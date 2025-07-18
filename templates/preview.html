@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Route Preview</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Available Routes</h1>
+        {% for route in routes %}
+            <div class="card">
+                <h2>{{ route.summary }}</h2>
+                <p>Distance: {{ route.distance }}</p>
+                <p>Duration: {{ route.duration }}</p>
+                <a href="{{ url_for('view_preview', filename=route.filename) }}" target="_blank">View Route</a>
+            </div>
+        {% endfor %}
+        <a href="/" class="back">← Plan another route</a>
+    </div>
+</body>
+</html>
+

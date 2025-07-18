@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>IndianOil Route Planner</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen;
+      background: linear-gradient(to right, #f8f9fa, #e0e0e0);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .form-box {
+      background-color: white;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 0 30px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .form-box h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #333;
+    }
+
+    label {
+      font-weight: 600;
+      margin-top: 10px;
+      display: block;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      font-size: 1rem;
+      background-color: #0071e3;
+      border: none;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+
+    button:hover {
+      background-color: #005bb5;
+    }
+
+    .footer {
+      margin-top: 20px;
+      font-size: 0.9rem;
+      text-align: center;
+      color: #888;
+    }
+
+    datalist option {
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <form class="form-box" method="POST" action="{{ url_for('fetch_routes') }}">
+    <h2>Enter Route Details</h2>
+
+    <label for="landmark_name">Source Landmark</label>
+    <input type="text" id="landmark_name" list="landmarkList" placeholder="Start typing landmark name...">
+    <datalist id="landmarkList">
+      {% for lm in landmarks %}
+        <option value="{{ lm['name'] }}">
+      {% endfor %}
+    </datalist>
+
+    <label for="source">Source Coordinates</label>
+    <input type="text" name="source" id="source" placeholder="Autofills from landmark or enter manually" required readonly>
+
+    <label for="destination">Destination Coordinates</label>
+    <input type="text" name="destination" id="destination" placeholder="e.g. 22.3072, 73.1812" required>
+
+    <label for="vehicle">Mode of Travel</label>
+    <select name="vehicle" id="vehicle" required>
+      <option value="driving">🚗 Driving</option>
+      <option value="walking">🚶 Walking</option>
+      <option value="bicycling">🚴 Bicycling</option>
+    </select>
+
+    <button type="submit"><i class="fa-solid fa-route"></i> Generate Routes</button>
+    <div class="footer">© 2025 IndianOil Corporation Ltd.</div>
+  </form>
+
+  <script>
+    const landmarkData = {{ landmarks | safe }};
+
+    document.getElementById('landmark_name').addEventListener('input', function () {
+      const name = this.value;
+      const match = landmarkData.find(item => item.name === name);
+      const sourceInput = document.getElementById('source');
+      if (match) {
+        sourceInput.value = `${match.lat}, ${match.lng}`;
+      } else {
+        sourceInput.value = "";
+      }
+    });
+  </script>
+
+</body>
+</html>
