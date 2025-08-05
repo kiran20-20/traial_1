@@ -1,5 +1,5 @@
 flask
-gunicorn
+gunicorn>=21.2.0
 googlemaps
 polyline
 folium
@@ -9,3 +9,4 @@ pandas
 openpyxl
 numpy
 geopy
+
