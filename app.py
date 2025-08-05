@@ -446,6 +446,7 @@ def analyze_route():
     {{% endmacro %}}
     """
 
+
     
     legend = MacroElement()
     legend._template = Template(legend_html)
@@ -504,4 +505,5 @@ if __name__ == '__main__':
     if not os.path.exists("templates"):
         os.makedirs("templates")
     app.run(debug=True)
+
 
