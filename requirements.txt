@@ -1,10 +1,12 @@
-Flask==2.2.5
-Flask-Session==0.5.0
+flask
 googlemaps
 polyline
 folium
+flask-session
 branca
-gunicorn
 pandas
 openpyxl
+numpy
+geopy
+uuid
 
