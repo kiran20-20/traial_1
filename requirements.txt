@@ -1,4 +1,5 @@
 flask
+gunicorn
 googlemaps
 polyline
 folium
@@ -8,7 +9,3 @@ pandas
 openpyxl
 numpy
 geopy
-uuid
-gunicorn
-
-
