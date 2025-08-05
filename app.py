@@ -436,7 +436,16 @@ def analyze_route():
         </div>
     </div>
     {% endmacro %}
-    """.format(TRUCK_WEIGHT=TRUCK_WEIGHT, MAX_SPEED_LIMIT=MAX_SPEED_LIMIT)
+    html = f"""
+    {{% macro html(this, kwargs) %}}
+        <div style="position: relative; width: 100%; height: 100%;">
+            <h4>Truck Info</h4>
+            <p>Truck weight: {TRUCK_WEIGHT}</p>
+            <p>Max speed: {MAX_SPEED_LIMIT}</p>
+        </div>
+    {{% endmacro %}}
+    """
+
     
     legend = MacroElement()
     legend._template = Template(legend_html)
@@ -495,3 +504,4 @@ if __name__ == '__main__':
     if not os.path.exists("templates"):
         os.makedirs("templates")
     app.run(debug=True)
+
