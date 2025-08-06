@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>📊 Detailed Route Analysis Report</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Add moment.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -380,7 +382,7 @@
             <h1><i class="fas fa-chart-line"></i> Detailed Route Analysis Report</h1>
             <div class="subtitle">Heavy Vehicle Navigation - Comprehensive Safety & Performance Analysis</div>
             <div class="report-meta">
-                <div><i class="fas fa-calendar"></i> Generated: {{ moment().format('MMMM DD, YYYY') }}</div>
+                <div><i class="fas fa-calendar"></i> Generated: <span id="report-date">Loading...</span></div>
                 <div><i class="fas fa-truck"></i> Vehicle: {{ report.truck_weight }}T Heavy Truck</div>
                 <div><i class="fas fa-tachometer-alt"></i> Max Speed: {{ report.max_speed_limit }} km/h</div>
             </div>
@@ -720,72 +722,4 @@
                 <a href="{{ url_for('home') }}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Back to Route Planning
                 </a>
-                <a href="#" onclick="downloadReport()" class="btn btn-success">
-                    <i class="fas fa-download"></i> Download PDF
-                </a>
-                <a href="mailto:?subject=Route Analysis Report&body=Please find the attached route analysis report for heavy vehicle navigation." class="btn btn-danger">
-                    <i class="fas fa-envelope"></i> Share Report
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // Print optimization
-        window.addEventListener('beforeprint', function() {
-            document.body.style.background = 'white';
-        });
-
-        window.addEventListener('afterprint', function() {
-            document.body.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-        });
-
-        // Download report function
-        function downloadReport() {
-            // In a real implementation, this would generate a PDF
-            alert('PDF download feature would be implemented here. Currently showing report data.');
-            console.log('Report data for PDF generation:', {
-                totalDistance: '{{ report.total_distance }}',
-                totalDuration: '{{ report.total_duration }}',
-                truckWeight: '{{ report.truck_weight }}',
-                highRiskZones: '{{ report.route_analysis.high_risk_zones }}',
-                mediumRiskZones: '{{ report.route_analysis.medium_risk_zones }}'
-            });
-        }
-
-        // Auto-scroll to sections
-        function scrollToSection(sectionId) {
-            document.getElementById(sectionId).scrollIntoView({ behavior: 'smooth' });
-        }
-
-        // Add current date/time
-        document.addEventListener('DOMContentLoaded', function() {
-            const now = new Date();
-            const reportMeta = document.querySelector('.report-meta');
-            if (reportMeta) {
-                const dateElement = reportMeta.querySelector('div:first-child');
-                if (dateElement) {
-                    dateElement.innerHTML = `<i class="fas fa-calendar"></i> Generated: ${now.toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })}`;
-                }
-            }
-        });
-
-        // Highlight critical sections
-        document.addEventListener('DOMContentLoaded', function() {
-            const highRiskZones = {{ report.route_analysis.high_risk_zones }};
-            if (highRiskZones > 3) {
-                const alerts = document.querySelectorAll('.alert-danger');
-                alerts.forEach(alert => {
-                    alert.style.animation = 'pulse 2s infinite';
-                });
-            }
-        });
-    </script>
-</body>
-</html>
+                <a href="#" onclick="downloadReport()" class="btn btn-
