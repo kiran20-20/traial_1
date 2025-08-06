@@ -26,7 +26,7 @@ gmaps = googlemaps.Client(key=API_KEY)
 # Constants for truck navigation
 TRUCK_WEIGHT = 37.5  # Average of 30-45 tonnes
 MAX_SPEED_LIMIT = 60  # kmph
-SAFE_TURN_ANGLE = 45  # degrees
+SAFE_TURN_ANGLE = 130  # degrees
 DANGEROUS_TURN_ANGLE = 30  # degrees
 
 def calculate_bearing(lat1, lng1, lat2, lng2):
@@ -630,3 +630,4 @@ if __name__ == '__main__':
         app.run(debug=True)
     except Exception as e:
         print(f"Error starting application: {e}")
+
