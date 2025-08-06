@@ -129,7 +129,7 @@
       </div>
     </div>
 
-    <label for="landmark_name">Source Landmark</label>
+    <label for="landmark_name">Iocl Terminal</label>
     <input type="text" id="landmark_name" list="landmarkList" placeholder="Start typing landmark name...">
     <datalist id="landmarkList">
       {% for lm in landmarks %}
@@ -137,10 +137,10 @@
       {% endfor %}
     </datalist>
 
-    <label for="source">Source Coordinates</label>
+    <label for="source">Terminal Cordinates</label>
     <input type="text" name="source" id="source" placeholder="Autofills from landmark or enter manually" required readonly>
 
-    <label for="destination">Destination Coordinates</label>
+    <label for="destination">RO Cordinates</label>
     <input type="text" name="destination" id="destination" placeholder="e.g. 22.3072, 73.1812" required>
 
     <label for="vehicle">Mode of Travel</label>
@@ -171,5 +171,6 @@
 
 </body>
 </html>
+
 
 
