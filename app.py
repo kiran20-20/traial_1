@@ -157,11 +157,11 @@ def identify_high_risk_zones(coords, pois):
                 except:
                     pass
             
-            # Add random factors for demonstration (school zones, construction, etc.)
+            # Add random factors for demonstration (Crowded zones, construction, etc.)
             try:
                 if np.random.random() < 0.05:  # 5% chance
                     risk_score += 4
-                    risk_factors.append("School zone")
+                    risk_factors.append("Crowded zone")
                 
                 if np.random.random() < 0.03:  # 3% chance
                     risk_score += 5
@@ -630,4 +630,5 @@ if __name__ == '__main__':
         app.run(debug=True)
     except Exception as e:
         print(f"Error starting application: {e}")
+
 
