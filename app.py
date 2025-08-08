@@ -284,7 +284,7 @@ def home():
     except Exception as e:
         print(f"Error loading data: {e}")
         return render_template("route_form.html", landmarks=[], sap_codes=[], sap_states=[])
-    ]
+        
     sap_states = sorted(set(row['State Code'] for _, row in df_sap.iterrows()))
     # Also pass IOCL coordinates/landmarks as before if needed
     return render_template("login.html", sap_codes=sap_codes, sap_states=sap_states)
@@ -655,5 +655,6 @@ if __name__ == '__main__':
         app.run(debug=True)
     except Exception as e:
         print(f"Error starting application: {e}")
+
 
 
