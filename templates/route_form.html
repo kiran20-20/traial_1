@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>IndianOil Smart Marg</title>
+  <title>IndianOil Smart Marg - Login</title>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -16,7 +16,6 @@
       justify-content: center;
       padding: 20px;
     }
-
     .form-box {
       background-color: white;
       padding: 40px;
@@ -27,7 +26,6 @@
       position: relative;
       text-align: center;
     }
-
     .heading-container {
       position: relative;
       display: inline-block;
@@ -37,7 +35,6 @@
       border-radius: 10px;
       box-shadow: 0 0 15px rgba(0, 87, 183, 0.2);
     }
-
     .heading-container h2 {
       font-size: 1.8em;
       font-weight: bold;
@@ -46,7 +43,6 @@
       position: relative;
       z-index: 2;
     }
-
     .rectangle-path {
       position: absolute;
       top: 0;
@@ -56,7 +52,6 @@
       z-index: 1;
       pointer-events: none;
     }
-
     .orbit-dot {
       position: absolute;
       width: 20px;
@@ -66,7 +61,6 @@
       box-shadow: 0 0 10px orange;
       animation: moveRect 4s linear infinite;
     }
-
     @keyframes moveRect {
       0%   { top: 0; left: 0; }
       25%  { top: 0; left: calc(100% - 20px); }
@@ -74,14 +68,12 @@
       75%  { top: calc(100% - 12px); left: 0; }
       100% { top: 0; left: 0; }
     }
-
     label {
       font-weight: 600;
       margin-top: 10px;
       display: block;
       text-align: left;
     }
-
     input, select {
       width: 100%;
       padding: 12px;
@@ -90,7 +82,6 @@
       border: 1px solid #ccc;
       border-radius: 8px;
     }
-
     button {
       width: 100%;
       padding: 14px;
@@ -102,18 +93,15 @@
       cursor: pointer;
       margin-top: 20px;
     }
-
     button:hover {
       background-color: #005bb5;
     }
-
     .footer {
       margin-top: 20px;
       font-size: 0.9rem;
       text-align: center;
       color: #888;
     }
-
     datalist option {
       padding: 10px;
     }
@@ -121,15 +109,34 @@
 </head>
 <body>
 
-  <form class="form-box" method="POST" action="{{ url_for('fetch_routes') }}">
+  <form class="form-box" method="POST" action="{{ url_for('login') }}">
     <div class="heading-container">
-      <h2>IndianOil Smart Marg</h2>
+      <h2>IndianOil Smart Marg - Login</h2>
       <div class="rectangle-path">
         <div class="orbit-dot"></div>
       </div>
     </div>
 
-    <label for="landmark_name">Iocl Terminal</label>
+    <!-- State and SAP Code Section -->
+    <label for="state_code">State Code</label>
+    <select id="state_code" name="state_code" required>
+      <option value="">Select State</option>
+      {% for state in sap_states %}
+        <option value="{{ state }}">{{ state }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="sap_code">SAP Code</label>
+    <input type="text" id="sap_code" name="sap_code" list="sapCodeList" placeholder="Start typing SAP code..." autocomplete="off" required>
+    <datalist id="sapCodeList">
+      <!-- Populated by JS -->
+    </datalist>
+
+    <label for="sap_coords">SAP Coordinates</label>
+    <input type="text" id="sap_coords" name="sap_coords" placeholder="Autofills from SAP code selection" readonly required>
+
+    <!-- IOCL Section (unchanged as per requirements) -->
+    <label for="landmark_name">IOCL Terminal</label>
     <input type="text" id="landmark_name" list="landmarkList" placeholder="Start typing landmark name...">
     <datalist id="landmarkList">
       {% for lm in landmarks %}
@@ -137,26 +144,16 @@
       {% endfor %}
     </datalist>
 
-    <label for="source">Terminal Cordinates</label>
+    <label for="source">Terminal Coordinates</label>
     <input type="text" name="source" id="source" placeholder="Autofills from landmark or enter manually" required readonly>
 
-    <label for="destination">RO Cordinates</label>
-    <input type="text" name="destination" id="destination" placeholder="e.g. 22.3072, 73.1812" required>
-
-    <label for="vehicle">Mode of Travel</label>
-    <select name="vehicle" id="vehicle" required>
-      <option value="driving">🚗 Driving</option>
-      <option value="walking">🚶 Walking</option>
-      <option value="bicycling">🚴 Bicycling</option>
-    </select>
-
-    <button type="submit"><i class="fa-solid fa-route"></i> Generate Routes</button>
+    <button type="submit"><i class="fa-solid fa-sign-in-alt"></i> Login</button>
     <div class="footer">© 2025 IndianOil Corporation Ltd.</div>
   </form>
 
   <script>
+    // IOCL Landmark autofill
     const landmarkData = {{ landmarks | safe }};
-
     document.getElementById('landmark_name').addEventListener('input', function () {
       const name = this.value;
       const match = landmarkData.find(item => item.name === name);
@@ -167,10 +164,34 @@
         sourceInput.value = "";
       }
     });
-  </script>
 
+    // SAP autofill logic
+    const sapData = {{ sap_codes | safe }};
+    document.getElementById('state_code').addEventListener('change', function() {
+      const state = this.value;
+      const sapList = document.getElementById('sapCodeList');
+      sapList.innerHTML = "";
+      sapData.filter(item => item.state === state)
+        .forEach(item => {
+          const option = document.createElement('option');
+          option.value = item.sap_code;
+          sapList.appendChild(option);
+        });
+      document.getElementById('sap_code').value = "";
+      document.getElementById('sap_coords').value = "";
+    });
+
+    document.getElementById('sap_code').addEventListener('input', function () {
+      const code = this.value;
+      const state = document.getElementById('state_code').value;
+      const match = sapData.find(item => item.state === state && item.sap_code === code);
+      const coordInput = document.getElementById('sap_coords');
+      if (match) {
+        coordInput.value = `${match.lat}, ${match.lng}`;
+      } else {
+        coordInput.value = "";
+      }
+    });
+  </script>
 </body>
 </html>
-
-
-
