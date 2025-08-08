@@ -265,7 +265,7 @@ def home():
         df_sap = pd.read_excel("IOCL_Plant_data.xlsx")
         sap_codes = [
             {
-                'state': row['State Code'],
+                'state': row['State code'],
                 'sap_code': row['Sap Code'],
                 'lat': row['Latitude'],
                 'lng': row['Longitude']
@@ -655,6 +655,7 @@ if __name__ == '__main__':
         app.run(debug=True)
     except Exception as e:
         print(f"Error starting application: {e}")
+
 
 
 
