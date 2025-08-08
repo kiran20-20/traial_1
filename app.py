@@ -254,15 +254,40 @@ def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance
 @app.route('/')
 def home():
     try:
-        df = pd.read_excel("IOCL_Landmark_Details.xlsx")
+        # Load IOCL Landmarks
+        df_iocl = pd.read_excel("IOCL_Landmark_Details.xlsx")
         landmarks = [
             {'name': row['Landmark Name'], 'lat': row['Latitude'], 'lng': row['Longitude']}
-            for _, row in df.iterrows()
+            for _, row in df_iocl.iterrows()
         ]
-        return render_template("route_form.html", landmarks=landmarks)
+        
+        # Load SAP Codes
+        df_sap = pd.read_excel("SAP_Codes.xlsx")
+        sap_codes = [
+            {
+                'state': row['State Code'],
+                'sap_code': row['SAP Code'],
+                'lat': row['Latitude'],
+                'lng': row['Longitude']
+            }
+            for _, row in df_sap.iterrows()
+        ]
+        sap_states = sorted(set(row['State Code'] for _, row in df_sap.iterrows()))
+
+        # Pass both to template
+        return render_template(
+            "route_form.html",
+            landmarks=landmarks,
+            sap_codes=sap_codes,
+            sap_states=sap_states
+        )
     except Exception as e:
-        print(f"Error loading landmarks: {e}")
-        return render_template("route_form.html", landmarks=[])
+        print(f"Error loading data: {e}")
+        return render_template("route_form.html", landmarks=[], sap_codes=[], sap_states=[])
+    ]
+    sap_states = sorted(set(row['State Code'] for _, row in df_sap.iterrows()))
+    # Also pass IOCL coordinates/landmarks as before if needed
+    return render_template("login.html", sap_codes=sap_codes, sap_states=sap_states)
 
 @app.route('/fetch_routes', methods=['POST'])
 def fetch_routes():
@@ -630,5 +655,4 @@ if __name__ == '__main__':
         app.run(debug=True)
     except Exception as e:
         print(f"Error starting application: {e}")
-
 
