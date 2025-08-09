@@ -290,7 +290,7 @@ def home():
 
         # Pass landmarks to template - no SAP codes needed
         return render_template(
-            "route_form_simple.html",
+            "route_form.html",
             landmarks=landmarks
         )
     except Exception as e:
@@ -300,7 +300,7 @@ def home():
         # Return a simple page if data loading fails
         return """
         <html><body>
-        <h2>IndianOil Smart Marg - Route Planner</h2>
+        <h2>IndianOil Smart Marg</h2>
         <p>Enter coordinates manually or use landmarks</p>
         <p>Error loading landmarks: """ + str(e) + """</p>
         </body></html>
@@ -680,3 +680,4 @@ if __name__ == '__main__':
         app.run(debug=True)
     except Exception as e:
         print(f"Error starting application: {e}")
+
