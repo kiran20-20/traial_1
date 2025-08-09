@@ -1,6 +1,10 @@
-You are correct. "Nation First" is a key value of IndianOil. The company's core values, as officially stated, are "**Nation-First, Care, Innovation, Passion, and Trust**." These are often referred to as the CIPT values, with "Nation-First" being the most recent addition. 🇮🇳
+I apologize for the misunderstanding. I now understand that you want the actual words "Nation-First," "Care," "Innovation," "Passion," and "Trust" to be the floating bubbles themselves, rather than abstract shapes.
 
-Here is the updated code reflecting the correct IndianOil values. I've rearranged the list to put "Nation-First" at the top, as it's a primary guiding principle. I've also updated the descriptive text to better align with the company's official messaging.
+Creating this effect with pure CSS is a complex and somewhat non-standard approach, as it involves animating text elements. The previous abstract shapes were a simple way to create a visual effect without affecting readability.
+
+To achieve your request of making the actual words "IndianOil Values" etc. float like bubbles, I'll need to update the CSS and HTML. I'll modify the `floating-shape` class to instead animate `div` elements containing the text. I will also add a subtle gradient and styling to these elements to make them look like "bubbles" or "sprints" as you requested. This will create the dynamic background you're looking for while ensuring the text is still somewhat readable as it floats by.
+
+Here is the revised code:
 
 ```html
 <!DOCTYPE html>
@@ -35,7 +39,7 @@ Here is the updated code reflecting the correct IndianOil values. I've rearrange
             overflow: hidden;
         }
 
-        /* World-Class Floating Background */
+        /* World-Class Floating Background with Text */
         .floating-bg-container {
             position: absolute;
             top: 0;
@@ -44,25 +48,37 @@ Here is the updated code reflecting the correct IndianOil values. I've rearrange
             height: 100%;
             overflow: hidden;
             z-index: -1;
+            pointer-events: none; /* Prevents text from being selectable */
         }
-        .floating-shape {
+        .floating-text-bubble {
             position: absolute;
-            background-color: rgba(243, 112, 34, 0.1); /* Subtle orange */
-            border-radius: 50%;
-            animation: float-up-down 15s infinite ease-in-out;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: rgba(255, 255, 255, 0.9);
+            padding: 15px 25px;
+            border-radius: 50px;
+            background-image: linear-gradient(45deg, rgba(2, 22, 79, 0.7), rgba(243, 112, 34, 0.7));
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            white-space: nowrap;
+            animation: float-and-rotate 20s infinite ease-in-out;
+            opacity: 0.8;
+            letter-spacing: 1px;
         }
-        .floating-shape:nth-child(1) { width: 150px; height: 150px; left: 10%; top: 5%; animation-duration: 18s; }
-        .floating-shape:nth-child(2) { width: 80px; height: 80px; left: 40%; top: 20%; animation-duration: 22s; }
-        .floating-shape:nth-child(3) { width: 200px; height: 200px; right: 5%; top: 50%; animation-duration: 20s; }
-        .floating-shape:nth-child(4) { width: 120px; height: 120px; right: 30%; bottom: 10%; animation-duration: 25s; }
-        .floating-shape:nth-child(5) { width: 90px; height: 90px; left: 25%; bottom: 30%; animation-duration: 19s; }
-        .floating-shape:nth-child(6) { width: 180px; height: 180px; left: 60%; top: 10%; background-color: rgba(2, 22, 79, 0.08); animation-duration: 21s; }
-        .floating-shape:nth-child(7) { width: 70px; height: 70px; right: 15%; bottom: 40%; background-color: rgba(2, 22, 79, 0.08); animation-duration: 23s; }
+        
+        /* Individual animations for each bubble */
+        .floating-text-bubble:nth-child(1) { top: 10%; left: 5%; animation-duration: 22s; animation-delay: 0s; transform: scale(1.2) rotate(5deg); }
+        .floating-text-bubble:nth-child(2) { top: 40%; left: 20%; animation-duration: 25s; animation-delay: 2s; transform: scale(0.9) rotate(-10deg); }
+        .floating-text-bubble:nth-child(3) { top: 70%; right: 15%; animation-duration: 28s; animation-delay: 5s; transform: scale(1.1) rotate(15deg); }
+        .floating-text-bubble:nth-child(4) { bottom: 5%; left: 30%; animation-duration: 21s; animation-delay: 3s; transform: scale(1.3) rotate(-5deg); }
+        .floating-text-bubble:nth-child(5) { top: 5%; right: 40%; animation-duration: 24s; animation-delay: 1s; transform: scale(0.8) rotate(20deg); }
+        .floating-text-bubble:nth-child(6) { bottom: 30%; right: 5%; animation-duration: 26s; animation-delay: 4s; transform: scale(1.05) rotate(10deg); }
 
-        @keyframes float-up-down {
-            0% { transform: translateY(0); }
-            50% { transform: translateY(-50px); }
-            100% { transform: translateY(0); }
+        @keyframes float-and-rotate {
+            0%   { transform: translate(0, 0) rotate(0deg); }
+            25%  { transform: translate(20px, -20px) rotate(-10deg); }
+            50%  { transform: translate(-30px, 15px) rotate(15deg); }
+            75%  { transform: translate(10px, 25px) rotate(-5deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
         }
 
         .form-box {
@@ -154,38 +170,9 @@ Here is the updated code reflecting the correct IndianOil values. I've rearrange
             text-align: center;
             color: var(--iocl-mid-gray);
         }
-
         .values-section {
-            margin-top: 40px;
-            padding: 25px;
-            background-color: var(--iocl-light-gray);
-            border-radius: 12px;
-            text-align: left;
+            display: none; /* Hide the static values section as the words are now floating */
         }
-        .values-section h3 {
-            color: var(--iocl-blue);
-            font-size: 1.4em;
-            margin-top: 0;
-            margin-bottom: 15px;
-        }
-        .values-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .values-list li {
-            display: flex;
-            align-items: flex-start;
-            margin-bottom: 15px;
-            font-weight: 500;
-        }
-        .values-list i {
-            color: var(--iocl-orange);
-            margin-right: 10px;
-            font-size: 1.2em;
-            margin-top: 2px;
-        }
-
         datalist option {
             padding: 10px;
         }
@@ -200,13 +187,12 @@ Here is the updated code reflecting the correct IndianOil values. I've rearrange
 <body>
 
 <div class="floating-bg-container">
-    <div class="floating-shape"></div>
-    <div class="floating-shape"></div>
-    <div class="floating-shape"></div>
-    <div class="floating-shape"></div>
-    <div class="floating-shape"></div>
-    <div class="floating-shape"></div>
-    <div class="floating-shape"></div>
+    <div class="floating-text-bubble">Nation-First</div>
+    <div class="floating-text-bubble">Care</div>
+    <div class="floating-text-bubble">Innovation</div>
+    <div class="floating-text-bubble">Passion</div>
+    <div class="floating-text-bubble">Trust</div>
+    <div class="floating-text-bubble">IndianOil Spirit</div>
 </div>
 
 <form class="form-box" method="POST" action="{{ url_for('fetch_routes') }}">
@@ -255,17 +241,6 @@ Here is the updated code reflecting the correct IndianOil values. I've rearrange
         <i class="fa-solid fa-route"></i> Generate Routes
     </button>
     
-    <div class="values-section">
-        <h3><i class="fa-solid fa-star"></i> Our Guiding Values</h3>
-        <ul class="values-list">
-            <li><i class="fa-solid fa-flag"></i> **Nation-First:** Always on duty to propel the nation forward.</li>
-            <li><i class="fa-solid fa-handshake-angle"></i> **Care:** Leading with empathy and a commitment to our people and communities.</li>
-            <li><i class="fa-solid fa-lightbulb"></i> **Innovation:** Solving for tomorrow and responding with agility.</li>
-            <li><i class="fa-solid fa-fire"></i> **Passion:** Going the extra mile and daring to be bold.</li>
-            <li><i class="fa-solid fa-handshake"></i> **Trust:** Our commitment to deliver and grow the ecosystem.</li>
-        </ul>
-    </div>
-
     <div class="footer">
         © 2025 IndianOil Corporation Ltd.
     </div>
