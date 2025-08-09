@@ -266,43 +266,284 @@ def home():
     """Main route form page - no login required"""
     try:
         # Load IOCL Landmarks with data validation
-        df_iocl = pd.read_excel("IOCL_Landmark_Details.xlsx")
         landmarks = []
         
-        for _, row in df_iocl.iterrows():
-            try:
-                # Validate and convert coordinates
-                lat = float(row['Latitude']) if pd.notna(row['Latitude']) else None
-                lng = float(row['Longitude']) if pd.notna(row['Longitude']) else None
-                name = str(row['Landmark Name']).strip() if pd.notna(row['Landmark Name']) else None
-                
-                if lat is not None and lng is not None and name:
-                    landmarks.append({
-                        'name': name,
-                        'lat': lat,
-                        'lng': lng
-                    })
-            except (ValueError, TypeError) as e:
-                print(f"Skipping invalid landmark row: {e}")
-                continue
-        
-        print(f"Loaded {len(landmarks)} landmarks")
+        # Try to load from Excel file, but handle gracefully if it doesn't exist
+        try:
+            df_iocl = pd.read_excel("IOCL_Landmark_Details.xlsx")
+            
+            for _, row in df_iocl.iterrows():
+                try:
+                    # Validate and convert coordinates
+                    lat = float(row['Latitude']) if pd.notna(row['Latitude']) else None
+                    lng = float(row['Longitude']) if pd.notna(row['Longitude']) else None
+                    name = str(row['Landmark Name']).strip() if pd.notna(row['Landmark Name']) else None
+                    
+                    if lat is not None and lng is not None and name:
+                        landmarks.append({
+                            'name': name,
+                            'lat': lat,
+                            'lng': lng
+                        })
+                except (ValueError, TypeError) as e:
+                    print(f"Skipping invalid landmark row: {e}")
+                    continue
+                    
+            print(f"Loaded {len(landmarks)} landmarks from Excel file")
+            
+        except FileNotFoundError:
+            print("IOCL_Landmark_Details.xlsx not found, using sample landmarks")
+            # Provide some sample landmarks if file doesn't exist
+            landmarks = [
+                {'name': 'Delhi Terminal', 'lat': 28.6139, 'lng': 77.2090},
+                {'name': 'Mumbai Terminal', 'lat': 19.0760, 'lng': 72.8777},
+                {'name': 'Bangalore Terminal', 'lat': 12.9716, 'lng': 77.5946},
+                {'name': 'Chennai Terminal', 'lat': 13.0827, 'lng': 80.2707},
+                {'name': 'Kolkata Terminal', 'lat': 22.5726, 'lng': 88.3639}
+            ]
+        except Exception as e:
+            print(f"Error loading Excel file: {e}")
+            landmarks = []
 
-        # Pass landmarks to template - no SAP codes needed
+        # Create the route_form.html content and save it to templates folder
+        route_form_content = '''<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>IndianOil Smart Marg</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen;
+      background: linear-gradient(to right, #f8f9fa, #e0e0e0);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .form-box {
+      background-color: white;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 0 30px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 480px;
+      position: relative;
+      text-align: center;
+    }
+    .heading-container {
+      position: relative;
+      display: inline-block;
+      margin-bottom: 30px;
+      padding: 20px 40px;
+      border: 2px solid #0057b7;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 87, 183, 0.2);
+    }
+    .heading-container h2 {
+      font-size: 1.8em;
+      font-weight: bold;
+      color: #0057b7;
+      margin: 0;
+      position: relative;
+      z-index: 2;
+    }
+    .rectangle-path {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .orbit-dot {
+      position: absolute;
+      width: 20px;
+      height: 12px;
+      background-color: orange;
+      border-radius: 4px;
+      box-shadow: 0 0 10px orange;
+      animation: moveRect 4s linear infinite;
+    }
+    @keyframes moveRect {
+      0%   { top: 0; left: 0; }
+      25%  { top: 0; left: calc(100% - 20px); }
+      50%  { top: calc(100% - 12px); left: calc(100% - 20px); }
+      75%  { top: calc(100% - 12px); left: 0; }
+      100% { top: 0; left: 0; }
+    }
+    label {
+      font-weight: 600;
+      margin-top: 10px;
+      display: block;
+      text-align: left;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-sizing: border-box;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      font-size: 1rem;
+      background-color: #0071e3;
+      border: none;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    button:hover {
+      background-color: #005bb5;
+    }
+    .footer {
+      margin-top: 20px;
+      font-size: 0.9rem;
+      text-align: center;
+      color: #888;
+    }
+    datalist option {
+      padding: 10px;
+    }
+    .section-divider {
+      margin: 30px 0;
+      border-top: 2px solid #e0e0e0;
+      padding-top: 20px;
+    }
+    .section-title {
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #0057b7;
+      margin-bottom: 15px;
+      text-align: left;
+    }
+    .coord-helper {
+      font-size: 0.8em;
+      color: #666;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <form class="form-box" method="POST" action="{{ url_for('fetch_routes') }}">
+    <div class="heading-container">
+      <h2>IndianOil Smart Marg</h2>
+      <div class="rectangle-path">
+        <div class="orbit-dot"></div>
+      </div>
+    </div>
+
+    <!-- Source Location Section -->
+    <div class="section-title">📍 Terminal Location</div>
+    
+    <label for="landmark_name">IOCL Terminal (Optional)</label>
+    <input type="text" id="landmark_name" list="landmarkList" placeholder="Start typing landmark name...">
+    <datalist id="landmarkList">
+      {% for lm in landmarks %}
+        <option value="{{ lm['name'] }}">
+      {% endfor %}
+    </datalist>
+
+    <label for="source">Terminal Coordinates</label>
+    <input type="text" name="source" id="source" placeholder="Enter coordinates (lat, lng) or select landmark above" required>
+    <div class="coord-helper">Example: 28.6139, 77.2090 (New Delhi)</div>
+
+    <!-- Destination Section -->
+    <div class="section-divider">
+      <div class="section-title">🎯 RO Location</div>
+
+      <label for="destination">Destination Coordinates</label>
+      <input type="text" name="destination" id="destination" placeholder="Enter coordinates manually (lat, lng)" required>
+      <div class="coord-helper">Example: 19.0760, 72.8777 (Mumbai)</div>
+    </div>
+
+    <!-- Vehicle Type Section -->
+    <div class="section-divider">
+      <div class="section-title">🚛 Vehicle Type</div>
+      
+      <label for="vehicle">Select Vehicle Mode</label>
+      <select id="vehicle" name="vehicle" required>
+        <option value="">Choose Vehicle Type</option>
+        <option value="driving">🚛 Truck (Driving)</option>
+        <option value="walking">🚶 Walking</option>
+        <option value="transit">🚌 Public Transit</option>
+      </select>
+    </div>
+
+    <button type="submit"><i class="fa-solid fa-route"></i> Generate Routes</button>
+    <div class="footer">© 2025 IndianOil Corporation Ltd.</div>
+  </form>
+
+  <script>
+    // IOCL Landmark autofill for SOURCE only
+    const landmarkData = {{ landmarks | tojson }};
+    
+    document.getElementById('landmark_name').addEventListener('input', function () {
+      const name = this.value;
+      const match = landmarkData.find(item => item.name === name);
+      const sourceInput = document.getElementById('source');
+      if (match) {
+        sourceInput.value = `${match.lat}, ${match.lng}`;
+      } else if (name === "") {
+        sourceInput.value = "";
+      }
+    });
+
+    // Allow manual coordinate entry for source
+    document.getElementById('source').addEventListener('focus', function() {
+      this.placeholder = "Enter coordinates manually (lat, lng)";
+    });
+  </script>
+</body>
+</html>'''
+
+        # Ensure templates directory exists
+        if not os.path.exists("templates"):
+            os.makedirs("templates")
+            
+        # Save the route_form.html template
+        with open("templates/route_form.html", "w", encoding="utf-8") as f:
+            f.write(route_form_content)
+
+        # Pass landmarks to template
         return render_template(
             "route_form.html",
             landmarks=landmarks
         )
+        
     except Exception as e:
         print(f"Error loading data: {e}")
         import traceback
         traceback.print_exc()
-        # Return a simple page if data loading fails
-        return """
+        # Return a simple fallback page if everything fails
+        return f"""
         <html><body>
         <h2>IndianOil Smart Marg</h2>
-        <p>Enter coordinates manually or use landmarks</p>
-        <p>Error loading landmarks: """ + str(e) + """</p>
+        <p>Basic form (landmarks unavailable)</p>
+        <form method="POST" action="/fetch_routes">
+            <p>Source: <input type="text" name="source" placeholder="lat,lng" required></p>
+            <p>Destination: <input type="text" name="destination" placeholder="lat,lng" required></p>
+            <p>Vehicle: 
+                <select name="vehicle" required>
+                    <option value="">Choose</option>
+                    <option value="driving">Driving</option>
+                    <option value="walking">Walking</option>
+                    <option value="transit">Transit</option>
+                </select>
+            </p>
+            <button type="submit">Generate Routes</button>
+        </form>
+        <p>Error: {str(e)}</p>
         </body></html>
         """
 
@@ -324,8 +565,8 @@ def fetch_routes():
                 pass
 
         # Get form data
-        source = request.form['source']
-        destination = request.form['destination']  # Changed from 'destination' to match form
+        source = request.form['source'].strip()
+        destination = request.form['destination'].strip()
         vehicle = request.form['vehicle']
 
         # Validate coordinates
@@ -352,6 +593,105 @@ def fetch_routes():
         session['destination'] = dest_coords
         session['vehicle'] = vehicle
         session.modified = True
+
+        # Create route_select.html template if it doesn't exist
+        route_select_content = '''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Select Route - IndianOil Smart Marg</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: linear-gradient(to right, #f8f9fa, #e0e0e0);
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #0057b7;
+            text-align: center;
+        }
+        .route-option {
+            border: 1px solid #ddd;
+            margin: 15px 0;
+            padding: 20px;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .route-option h3 {
+            color: #0057b7;
+            margin-top: 0;
+        }
+        .route-info {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+        .route-info span {
+            font-weight: bold;
+        }
+        button {
+            background-color: #0071e3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #005bb5;
+        }
+        .preview {
+            margin: 10px 0;
+            height: 200px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚛 Select Your Route</h1>
+        
+        {% for route in routes %}
+        <div class="route-option">
+            <h3>Route {{ route.index + 1 }}: {{ route.summary }}</h3>
+            <div class="route-info">
+                <span>Distance: {{ route.distance }}</span>
+                <span>Duration: {{ route.duration }}</span>
+            </div>
+            
+            {% if route.preview_file %}
+            <iframe src="{{ url_for('view_preview', filename=route.preview_file) }}" 
+                    class="preview" frameborder="0"></iframe>
+            {% endif %}
+            
+            <form method="POST" action="{{ url_for('analyze_route') }}" style="margin-top: 15px;">
+                <input type="hidden" name="route_index" value="{{ route.index }}">
+                <button type="submit">🔍 Analyze This Route</button>
+            </form>
+        </div>
+        {% endfor %}
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="{{ url_for('home') }}" style="text-decoration: none;">
+                <button>🏠 Start Over</button>
+            </a>
+        </div>
+    </div>
+</body>
+</html>'''
+
+        with open("templates/route_select.html", "w", encoding="utf-8") as f:
+            f.write(route_select_content)
 
         # Process routes for selection
         routes = []
@@ -384,6 +724,8 @@ def fetch_routes():
     
     except Exception as e:
         print(f"Error in fetch_routes: {e}")
+        import traceback
+        traceback.print_exc()
         return f"Error processing route request: {str(e)}"
 
 @app.route('/analyze_route', methods=['POST'])
@@ -557,7 +899,7 @@ def analyze_route():
                 print(f"Error adding traffic indicator: {e}")
                 continue
 
-        # Fixed legend HTML - removed the problematic duplicate section
+        # Fixed legend HTML
         legend_html = f"""
         {{% macro html(this, kwargs) %}}
         <div style="
@@ -604,6 +946,182 @@ def analyze_route():
         session['route_report'] = route_report
         session.modified = True
 
+        # Create route_analysis.html template if it doesn't exist
+        route_analysis_content = '''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Route Analysis - IndianOil Smart Marg</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: linear-gradient(to right, #f8f9fa, #e0e0e0);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .header h1 {
+            color: #0057b7;
+            margin: 0;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-card h3 {
+            color: #0057b7;
+            margin-top: 0;
+        }
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #333;
+            margin: 10px 0;
+        }
+        .map-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .map-frame {
+            width: 100%;
+            height: 600px;
+            border: none;
+            border-radius: 8px;
+        }
+        .actions {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #0071e3;
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            margin: 0 10px;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background-color: #005bb5;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        .alert {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .recommendations {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .recommendations h3 {
+            color: #0057b7;
+        }
+        .recommendations ul {
+            padding-left: 20px;
+        }
+        .recommendations li {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚛 Route Analysis Complete</h1>
+            <p>Vehicle Mode: {{ mode|title }} | Analysis Generated</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>📏 Total Distance</h3>
+                <div class="stat-value">{{ route_report.total_distance }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>⏱️ Estimated Duration</h3>
+                <div class="stat-value">{{ route_report.total_duration }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>⚠️ Risk Zones</h3>
+                <div class="stat-value">{{ high_risk_zones }}</div>
+                <small>High Risk Areas</small>
+            </div>
+            <div class="stat-card">
+                <h3>🏥 POIs Found</h3>
+                <div class="stat-value">{{ poi_count }}</div>
+                <small>Hospitals, Police, Fuel</small>
+            </div>
+        </div>
+
+        {% if high_risk_zones > 0 %}
+        <div class="alert">
+            <strong>⚠️ Caution Required:</strong> This route contains {{ high_risk_zones }} high-risk zones. 
+            Please review the detailed map below and exercise extra caution in marked areas.
+        </div>
+        {% endif %}
+
+        <div class="map-container">
+            <h3>🗺️ Interactive Route Map</h3>
+            <iframe src="{{ url_for('view_map', filename=html_file) }}" 
+                    class="map-frame"></iframe>
+        </div>
+
+        <div class="recommendations">
+            <h3>🛡️ Safety Recommendations</h3>
+            <ul>
+                {% for recommendation in route_report.safety_recommendations %}
+                <li>{{ recommendation }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="actions">
+            <a href="{{ url_for('detailed_report') }}" class="btn">📊 View Detailed Report</a>
+            <a href="{{ url_for('download_map', filename=html_file) }}" class="btn btn-secondary">💾 Download Map</a>
+            <a href="{{ url_for('home') }}" class="btn btn-secondary">🏠 Start Over</a>
+        </div>
+    </div>
+</body>
+</html>'''
+
+        with open("templates/route_analysis.html", "w", encoding="utf-8") as f:
+            f.write(route_analysis_content)
+
         return render_template("route_analysis.html",
                                mode=session['vehicle'],
                                turns=sum("turn" in s['html_instructions'].lower() for s in steps),
@@ -615,6 +1133,8 @@ def analyze_route():
 
     except Exception as e:
         print(f"Error in analyze_route: {e}")
+        import traceback
+        traceback.print_exc()
         return f"Error analyzing route: {str(e)}. Please try again."
 
 @app.route('/detailed_report')
@@ -625,7 +1145,297 @@ def detailed_report():
         if not report:
             return "No route analysis data found. Please analyze a route first."
         
+        # Create detailed_report.html template if it doesn't exist
+        detailed_report_content = '''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Detailed Route Report - IndianOil Smart Marg</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: linear-gradient(to right, #f8f9fa, #e0e0e0);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #0057b7, #0071e3);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        .content {
+            padding: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border-left: 4px solid #0071e3;
+            background: #f8f9fa;
+            border-radius: 0 8px 8px 0;
+        }
+        .section h2 {
+            color: #0057b7;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+        }
+        .section h2 i {
+            margin-right: 10px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .info-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        .info-item strong {
+            color: #0057b7;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .info-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+        .recommendations {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .recommendations h3 {
+            color: #856404;
+            margin-top: 0;
+        }
+        .recommendations ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .recommendations li {
+            margin: 8px 0;
+        }
+        .actions {
+            text-align: center;
+            margin: 30px 0;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #0071e3;
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            margin: 0 10px;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background-color: #005bb5;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        .truck-specs {
+            background: linear-gradient(135deg, #ff9500, #ffa726);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .truck-specs h3 {
+            margin-top: 0;
+        }
+        .progress-bar {
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 20px;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            text-align: center;
+            color: white;
+            font-size: 12px;
+            line-height: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Detailed Route Analysis Report</h1>
+            <p>IndianOil Smart Marg - Comprehensive Truck Navigation Analysis</p>
+        </div>
+
+        <div class="content">
+            <!-- Route Overview -->
+            <div class="section">
+                <h2>🛣️ Route Overview</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <strong>Total Distance</strong>
+                        <div class="info-value">{{ report.total_distance }}</div>
+                    </div>
+                    <div class="info-item">
+                        <strong>Estimated Duration</strong>
+                        <div class="info-value">{{ report.total_duration }}</div>
+                    </div>
+                    <div class="info-item">
+                        <strong>Route Points</strong>
+                        <div class="info-value">{{ report.route_analysis.total_points }}</div>
+                    </div>
+                    <div class="info-item">
+                        <strong>Points per KM</strong>
+                        <div class="info-value">{{ "%.1f"|format(report.route_analysis.points_per_km) }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Truck Specifications -->
+            <div class="truck-specs">
+                <h3>🚛 Truck Specifications</h3>
+                <div class="info-grid">
+                    <div style="color: white;">
+                        <strong>Maximum Weight:</strong> {{ report.truck_weight }} tonnes
+                    </div>
+                    <div style="color: white;">
+                        <strong>Speed Limit:</strong> {{ report.max_speed_limit }} km/h
+                    </div>
+                </div>
+            </div>
+
+            <!-- Risk Analysis -->
+            <div class="section">
+                <h2>⚠️ Risk Zone Analysis</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <strong>High Risk Zones</strong>
+                        <div class="info-value" style="color: #dc3545;">{{ report.route_analysis.high_risk_zones }}</div>
+                    </div>
+                    <div class="info-item">
+                        <strong>Medium Risk Zones</strong>
+                        <div class="info-value" style="color: #fd7e14;">{{ report.route_analysis.medium_risk_zones }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Points of Interest -->
+            <div class="section">
+                <h2>📍 Points of Interest Along Route</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <strong>🏥 Hospitals</strong>
+                        <div class="info-value">{{ report.route_analysis.hospitals_along_route }}</div>
+                    </div>
+                    <div class="info-item">
+                        <strong>👮 Police Stations</strong>
+                        <div class="info-value">{{ report.route_analysis.police_stations }}</div>
+                    </div>
+                    <div class="info-item">
+                        <strong>⛽ Fuel Stations</strong>
+                        <div class="info-value">{{ report.route_analysis.fuel_stations }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Traffic Analysis -->
+            <div class="section">
+                <h2>🚦 Traffic Analysis</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <strong>Light Traffic Segments</strong>
+                        <div class="info-value" style="color: #28a745;">{{ report.traffic_analysis.light_traffic_segments }}</div>
+                    </div>
+                    <div class="info-item">
+                        <strong>Moderate Traffic Segments</strong>
+                        <div class="info-value" style="color: #ffc107;">{{ report.traffic_analysis.moderate_traffic_segments }}</div>
+                    </div>
+                    <div class="info-item">
+                        <strong>Heavy Traffic Segments</strong>
+                        <div class="info-value" style="color: #dc3545;">{{ report.traffic_analysis.heavy_traffic_segments }}</div>
+                    </div>
+                    <div class="info-item">
+                        <strong>Average Delay Factor</strong>
+                        <div class="info-value">{{ "%.1fx"|format(report.traffic_analysis.average_delay_factor) }}</div>
+                    </div>
+                </div>
+
+                <!-- Traffic Distribution Progress Bar -->
+                <div style="margin-top: 20px;">
+                    <strong>Traffic Distribution:</strong>
+                    <div class="progress-bar">
+                        {% set total_segments = report.traffic_analysis.light_traffic_segments + report.traffic_analysis.moderate_traffic_segments + report.traffic_analysis.heavy_traffic_segments %}
+                        {% if total_segments > 0 %}
+                        {% set light_percent = (report.traffic_analysis.light_traffic_segments / total_segments * 100)|int %}
+                        <div class="progress-fill" style="width: {{ light_percent }}%;">
+                            {{ light_percent }}% Light Traffic
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Safety Recommendations -->
+            <div class="recommendations">
+                <h3>🛡️ Safety Recommendations</h3>
+                <ul>
+                    {% for recommendation in report.safety_recommendations %}
+                    <li>{{ recommendation }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Actions -->
+            <div class="actions">
+                <a href="javascript:window.history.back();" class="btn">⬅️ Back to Map</a>
+                <a href="{{ url_for('home') }}" class="btn btn-secondary">🏠 New Route</a>
+                <button onclick="window.print()" class="btn btn-secondary">🖨️ Print Report</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Print styles
+        window.addEventListener('beforeprint', function() {
+            document.body.style.background = 'white';
+        });
+    </script>
+</body>
+</html>'''
+
+        with open("templates/detailed_report.html", "w", encoding="utf-8") as f:
+            f.write(detailed_report_content)
+        
         return render_template("detailed_report.html", report=report)
+        
     except Exception as e:
         print(f"Error in detailed_report: {e}")
         return f"Error generating detailed report: {str(e)}"
@@ -680,4 +1490,3 @@ if __name__ == '__main__':
         app.run(debug=True)
     except Exception as e:
         print(f"Error starting application: {e}")
-
