@@ -253,6 +253,7 @@ def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance
 
 @app.route('/')
 def home():
+    """Main route form page - no login required"""
     try:
         # Load IOCL Landmarks
         df_iocl = pd.read_excel("IOCL_Landmark_Details.xlsx")
@@ -284,13 +285,10 @@ def home():
     except Exception as e:
         print(f"Error loading data: {e}")
         return render_template("route_form.html", landmarks=[], sap_codes=[], sap_states=[])
-        
-    sap_states = sorted(set(row['State code'] for _, row in df_sap.iterrows()))
-    # Also pass IOCL coordinates/landmarks as before if needed
-    return render_template("login.html", sap_codes=sap_codes, sap_states=sap_states)
 
 @app.route('/fetch_routes', methods=['POST'])
 def fetch_routes():
+    """Generate routes based on form input"""
     try:
         # Clear session and old route files
         session.clear()
@@ -305,16 +303,19 @@ def fetch_routes():
             except:
                 pass
 
+        # Get form data
         source = request.form['source']
-        destination = request.form['destination']
+        destination = request.form['destination']  # Changed from 'destination' to match form
         vehicle = request.form['vehicle']
 
+        # Validate coordinates
         try:
             source_coords = tuple(map(float, source.split(',')))
             dest_coords = tuple(map(float, destination.split(',')))
         except ValueError:
             return "Invalid coordinates format. Please use: latitude,longitude"
 
+        # Get routes from Google Maps
         directions = gmaps.directions(
             source_coords, dest_coords,
             mode=vehicle,
@@ -325,12 +326,14 @@ def fetch_routes():
         if not directions:
             return "No routes found between the specified locations."
 
+        # Store in session
         session['directions'] = directions
         session['source'] = source_coords
         session['destination'] = dest_coords
         session['vehicle'] = vehicle
         session.modified = True
 
+        # Process routes for selection
         routes = []
         for i, route in enumerate(directions):
             try:
@@ -339,6 +342,7 @@ def fetch_routes():
                 duration = route['legs'][0]['duration']['text']
                 summary = route.get('summary', f"Route {i+1}")
 
+                # Create preview map
                 unique_id = uuid4().hex
                 preview_file = f"route_preview_{i}_{unique_id}.html"
                 m = folium.Map(location=coords[len(coords)//2], zoom_start=12)
@@ -364,6 +368,7 @@ def fetch_routes():
 
 @app.route('/analyze_route', methods=['POST'])
 def analyze_route():
+    """Analyze the selected route"""
     try:
         directions = session.get('directions')
         index = int(request.form['route_index'])
@@ -655,8 +660,3 @@ if __name__ == '__main__':
         app.run(debug=True)
     except Exception as e:
         print(f"Error starting application: {e}")
-
-
-
-
-
