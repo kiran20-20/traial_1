@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>IndianOil Smart Marg - Login</title>
+  <title>IndianOil Smart Marg</title>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -81,6 +81,7 @@
       font-size: 1rem;
       border: 1px solid #ccc;
       border-radius: 8px;
+      box-sizing: border-box;
     }
     button {
       width: 100%;
@@ -105,68 +106,101 @@
     datalist option {
       padding: 10px;
     }
+    .section-divider {
+      margin: 30px 0;
+      border-top: 2px solid #e0e0e0;
+      padding-top: 20px;
+    }
+    .section-title {
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #0057b7;
+      margin-bottom: 15px;
+      text-align: left;
+    }
   </style>
 </head>
 <body>
 
-  <form class="form-box" method="POST" action="{{ url_for('login') }}">
+  <form class="form-box" method="POST" action="{{ url_for('fetch_routes') }}">
     <div class="heading-container">
-      <h2>IndianOil Smart Marg - Login</h2>
+      <h2>IndianOil Smart Marg</h2>
       <div class="rectangle-path">
         <div class="orbit-dot"></div>
       </div>
     </div>
 
-    <!-- State and SAP Code Section -->
-    <label for="state_code">State Code</label>
-    <select id="state_code" name="state_code" required>
-      <option value="">Select State</option>
-      {% for state in sap_states %}
-        <option value="{{ state }}">{{ state }}</option>
-      {% endfor %}
-    </select>
-
-    <label for="sap_code">SAP Code</label>
-    <input type="text" id="sap_code" name="sap_code" list="sapCodeList" placeholder="Start typing SAP code..." autocomplete="off" required>
-    <datalist id="sapCodeList">
-      <!-- Populated by JS -->
-    </datalist>
-
-    <label for="sap_coords">SAP Coordinates</label>
-    <input type="text" id="sap_coords" name="sap_coords" placeholder="Autofills from SAP code selection" readonly required>
-
-    <!-- IOCL Section (unchanged as per requirements) -->
+    <!-- Source Location Section -->
+    <div class="section-title">📍 Terminal Location</div>
+    
     <label for="landmark_name">IOCL Terminal</label>
-    <input type="text" id="landmark_name" list="landmarkList" placeholder="Start typing landmark name...">
+    <input type="text" id="landmark_name" list="landmarkList" placeholder="Start typing landmark name..." required>
     <datalist id="landmarkList">
       {% for lm in landmarks %}
         <option value="{{ lm['name'] }}">
       {% endfor %}
     </datalist>
 
-    <label for="source">Terminal Coordinates</label>
-    <input type="text" name="source" id="source" placeholder="Autofills from landmark or enter manually" required readonly>
+    <label for="source">RO Coordinates</label>
+    <input type="text" name="source" id="source" placeholder="Autofills from landmark selection" readonly required>
 
-    <button type="submit"><i class="fa-solid fa-sign-in-alt"></i> Login</button>
+    <!-- Destination Section -->
+    <div class="section-divider">
+      <div class="section-title">🎯 RO Location</div>
+      
+      <label for="state_code">State Code</label>
+      <select id="state_code" name="state_code" required>
+        <option value="">Select State</option>
+        {% for state in sap_states %}
+          <option value="{{ state }}">{{ state }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="sap_code">SAP Code</label>
+      <input type="text" id="sap_code" name="sap_code" list="sapCodeList" placeholder="Start typing SAP code..." autocomplete="off" required>
+      <datalist id="sapCodeList">
+        <!-- Populated by JS -->
+      </datalist>
+
+      <label for="destination">RO Coordinates</label>
+      <input type="text" name="destination" id="destination" placeholder="Autofills from SAP code selection" readonly required>
+    </div>
+
+    <!-- Vehicle Type Section -->
+    <div class="section-divider">
+      <div class="section-title">🚛 Vehicle Type</div>
+      
+      <label for="vehicle">Select Vehicle Mode</label>
+      <select id="vehicle" name="vehicle" required>
+        <option value="">Choose Vehicle Type</option>
+        <option value="driving">🚛 Truck (Driving)</option>
+        <option value="walking">🚶 Walking</option>
+        <option value="transit">🚌 Public Transit</option>
+      </select>
+    </div>
+
+    <button type="submit"><i class="fa-solid fa-route"></i> Generate Routes</button>
     <div class="footer">© 2025 IndianOil Corporation Ltd.</div>
   </form>
 
   <script>
-    // IOCL Landmark autofill
+    // IOCL Landmark autofill for SOURCE
     const landmarkData = {{ landmarks | safe }};
+    
     document.getElementById('landmark_name').addEventListener('input', function () {
       const name = this.value;
       const match = landmarkData.find(item => item.name === name);
       const sourceInput = document.getElementById('source');
       if (match) {
         sourceInput.value = `${match.lat}, ${match.lng}`;
-      } else {
+      } else if (name === "") {
         sourceInput.value = "";
       }
     });
 
-    // SAP autofill logic
+    // SAP autofill logic for DESTINATION
     const sapData = {{ sap_codes | safe }};
+    
     document.getElementById('state_code').addEventListener('change', function() {
       const state = this.value;
       const sapList = document.getElementById('sapCodeList');
@@ -178,18 +212,18 @@
           sapList.appendChild(option);
         });
       document.getElementById('sap_code').value = "";
-      document.getElementById('sap_coords').value = "";
+      document.getElementById('destination').value = "";
     });
 
     document.getElementById('sap_code').addEventListener('input', function () {
       const code = this.value;
       const state = document.getElementById('state_code').value;
       const match = sapData.find(item => item.state === state && item.sap_code === code);
-      const coordInput = document.getElementById('sap_coords');
+      const destInput = document.getElementById('destination');
       if (match) {
-        coordInput.value = `${match.lat}, ${match.lng}`;
+        destInput.value = `${match.lat}, ${match.lng}`;
       } else {
-        coordInput.value = "";
+        destInput.value = "";
       }
     });
   </script>
