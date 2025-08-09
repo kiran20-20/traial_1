@@ -413,7 +413,8 @@ def analyze_route():
             return "Invalid route selected or session data expired. Please start over."
 
         selected = directions[index]
-        steps = selected['legs'][0']['steps']
+        # This line has been corrected
+        steps = selected['legs'][0]['steps']
         coords = polyline.decode(selected['overview_polyline']['points'])
         source = session['source']
         destination = session['destination']
