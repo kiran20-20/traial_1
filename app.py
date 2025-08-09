@@ -286,53 +286,12 @@ def home():
                 print(f"Skipping invalid landmark row: {e}")
                 continue
         
-        # Load SAP Codes with data validation - LIMIT TO REDUCE LOAD TIME
-        df_sap = pd.read_excel("IOCL_Plant_data.xlsx")
-        sap_codes = []
-        valid_states = set()
-        
-        # Limit SAP codes to prevent browser timeout (take first 1000 or sample)
-        df_sap_sample = df_sap.head(2000) if len(df_sap) > 2000 else df_sap
-        
-        for _, row in df_sap_sample.iterrows():
-            try:
-                # Validate and convert data
-                state = str(row['State code']).strip() if pd.notna(row['State code']) else None
-                sap_code = str(row['Sap Code']).strip() if pd.notna(row['Sap Code']) else None
-                lat = float(row['Latitude']) if pd.notna(row['Latitude']) else None
-                lng = float(row['Longitude']) if pd.notna(row['Longitude']) else None
-                
-                if state and sap_code and lat is not None and lng is not None:
-                    sap_codes.append({
-                        'state': state,
-                        'sap_code': sap_code,
-                        'lat': lat,
-                        'lng': lng
-                    })
-                    valid_states.add(state)
-            except (ValueError, TypeError) as e:
-                print(f"Skipping invalid SAP row: {e}")
-                continue
-        
-        # Sort states safely (all should be strings now)
-        sap_states = sorted(list(valid_states))
+        print(f"Loaded {len(landmarks)} landmarks")
 
-        print(f"Loaded {len(landmarks)} landmarks and {len(sap_codes)} SAP codes from {len(sap_states)} states")
-
-        # Create JSON data safely
-        landmarks_json = json.dumps(landmarks)
-        sap_codes_json = json.dumps(sap_codes)
-        
-        print(f"JSON sizes: landmarks={len(landmarks_json)} chars, sap_codes={len(sap_codes_json)} chars")
-
-        # Pass both to template
+        # Pass landmarks to template - no SAP codes needed
         return render_template(
-            "route_form.html",
-            landmarks=landmarks,
-            sap_codes=sap_codes,
-            sap_states=sap_states,
-            landmarks_json=landmarks_json,
-            sap_codes_json=sap_codes_json
+            "route_form_simple.html",
+            landmarks=landmarks
         )
     except Exception as e:
         print(f"Error loading data: {e}")
@@ -341,9 +300,9 @@ def home():
         # Return a simple page if data loading fails
         return """
         <html><body>
-        <h2>Error Loading Data</h2>
-        <p>Check server logs for details</p>
-        <p>Error: """ + str(e) + """</p>
+        <h2>IndianOil Smart Marg - Route Planner</h2>
+        <p>Enter coordinates manually or use landmarks</p>
+        <p>Error loading landmarks: """ + str(e) + """</p>
         </body></html>
         """
 
