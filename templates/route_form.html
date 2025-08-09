@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>IndianOil Smart Marg - Route Planner</title>
+  <title>IndianOil Smart Marg</title>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -129,14 +129,14 @@
 
   <form class="form-box" method="POST" action="{{ url_for('fetch_routes') }}">
     <div class="heading-container">
-      <h2>IndianOil Smart Marg - Route Planner</h2>
+      <h2>IndianOil Smart Marg</h2>
       <div class="rectangle-path">
         <div class="orbit-dot"></div>
       </div>
     </div>
 
     <!-- Source Location Section -->
-    <div class="section-title">📍 Source Location</div>
+    <div class="section-title">📍 Terminal Location</div>
     
     <label for="landmark_name">IOCL Terminal (Optional)</label>
     <input type="text" id="landmark_name" list="landmarkList" placeholder="Start typing landmark name...">
@@ -146,13 +146,13 @@
       {% endfor %}
     </datalist>
 
-    <label for="source">Source Coordinates</label>
+    <label for="source">Terminal Coordinates</label>
     <input type="text" name="source" id="source" placeholder="Enter coordinates (lat, lng) or select landmark above" required>
     <div class="coord-helper">Example: 28.6139, 77.2090 (New Delhi)</div>
 
     <!-- Destination Section -->
     <div class="section-divider">
-      <div class="section-title">🎯 Destination Location</div>
+      <div class="section-title">🎯 RO Location</div>
       
       <label for="dest_landmark_name">IOCL Terminal (Optional)</label>
       <input type="text" id="dest_landmark_name" list="destLandmarkList" placeholder="Start typing destination landmark...">
