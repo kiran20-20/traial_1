@@ -1,3 +1,27 @@
+Using only the Google Maps Directions API, we can create a sophisticated analysis that is more advanced and closer to reality by leveraging the information the API provides and applying a more complex mathematical model. The key is to infer data that isn't explicitly given by Google's API, such as road width, and to use a weighted risk assessment model.
+
+-----
+
+### **1. Advanced Route Analysis Model**
+
+The Google Maps Directions API provides detailed `steps` for each route, including `html_instructions`, `distance`, and `duration`. We will use this data to build a more realistic model.
+
+  * **Road Type and Width:** While the API doesn't give road width, the `html_instructions` often contain keywords like "National Highway," "motorway," or "urban road." We can use these keywords to **probabilistically infer** a road type and assign an estimated width. For instance, a segment with "National Highway" in its instructions is likely to be wider than a segment on an "urban road."
+  * **Weighted Risk Factors:** The risk score will be a weighted sum of various factors. This is more advanced than a simple sum because it allows us to assign more importance to factors that are more critical for truck safety.
+  * **Risk Factors:**
+      * **Turn Angle:** A sharp turn poses a higher risk for a large truck than a gentle curve. A **mathematically correct** approach is to assign a higher risk factor to larger turn angles.
+      * **Road Width:** A narrow road is riskier for a large truck. We'll assign a higher risk factor to narrower roads.
+      * **Proximity to POIs:** The presence of points of interest like hospitals (due to emergency vehicles) and schools (due to children) increases risk.
+      * **Traffic:** Heavier traffic, especially in combination with other risk factors, increases the chance of an incident. We'll simulate this using a **Gaussian (Normal) distribution** to make it more realistic.
+  * **Weighting Scheme:** The weights will be assigned based on how critical each factor is to truck safety. For example, a sharp turn on a narrow road is a more immediate risk than the presence of a police station.
+
+-----
+
+### **2. Updated `app.py` Code**
+
+Here's the complete `app.py` file with these advanced features.
+
+```python
 from flask import Flask, render_template, request, session, redirect, url_for, send_from_directory, make_response
 import googlemaps
 import polyline
@@ -152,19 +176,60 @@ def get_traffic_data(coords):
     
     return traffic_data
 
-def identify_high_risk_zones(coords, pois):
+def get_road_type_and_width(html_instructions):
+    """
+    Simulates road type and width based on HTML instructions from Google Maps.
+    This is a probabilistic heuristic, as Google does not provide this data directly.
+    """
+    instructions_lower = html_instructions.lower()
+    if "national highway" in instructions_lower or "motorway" in instructions_lower or "expressway" in instructions_lower:
+        road_type = "National Highway/Expressway"
+        road_width = random.uniform(10.0, 15.0)  # meters
+    elif "urban" in instructions_lower or "city" in instructions_lower or "local road" in instructions_lower:
+        road_type = "Urban/Local Road"
+        road_width = random.uniform(5.0, 8.0)  # meters
+    elif "state highway" in instructions_lower:
+        road_type = "State Highway"
+        road_width = random.uniform(7.0, 10.0)  # meters
+    elif "rural" in instructions_lower or "country" in instructions_lower:
+        road_type = "Rural Road"
+        road_width = random.uniform(3.0, 6.0)  # meters
+    else:
+        # Default for other roads
+        road_type = "Other Road"
+        road_width = random.uniform(3.0, 5.0)  # meters
+    
+    return road_type, round(road_width, 2)
+
+def get_route_segments(steps):
+    """
+    Splits the route into segments and analyzes each for road type and width.
+    """
+    segments = []
+    for step in steps:
+        road_type, road_width = get_road_type_and_width(step.get('html_instructions', ''))
+        segments.append({
+            'road_type': road_type,
+            'road_width': road_width,
+            'distance': step['distance']['text']
+        })
+    return segments
+
+def identify_high_risk_zones(coords, pois, segments):
     """
     Identifies high-risk zones using a weighted, multi-factor model.
-    The risk score is a sum of weighted factors, normalized to 10.
+    The risk score now includes road width as a factor.
     """
     risk_zones = []
     
     # Define weights for different risk factors
     weights = {
         'sharp_turn': 5,
-        'hospital_proximity': 4,
+        'narrow_road': 4,
+        'hospital_proximity': 3,
         'police_proximity': 2,
-        'simulated_accident_prone': 5
+        'simulated_accident_prone': 5,
+        'school_proximity': 4
     }
 
     try:
@@ -184,7 +249,16 @@ def identify_high_risk_zones(coords, pois):
                 risk_score += weights['sharp_turn'] * (turn_angle / 180)
                 risk_factors.append(f"Sharp turn ({turn_angle:.1f}°)")
 
-            # Factor 2: Proximity to POIs (weighted)
+            # Factor 2: Narrow Road (new weighted factor)
+            segment_index = int(i * len(segments) / len(coords))
+            if segment_index < len(segments):
+                road_width = segments[segment_index]['road_width']
+                if road_width < 7.0: # Roads narrower than 7m are considered risky
+                    width_factor = 1 - (road_width - 3) / 4 # Higher factor for narrower roads
+                    risk_score += weights['narrow_road'] * width_factor
+                    risk_factors.append(f"Narrow road ({road_width:.1f}m)")
+
+            # Factor 3: Proximity to POIs (weighted)
             for poi_type, locations in poi_locations.items():
                 for poi_loc in locations:
                     distance = geodesic(current_coord, poi_loc).meters
@@ -195,8 +269,11 @@ def identify_high_risk_zones(coords, pois):
                         elif poi_type == 'police':
                             risk_score += weights['police_proximity'] * (1 - distance / 500)
                             risk_factors.append("Proximity to police station")
+                        elif poi_type == 'school':
+                            risk_score += weights['school_proximity'] * (1 - distance / 500)
+                            risk_factors.append("Proximity to school")
                         
-            # Factor 3: Simulated high-risk areas (weighted)
+            # Factor 4: Simulated high-risk areas (weighted)
             if random.random() < 0.005:
                 risk_score += weights['simulated_accident_prone']
                 risk_factors.append("Historically accident-prone zone (simulated)")
@@ -224,7 +301,7 @@ def identify_high_risk_zones(coords, pois):
     
     return risk_zones
 
-def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance, total_duration):
+def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance, total_duration, segments):
     """Generates a detailed route analysis report."""
     try:
         distance_value = 1
@@ -236,6 +313,12 @@ def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance
         except (ValueError, IndexError):
             distance_value = 1
             
+        # Analyze road types
+        national_highway_count = sum(1 for s in segments if 'National Highway' in s['road_type'])
+        state_highway_count = sum(1 for s in segments if 'State Highway' in s['road_type'])
+        urban_road_count = sum(1 for s in segments if 'Urban/Local Road' in s['road_type'])
+        rural_road_count = sum(1 for s in segments if 'Rural Road' in s['road_type'])
+
         report = {
             'total_distance': total_distance,
             'total_duration': total_duration,
@@ -248,7 +331,12 @@ def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance
                 'medium_risk_zones': len([z for z in risk_zones if z['risk_level'] == 'Medium']),
                 'hospitals_along_route': len([p for p in pois if p['type'] == 'hospital']),
                 'fuel_stations': len([p for p in pois if p['type'] == 'fuel']),
-                'police_stations': len([p for p in pois if p['type'] == 'police'])
+                'police_stations': len([p for p in pois if p['type'] == 'police']),
+                'national_highway_segments': national_highway_count,
+                'state_highway_segments': state_highway_count,
+                'urban_road_segments': urban_road_count,
+                'rural_road_segments': rural_road_count,
+                'total_segments': len(segments)
             },
             'traffic_analysis': {
                 'light_traffic_segments': len([t for t in traffic_data if t['traffic_level'] == 'light']),
@@ -280,7 +368,12 @@ def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance
                 'medium_risk_zones': 0,
                 'hospitals_along_route': 0,
                 'fuel_stations': 0,
-                'police_stations': 0
+                'police_stations': 0,
+                'national_highway_segments': 0,
+                'state_highway_segments': 0,
+                'urban_road_segments': 0,
+                'rural_road_segments': 0,
+                'total_segments': 0
             },
             'traffic_analysis': {
                 'light_traffic_segments': 0,
@@ -413,7 +506,6 @@ def analyze_route():
             return "Invalid route selected or session data expired. Please start over."
 
         selected = directions[index]
-        # This line has been corrected
         steps = selected['legs'][0]['steps']
         coords = polyline.decode(selected['overview_polyline']['points'])
         source = session['source']
@@ -424,11 +516,15 @@ def analyze_route():
 
         detailed_coords = interpolate_route_points(coords, points_per_km=10)
         
+        # New function call to get road segments and their properties
+        segments = get_route_segments(steps)
+
         def get_pois(keyword):
             pois = []
             try:
-                for lat, lng in detailed_coords[::20]:
-                    places = gmaps.places_nearby(location=(lat, lng), radius=300, keyword=keyword)
+                # Use a smaller radius and sample points more sparsely to avoid hitting API limits
+                for lat, lng in detailed_coords[::50]:
+                    places = gmaps.places_nearby(location=(lat, lng), radius=200, keyword=keyword)
                     for place in places.get('results', []):
                         pois.append({
                             'name': place['name'],
@@ -440,12 +536,12 @@ def analyze_route():
             return pois
 
         all_pois = []
-        for keyword in ['hospital', 'police', 'fuel']:
+        for keyword in ['hospital', 'police', 'fuel', 'school']: # Added 'school'
             all_pois.extend(get_pois(keyword))
 
         traffic_data = get_traffic_data(detailed_coords)
-        risk_zones = identify_high_risk_zones(detailed_coords, all_pois)
-        route_report = generate_route_report(detailed_coords, all_pois, risk_zones, traffic_data, total_distance, total_duration)
+        risk_zones = identify_high_risk_zones(detailed_coords, all_pois, segments)
+        route_report = generate_route_report(detailed_coords, all_pois, risk_zones, traffic_data, total_distance, total_duration, segments)
 
         m = folium.Map(location=source, zoom_start=13)
         
@@ -487,7 +583,8 @@ def analyze_route():
         marker_styles = {
             'hospital': {'color': 'red', 'icon': 'plus'},
             'police': {'color': 'blue', 'icon': 'shield'},
-            'fuel': {'color': 'orange', 'icon': 'gas-pump'}
+            'fuel': {'color': 'orange', 'icon': 'gas-pump'},
+            'school': {'color': 'purple', 'icon': 'school'}
         }
         for poi in all_pois:
             try:
@@ -650,3 +747,4 @@ if __name__ == '__main__':
         app.run(debug=True)
     except Exception as e:
         print(f"Error starting application: {e}")
+```
