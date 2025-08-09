@@ -251,6 +251,16 @@ def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance
             ]
         }
 
+@app.route('/health')
+def health():
+    """Simple health check endpoint"""
+    return {"status": "OK", "message": "App is running"}
+
+@app.route('/test')
+def test():
+    """Simple test page"""
+    return "<h1>Flask App is Working!</h1><p>If you see this, the basic Flask setup is fine.</p>"
+
 @app.route('/')
 def home():
     """Main route form page - no login required"""
@@ -276,12 +286,15 @@ def home():
                 print(f"Skipping invalid landmark row: {e}")
                 continue
         
-        # Load SAP Codes with data validation
+        # Load SAP Codes with data validation - LIMIT TO REDUCE LOAD TIME
         df_sap = pd.read_excel("IOCL_Plant_data.xlsx")
         sap_codes = []
         valid_states = set()
         
-        for _, row in df_sap.iterrows():
+        # Limit SAP codes to prevent browser timeout (take first 1000 or sample)
+        df_sap_sample = df_sap.head(2000) if len(df_sap) > 2000 else df_sap
+        
+        for _, row in df_sap_sample.iterrows():
             try:
                 # Validate and convert data
                 state = str(row['State code']).strip() if pd.notna(row['State code']) else None
@@ -306,18 +319,33 @@ def home():
 
         print(f"Loaded {len(landmarks)} landmarks and {len(sap_codes)} SAP codes from {len(sap_states)} states")
 
+        # Create JSON data safely
+        landmarks_json = json.dumps(landmarks)
+        sap_codes_json = json.dumps(sap_codes)
+        
+        print(f"JSON sizes: landmarks={len(landmarks_json)} chars, sap_codes={len(sap_codes_json)} chars")
+
         # Pass both to template
         return render_template(
             "route_form.html",
             landmarks=landmarks,
             sap_codes=sap_codes,
-            sap_states=sap_states
+            sap_states=sap_states,
+            landmarks_json=landmarks_json,
+            sap_codes_json=sap_codes_json
         )
     except Exception as e:
         print(f"Error loading data: {e}")
         import traceback
         traceback.print_exc()
-        return render_template("route_form.html", landmarks=[], sap_codes=[], sap_states=[])
+        # Return a simple page if data loading fails
+        return """
+        <html><body>
+        <h2>Error Loading Data</h2>
+        <p>Check server logs for details</p>
+        <p>Error: """ + str(e) + """</p>
+        </body></html>
+        """
 
 @app.route('/fetch_routes', methods=['POST'])
 def fetch_routes():
