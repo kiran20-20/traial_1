@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>IndianOil Smart Marg</title>
+  <title>IndianOil Smart Marg - Route Planner</title>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -118,52 +118,53 @@
       margin-bottom: 15px;
       text-align: left;
     }
+    .coord-helper {
+      font-size: 0.8em;
+      color: #666;
+      margin-top: 5px;
+    }
   </style>
 </head>
 <body>
 
   <form class="form-box" method="POST" action="{{ url_for('fetch_routes') }}">
     <div class="heading-container">
-      <h2>IndianOil Smart Marg</h2>
+      <h2>IndianOil Smart Marg - Route Planner</h2>
       <div class="rectangle-path">
         <div class="orbit-dot"></div>
       </div>
     </div>
 
     <!-- Source Location Section -->
-    <div class="section-title">📍 Terminal Location</div>
+    <div class="section-title">📍 Source Location</div>
     
-    <label for="landmark_name">IOCL Terminal</label>
-    <input type="text" id="landmark_name" list="landmarkList" placeholder="Start typing landmark name..." required>
+    <label for="landmark_name">IOCL Terminal (Optional)</label>
+    <input type="text" id="landmark_name" list="landmarkList" placeholder="Start typing landmark name...">
     <datalist id="landmarkList">
       {% for lm in landmarks %}
         <option value="{{ lm['name'] }}">
       {% endfor %}
     </datalist>
 
-    <label for="source">RO Coordinates</label>
-    <input type="text" name="source" id="source" placeholder="Autofills from landmark selection" readonly required>
+    <label for="source">Source Coordinates</label>
+    <input type="text" name="source" id="source" placeholder="Enter coordinates (lat, lng) or select landmark above" required>
+    <div class="coord-helper">Example: 28.6139, 77.2090 (New Delhi)</div>
 
     <!-- Destination Section -->
     <div class="section-divider">
-      <div class="section-title">🎯 RO Location</div>
+      <div class="section-title">🎯 Destination Location</div>
       
-      <label for="state_code">State Code</label>
-      <select id="state_code" name="state_code" required>
-        <option value="">Select State</option>
-        {% for state in sap_states %}
-          <option value="{{ state }}">{{ state }}</option>
+      <label for="dest_landmark_name">IOCL Terminal (Optional)</label>
+      <input type="text" id="dest_landmark_name" list="destLandmarkList" placeholder="Start typing destination landmark...">
+      <datalist id="destLandmarkList">
+        {% for lm in landmarks %}
+          <option value="{{ lm['name'] }}">
         {% endfor %}
-      </select>
-
-      <label for="sap_code">SAP Code</label>
-      <input type="text" id="sap_code" name="sap_code" list="sapCodeList" placeholder="Start typing SAP code..." autocomplete="off" required>
-      <datalist id="sapCodeList">
-        <!-- Populated by JS -->
       </datalist>
 
-      <label for="destination">RO Coordinates</label>
-      <input type="text" name="destination" id="destination" placeholder="Autofills from SAP code selection" readonly required>
+      <label for="destination">Destination Coordinates</label>
+      <input type="text" name="destination" id="destination" placeholder="Enter coordinates (lat, lng) or select landmark above" required>
+      <div class="coord-helper">Example: 19.0760, 72.8777 (Mumbai)</div>
     </div>
 
     <!-- Vehicle Type Section -->
@@ -185,7 +186,7 @@
 
   <script>
     // IOCL Landmark autofill for SOURCE
-    const landmarkData = {{ landmarks | safe }};
+    const landmarkData = {{ landmarks | tojson }};
     
     document.getElementById('landmark_name').addEventListener('input', function () {
       const name = this.value;
@@ -198,33 +199,25 @@
       }
     });
 
-    // SAP autofill logic for DESTINATION
-    const sapData = {{ sap_codes | safe }};
-    
-    document.getElementById('state_code').addEventListener('change', function() {
-      const state = this.value;
-      const sapList = document.getElementById('sapCodeList');
-      sapList.innerHTML = "";
-      sapData.filter(item => item.state === state)
-        .forEach(item => {
-          const option = document.createElement('option');
-          option.value = item.sap_code;
-          sapList.appendChild(option);
-        });
-      document.getElementById('sap_code').value = "";
-      document.getElementById('destination').value = "";
-    });
-
-    document.getElementById('sap_code').addEventListener('input', function () {
-      const code = this.value;
-      const state = document.getElementById('state_code').value;
-      const match = sapData.find(item => item.state === state && item.sap_code === code);
+    // IOCL Landmark autofill for DESTINATION
+    document.getElementById('dest_landmark_name').addEventListener('input', function () {
+      const name = this.value;
+      const match = landmarkData.find(item => item.name === name);
       const destInput = document.getElementById('destination');
       if (match) {
         destInput.value = `${match.lat}, ${match.lng}`;
-      } else {
+      } else if (name === "") {
         destInput.value = "";
       }
+    });
+
+    // Allow manual coordinate entry
+    document.getElementById('source').addEventListener('focus', function() {
+      this.placeholder = "Enter coordinates manually (lat, lng)";
+    });
+
+    document.getElementById('destination').addEventListener('focus', function() {
+      this.placeholder = "Enter coordinates manually (lat, lng)";
     });
   </script>
 </body>
