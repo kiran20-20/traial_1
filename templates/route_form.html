@@ -153,17 +153,9 @@
     <!-- Destination Section -->
     <div class="section-divider">
       <div class="section-title">🎯 RO Location</div>
-      
-      <label for="dest_landmark_name">IOCL Terminal (Optional)</label>
-      <input type="text" id="dest_landmark_name" list="destLandmarkList" placeholder="Start typing destination landmark...">
-      <datalist id="destLandmarkList">
-        {% for lm in landmarks %}
-          <option value="{{ lm['name'] }}">
-        {% endfor %}
-      </datalist>
 
       <label for="destination">Destination Coordinates</label>
-      <input type="text" name="destination" id="destination" placeholder="Enter coordinates (lat, lng) or select landmark above" required>
+      <input type="text" name="destination" id="destination" placeholder="Enter coordinates manually (lat, lng)" required>
       <div class="coord-helper">Example: 19.0760, 72.8777 (Mumbai)</div>
     </div>
 
@@ -185,7 +177,7 @@
   </form>
 
   <script>
-    // IOCL Landmark autofill for SOURCE
+    // IOCL Landmark autofill for SOURCE only
     const landmarkData = {{ landmarks | tojson }};
     
     document.getElementById('landmark_name').addEventListener('input', function () {
@@ -199,24 +191,8 @@
       }
     });
 
-    // IOCL Landmark autofill for DESTINATION
-    document.getElementById('dest_landmark_name').addEventListener('input', function () {
-      const name = this.value;
-      const match = landmarkData.find(item => item.name === name);
-      const destInput = document.getElementById('destination');
-      if (match) {
-        destInput.value = `${match.lat}, ${match.lng}`;
-      } else if (name === "") {
-        destInput.value = "";
-      }
-    });
-
-    // Allow manual coordinate entry
+    // Allow manual coordinate entry for source
     document.getElementById('source').addEventListener('focus', function() {
-      this.placeholder = "Enter coordinates manually (lat, lng)";
-    });
-
-    document.getElementById('destination').addEventListener('focus', function() {
       this.placeholder = "Enter coordinates manually (lat, lng)";
     });
   </script>
