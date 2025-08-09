@@ -62,7 +62,6 @@ def get_recommended_speed(turn_angle, road_type="urban"):
     This is a heuristic model, not a physical simulation.
     """
     try:
-        # A simple, piecewise linear model for recommended speed
         if turn_angle > 90:
             return 10
         elif turn_angle > 45:
@@ -191,21 +190,21 @@ def get_route_segments(steps):
         })
     return segments
 
-def identify_high_risk_zones(coords, pois, segments):
+def identify_high_risk_zones(coords, pois, segments, traffic_data):
     """
     Identifies high-risk zones using a weighted, multi-factor model.
-    The risk score now includes road width as a factor.
+    The risk score is now calculated using the user-specified weights.
     """
     risk_zones = []
     
-    # Define weights for different risk factors
+    # User-specified weights for different risk factors
     weights = {
-        'sharp_turn': 5,
-        'narrow_road': 4,
-        'hospital_proximity': 3,
-        'police_proximity': 2,
-        'simulated_accident_prone': 5,
-        'school_proximity': 4
+        'turn_angle': 4,
+        'hospital_proximity': 2,
+        'school_proximity': 2,
+        'road_width': 4,
+        'traffic': 3,
+        'simulated_accident_prone': 5 # Keeping this high as a crucial factor
     }
 
     try:
@@ -221,35 +220,50 @@ def identify_high_risk_zones(coords, pois, segments):
             next_bearing = calculate_bearing(current_coord[0], current_coord[1], coords[i+1][0], coords[i+1][1])
             turn_angle = calculate_turn_angle(prev_bearing, next_bearing)
 
-            if turn_angle > 60:
-                risk_score += weights['sharp_turn'] * (turn_angle / 180)
+            if turn_angle > 45: # A turn angle over 45 degrees is considered a risk
+                turn_factor = turn_angle / 180  # Normalize to a value between 0 and 1
+                risk_score += weights['turn_angle'] * turn_factor
                 risk_factors.append(f"Sharp turn ({turn_angle:.1f}°)")
 
-            # Factor 2: Narrow Road (new weighted factor)
+            # Factor 2: Road Width (weighted)
             segment_index = int(i * len(segments) / len(coords))
             if segment_index < len(segments):
                 road_width = segments[segment_index]['road_width']
                 if road_width < 7.0: # Roads narrower than 7m are considered risky
                     width_factor = 1 - (road_width - 3) / 4 # Higher factor for narrower roads
-                    risk_score += weights['narrow_road'] * width_factor
+                    risk_score += weights['road_width'] * width_factor
                     risk_factors.append(f"Narrow road ({road_width:.1f}m)")
 
-            # Factor 3: Proximity to POIs (weighted)
+            # Factor 3: Traffic (weighted)
+            traffic_segment_index = int(i * len(traffic_data) / len(coords))
+            if traffic_segment_index < len(traffic_data):
+                traffic_level = traffic_data[traffic_segment_index]['traffic_level']
+                if traffic_level == 'heavy':
+                    traffic_factor = 1.0
+                elif traffic_level == 'moderate':
+                    traffic_factor = 0.5
+                else:
+                    traffic_factor = 0.1
+                risk_score += weights['traffic'] * traffic_factor
+                risk_factors.append(f"Traffic ({traffic_level.title()})")
+
+            # Factor 4: Proximity to POIs (weighted)
             for poi_type, locations in poi_locations.items():
                 for poi_loc in locations:
                     distance = geodesic(current_coord, poi_loc).meters
                     if distance < 500:
+                        proximity_factor = 1 - (distance / 500)
                         if poi_type == 'hospital':
-                            risk_score += weights['hospital_proximity'] * (1 - distance / 500)
+                            risk_score += weights['hospital_proximity'] * proximity_factor
                             risk_factors.append("Proximity to hospital")
-                        elif poi_type == 'police':
-                            risk_score += weights['police_proximity'] * (1 - distance / 500)
-                            risk_factors.append("Proximity to police station")
                         elif poi_type == 'school':
-                            risk_score += weights['school_proximity'] * (1 - distance / 500)
+                            risk_score += weights['school_proximity'] * proximity_factor
                             risk_factors.append("Proximity to school")
+                        elif poi_type == 'police':
+                            risk_score += weights.get('police_proximity', 2) * proximity_factor # Use default if not specified
+                            risk_factors.append("Proximity to police station")
                         
-            # Factor 4: Simulated high-risk areas (weighted)
+            # Factor 5: Simulated high-risk areas (weighted)
             if random.random() < 0.005:
                 risk_score += weights['simulated_accident_prone']
                 risk_factors.append("Historically accident-prone zone (simulated)")
@@ -295,11 +309,22 @@ def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance
         urban_road_count = sum(1 for s in segments if 'Urban/Local Road' in s['road_type'])
         rural_road_count = sum(1 for s in segments if 'Rural Road' in s['road_type'])
 
+        # User-specified weights for report
+        weights = {
+            'turn_angle': 4,
+            'hospital_proximity': 2,
+            'school_proximity': 2,
+            'road_width': 4,
+            'traffic': 3,
+            'simulated_accident_prone': 5
+        }
+
         report = {
             'total_distance': total_distance,
             'total_duration': total_duration,
             'truck_weight': TRUCK_WEIGHT,
             'max_speed_limit': MAX_SPEED_LIMIT,
+            'risk_weights': weights,
             'route_analysis': {
                 'total_points': len(coords),
                 'points_per_km': len(coords) / distance_value if distance_value > 0 else 0,
@@ -337,6 +362,7 @@ def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance
             'total_duration': total_duration or "N/A",
             'truck_weight': TRUCK_WEIGHT,
             'max_speed_limit': MAX_SPEED_LIMIT,
+            'risk_weights': {},
             'route_analysis': {
                 'total_points': len(coords),
                 'points_per_km': 1,
@@ -492,13 +518,11 @@ def analyze_route():
 
         detailed_coords = interpolate_route_points(coords, points_per_km=10)
         
-        # New function call to get road segments and their properties
         segments = get_route_segments(steps)
 
         def get_pois(keyword):
             pois = []
             try:
-                # Use a smaller radius and sample points more sparsely to avoid hitting API limits
                 for lat, lng in detailed_coords[::50]:
                     places = gmaps.places_nearby(location=(lat, lng), radius=200, keyword=keyword)
                     for place in places.get('results', []):
@@ -512,11 +536,11 @@ def analyze_route():
             return pois
 
         all_pois = []
-        for keyword in ['hospital', 'police', 'fuel', 'school']: # Added 'school'
+        for keyword in ['hospital', 'police', 'fuel', 'school']:
             all_pois.extend(get_pois(keyword))
 
         traffic_data = get_traffic_data(detailed_coords)
-        risk_zones = identify_high_risk_zones(detailed_coords, all_pois, segments)
+        risk_zones = identify_high_risk_zones(detailed_coords, all_pois, segments, traffic_data)
         route_report = generate_route_report(detailed_coords, all_pois, risk_zones, traffic_data, total_distance, total_duration, segments)
 
         m = folium.Map(location=source, zoom_start=13)
@@ -525,37 +549,39 @@ def analyze_route():
         folium.Marker(destination, popup='End', icon=folium.Icon(color='black', icon='flag-checkered', prefix='fa')).add_to(m)
         
         folium.PolyLine(detailed_coords, color='blue', weight=4, opacity=0.8).add_to(m)
+        
+        # Adding truck markers at intervals
+        for i in range(1, len(detailed_coords) - 1, 50): # Every 50 points
+            try:
+                current_coord = detailed_coords[i]
+                prev_coord = detailed_coords[i-1]
+                next_coord = detailed_coords[i+1]
+                prev_bearing = calculate_bearing(prev_coord[0], prev_coord[1], current_coord[0], current_coord[1])
+                next_bearing = calculate_bearing(current_coord[0], current_coord[1], next_coord[0], next_coord[1])
+                turn_angle = calculate_turn_angle(prev_bearing, next_bearing)
+                recommended_speed = get_recommended_speed(turn_angle)
 
-        for i, (lat, lng) in enumerate(detailed_coords):
-            if i % 50 == 0 and i > 0 and i < len(detailed_coords) - 1:
-                try:
-                    prev_coord = detailed_coords[i-1]
-                    next_coord = detailed_coords[i+1]
-                    prev_bearing = calculate_bearing(prev_coord[0], prev_coord[1], lat, lng)
-                    next_bearing = calculate_bearing(lat, lng, next_coord[0], next_coord[1])
-                    turn_angle = calculate_turn_angle(prev_bearing, next_bearing)
-                    recommended_speed = get_recommended_speed(turn_angle)
-                    
-                    truck_html = f"""
-                    <div style='text-align: center; font-family: Arial;'>
-                        <div style='font-size: 20px;'>🚛</div>
-                        <div style='background-color: {"red" if recommended_speed < 30 else "orange" if recommended_speed < 45 else "green"}; 
-                                    color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;'>
-                            {recommended_speed} km/h
-                        </div>
-                        <div style='font-size: 10px; margin-top: 2px;'>
-                            Turn: {turn_angle:.1f}°
-                        </div>
+                truck_html = f"""
+                <div style='text-align: center; font-family: Arial;'>
+                    <div style='font-size: 20px;'>🚛</div>
+                    <div style='background-color: {"red" if recommended_speed < 30 else "orange" if recommended_speed < 45 else "green"};
+                                color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;'>
+                        {recommended_speed} km/h
                     </div>
-                    """
-                    folium.Marker(
-                        location=(lat, lng),
-                        popup=folium.IFrame(truck_html, width=120, height=80),
-                        icon=folium.DivIcon(html=truck_html, icon_size=(60, 60), icon_anchor=(30, 30))
-                    ).add_to(m)
-                except Exception as e:
-                    print(f"Error adding truck marker at {i}: {e}")
+                    <div style='font-size: 10px; margin-top: 2px;'>
+                        Turn: {turn_angle:.1f}°
+                    </div>
+                </div>
+                """
+                folium.Marker(
+                    location=current_coord,
+                    popup=folium.IFrame(truck_html, width=120, height=80),
+                    icon=folium.DivIcon(html=truck_html, icon_size=(60, 60), icon_anchor=(30, 30))
+                ).add_to(m)
+            except Exception as e:
+                print(f"Error adding truck marker at {i}: {e}")
 
+        # Adding POI markers
         marker_styles = {
             'hospital': {'color': 'red', 'icon': 'plus'},
             'police': {'color': 'blue', 'icon': 'shield'},
@@ -570,20 +596,21 @@ def analyze_route():
             except Exception as e:
                 print(f"Error adding POI marker: {e}")
 
+        # Adding risk zones
         for zone in risk_zones:
             try:
                 color = 'red' if zone['risk_level'] == 'High' else 'orange'
-                risk_popup = f"""
+                risk_popup = folium.Popup(f"""
                 <div style='font-family: Arial; max-width: 200px;'>
                     <h4 style='color: {color};'>⚠️ {zone['risk_level']} Risk Zone</h4>
                     <p><b>Risk Score:</b> {zone['risk_score']:.1f}/10</p>
                     <p><b>Factors:</b><br>{'<br>'.join(zone['risk_factors'])}</p>
                 </div>
-                """
+                """, max_width=250)
                 folium.CircleMarker(
                     location=zone['location'],
                     radius=15,
-                    popup=folium.IFrame(risk_popup, width=200, height=120),
+                    popup=risk_popup,
                     color=color,
                     fillColor=color,
                     fillOpacity=0.4
@@ -591,9 +618,10 @@ def analyze_route():
             except Exception as e:
                 print(f"Error adding risk zone: {e}")
 
+        # Adding traffic indicators
         for traffic in traffic_data:
             try:
-                color = {'light': 'green', 'moderate': 'yellow', 'heavy': 'red'}[traffic['traffic_level']]
+                color = {'light': 'green', 'moderate': 'orange', 'heavy': 'red'}[traffic['traffic_level']]
                 folium.Circle(
                     location=traffic['location'],
                     radius=100,
@@ -606,6 +634,7 @@ def analyze_route():
             except Exception as e:
                 print(f"Error adding traffic indicator: {e}")
 
+        # Add the legend
         legend_html = f"""
         {{% macro html(this, kwargs) %}}
         <div style="
@@ -723,4 +752,3 @@ if __name__ == '__main__':
         app.run(debug=True)
     except Exception as e:
         print(f"Error starting application: {e}")
-
