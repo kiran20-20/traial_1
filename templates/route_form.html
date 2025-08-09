@@ -27,7 +27,7 @@
             padding: 20px;
             color: #333;
             position: relative;
-            overflow: hidden; /* Ensures floating elements stay within the body */
+            overflow: hidden;
         }
 
         /* World-Class Floating Background */
@@ -68,7 +68,7 @@
             width: 100%;
             max-width: 520px;
             position: relative;
-            z-index: 1; /* Keep the form on top of the background */
+            z-index: 1;
             text-align: left;
         }
 
@@ -150,6 +150,36 @@
             color: var(--iocl-mid-gray);
         }
 
+        .values-section {
+            margin-top: 40px;
+            padding: 25px;
+            background-color: var(--iocl-light-gray);
+            border-radius: 12px;
+            text-align: left;
+        }
+        .values-section h3 {
+            color: var(--iocl-blue);
+            font-size: 1.4em;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        .values-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .values-list li {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        .values-list i {
+            color: var(--iocl-orange);
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
         datalist option {
             padding: 10px;
         }
@@ -221,6 +251,17 @@
         <i class="fa-solid fa-route"></i> Generate Routes
     </button>
     
+    <div class="values-section">
+        <h3><i class="fa-solid fa-star"></i> IndianOil Values & Spirit</h3>
+        <ul class="values-list">
+            <li><i class="fa-solid fa-handshake"></i> **Customer Focus:** We are dedicated to our customers' needs.</li>
+            <li><i class="fa-solid fa-lightbulb"></i> **Innovation:** We constantly seek new and better ways to serve.</li>
+            <li><i class="fa-solid fa-users"></i> **Teamwork:** We achieve more together.</li>
+            <li><i class="fa-solid fa-shield-halved"></i> **Safety:** We prioritize the well-being of our people and communities.</li>
+            <li><i class="fa-solid fa-leaf"></i> **Sustainability:** We are committed to a cleaner, greener future.</li>
+        </ul>
+    </div>
+
     <div class="footer">
         © 2025 IndianOil Corporation Ltd.
     </div>
