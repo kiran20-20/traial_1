@@ -1,3 +1,8 @@
+You are correct. "Nation First" is a key value of IndianOil. The company's core values, as officially stated, are "**Nation-First, Care, Innovation, Passion, and Trust**." These are often referred to as the CIPT values, with "Nation-First" being the most recent addition. 🇮🇳
+
+Here is the updated code reflecting the correct IndianOil values. I've rearranged the list to put "Nation-First" at the top, as it's a primary guiding principle. I've also updated the descriptive text to better align with the company's official messaging.
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -170,14 +175,15 @@
         }
         .values-list li {
             display: flex;
-            align-items: center;
-            margin-bottom: 10px;
+            align-items: flex-start;
+            margin-bottom: 15px;
             font-weight: 500;
         }
         .values-list i {
             color: var(--iocl-orange);
             margin-right: 10px;
             font-size: 1.2em;
+            margin-top: 2px;
         }
 
         datalist option {
@@ -213,7 +219,7 @@
         <span>Terminal Location</span>
     </div>
     
-    <label for="landmark_name">IOCL Terminal (Optional)</label>
+    <label for="landmark_name">IOCL Terminal</label>
     <input type="text" id="landmark_name" list="landmarkList" placeholder="Start typing terminal name...">
     <datalist id="landmarkList">
         {% for lm in landmarks %}
@@ -230,7 +236,7 @@
         <span>RO Location</span>
     </div>
 
-    <label for="destination">Destination Coordinates</label>
+    <label for="destination">RO Coordinates</label>
     <input type="text" name="destination" id="destination" placeholder="Enter coordinates manually (lat, lng)" required>
     <div class="coord-helper">Example: 19.0760, 72.8777 (Mumbai)</div>
 
@@ -239,12 +245,10 @@
         <span>Vehicle Type</span>
     </div>
     
-    <label for="vehicle">Select Vehicle Mode</label>
+    <label for="vehicle">Select TT</label>
     <select id="vehicle" name="vehicle" required>
         <option value="">Choose Vehicle Type</option>
         <option value="driving">🚛 Truck (Driving)</option>
-        <option value="walking">🚶 Walking</option>
-        <option value="transit">🚌 Public Transit</option>
     </select>
 
     <button type="submit">
@@ -252,13 +256,13 @@
     </button>
     
     <div class="values-section">
-        <h3><i class="fa-solid fa-star"></i> IndianOil Values & Spirit</h3>
+        <h3><i class="fa-solid fa-star"></i> Our Guiding Values</h3>
         <ul class="values-list">
-            <li><i class="fa-solid fa-handshake"></i> **Customer Focus:** We are dedicated to our customers' needs.</li>
-            <li><i class="fa-solid fa-lightbulb"></i> **Innovation:** We constantly seek new and better ways to serve.</li>
-            <li><i class="fa-solid fa-users"></i> **Teamwork:** We achieve more together.</li>
-            <li><i class="fa-solid fa-shield-halved"></i> **Safety:** We prioritize the well-being of our people and communities.</li>
-            <li><i class="fa-solid fa-leaf"></i> **Sustainability:** We are committed to a cleaner, greener future.</li>
+            <li><i class="fa-solid fa-flag"></i> **Nation-First:** Always on duty to propel the nation forward.</li>
+            <li><i class="fa-solid fa-handshake-angle"></i> **Care:** Leading with empathy and a commitment to our people and communities.</li>
+            <li><i class="fa-solid fa-lightbulb"></i> **Innovation:** Solving for tomorrow and responding with agility.</li>
+            <li><i class="fa-solid fa-fire"></i> **Passion:** Going the extra mile and daring to be bold.</li>
+            <li><i class="fa-solid fa-handshake"></i> **Trust:** Our commitment to deliver and grow the ecosystem.</li>
         </ul>
     </div>
 
@@ -287,3 +291,4 @@
 </script>
 </body>
 </html>
+```
