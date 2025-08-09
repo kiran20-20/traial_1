@@ -255,25 +255,56 @@ def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance
 def home():
     """Main route form page - no login required"""
     try:
-        # Load IOCL Landmarks
+        # Load IOCL Landmarks with data validation
         df_iocl = pd.read_excel("IOCL_Landmark_Details.xlsx")
-        landmarks = [
-            {'name': row['Landmark Name'], 'lat': row['Latitude'], 'lng': row['Longitude']}
-            for _, row in df_iocl.iterrows()
-        ]
+        landmarks = []
         
-        # Load SAP Codes
+        for _, row in df_iocl.iterrows():
+            try:
+                # Validate and convert coordinates
+                lat = float(row['Latitude']) if pd.notna(row['Latitude']) else None
+                lng = float(row['Longitude']) if pd.notna(row['Longitude']) else None
+                name = str(row['Landmark Name']).strip() if pd.notna(row['Landmark Name']) else None
+                
+                if lat is not None and lng is not None and name:
+                    landmarks.append({
+                        'name': name,
+                        'lat': lat,
+                        'lng': lng
+                    })
+            except (ValueError, TypeError) as e:
+                print(f"Skipping invalid landmark row: {e}")
+                continue
+        
+        # Load SAP Codes with data validation
         df_sap = pd.read_excel("IOCL_Plant_data.xlsx")
-        sap_codes = [
-            {
-                'state': row['State code'],
-                'sap_code': row['Sap Code'],
-                'lat': row['Latitude'],
-                'lng': row['Longitude']
-            }
-            for _, row in df_sap.iterrows()
-        ]
-        sap_states = sorted(set(row['State code'] for _, row in df_sap.iterrows()))
+        sap_codes = []
+        valid_states = set()
+        
+        for _, row in df_sap.iterrows():
+            try:
+                # Validate and convert data
+                state = str(row['State code']).strip() if pd.notna(row['State code']) else None
+                sap_code = str(row['Sap Code']).strip() if pd.notna(row['Sap Code']) else None
+                lat = float(row['Latitude']) if pd.notna(row['Latitude']) else None
+                lng = float(row['Longitude']) if pd.notna(row['Longitude']) else None
+                
+                if state and sap_code and lat is not None and lng is not None:
+                    sap_codes.append({
+                        'state': state,
+                        'sap_code': sap_code,
+                        'lat': lat,
+                        'lng': lng
+                    })
+                    valid_states.add(state)
+            except (ValueError, TypeError) as e:
+                print(f"Skipping invalid SAP row: {e}")
+                continue
+        
+        # Sort states safely (all should be strings now)
+        sap_states = sorted(list(valid_states))
+
+        print(f"Loaded {len(landmarks)} landmarks and {len(sap_codes)} SAP codes from {len(sap_states)} states")
 
         # Pass both to template
         return render_template(
@@ -284,6 +315,8 @@ def home():
         )
     except Exception as e:
         print(f"Error loading data: {e}")
+        import traceback
+        traceback.print_exc()
         return render_template("route_form.html", landmarks=[], sap_codes=[], sap_states=[])
 
 @app.route('/fetch_routes', methods=['POST'])
