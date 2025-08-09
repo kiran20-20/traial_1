@@ -43,7 +43,7 @@
         }
         .floating-text-bubble {
             position: absolute;
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             font-weight: bold;
             color: rgba(255, 255, 255, 0.9);
             padding: 15px 25px;
@@ -63,6 +63,16 @@
         .floating-text-bubble:nth-child(4) { bottom: 5%; left: 30%; animation-duration: 21s; animation-delay: 3s; transform: scale(1.3) rotate(-5deg); }
         .floating-text-bubble:nth-child(5) { top: 5%; right: 40%; animation-duration: 24s; animation-delay: 1s; transform: scale(0.8) rotate(20deg); }
         .floating-text-bubble:nth-child(6) { bottom: 30%; right: 5%; animation-duration: 26s; animation-delay: 4s; transform: scale(1.05) rotate(10deg); }
+        .floating-text-bubble:nth-child(7) { top: 25%; right: 25%; animation-duration: 20s; animation-delay: 6s; transform: scale(1.4) rotate(7deg); }
+        .floating-text-bubble:nth-child(8) { bottom: 40%; left: 10%; animation-duration: 23s; animation-delay: 8s; transform: scale(1.15) rotate(-12deg); }
+        .floating-text-bubble:nth-child(9) { top: 55%; left: 50%; animation-duration: 27s; animation-delay: 9s; transform: scale(0.95) rotate(18deg); }
+        .floating-text-bubble:nth-child(10) { bottom: 15%; right: 35%; animation-duration: 29s; animation-delay: 10s; transform: scale(1.25) rotate(-8deg); }
+        .floating-text-bubble:nth-child(11) { top: 85%; left: 45%; animation-duration: 25s; animation-delay: 11s; transform: scale(1.0) rotate(25deg); }
+        .floating-text-bubble:nth-child(12) { top: 15%; right: 5%; animation-duration: 21s; animation-delay: 12s; transform: scale(1.2) rotate(-15deg); }
+        .floating-text-bubble:nth-child(13) { bottom: 25%; left: 55%; animation-duration: 24s; animation-delay: 13s; transform: scale(0.85) rotate(5deg); }
+        .floating-text-bubble:nth-child(14) { top: 60%; left: 5%; animation-duration: 26s; animation-delay: 14s; transform: scale(1.1) rotate(10deg); }
+        .floating-text-bubble:nth-child(15) { top: 35%; left: 80%; animation-duration: 23s; animation-delay: 15s; transform: scale(1.3) rotate(-20deg); }
+
 
         @keyframes float-and-rotate {
             0%   { transform: translate(0, 0) rotate(0deg); }
@@ -183,7 +193,17 @@
     <div class="floating-text-bubble">Innovation</div>
     <div class="floating-text-bubble">Passion</div>
     <div class="floating-text-bubble">Trust</div>
-    <div class="floating-text-bubble">IndianOil Spirit</div>
+    <div class="floating-text-bubble">Indane</div>
+    <div class="floating-text-bubble">SERVO</div>
+    <div class="floating-text-bubble">XtraGreen</div>
+    <div class="floating-text-bubble">Autogas</div>
+    <div class="floating-text-bubble">Lubes</div>
+    <div class="floating-text-bubble">Energy</div>
+    <div class="floating-text-bubble">Sustainability</div>
+    <div class="floating-text-bubble">Teamwork</div>
+    <div class="floating-text-bubble">Excellence</div>
+    <div class="floating-text-bubble">Commitment</div>
+    <div class="floating-text-bubble">Integrity</div>
 </div>
 
 <form class="form-box" method="POST" action="{{ url_for('fetch_routes') }}">
@@ -257,5 +277,3 @@
 </script>
 </body>
 </html>
-```
-
