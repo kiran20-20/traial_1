@@ -1,27 +1,3 @@
-Using only the Google Maps Directions API, we can create a sophisticated analysis that is more advanced and closer to reality by leveraging the information the API provides and applying a more complex mathematical model. The key is to infer data that isn't explicitly given by Google's API, such as road width, and to use a weighted risk assessment model.
-
------
-
-### **1. Advanced Route Analysis Model**
-
-The Google Maps Directions API provides detailed `steps` for each route, including `html_instructions`, `distance`, and `duration`. We will use this data to build a more realistic model.
-
-  * **Road Type and Width:** While the API doesn't give road width, the `html_instructions` often contain keywords like "National Highway," "motorway," or "urban road." We can use these keywords to **probabilistically infer** a road type and assign an estimated width. For instance, a segment with "National Highway" in its instructions is likely to be wider than a segment on an "urban road."
-  * **Weighted Risk Factors:** The risk score will be a weighted sum of various factors. This is more advanced than a simple sum because it allows us to assign more importance to factors that are more critical for truck safety.
-  * **Risk Factors:**
-      * **Turn Angle:** A sharp turn poses a higher risk for a large truck than a gentle curve. A **mathematically correct** approach is to assign a higher risk factor to larger turn angles.
-      * **Road Width:** A narrow road is riskier for a large truck. We'll assign a higher risk factor to narrower roads.
-      * **Proximity to POIs:** The presence of points of interest like hospitals (due to emergency vehicles) and schools (due to children) increases risk.
-      * **Traffic:** Heavier traffic, especially in combination with other risk factors, increases the chance of an incident. We'll simulate this using a **Gaussian (Normal) distribution** to make it more realistic.
-  * **Weighting Scheme:** The weights will be assigned based on how critical each factor is to truck safety. For example, a sharp turn on a narrow road is a more immediate risk than the presence of a police station.
-
------
-
-### **2. Updated `app.py` Code**
-
-Here's the complete `app.py` file with these advanced features.
-
-```python
 from flask import Flask, render_template, request, session, redirect, url_for, send_from_directory, make_response
 import googlemaps
 import polyline
@@ -747,4 +723,4 @@ if __name__ == '__main__':
         app.run(debug=True)
     except Exception as e:
         print(f"Error starting application: {e}")
-```
+
