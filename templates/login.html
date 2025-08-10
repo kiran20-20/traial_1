@@ -6,6 +6,7 @@
     <title>IndianOil Smart Marg - Login</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* All of your original CSS */
         * {
             margin: 0;
             padding: 0;
@@ -369,67 +370,71 @@
     </div>
 
     <script>
-        // Toggle password visibility
-        document.getElementById('togglePassword').addEventListener('click', function() {
-            const passwordField = document.getElementById('password');
-            const icon = this;
-            
-            if (passwordField.type === 'password') {
-                passwordField.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                passwordField.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            }
-        });
-        
-        // Form submission with validation
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
-            
-            if (!username) {
-                e.preventDefault();
-                showAlert('Please enter your username', 'error');
-                return;
-            }
-            
-            if (!password) {
-                e.preventDefault();
-                showAlert('Please enter your password', 'error');
-                return;
-            }
-            
-            // Show loading state
-            const button = document.querySelector('.login-btn');
-            const originalText = button.innerHTML;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
-            button.disabled = true;
-            
-            // Re-enable button after 3 seconds if form doesn't submit
-            setTimeout(() => {
-                button.innerHTML = originalText;
-                button.disabled = false;
-            }, 3000);
-        });
-        
-        // Alert system
-        function showAlert(message, type) {
-            const alert = document.getElementById('alert');
-            alert.className = `alert alert-${type}`;
-            alert.textContent = message;
-            alert.style.display = 'block';
-            
-            // Auto-hide after 5 seconds
-            setTimeout(() => {
-                alert.style.display = 'none';
-            }, 5000);
-        }
-        
-        // Check for flash messages from Flask
+        // Log the state of the password input field on page load for debugging.
         window.addEventListener('DOMContentLoaded', function() {
+            const passwordField = document.getElementById('password');
+            console.log('Password field enabled:', !passwordField.disabled);
+            console.log('Password field read-only:', passwordField.readOnly);
+            
+            // Toggle password visibility
+            document.getElementById('togglePassword').addEventListener('click', function() {
+                const icon = this;
+                
+                if (passwordField.type === 'password') {
+                    passwordField.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    passwordField.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+            
+            // Form submission with validation
+            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value;
+                
+                if (!username) {
+                    e.preventDefault();
+                    showAlert('Please enter your username', 'error');
+                    return;
+                }
+                
+                if (!password) {
+                    e.preventDefault();
+                    showAlert('Please enter your password', 'error');
+                    return;
+                }
+                
+                // Show loading state
+                const button = document.querySelector('.login-btn');
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
+                button.disabled = true;
+                
+                // Re-enable button after 3 seconds if form doesn't submit
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }, 3000);
+            });
+            
+            // Alert system
+            function showAlert(message, type) {
+                const alert = document.getElementById('alert');
+                alert.className = `alert alert-${type}`;
+                alert.textContent = message;
+                alert.style.display = 'block';
+                
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    alert.style.display = 'none';
+                }, 5000);
+            }
+            
+            // Check for flash messages from Flask
             const urlParams = new URLSearchParams(window.location.search);
             const error = urlParams.get('error');
             const success = urlParams.get('success');
@@ -440,35 +445,35 @@
             if (success) {
                 showAlert(success, 'success');
             }
-        });
-        
-        // Enhanced keyboard navigation
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                const form = document.getElementById('loginForm');
-                const inputs = form.querySelectorAll('input');
-                const currentInput = document.activeElement;
-                const currentIndex = Array.from(inputs).indexOf(currentInput);
-                
-                if (currentIndex >= 0 && currentIndex < inputs.length - 1) {
-                    e.preventDefault();
-                    inputs[currentIndex + 1].focus();
+            
+            // Enhanced keyboard navigation
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    const form = document.getElementById('loginForm');
+                    const inputs = form.querySelectorAll('input');
+                    const currentInput = document.activeElement;
+                    const currentIndex = Array.from(inputs).indexOf(currentInput);
+                    
+                    if (currentIndex >= 0 && currentIndex < inputs.length - 1) {
+                        e.preventDefault();
+                        inputs[currentIndex + 1].focus();
+                    }
                 }
-            }
-        });
-        
-        // Auto-focus on username field
-        document.getElementById('username').focus();
-        
-        // Add input animation effects
-        document.querySelectorAll('.form-group input').forEach(input => {
-            input.addEventListener('focus', function() {
-                this.parentElement.style.transform = 'scale(1.02)';
-                this.parentElement.style.transition = 'transform 0.2s ease';
             });
             
-            input.addEventListener('blur', function() {
-                this.parentElement.style.transform = 'scale(1)';
+            // Auto-focus on username field
+            document.getElementById('username').focus();
+            
+            // Add input animation effects
+            document.querySelectorAll('.form-group input').forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.parentElement.style.transform = 'scale(1.02)';
+                    this.parentElement.style.transition = 'transform 0.2s ease';
+                });
+                
+                input.addEventListener('blur', function() {
+                    this.parentElement.style.transform = 'scale(1)';
+                });
             });
         });
     </script>
