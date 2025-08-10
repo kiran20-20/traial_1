@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, session, redirect, url_for, send_from_directory, make_response, jsonify
+
+from flask import Flask, render_template, request, session, redirect, url_for, send_from_directory, make_response
 import googlemaps
 import polyline
 import folium
@@ -15,9 +16,6 @@ import numpy as np
 from geopy.distance import geodesic
 import time
 import random
-from urllib.parse import quote # To properly format URLs with spaces
-import base64
-import hashlib
 
 # Use this to configure your Flask app
 app = Flask(__name__)
@@ -30,19 +28,6 @@ gmaps = googlemaps.Client(key=API_KEY)
 
 TRUCK_WEIGHT = 37.5  # tonnes
 MAX_SPEED_LIMIT = 60  # kmph
-
-# Alternative TTS solution using Web Speech API
-def generate_audio_instruction(text, instruction_id):
-    """
-    Instead of server-side TTS, we'll use browser-based Web Speech API
-    This returns the instruction data for client-side audio generation
-    """
-    return {
-        'id': instruction_id,
-        'text': text,
-        'audio_available': True,  # Will be handled by JavaScript on client side
-        'use_web_speech': True
-    }
 
 def calculate_bearing(lat1, lng1, lat2, lng2):
     """
@@ -559,18 +544,6 @@ def analyze_route():
         risk_zones = identify_high_risk_zones(detailed_coords, all_pois, segments, traffic_data)
         route_report = generate_route_report(detailed_coords, all_pois, risk_zones, traffic_data, total_distance, total_duration, segments)
 
-        # Generate audio instructions using the new method
-        audio_instructions = []
-        for i, zone in enumerate(risk_zones):
-            instruction_text = f"Warning: {zone['risk_level']} risk zone ahead. "
-            instruction_text += "Factors include: " + ", ".join(zone['risk_factors']) + ". Please reduce speed and exercise caution."
-            
-            audio_instruction = generate_audio_instruction(instruction_text, i)
-            audio_instructions.append(audio_instruction)
-        
-        session['audio_instructions'] = audio_instructions
-        session.modified = True
-        
         m = folium.Map(location=source, zoom_start=13)
         
         folium.Marker(source, popup='Start', icon=folium.Icon(color='green', icon='flag', prefix='fa')).add_to(m)
@@ -711,30 +684,13 @@ def analyze_route():
                                html_file=html_name,
                                route_report=route_report,
                                risk_zones=len(risk_zones),
-                               high_risk_zones=len([z for z in risk_zones if z['risk_level'] == 'High']),
-                               audio_instructions=audio_instructions)
+                               high_risk_zones=len([z for z in risk_zones if z['risk_level'] == 'High']))
 
     except Exception as e:
         print(f"Error in analyze_route: {e}")
         import traceback
         traceback.print_exc()
         return f"Error analyzing route: {str(e)}. Please try again."
-
-@app.route('/get_audio_instructions')
-def get_audio_instructions():
-    """API endpoint to get audio instructions for the current route"""
-    try:
-        audio_instructions = session.get('audio_instructions', [])
-        return jsonify({
-            'success': True,
-            'instructions': audio_instructions
-        })
-    except Exception as e:
-        print(f"Error getting audio instructions: {e}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        })
 
 @app.route('/detailed_report')
 def detailed_report():
