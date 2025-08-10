@@ -351,7 +351,7 @@
 </div>
 
 <div class="container">
-    <form class="form-box" method="POST" action="">
+    <form class="form-box" method="POST" action="/fetch_routes">
         <div class="header">
             <h1>IndianOil <span class="logo-text">Smart Marg</span></h1>
         </div>
@@ -362,14 +362,15 @@
         </div>
         
         <label for="landmark_name">IOCL Terminal</label>
-        <!-- The datalist will be populated dynamically -->
         <input type="text" id="landmark_name" list="landmarkList" placeholder="Start typing terminal name...">
         <datalist id="landmarkList">
-            <!-- Options will be added here by JavaScript -->
+            {% for landmark in landmarks %}
+            <option value="{{ landmark.name }}" data-lat="{{ landmark.lat }}" data-lng="{{ landmark.lng }}">
+            {% endfor %}
         </datalist>
 
         <label for="source">Terminal Coordinates</label>
-        <input type="text" name="source" id="source" placeholder="Enter coordinates (lat, lng) or select from above" required>
+        <input type="text" name="source" id="source" placeholder="Select from above or enter manually" required>
         <div class="coord-helper">Example: 28.6139, 77.2090</div>
 
         <div class="section-title">
@@ -389,11 +390,17 @@
         <label for="tt_type">Select TT Capacity Range</label>
         <select id="tt_type" name="tt_type" required onchange="showTTSpecs()">
             <option value="">Choose TT Capacity</option>
-            <option value="12-16KL"  data-capacity="14000" data-product-weight="12600" data-tare-weight="8500" data-gross-weight="21100" data-axle-load="10.5" data-max-speed="60">12-16 KL (21.1T)</option>
-            <option value="16-20KL" data-capacity="18000" data-product-weight="16200" data-tare-weight="9500" data-gross-weight="25700" data-axle-load="12.85" data-max-speed="55">16-20 KL (25.7T)</option>
-            <option value="20-24KL" data-capacity="22000" data-product-weight="19800" data-tare-weight="10500" data-gross-weight="30300" data-axle-load="15.15" data-max-speed="50">20-24 KL (30.3T)</option>
-            <option value="24-30KL" data-capacity="27000" data-product-weight="24300" data-tare-weight="11500" data-gross-weight="35800" data-axle-load="17.9" data-max-speed="45">24-30 KL (35.8T)</option>
-            <option value="30KL+" data-capacity="35000" data-product-weight="31500" data-tare-weight="13000" data-gross-weight="44500" data-axle-load="22.25" data-max-speed="40">30+ KL (44.5T)</option>
+            {% for tt_key, tt_data in tt_specifications.items() %}
+            <option value="{{ tt_key }}"
+                    data-capacity="{{ tt_data.avg_capacity_liters }}"
+                    data-product-weight="{{ tt_data.product_weight }}"
+                    data-tare-weight="{{ tt_data.tare_weight }}"
+                    data-gross-weight="{{ tt_data.gross_weight }}"
+                    data-axle-load="{{ tt_data.axle_load }}"
+                    data-max-speed="{{ tt_data.max_speed }}">
+                {{ tt_data.capacity_range }} ({{ (tt_data.gross_weight / 1000) | round(1) }}T)
+            </option>
+            {% endfor %}
         </select>
 
         <div id="ttSpecsDisplay" class="tt-specs-display">
@@ -450,62 +457,32 @@
 </div>
 
 <script>
-    // Sample landmark data
-    const landmarkData = [
-        { name: "Jamnagar Terminal", lat: 22.4707, lng: 70.0577 },
-        { name: "Mumbai Terminal", lat: 19.0760, lng: 72.8777 },
-        { name: "Delhi Terminal", lat: 28.6139, lng: 77.2090 },
-        { name: "Kolkata Terminal", lat: 22.5726, lng: 88.3639 },
-        { name: "Chennai Terminal", lat: 13.0827, lng: 80.2707 },
-        { name: "Bangalore Terminal", lat: 12.9716, lng: 77.5946 },
-        { name: "Hyderabad Terminal", lat: 17.3850, lng: 78.4867 },
-        { name: "Pune Terminal", lat: 18.5204, lng: 73.8567 },
-        { name: "Panipat Terminal", lat: 29.3909, lng: 76.9635 },
-        { name: "Mathura Terminal", lat: 27.4924, lng: 77.6737 },
-        { name: "Paradip Terminal", lat: 20.2662, lng: 86.6436 },
-        { name: "Haldia Terminal", lat: 22.0298, lng: 88.0645 },
-        { name: "Vadodara Terminal", lat: 22.3072, lng: 73.1812 },
-        { name: "Bhopal Terminal", lat: 23.2599, lng: 77.4126 },
-        { name: "Lucknow Terminal", lat: 26.8467, lng: 80.9462 },
-        { name: "Jaipur Terminal", lat: 26.9124, lng: 75.7873 },
-        { name: "Patna Terminal", lat: 25.5941, lng: 85.1376 },
-        { name: "Guwahati Terminal", lat: 26.1445, lng: 91.7362 }
-    ];
-    
+    // This part of the JS is no longer needed since Flask populates the datalist
+    // const landmarkData = [...]
+    // function filterTerminals(query) {...}
+    // landmarkInput.addEventListener('input', ...)
+
     const landmarkInput = document.getElementById('landmark_name');
-    const landmarkList = document.getElementById('landmarkList');
     const sourceInput = document.getElementById('source');
-
-    // Function to dynamically filter and populate the datalist
-    function filterTerminals(query) {
-        // Clear previous options
-        landmarkList.innerHTML = '';
-        const lowercaseQuery = query.toLowerCase();
-
-        // Filter the landmark data
-        const filteredTerminals = landmarkData.filter(item =>
-            item.name.toLowerCase().includes(lowercaseQuery)
-        );
-
-        // Populate the datalist with new options
-        filteredTerminals.forEach(item => {
-            const option = document.createElement('option');
-            option.value = item.name;
-            landmarkList.appendChild(option);
-        });
-    }
-
-    // Event listener for the input field to trigger the filter
-    landmarkInput.addEventListener('input', function () {
-        filterTerminals(this.value);
-    });
-
-    // Event listener to populate coordinates when a terminal is selected
+    
+    // Updated event listener to get coordinates from the dynamically populated datalist
     landmarkInput.addEventListener('change', function () {
         const name = this.value;
-        const match = landmarkData.find(item => item.name === name);
+        const options = document.getElementById('landmarkList').options;
+        let match = null;
+
+        // Find the option with the matching value
+        for (let i = 0; i < options.length; i++) {
+            if (options[i].value === name) {
+                match = options[i];
+                break;
+            }
+        }
+
         if (match) {
-            sourceInput.value = `${match.lat}, ${match.lng}`;
+            const lat = match.getAttribute('data-lat');
+            const lng = match.getAttribute('data-lng');
+            sourceInput.value = `${lat},${lng}`;
         } else if (name === "") {
             sourceInput.value = "";
         }
