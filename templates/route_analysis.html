@@ -478,7 +478,6 @@
             </div>
 
             <div class="sidebar">
-                <!-- Route Overview -->
                 <div class="info-card">
                     <h3><i class="fas fa-route"></i> Route Overview</h3>
                     <div class="stat-grid">
@@ -501,7 +500,6 @@
                     </div>
                 </div>
 
-                <!-- Vehicle Specifications -->
                 <div class="truck-info">
                     <h4><i class="fas fa-truck"></i> Vehicle Specifications</h4>
                     <div class="truck-specs">
@@ -516,7 +514,6 @@
                     </div>
                 </div>
 
-                <!-- Risk Assessment -->
                 <div class="info-card">
                     <h3><i class="fas fa-exclamation-triangle"></i> Risk Assessment</h3>
                     <div class="stat-grid">
@@ -538,7 +535,21 @@
                     {% endif %}
                 </div>
 
-                <!-- Traffic Analysis -->
+                <div class="info-card">
+                    <h3><i class="fas fa-volume-up"></i> Audio Instructions</h3>
+                    {% if audio_instructions %}
+                        <ul class="list-group" style="list-style: none; padding: 0;">
+                            {% for instruction in audio_instructions %}
+                                <li class="list-group-item" style="display: flex; flex-direction: column; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid #eee;">
+                                    <p class="mb-2" style="font-size: 0.9em; margin: 0 0 5px 0;">{{ instruction.text }}</p>
+                                    <audio controls src="{{ instruction.audio_url }}" style="width: 100%;"></audio>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-center" style="font-size: 0.9em; color: #6c757d;">No high-risk audio instructions generated for this route.</p>
+                    {% endif %}
+                </div>
                 <div class="info-card">
                     <h3><i class="fas fa-traffic-light"></i> Traffic Analysis</h3>
                     <div class="traffic-status">
@@ -571,7 +582,6 @@
                     </div>
                 </div>
 
-                <!-- Infrastructure -->
                 <div class="info-card">
                     <h3><i class="fas fa-map-marked-alt"></i> Infrastructure</h3>
                     <div class="stat-grid">
@@ -594,7 +604,6 @@
                     </div>
                 </div>
 
-                <!-- Safety Recommendations -->
                 <div class="info-card">
                     <h3><i class="fas fa-shield-alt"></i> Safety Recommendations</h3>
                     <ul class="safety-recommendations">
@@ -604,7 +613,6 @@
                     </ul>
                 </div>
 
-                <!-- Action Buttons -->
                 <div class="action-buttons">
                     <a href="{{ url_for('detailed_report') }}" class="btn btn-primary">
                         <i class="fas fa-chart-bar"></i> Detailed Report
