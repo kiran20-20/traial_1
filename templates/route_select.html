@@ -73,28 +73,16 @@
             event.preventDefault(); // Prevents the default form submission
             const form = event.target;
             const button = form.querySelector('button');
-            const originalText = button.innerHTML; // Store original button text
-
+            
             // Disable the button and show a loading spinner
             button.disabled = true;
             button.innerHTML = '<div class="loader mx-auto"></div>';
 
-            // Here you would typically make a real API call or submit the form.
-            // For this example, we'll use a setTimeout to simulate a network request.
-            setTimeout(() => {
-                const routeIndex = form.querySelector('input[name="route_index"]').value;
-                
-                // You can add logic here to navigate to the next page or show a success message.
-                // For now, we'll just show an alert.
-                alert(`Route ${parseInt(routeIndex) + 1} has been selected!`);
-
-                // Re-enable the button and restore the text
-                button.disabled = false;
-                button.innerHTML = originalText;
-                
-                // If you want to submit the form after the loading state, you can use:
-                // form.submit();
-            }, 1500); // Simulate a 1.5 second network request
+            // The original code used a setTimeout to simulate a network request.
+            // This has been removed to allow the form to submit immediately.
+            // When the form is submitted, the page will refresh or navigate,
+            // so the loading state will be present until the next page loads.
+            form.submit();
         }
     </script>
 </body>
