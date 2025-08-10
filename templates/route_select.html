@@ -10,51 +10,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: #f3f4f6;
         }
-        
-        .header-info {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 30px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            max-width: 1100px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        
-        .validation-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        
-        .validation-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-        }
-        
-        .validation-success {
-            color: #27ae60;
-        }
-        
-        .validation-warning {
-            color: #f39c12;
-        }
-        
-        .distance-limit {
-            background: #e8f5e8;
-            border: 1px solid #27ae60;
-            border-radius: 6px;
-            padding: 10px 15px;
-            font-size: 13px;
-            color: #27ae60;
-            font-weight: 600;
-        }
-        
+
         .route-container {
             display: flex;
             flex-direction: column;
@@ -62,180 +18,60 @@
             max-width: 1100px;
             margin: auto;
         }
+
         .route-block {
             display: flex;
             background: white;
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
-            border: 2px solid transparent;
-            transition: all 0.3s ease;
         }
-        
-        .route-block:hover {
-            border-color: #007aff;
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-        }
-        
+
         .route-info {
             flex: 1;
             padding: 25px;
             border-right: 1px solid #eee;
         }
+
         .route-info h3 {
             margin-top: 0;
             font-size: 20px;
-            color: #333;
-            display: flex;
-            align-items: center;
-            gap: 10px;
         }
-        
-        .route-status {
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .status-valid {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .distance-info {
-            background: #f8f9fa;
-            border-radius: 6px;
-            padding: 12px;
-            margin: 10px 0;
-            border-left: 4px solid #007aff;
-        }
-        
+
         .route-info p {
             font-size: 14px;
             margin: 5px 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
-        
-        .route-info p strong {
-            color: #333;
-            min-width: 80px;
-        }
-        
-        .distance-indicator {
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-left: auto;
-        }
-        
-        .distance-short {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .distance-medium {
-            background: #fff3cd;
-            color: #856404;
-        }
-        
-        .distance-long {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        
+
         .route-info form {
             margin-top: 15px;
         }
+
         .route-info button {
             background-color: #007aff;
             color: white;
-            padding: 12px 20px;
+            padding: 10px 18px;
             font-size: 15px;
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            position: relative;
-            min-width: 140px;
-            transition: all 0.3s ease;
-            font-weight: 600;
         }
-        .route-info button:hover:not(.loading) {
+
+        .route-info button:hover {
             background-color: #005fcc;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
         }
-        .route-info button.loading {
-            background-color: #666;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-        .route-info button .button-text {
-            opacity: 1;
-            transition: opacity 0.3s ease;
-        }
-        .route-info button.loading .button-text {
-            opacity: 0;
-        }
-        .loading-spinner {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        .loading-spinner.active {
-            opacity: 1;
-        }
-        .spinner {
-            width: 18px;
-            height: 18px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-top: 2px solid white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+
         .route-map {
             flex: 2;
         }
+
         iframe {
             width: 100%;
             height: 280px;
             border: none;
         }
-        
-        /* Loading overlay for entire page */
-        .page-loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.1);
-            display: none;
-            z-index: 1000;
-        }
-        .page-loading-overlay.active {
-            display: block;
-        }
-        
+
         @media (max-width: 768px) {
-            .validation-info {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
             .route-block {
                 flex-direction: column;
             }
@@ -250,140 +86,29 @@
     </style>
 </head>
 <body>
-    <div class="page-loading-overlay" id="pageLoadingOverlay"></div>
-    
-    <h2 style="text-align: center; margin-bottom: 20px;">
+
+    <h2 style="text-align: center; margin-bottom: 40px;">
         <i class="fas fa-route"></i> Select the Route You Prefer
     </h2>
-    
-    <div class="header-info">
-        <div class="validation-info">
-            <div class="validation-item validation-success">
-                <i class="fas fa-check-circle"></i>
-                <span><strong>{{ routes | length }}</strong> valid route(s) found from {{ total_routes_found }} total</span>
-            </div>
-            
-            <div class="validation-item">
-                <i class="fas fa-truck"></i>
-                <span>TT Type: <strong>{{ tt_info }}</strong></span>
-            </div>
-            
-            <div class="distance-limit">
-                <i class="fas fa-ruler-combined"></i> Max Distance: 500 km
-            </div>
-        </div>
-    </div>
-    
+
     <div class="route-container">
         {% for route in routes %}
         <div class="route-block">
             <div class="route-info">
-                <h3>
-                    {{ route.summary }}
-                    <span class="route-status status-valid">
-                        <i class="fas fa-check"></i> Valid
-                    </span>
-                </h3>
-                
-                <div class="distance-info">
-                    <p><strong><i class="fas fa-route"></i> Distance:</strong> 
-                        {{ route.distance }}
-                        <span class="distance-indicator {% if route.distance_km <= 200 %}distance-short{% elif route.distance_km <= 350 %}distance-medium{% else %}distance-long{% endif %}">
-                            {{ "%.0f"|format(route.distance_km) }} km
-                        </span>
-                    </p>
-                    <p><strong><i class="fas fa-clock"></i> Duration:</strong> {{ route.duration }}</p>
-                    <p><strong><i class="fas fa-truck"></i> TT Info:</strong> {{ route.tt_info }}</p>
-                </div>
-                
-                {% if route.distance_km > 400 %}
-                <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; padding: 8px; margin: 10px 0; font-size: 13px; color: #856404;">
-                    <i class="fas fa-exclamation-triangle"></i> <strong>Long Route Notice:</strong> Plan extra rest stops and fuel management.
-                </div>
-                {% elif route.distance_km > 300 %}
-                <div style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 4px; padding: 8px; margin: 10px 0; font-size: 13px; color: #0c5460;">
-                    <i class="fas fa-info-circle"></i> <strong>Medium Route:</strong> Standard safety protocols apply.
-                </div>
-                {% else %}
-                <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; padding: 8px; margin: 10px 0; font-size: 13px; color: #155724;">
-                    <i class="fas fa-thumbs-up"></i> <strong>Optimal Route:</strong> Good distance for TT operations.
-                </div>
-                {% endif %}
-                
-                <form method="GET" action="{{ url_for('analyze_route', route_index=route.index) }}" class="route-form">
-                    <button type="submit" class="route-button">
-                        <span class="button-text">
-                            <i class="fas fa-search"></i> Analyze This Route
-                        </span>
-                        <div class="loading-spinner">
-                            <div class="spinner"></div>
-                        </div>
-                    </button>
+                <h3>{{ route.summary }}</h3>
+                <p><strong>Distance:</strong> {{ route.distance }}</p>
+                <p><strong>Duration:</strong> {{ route.duration }}</p>
+                <form method="POST" action="{{ url_for('analyze_route') }}">
+                    <input type="hidden" name="route_index" value="{{ route.index }}">
+                    <button type="submit">Select This Route</button>
                 </form>
             </div>
             <div class="route-map">
-                <iframe src="{{ url_for('serve_file', filename=route.preview_file) }}" 
-                        title="Route {{ loop.index }} Preview Map"></iframe>
+                <iframe src="{{ url_for('view_preview', filename=route.preview_file) }}?v={{ loop.index }}"></iframe>
             </div>
         </div>
         {% endfor %}
     </div>
-    
-    <div style="text-align: center; margin-top: 30px; padding: 20px; background: white; border-radius: 8px; max-width: 1100px; margin-left: auto; margin-right: auto;">
-        <p style="color: #666; font-size: 13px; margin: 0;">
-            <i class="fas fa-shield-alt"></i> All routes are validated for safety compliance and distance limits.
-            <br>Routes exceeding 500 km have been automatically filtered out for TT safety standards.
-        </p>
-    </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const forms = document.querySelectorAll('.route-form');
-            const pageOverlay = document.getElementById('pageLoadingOverlay');
-            
-            forms.forEach(form => {
-                form.addEventListener('submit', function(e) {
-                    const button = this.querySelector('.route-button');
-                    const spinner = button.querySelector('.loading-spinner');
-                    
-                    // Add loading state to clicked button
-                    button.classList.add('loading');
-                    spinner.classList.add('active');
-                    
-                    // Disable all other buttons
-                    forms.forEach(otherForm => {
-                        const otherButton = otherForm.querySelector('.route-button');
-                        if (otherButton !== button) {
-                            otherButton.disabled = true;
-                            otherButton.style.opacity = '0.5';
-                        }
-                    });
-                    
-                    // Show page overlay
-                    pageOverlay.classList.add('active');
-                    
-                    // Optional: Add a minimum loading time for better UX
-                    setTimeout(() => {
-                        // The form will submit naturally after this timeout
-                        // This ensures the loading animation is visible for at least 500ms
-                    }, 500);
-                });
-            });
-            
-            // Handle browser back button - remove loading states
-            window.addEventListener('pageshow', function(event) {
-                if (event.persisted) {
-                    // Reset all loading states
-                    document.querySelectorAll('.route-button').forEach(button => {
-                        button.classList.remove('loading');
-                        button.disabled = false;
-                        button.style.opacity = '';
-                        button.querySelector('.loading-spinner').classList.remove('active');
-                    });
-                    pageOverlay.classList.remove('active');
-                }
-            });
-        });
-    </script>
 </body>
 </html>
