@@ -15,6 +15,9 @@ import numpy as np
 from geopy.distance import geodesic
 import time
 import random
+import pyttsx3
+import os
+from urllib.parse import quote # To properly format URLs with spaces
 
 # Use this to configure your Flask app
 app = Flask(__name__)
@@ -27,6 +30,23 @@ gmaps = googlemaps.Client(key=API_KEY)
 
 TRUCK_WEIGHT = 37.5  # tonnes
 MAX_SPEED_LIMIT = 60  # kmph
+
+# ... (your existing app and API key setup) ...
+
+# Initialize the TTS engine once when the app starts
+try:
+    TTS_ENGINE = pyttsx3.init()
+    # You can configure voice, speed, etc., here if desired
+    # voices = TTS_ENGINE.getProperty('voices')
+    # TTS_ENGINE.setProperty('voice', voices[1].id)
+    # TTS_ENGINE.setProperty('rate', 150)
+except Exception as e:
+    print(f"Error initializing TTS engine: {e}")
+    TTS_ENGINE = None
+
+# ... (your existing helper functions) ...
+
+
 
 def calculate_bearing(lat1, lng1, lat2, lng2):
     """
@@ -389,6 +409,34 @@ def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance
             ]
         }
 
+# ... (after your existing helper functions) ...
+
+def generate_audio(text, filename):
+    """
+    Converts text to an audio file and saves it in the static directory.
+    Returns the URL for the saved file.
+    """
+    if TTS_ENGINE is None:
+        print("TTS engine is not initialized. Cannot generate audio.")
+        return None
+    
+    # Create the static/audio directory if it doesn't exist
+    output_dir = os.path.join(app.root_path, 'static', 'audio')
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    file_path = os.path.join(output_dir, filename)
+    
+    try:
+        TTS_ENGINE.save_to_file(text, file_path)
+        TTS_ENGINE.runAndWait()
+        return url_for('static', filename=f'audio/{quote(filename)}')
+    except Exception as e:
+        print(f"Error generating audio file {filename}: {e}")
+        return None
+
+# ... (your existing routes) ...
+
 @app.route('/health')
 def health():
     return {"status": "OK", "message": "App is running"}
@@ -543,6 +591,31 @@ def analyze_route():
         risk_zones = identify_high_risk_zones(detailed_coords, all_pois, segments, traffic_data)
         route_report = generate_route_report(detailed_coords, all_pois, risk_zones, traffic_data, total_distance, total_duration, segments)
 
+        
+        # --- NEW CODE FOR AUDIO INSTRUCTIONS ---
+        audio_instructions = []
+        for i, zone in enumerate(risk_zones):
+            # Create a more descriptive instruction text
+            instruction_text = f"Warning, a {zone['risk_level']} risk zone is ahead. "
+            instruction_text += "Factors include: " + ", ".join(zone['risk_factors']) + "."
+            
+            # Generate a unique filename for the audio file
+            audio_filename = f"instruction_{uuid4().hex}.mp3"
+            audio_url = generate_audio(instruction_text, audio_filename)
+            
+            if audio_url:
+                audio_instructions.append({
+                    'id': i,
+                    'text': instruction_text,
+                    'audio_url': audio_url
+                })
+        
+        session['audio_instructions'] = audio_instructions
+        session.modified = True
+        
+        # --- END OF NEW CODE ---
+
+        
         m = folium.Map(location=source, zoom_start=13)
         
         folium.Marker(source, popup='Start', icon=folium.Icon(color='green', icon='flag', prefix='fa')).add_to(m)
@@ -752,3 +825,4 @@ if __name__ == '__main__':
         app.run(debug=True)
     except Exception as e:
         print(f"Error starting application: {e}")
+
