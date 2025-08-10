@@ -1,3 +1,275 @@
+from flask import Flask, render_template, request, session, url_for
+import googlemaps
+import folium
+from folium import plugins
+from folium.plugins import MarkerCluster
+import polyline
+import os
+import glob
+from datetime import datetime
+from uuid import uuid4
+from jinja2 import Template
+from branca.element import MacroElement
+import math
+import re
+
+# Initialize Flask app
+app = Flask(__name__)
+app.secret_key = 'your-secret-key-here'  # Change this to a secure random key
+
+# Initialize Google Maps client
+gmaps = googlemaps.Client(key='YOUR_GOOGLE_MAPS_API_KEY')  # Replace with your API key
+
+# TT (Truck Tanker) specifications
+def get_tt_specs(tt_type):
+    """Get truck tanker specifications based on type"""
+    specs = {
+        'small_tt': {
+            'capacity_range': '5,000-10,000L',
+            'avg_capacity_liters': 7500,
+            'gross_weight': 15000,  # kg
+            'axle_load': 7.5,  # tonnes
+            'max_speed': 60,  # km/h
+            'turn_sensitivity': 1.2,
+            'risk_multiplier': 1.5,
+            'product_weight': 6750  # kg (0.9 density for petroleum)
+        },
+        'medium_tt': {
+            'capacity_range': '10,000-20,000L',
+            'avg_capacity_liters': 15000,
+            'gross_weight': 25000,  # kg
+            'axle_load': 12.5,  # tonnes
+            'max_speed': 55,  # km/h
+            'turn_sensitivity': 1.5,
+            'risk_multiplier': 2.0,
+            'product_weight': 13500  # kg
+        },
+        'large_tt': {
+            'capacity_range': '20,000-35,000L',
+            'avg_capacity_liters': 27500,
+            'gross_weight': 40000,  # kg
+            'axle_load': 20.0,  # tonnes
+            'max_speed': 50,  # km/h
+            'turn_sensitivity': 2.0,
+            'risk_multiplier': 2.5,
+            'product_weight': 24750  # kg
+        }
+    }
+    return specs.get(tt_type, specs['medium_tt'])
+
+def calculate_bearing(lat1, lon1, lat2, lon2):
+    """Calculate bearing between two coordinates"""
+    lat1 = math.radians(lat1)
+    lat2 = math.radians(lat2)
+    diff_long = math.radians(lon2 - lon1)
+    
+    x = math.sin(diff_long) * math.cos(lat2)
+    y = math.cos(lat1) * math.sin(lat2) - (math.sin(lat1) * math.cos(lat2) * math.cos(diff_long))
+    
+    initial_bearing = math.atan2(x, y)
+    initial_bearing = math.degrees(initial_bearing)
+    compass_bearing = (initial_bearing + 360) % 360
+    
+    return compass_bearing
+
+def calculate_turn_angle(prev_bearing, next_bearing):
+    """Calculate turn angle between two bearings"""
+    angle_diff = next_bearing - prev_bearing
+    if angle_diff > 180:
+        angle_diff -= 360
+    elif angle_diff < -180:
+        angle_diff += 360
+    return abs(angle_diff)
+
+def get_recommended_speed(turn_angle, tt_specs):
+    """Get recommended speed based on turn angle and TT specs"""
+    base_speed = tt_specs['max_speed']
+    
+    if turn_angle > 45:  # Sharp turn
+        return int(base_speed * 0.3)  # 30% of max speed
+    elif turn_angle > 20:  # Moderate turn
+        return int(base_speed * 0.6)  # 60% of max speed
+    else:  # Gentle turn or straight
+        return base_speed
+
+def interpolate_route_points(coords, points_per_km=10):
+    """Interpolate additional points along the route for better precision"""
+    if len(coords) < 2:
+        return coords
+    
+    detailed_coords = []
+    
+    for i in range(len(coords) - 1):
+        lat1, lon1 = coords[i]
+        lat2, lon2 = coords[i + 1]
+        
+        # Calculate distance between points
+        distance = math.sqrt((lat2 - lat1)**2 + (lon2 - lon1)**2) * 111  # Rough km conversion
+        
+        # Determine number of interpolation points
+        num_points = max(1, int(distance * points_per_km))
+        
+        # Add original point
+        detailed_coords.append((lat1, lon1))
+        
+        # Add interpolated points
+        for j in range(1, num_points):
+            ratio = j / num_points
+            interp_lat = lat1 + (lat2 - lat1) * ratio
+            interp_lon = lon1 + (lon2 - lon1) * ratio
+            detailed_coords.append((interp_lat, interp_lon))
+    
+    # Add final point
+    detailed_coords.append(coords[-1])
+    
+    return detailed_coords
+
+def get_traffic_data(coords):
+    """Simulate traffic data for route points"""
+    import random
+    traffic_data = []
+    
+    # Sample every 10th coordinate for traffic data
+    sample_coords = coords[::10] if len(coords) > 10 else coords
+    
+    for i, (lat, lng) in enumerate(sample_coords):
+        # Simulate traffic levels
+        traffic_level = random.choice(['light', 'moderate', 'heavy'])
+        delay_factor = {'light': 1.0, 'moderate': 1.3, 'heavy': 1.8}[traffic_level]
+        
+        traffic_data.append({
+            'location': (lat, lng),
+            'traffic_level': traffic_level,
+            'delay_factor': delay_factor
+        })
+    
+    return traffic_data
+
+def identify_high_risk_zones(coords, pois, tt_specs):
+    """Identify high-risk zones for truck tankers"""
+    risk_zones = []
+    
+    # Check each coordinate for risk factors
+    for i, (lat, lng) in enumerate(coords[::20]):  # Sample every 20th point
+        risk_score = 0
+        risk_factors = []
+        
+        # Check proximity to POIs
+        for poi in pois:
+            poi_lat, poi_lng = poi['location']
+            distance = math.sqrt((lat - poi_lat)**2 + (lng - poi_lng)**2) * 111  # km
+            
+            if distance < 0.5:  # Within 500m
+                if poi['type'] == 'hospital':
+                    risk_score += 3
+                    risk_factors.append("Near hospital - high pedestrian traffic")
+                elif poi['type'] == 'police':
+                    risk_score += 1
+                    risk_factors.append("Police station nearby")
+                elif poi['type'] == 'fuel':
+                    risk_score += 2
+                    risk_factors.append("Fuel station - fire hazard zone")
+        
+        # Check for turns (simplified)
+        if i > 0 and i < len(coords[::20]) - 1:
+            prev_coord = coords[::20][i-1]
+            next_coord = coords[::20][i+1]
+            
+            prev_bearing = calculate_bearing(prev_coord[0], prev_coord[1], lat, lng)
+            next_bearing = calculate_bearing(lat, lng, next_coord[0], next_coord[1])
+            turn_angle = calculate_turn_angle(prev_bearing, next_bearing)
+            
+            if turn_angle > 45:
+                risk_score += 2 * tt_specs['turn_sensitivity']
+                risk_factors.append(f"Sharp turn ({turn_angle:.1f}°)")
+            elif turn_angle > 20:
+                risk_score += 1 * tt_specs['turn_sensitivity']
+                risk_factors.append(f"Moderate turn ({turn_angle:.1f}°)")
+        
+        # Apply TT-specific risk multiplier
+        risk_score *= tt_specs['risk_multiplier']
+        
+        if risk_score > 2:
+            risk_level = 'Critical' if risk_score > 6 else 'High' if risk_score > 4 else 'Medium'
+            risk_zones.append({
+                'location': (lat, lng),
+                'risk_score': risk_score,
+                'risk_level': risk_level,
+                'risk_factors': risk_factors,
+                'tt_impact': tt_specs['risk_multiplier']
+            })
+    
+    return risk_zones
+
+def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance, total_duration, tt_specs):
+    """Generate comprehensive route report for truck tankers"""
+    
+    # Calculate statistics
+    total_pois = len(pois)
+    hospitals = len([p for p in pois if p['type'] == 'hospital'])
+    police = len([p for p in pois if p['type'] == 'police'])
+    fuel_stations = len([p for p in pois if p['type'] == 'fuel'])
+    
+    critical_zones = len([z for z in risk_zones if z['risk_level'] == 'Critical'])
+    high_zones = len([z for z in risk_zones if z['risk_level'] == 'High'])
+    
+    heavy_traffic_points = len([t for t in traffic_data if t['traffic_level'] == 'heavy'])
+    
+    # Calculate safety score
+    base_score = 100
+    base_score -= critical_zones * 20
+    base_score -= high_zones * 10
+    base_score -= heavy_traffic_points * 5
+    
+    # Apply TT-specific penalties
+    if tt_specs['gross_weight'] > 30000:
+        base_score -= 10  # Heavy TT penalty
+    
+    safety_score = max(0, base_score)
+    safety_grade = 'A' if safety_score >= 90 else 'B' if safety_score >= 80 else 'C' if safety_score >= 70 else 'D' if safety_score >= 60 else 'F'
+    
+    return {
+        'total_distance': total_distance,
+        'total_duration': total_duration,
+        'safety_score': safety_score,
+        'safety_grade': safety_grade,
+        'total_pois': total_pois,
+        'hospitals': hospitals,
+        'police_stations': police,
+        'fuel_stations': fuel_stations,
+        'critical_zones': critical_zones,
+        'high_risk_zones': high_zones,
+        'heavy_traffic_points': heavy_traffic_points,
+        'tt_specs': tt_specs,
+        'recommendations': generate_tt_recommendations(risk_zones, traffic_data, tt_specs)
+    }
+
+def generate_tt_recommendations(risk_zones, traffic_data, tt_specs):
+    """Generate specific recommendations for truck tanker operation"""
+    recommendations = []
+    
+    if tt_specs['gross_weight'] > 35000:
+        recommendations.append("Heavy TT: Maintain maximum 50 km/h on highways")
+        recommendations.append("Use engine braking on downhill sections")
+    
+    critical_zones = [z for z in risk_zones if z['risk_level'] == 'Critical']
+    if critical_zones:
+        recommendations.append(f"Reduce speed by 50% in {len(critical_zones)} critical zones")
+        recommendations.append("Increase following distance to 6+ seconds")
+    
+    heavy_traffic = [t for t in traffic_data if t['traffic_level'] == 'heavy']
+    if len(heavy_traffic) > 3:
+        recommendations.append("Consider alternate timing - heavy traffic detected")
+    
+    if tt_specs['turn_sensitivity'] > 1.5:
+        recommendations.append("Take wide turns - high center of gravity vehicle")
+        recommendations.append("Check mirrors frequently for trailer swing")
+    
+    recommendations.append("Maintain emergency kit: fire extinguisher, spill containment")
+    recommendations.append("Monitor tire pressure - heavy load affects handling")
+    
+    return recommendations
+
 def extract_distance_km(distance_text):
     """Extract distance in kilometers from Google Maps distance text"""
     try:
@@ -24,6 +296,11 @@ def extract_distance_km(distance_text):
             return 0
     except (ValueError, AttributeError, IndexError):
         return 0
+
+@app.route('/')
+def home():
+    """Home page with TT route planning form"""
+    return render_template('index.html')
 
 @app.route('/fetch_routes', methods=['POST'])
 def fetch_routes():
@@ -273,7 +550,6 @@ def analyze_route():
         total_distance = selected['legs'][0]['distance']['text']
         total_duration = selected['legs'][0]['duration']['text']
 
-        # [Rest of the existing analyze_route code continues unchanged...]
         # Interpolate route for more precise mapping (adjusted for TT weight)
         points_per_km = 15 if tt_specs["gross_weight"] > 30000 else 10  # More points for heavier TT
         detailed_coords = interpolate_route_points(coords, points_per_km=points_per_km)
@@ -509,3 +785,37 @@ def analyze_route():
                              error="Analysis error", 
                              message=f"Error analyzing route: {str(e)}. Please try selecting a different route.",
                              back_url=url_for('fetch_routes'))
+
+@app.route('/detailed_report')
+def detailed_report():
+    """Show detailed route report"""
+    route_report = session.get('route_report')
+    if not route_report:
+        return render_template("error_page.html", 
+                             error="No report available", 
+                             message="No route analysis report found. Please analyze a route first.",
+                             back_url=url_for('home'))
+    
+    return render_template("detailed_report.html", report=route_report)
+
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('error_page.html', 
+                          error="Page not found",
+                          message="The requested page could not be found.",
+                          back_url=url_for('home')), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return render_template('error_page.html',
+                          error="Internal server error",
+                          message="An internal server error occurred. Please try again later.",
+                          back_url=url_for('home')), 500
+
+if __name__ == '__main__':
+    # Create templates directory if it doesn't exist
+    if not os.path.exists('templates'):
+        os.makedirs('templates')
+    
+    # Run the application
+    app.run(debug=True, host='0.0.0.0', port=10000)
