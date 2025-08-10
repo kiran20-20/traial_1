@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -40,7 +39,7 @@
             height: 100%;
             overflow: hidden;
             z-index: -1;
-            pointer-events: none; /* Prevents text from being selectable */
+            pointer-events: none;
         }
         .floating-text-bubble {
             position: absolute;
@@ -76,7 +75,6 @@
         .floating-text-bubble:nth-child(16) { top: 80%; right: 25%; animation-duration: 30s; animation-delay: 16s; transform: scale(1.1) rotate(12deg); }
         .floating-text-bubble:nth-child(17) { top: 5%; left: 60%; animation-duration: 28s; animation-delay: 17s; transform: scale(0.9) rotate(25deg); }
 
-
         @keyframes float-and-rotate {
             0%   { transform: translate(0, 0) rotate(0deg); }
             25%  { transform: translate(20px, -20px) rotate(-10deg); }
@@ -91,7 +89,7 @@
             border-radius: 16px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.15);
             width: 100%;
-            max-width: 40%; /* Adjusted to 40% as requested */
+            max-width: 45%; /* Slightly increased for TT specs */
             position: relative;
             z-index: 1;
             text-align: left;
@@ -197,6 +195,99 @@
             margin-top: 5px;
             font-style: italic;
         }
+
+        /* TT Specifications Display */
+        .tt-specs-display {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1ecf1 100%);
+            border: 2px solid var(--iocl-blue);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 15px;
+            display: none;
+            animation: slideDown 0.4s ease;
+        }
+
+        .tt-specs-display.active {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .specs-title {
+            text-align: center;
+            color: var(--iocl-blue);
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .specs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+        }
+
+        .spec-item {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
+        }
+
+        .spec-item .icon {
+            font-size: 1.5em;
+            margin-bottom: 8px;
+            color: var(--iocl-orange);
+        }
+
+        .spec-item .value {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: var(--iocl-blue);
+            margin-bottom: 4px;
+        }
+
+        .spec-item .label {
+            font-size: 0.8em;
+            color: var(--iocl-mid-gray);
+            font-weight: 500;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .warning-box i {
+            color: #f39c12;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .form-box {
+                max-width: 95%;
+            }
+            .specs-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -252,26 +343,143 @@
 
     <div class="section-title">
         <i class="fa-solid fa-truck-fast"></i>
-        <span>Vehicle Type</span>
+        <span>Truck Tanker (TT) Specifications</span>
     </div>
     
-    <label for="vehicle">Select TT</label>
-    <select id="vehicle" name="vehicle" required>
-        <option value="">Choose Vehicle Type</option>
-        <option value="driving">🚛 Truck (Driving)</option>
+    <label for="tt_type">Select TT Capacity Range</label>
+    <select id="tt_type" name="tt_type" required onchange="showTTSpecs()">
+        <option value="">Choose TT Capacity</option>
+        {% if tt_specifications %}
+        {% for tt_key, tt_data in tt_specifications.items() %}
+        <option value="{{ tt_key }}" 
+                data-capacity="{{ tt_data.avg_capacity_liters }}"
+                data-product-weight="{{ tt_data.product_weight }}"
+                data-tare-weight="{{ tt_data.tare_weight }}"
+                data-gross-weight="{{ tt_data.gross_weight }}"
+                data-axle-load="{{ tt_data.axle_load }}"
+                data-max-speed="{{ tt_data.max_speed }}"
+                data-risk-multiplier="{{ tt_data.risk_multiplier }}"
+                data-turn-sensitivity="{{ tt_data.turn_sensitivity }}">
+            {{ tt_data.capacity_range }} ({{ "%.1f"|format(tt_data.gross_weight/1000) }}T)
+        </option>
+        {% endfor %}
+        {% else %}
+        <option value="12-16KL">12-16 KL (21.1T)</option>
+        <option value="16-20KL">16-20 KL (25.7T)</option>
+        <option value="20-24KL">20-24 KL (30.3T)</option>
+        <option value="24-30KL">24-30 KL (35.8T)</option>
+        <option value="30KL+">30+ KL (44.5T)</option>
+        {% endif %}
     </select>
 
+    <div id="ttSpecsDisplay" class="tt-specs-display">
+        <div class="specs-title">
+            <i class="fas fa-truck"></i>
+            <span>Selected TT Specifications</span>
+        </div>
+        <div class="specs-grid">
+            <div class="spec-item">
+                <div class="icon"><i class="fas fa-gas-pump"></i></div>
+                <div class="value" id="specCapacity">-</div>
+                <div class="label">Fuel Capacity</div>
+            </div>
+            <div class="spec-item">
+                <div class="icon"><i class="fas fa-weight-hanging"></i></div>
+                <div class="value" id="specGrossWeight">-</div>
+                <div class="label">Gross Weight</div>
+            </div>
+            <div class="spec-item">
+                <div class="icon"><i class="fas fa-oil-can"></i></div>
+                <div class="value" id="specProductWeight">-</div>
+                <div class="label">Product Weight</div>
+            </div>
+            <div class="spec-item">
+                <div class="icon"><i class="fas fa-truck"></i></div>
+                <div class="value" id="specTareWeight">-</div>
+                <div class="label">Tare Weight</div>
+            </div>
+            <div class="spec-item">
+                <div class="icon"><i class="fas fa-balance-scale"></i></div>
+                <div class="value" id="specAxleLoad">-</div>
+                <div class="label">Axle Load</div>
+            </div>
+            <div class="spec-item">
+                <div class="icon"><i class="fas fa-tachometer-alt"></i></div>
+                <div class="value" id="specMaxSpeed">-</div>
+                <div class="label">Max Speed</div>
+            </div>
+        </div>
+        <div class="warning-box" id="warningBox" style="display: none;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span id="warningText"></span>
+        </div>
+    </div>
+
     <button type="submit">
-        <i class="fa-solid fa-route"></i> Generate Routes
+        <i class="fa-solid fa-route"></i> Generate Smart Routes
     </button>
     
     <div class="footer">
-        © 2025 IndianOil Corporation Ltd.
+        © 2025 IndianOil Corporation Ltd. - Truck Tanker Safety Navigation
     </div>
 </form>
 
 <script>
-    const landmarkData = {{ landmarks | tojson }};
+    const landmarkData = {{ landmarks | tojson if landmarks else [] }};
+    
+    // TT Specifications (fallback if not provided by backend)
+    const ttSpecifications = {
+        "12-16KL": {
+            capacity: 14000,
+            productWeight: 12600,
+            tareWeight: 8500,
+            grossWeight: 21100,
+            axleLoad: 10.5,
+            maxSpeed: 60,
+            riskMultiplier: 1.0,
+            turnSensitivity: 1.0
+        },
+        "16-20KL": {
+            capacity: 18000,
+            productWeight: 16200,
+            tareWeight: 9500,
+            grossWeight: 25700,
+            axleLoad: 12.85,
+            maxSpeed: 55,
+            riskMultiplier: 1.2,
+            turnSensitivity: 1.15
+        },
+        "20-24KL": {
+            capacity: 22000,
+            productWeight: 19800,
+            tareWeight: 10500,
+            grossWeight: 30300,
+            axleLoad: 15.15,
+            maxSpeed: 50,
+            riskMultiplier: 1.4,
+            turnSensitivity: 1.3
+        },
+        "24-30KL": {
+            capacity: 27000,
+            productWeight: 24300,
+            tareWeight: 11500,
+            grossWeight: 35800,
+            axleLoad: 17.9,
+            maxSpeed: 45,
+            riskMultiplier: 1.6,
+            turnSensitivity: 1.5
+        },
+        "30KL+": {
+            capacity: 35000,
+            productWeight: 31500,
+            tareWeight: 13000,
+            grossWeight: 44500,
+            axleLoad: 22.25,
+            maxSpeed: 40,
+            riskMultiplier: 2.0,
+            turnSensitivity: 1.8
+        }
+    };
     
     document.getElementById('landmark_name').addEventListener('input', function () {
         const name = this.value;
@@ -285,9 +493,85 @@
     });
 
     document.getElementById('source').addEventListener('focus', function() {
-      this.placeholder = "Enter coordinates manually (lat, lng)";
+        this.placeholder = "Enter coordinates manually (lat, lng)";
+    });
+
+    function showTTSpecs() {
+        const select = document.getElementById('tt_type');
+        const display = document.getElementById('ttSpecsDisplay');
+        const selectedOption = select.options[select.selectedIndex];
+        const warningBox = document.getElementById('warningBox');
+        const warningText = document.getElementById('warningText');
+        
+        if (selectedOption.value) {
+            // Get data from HTML attributes or fallback to JS object
+            let specs;
+            if (selectedOption.dataset.capacity) {
+                specs = {
+                    capacity: parseInt(selectedOption.dataset.capacity),
+                    productWeight: parseInt(selectedOption.dataset.productWeight),
+                    tareWeight: parseInt(selectedOption.dataset.tareWeight),
+                    grossWeight: parseInt(selectedOption.dataset.grossWeight),
+                    axleLoad: parseFloat(selectedOption.dataset.axleLoad),
+                    maxSpeed: parseInt(selectedOption.dataset.maxSpeed),
+                    riskMultiplier: parseFloat(selectedOption.dataset.riskMultiplier),
+                    turnSensitivity: parseFloat(selectedOption.dataset.turnSensitivity)
+                };
+            } else {
+                specs = ttSpecifications[selectedOption.value];
+            }
+            
+            if (specs) {
+                document.getElementById('specCapacity').textContent = specs.capacity.toLocaleString() + ' L';
+                document.getElementById('specGrossWeight').textContent = (specs.grossWeight / 1000).toFixed(1) + ' T';
+                document.getElementById('specProductWeight').textContent = (specs.productWeight / 1000).toFixed(1) + ' T';
+                document.getElementById('specTareWeight').textContent = (specs.tareWeight / 1000).toFixed(1) + ' T';
+                document.getElementById('specAxleLoad').textContent = specs.axleLoad.toFixed(1) + ' T';
+                document.getElementById('specMaxSpeed').textContent = specs.maxSpeed + ' kmph';
+                
+                // Show warnings for heavy TT
+                if (specs.grossWeight > 35000) {
+                    warningBox.style.display = 'flex';
+                    warningText.textContent = 'Heavy TT: Check bridge weight limits, reduce speed at turns, extra caution required.';
+                } else if (specs.grossWeight > 25000) {
+                    warningBox.style.display = 'flex';
+                    warningText.textContent = 'Medium TT: Monitor axle load limits and follow speed recommendations.';
+                } else {
+                    warningBox.style.display = 'none';
+                }
+                
+                display.classList.add('active');
+            }
+        } else {
+            display.classList.remove('active');
+        }
+    }
+
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const source = document.getElementById('source').value.trim();
+        const destination = document.getElementById('destination').value.trim();
+        const ttType = document.getElementById('tt_type').value;
+        
+        if (!source || !destination || !ttType) {
+            e.preventDefault();
+            alert('Please fill in all required fields:\n- Terminal coordinates\n- RO coordinates\n- TT Capacity type');
+            return;
+        }
+        
+        // Validate coordinate format
+        const coordPattern = /^-?\d+\.?\d*\s*,\s*-?\d+\.?\d*$/;
+        if (!coordPattern.test(source) || !coordPattern.test(destination)) {
+            e.preventDefault();
+            alert('Please enter coordinates in the format: latitude,longitude\nExample: 28.6139,77.2090');
+            return;
+        }
+        
+        // Show loading state
+        const submitBtn = document.querySelector('button[type="submit"]');
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing TT Route...';
+        submitBtn.disabled = true;
     });
 </script>
 </body>
 </html>
-```
