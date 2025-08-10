@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template, request, session, redirect, url_for, send_from_directory, make_response
 import googlemaps
 import polyline
@@ -15,25 +14,23 @@ import math
 import numpy as np
 from geopy.distance import geodesic
 import time
-import random
 
-# Use this to configure your Flask app
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
 
-API_KEY = os.environ.get("API_KEY") 
+API_KEY = os.environ.get("API_KEY")  # Secure access
 gmaps = googlemaps.Client(key=API_KEY)
 
-TRUCK_WEIGHT = 37.5  # tonnes
+# Constants for truck navigation
+TRUCK_WEIGHT = 37.5  # Average of 30-45 tonnes
 MAX_SPEED_LIMIT = 60  # kmph
+SAFE_TURN_ANGLE = 130  # degrees
+DANGEROUS_TURN_ANGLE = 30  # degrees
 
 def calculate_bearing(lat1, lng1, lat2, lng2):
-    """
-    Calculates the bearing between two points using the Haversine formula.
-    This provides a more accurate value for navigation.
-    """
+    """Calculate bearing between two points"""
     try:
         lat1, lng1, lat2, lng2 = map(math.radians, [lat1, lng1, lat2, lng2])
         dlng = lng2 - lng1
@@ -41,58 +38,57 @@ def calculate_bearing(lat1, lng1, lat2, lng2):
         x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dlng)
         bearing = math.atan2(y, x)
         return (math.degrees(bearing) + 360) % 360
-    except (ValueError, TypeError, ZeroDivisionError) as e:
-        print(f"Error in calculate_bearing: {e}")
+    except:
         return 0
 
 def calculate_turn_angle(prev_bearing, curr_bearing):
-    """
-    Calculates the turn angle (in degrees) from one bearing to the next.
-    The result is always between 0 and 180 degrees.
-    """
+    """Calculate turn angle between two bearings"""
     try:
         angle = abs(curr_bearing - prev_bearing)
         return min(angle, 360 - angle)
-    except (ValueError, TypeError) as e:
-        print(f"Error in calculate_turn_angle: {e}")
+    except:
         return 0
 
 def get_recommended_speed(turn_angle, road_type="urban"):
-    """
-    Calculates a recommended speed based on the turn angle.
-    This is a heuristic model, not a physical simulation.
-    """
+    """Calculate recommended speed based on turn angle and road type"""
     try:
-        if turn_angle > 90:
-            return 10
-        elif turn_angle > 45:
-            return 20
-        elif turn_angle > 20:
-            return 35
-        else:
-            return MAX_SPEED_LIMIT
+        base_speed = 40 if road_type == "urban" else 50
+        
+        if turn_angle < 15:  # Straight/slight curve
+            return min(MAX_SPEED_LIMIT, base_speed + 10)
+        elif turn_angle < 30:  # Moderate turn
+            return min(MAX_SPEED_LIMIT, base_speed)
+        elif turn_angle < 45:  # Sharp turn
+            return min(40, base_speed - 10)
+        elif turn_angle < 90:  # Very sharp turn
+            return min(30, base_speed - 20)
+        else:  # U-turn or extreme turn
+            return 15
     except:
-        return 40
+        return 30  # Default safe speed
 
 def interpolate_route_points(coords, points_per_km=10):
-    """
-    Interpolates between route points to increase resolution.
-    Uses linear interpolation, which is a good approximation for road segments.
-    """
+    """Interpolate route to get more points per kilometer"""
     if len(coords) < 2:
         return coords
     
     try:
         interpolated = [coords[0]]
+        
         for i in range(1, len(coords)):
             start = coords[i-1]
             end = coords[i]
+            
+            # Calculate distance between points
             distance_km = geodesic(start, end).kilometers
             
-            if distance_km > 0.1:  # Only interpolate if segment is long enough
+            if distance_km > 1/points_per_km:  # If points are far apart
+                # Calculate number of intermediate points needed
                 num_points = int(distance_km * points_per_km)
-                for j in range(1, num_points):
-                    ratio = j / num_points
+                
+                # Interpolate points
+                for j in range(1, num_points + 1):
+                    ratio = j / (num_points + 1)
                     lat = start[0] + (end[0] - start[0]) * ratio
                     lng = start[1] + (end[1] - start[1]) * ratio
                     interpolated.append((lat, lng))
@@ -105,240 +101,112 @@ def interpolate_route_points(coords, points_per_km=10):
         return coords
 
 def get_traffic_data(coords):
-    """
-    Simulates real-time traffic data with a more refined probabilistic model.
-    Uses a normal distribution to introduce realistic variability.
-    """
+    """Get traffic data for route coordinates"""
     traffic_data = []
-    current_hour = datetime.now().hour
     
-    # Define mean and standard deviation for delay factors based on time of day
-    if 8 <= current_hour <= 10 or 17 <= current_hour <= 19:
-        # Rush hour
-        mean_delay = 1.6
-        std_dev_delay = 0.3
-    elif 11 <= current_hour <= 16:
-        # Daytime
-        mean_delay = 1.3
-        std_dev_delay = 0.2
-    else:
-        # Off-peak hours
-        mean_delay = 1.1
-        std_dev_delay = 0.1
-
     try:
-        # Sample points to make API calls more efficient
+        # Sample every 5th point to avoid API limits
         sample_coords = coords[::5] if len(coords) > 5 else coords
         
         for lat, lng in sample_coords:
-            # Generate a random delay factor from a normal distribution
-            delay_factor = np.random.normal(mean_delay, std_dev_delay)
-            delay_factor = max(1.0, delay_factor) # Ensure delay factor is at least 1.0
-
-            if delay_factor >= 1.75:
-                traffic_level = 'heavy'
-            elif delay_factor >= 1.25:
-                traffic_level = 'moderate'
-            else:
-                traffic_level = 'light'
-
-            traffic_data.append({
-                'location': (lat, lng),
-                'traffic_level': traffic_level,
-                'delay_factor': delay_factor
-            })
+            try:
+                # Get traffic data using simulation (replace with actual API in production)
+                traffic_level = np.random.choice(['light', 'moderate', 'heavy'], p=[0.4, 0.4, 0.2])
+                traffic_data.append({
+                    'location': (lat, lng),
+                    'traffic_level': traffic_level,
+                    'delay_factor': {'light': 1.0, 'moderate': 1.3, 'heavy': 1.8}[traffic_level]
+                })
+            except:
+                continue
     except Exception as e:
         print(f"Error getting traffic data: {e}")
     
     return traffic_data
 
-def get_road_type_and_width(html_instructions):
-    """
-    Simulates road type and width based on HTML instructions from Google Maps.
-    This is a probabilistic heuristic, as Google does not provide this data directly.
-    """
-    instructions_lower = html_instructions.lower()
-    if "national highway" in instructions_lower or "motorway" in instructions_lower or "expressway" in instructions_lower:
-        road_type = "National Highway/Expressway"
-        road_width = random.uniform(10.0, 15.0)  # meters
-    elif "urban" in instructions_lower or "city" in instructions_lower or "local road" in instructions_lower:
-        road_type = "Urban/Local Road"
-        road_width = random.uniform(5.0, 8.0)  # meters
-    elif "state highway" in instructions_lower:
-        road_type = "State Highway"
-        road_width = random.uniform(7.0, 10.0)  # meters
-    elif "rural" in instructions_lower or "country" in instructions_lower:
-        road_type = "Rural Road"
-        road_width = random.uniform(3.0, 6.0)  # meters
-    else:
-        # Default for other roads
-        road_type = "Other Road"
-        road_width = random.uniform(3.0, 5.0)  # meters
-    
-    return road_type, round(road_width, 2)
-
-def get_route_segments(steps):
-    """
-    Splits the route into segments and analyzes each for road type and width.
-    """
-    segments = []
-    for step in steps:
-        road_type, road_width = get_road_type_and_width(step.get('html_instructions', ''))
-        segments.append({
-            'road_type': road_type,
-            'road_width': road_width,
-            'distance': step['distance']['text']
-        })
-    return segments
-
-def identify_high_risk_zones(coords, pois, segments, traffic_data):
-    """
-    Identifies high-risk zones using a weighted, multi-factor model.
-    The risk score is now calculated using the user-specified weights.
-    """
+def identify_high_risk_zones(coords, pois):
+    """Identify high-risk zones based on various factors"""
     risk_zones = []
     
-    # User-specified weights for different risk factors
-    weights = {
-        'turn_angle': 4,
-        'hospital_proximity': 2,
-        'school_proximity': 2,
-        'road_width': 4,
-        'traffic': 3,
-        'simulated_accident_prone': 5 # Keeping this high as a crucial factor
-    }
-
     try:
-        poi_locations = {poi['type']: [p['location'] for p in pois if p['type'] == poi['type']] for poi in pois}
-
-        for i in range(1, len(coords) - 1):
-            current_coord = coords[i]
+        for i, (lat, lng) in enumerate(coords):
             risk_score = 0
             risk_factors = []
-
-            # Factor 1: Turn angle (weighted)
-            prev_bearing = calculate_bearing(coords[i-1][0], coords[i-1][1], current_coord[0], current_coord[1])
-            next_bearing = calculate_bearing(current_coord[0], current_coord[1], coords[i+1][0], coords[i+1][1])
-            turn_angle = calculate_turn_angle(prev_bearing, next_bearing)
-
-            if turn_angle > 45: # A turn angle over 45 degrees is considered a risk
-                turn_factor = turn_angle / 180  # Normalize to a value between 0 and 1
-                risk_score += weights['turn_angle'] * turn_factor
-                risk_factors.append(f"Sharp turn ({turn_angle:.1f}°)")
-
-            # Factor 2: Road Width (weighted)
-            segment_index = int(i * len(segments) / len(coords))
-            if segment_index < len(segments):
-                road_width = segments[segment_index]['road_width']
-                if road_width < 7.0: # Roads narrower than 7m are considered risky
-                    width_factor = 1 - (road_width - 3) / 4 # Higher factor for narrower roads
-                    risk_score += weights['road_width'] * width_factor
-                    risk_factors.append(f"Narrow road ({road_width:.1f}m)")
-
-            # Factor 3: Traffic (weighted)
-            traffic_segment_index = int(i * len(traffic_data) / len(coords))
-            if traffic_segment_index < len(traffic_data):
-                traffic_level = traffic_data[traffic_segment_index]['traffic_level']
-                if traffic_level == 'heavy':
-                    traffic_factor = 1.0
-                elif traffic_level == 'moderate':
-                    traffic_factor = 0.5
-                else:
-                    traffic_factor = 0.1
-                risk_score += weights['traffic'] * traffic_factor
-                risk_factors.append(f"Traffic ({traffic_level.title()})")
-
-            # Factor 4: Proximity to POIs (weighted)
-            for poi_type, locations in poi_locations.items():
-                for poi_loc in locations:
-                    distance = geodesic(current_coord, poi_loc).meters
-                    if distance < 500:
-                        proximity_factor = 1 - (distance / 500)
-                        if poi_type == 'hospital':
-                            risk_score += weights['hospital_proximity'] * proximity_factor
-                            risk_factors.append("Proximity to hospital")
-                        elif poi_type == 'school':
-                            risk_score += weights['school_proximity'] * proximity_factor
-                            risk_factors.append("Proximity to school")
-                        elif poi_type == 'police':
-                            risk_score += weights.get('police_proximity', 2) * proximity_factor # Use default if not specified
-                            risk_factors.append("Proximity to police station")
-                        
-            # Factor 5: Simulated high-risk areas (weighted)
-            if random.random() < 0.005:
-                risk_score += weights['simulated_accident_prone']
-                risk_factors.append("Historically accident-prone zone (simulated)")
-
-            # Normalize the score to a 10-point scale
-            max_possible_score = sum(weights.values())
-            normalized_score = (risk_score / max_possible_score) * 10
             
-            if normalized_score >= 7:
-                risk_level = 'High'
-            elif normalized_score >= 3:
-                risk_level = 'Medium'
-            else:
-                continue
-
-            risk_zones.append({
-                'location': current_coord,
-                'risk_score': min(normalized_score, 10),
-                'risk_factors': risk_factors,
-                'risk_level': risk_level
-            })
+            # Check proximity to hospitals (accident-prone areas)
+            try:
+                hospital_count = sum(1 for poi in pois if poi['type'] == 'hospital' 
+                               and geodesic((lat, lng), poi['location']).meters < 500)
+                if hospital_count > 0:
+                    risk_score += hospital_count * 2
+                    risk_factors.append(f"{hospital_count} hospital(s) nearby")
+            except:
+                pass
             
+            # Check for intersections (every 10th point approximation)
+            if i % 10 == 0 and i > 0 and i < len(coords) - 10:
+                try:
+                    # Simplified intersection detection based on bearing changes
+                    prev_bearing = calculate_bearing(coords[i-10][0], coords[i-10][1], lat, lng)
+                    next_bearing = calculate_bearing(lat, lng, coords[i+10][0], coords[i+10][1])
+                    turn_angle = calculate_turn_angle(prev_bearing, next_bearing)
+                    
+                    if turn_angle > 30:
+                        risk_score += 3
+                        risk_factors.append("Sharp turn/intersection")
+                except:
+                    pass
+            
+            # Add random factors for demonstration (Crowded zones, construction, etc.)
+            try:
+                if np.random.random() < 0.05:  # 5% chance
+                    risk_score += 4
+                    risk_factors.append("Crowded zone")
+                
+                if np.random.random() < 0.03:  # 3% chance
+                    risk_score += 5
+                    risk_factors.append("Construction zone")
+            except:
+                pass
+            
+            if risk_score >= 3:
+                risk_zones.append({
+                    'location': (lat, lng),
+                    'risk_score': risk_score,
+                    'risk_factors': risk_factors,
+                    'risk_level': 'High' if risk_score >= 6 else 'Medium'
+                })
     except Exception as e:
         print(f"Error identifying risk zones: {e}")
     
     return risk_zones
 
-def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance, total_duration, segments):
-    """Generates a detailed route analysis report."""
+def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance, total_duration):
+    """Generate a detailed route analysis report"""
     try:
+        # Extract numeric value from distance string
         distance_value = 1
         try:
             if total_distance:
                 distance_parts = total_distance.split()
                 if distance_parts:
                     distance_value = float(distance_parts[0])
-        except (ValueError, IndexError):
+        except:
             distance_value = 1
-            
-        # Analyze road types
-        national_highway_count = sum(1 for s in segments if 'National Highway' in s['road_type'])
-        state_highway_count = sum(1 for s in segments if 'State Highway' in s['road_type'])
-        urban_road_count = sum(1 for s in segments if 'Urban/Local Road' in s['road_type'])
-        rural_road_count = sum(1 for s in segments if 'Rural Road' in s['road_type'])
-
-        # User-specified weights for report
-        weights = {
-            'turn_angle': 4,
-            'hospital_proximity': 2,
-            'school_proximity': 2,
-            'road_width': 4,
-            'traffic': 3,
-            'simulated_accident_prone': 5
-        }
-
+        
         report = {
             'total_distance': total_distance,
             'total_duration': total_duration,
             'truck_weight': TRUCK_WEIGHT,
             'max_speed_limit': MAX_SPEED_LIMIT,
-            'risk_weights': weights,
             'route_analysis': {
                 'total_points': len(coords),
-                'points_per_km': len(coords) / distance_value if distance_value > 0 else 0,
+                'points_per_km': len(coords) / distance_value,
                 'high_risk_zones': len([z for z in risk_zones if z['risk_level'] == 'High']),
                 'medium_risk_zones': len([z for z in risk_zones if z['risk_level'] == 'Medium']),
                 'hospitals_along_route': len([p for p in pois if p['type'] == 'hospital']),
                 'fuel_stations': len([p for p in pois if p['type'] == 'fuel']),
-                'police_stations': len([p for p in pois if p['type'] == 'police']),
-                'national_highway_segments': national_highway_count,
-                'state_highway_segments': state_highway_count,
-                'urban_road_segments': urban_road_count,
-                'rural_road_segments': rural_road_count,
-                'total_segments': len(segments)
+                'police_stations': len([p for p in pois if p['type'] == 'police'])
             },
             'traffic_analysis': {
                 'light_traffic_segments': len([t for t in traffic_data if t['traffic_level'] == 'light']),
@@ -348,10 +216,10 @@ def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance
             },
             'safety_recommendations': [
                 f"Maintain speed below {MAX_SPEED_LIMIT} kmph at all times",
-                f"Exercise extreme caution at the {len([z for z in risk_zones if z['risk_level'] == 'High'])} high-risk zones identified.",
-                "Reduce speed to 15-30 kmph at sharp turns and intersections.",
-                "Plan for refueling at the marked IndianOil stations along the route.",
-                "Keep emergency contacts handy for nearby hospitals and police stations."
+                f"Extra caution required at {len([z for z in risk_zones if z['risk_level'] == 'High'])} high-risk zones",
+                "Reduce speed to 15-30 kmph at sharp turns",
+                "Plan for fuel stops at marked stations",
+                "Keep emergency contacts handy for police/hospital locations"
             ]
         }
         
@@ -363,7 +231,6 @@ def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance
             'total_duration': total_duration or "N/A",
             'truck_weight': TRUCK_WEIGHT,
             'max_speed_limit': MAX_SPEED_LIMIT,
-            'risk_weights': {},
             'route_analysis': {
                 'total_points': len(coords),
                 'points_per_km': 1,
@@ -371,12 +238,7 @@ def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance
                 'medium_risk_zones': 0,
                 'hospitals_along_route': 0,
                 'fuel_stations': 0,
-                'police_stations': 0,
-                'national_highway_segments': 0,
-                'state_highway_segments': 0,
-                'urban_road_segments': 0,
-                'rural_road_segments': 0,
-                'total_segments': 0
+                'police_stations': 0
             },
             'traffic_analysis': {
                 'light_traffic_segments': 0,
@@ -385,36 +247,53 @@ def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance
                 'average_delay_factor': 1.0
             },
             'safety_recommendations': [
-                f"Maintain speed below {MAX_SPEED_LIMIT} kmph at all times",
-                "Detailed analysis unavailable. Proceed with caution."
+                f"Maintain speed below {MAX_SPEED_LIMIT} kmph at all times"
             ]
         }
 
 @app.route('/health')
 def health():
+    """Simple health check endpoint"""
     return {"status": "OK", "message": "App is running"}
 
 @app.route('/test')
 def test():
+    """Simple test page"""
     return "<h1>Flask App is Working!</h1><p>If you see this, the basic Flask setup is fine.</p>"
 
 @app.route('/')
 def home():
+    """Main route form page - no login required"""
     try:
+        # Load IOCL Landmarks with data validation
         landmarks = []
+        
+        # Try to load from Excel file, but handle gracefully if it doesn't exist
         try:
             df_iocl = pd.read_excel("IOCL_Landmark_Details.xlsx")
+            
             for _, row in df_iocl.iterrows():
                 try:
+                    # Validate and convert coordinates
                     lat = float(row['Latitude']) if pd.notna(row['Latitude']) else None
                     lng = float(row['Longitude']) if pd.notna(row['Longitude']) else None
                     name = str(row['Landmark Name']).strip() if pd.notna(row['Landmark Name']) else None
+                    
                     if lat is not None and lng is not None and name:
-                        landmarks.append({'name': name, 'lat': lat, 'lng': lng})
+                        landmarks.append({
+                            'name': name,
+                            'lat': lat,
+                            'lng': lng
+                        })
                 except (ValueError, TypeError) as e:
+                    print(f"Skipping invalid landmark row: {e}")
                     continue
+                    
+            print(f"Loaded {len(landmarks)} landmarks from Excel file")
+            
         except FileNotFoundError:
             print("IOCL_Landmark_Details.xlsx not found, using sample landmarks")
+            # Provide some sample landmarks if file doesn't exist
             landmarks = [
                 {'name': 'Delhi Terminal', 'lat': 28.6139, 'lng': 77.2090},
                 {'name': 'Mumbai Terminal', 'lat': 19.0760, 'lng': 72.8777},
@@ -426,30 +305,68 @@ def home():
             print(f"Error loading Excel file: {e}")
             landmarks = []
 
-        return render_template("route_form.html", landmarks=landmarks)
+        # Pass landmarks to template
+        return render_template(
+            "route_form.html",  # Use existing route_form.html
+            landmarks=landmarks
+        )
+        
     except Exception as e:
         print(f"Error loading data: {e}")
         import traceback
         traceback.print_exc()
-        return f"<html><body><h2>IndianOil Smart Marg</h2><p>Error: {str(e)}</p></body></html>"
+        # Return a simple fallback page if everything fails
+        return f"""
+        <html><body>
+        <h2>IndianOil Smart Marg</h2>
+        <p>Basic form (landmarks unavailable)</p>
+        <form method="POST" action="/fetch_routes">
+            <p>Source: <input type="text" name="source" placeholder="lat,lng" required></p>
+            <p>Destination: <input type="text" name="destination" placeholder="lat,lng" required></p>
+            <p>Vehicle: 
+                <select name="vehicle" required>
+                    <option value="">Choose</option>
+                    <option value="driving">Driving</option>
+                    <option value="walking">Walking</option>
+                    <option value="transit">Transit</option>
+                </select>
+            </p>
+            <button type="submit">Generate Routes</button>
+        </form>
+        <p>Error: {str(e)}</p>
+        </body></html>
+        """
 
 @app.route('/fetch_routes', methods=['POST'])
 def fetch_routes():
+    """Generate routes based on form input"""
     try:
+        # Clear session and old route files
         session.clear()
-        for f in glob.glob("templates/route_preview_*.html"): os.remove(f)
-        for f in glob.glob("templates/route_map_*.html"): os.remove(f)
+        for f in glob.glob("templates/route_preview_*.html"):
+            try:
+                os.remove(f)
+            except:
+                pass
+        for f in glob.glob("templates/route_map_*.html"):
+            try:
+                os.remove(f)
+            except:
+                pass
 
+        # Get form data
         source = request.form['source'].strip()
         destination = request.form['destination'].strip()
         vehicle = request.form['vehicle']
 
+        # Validate coordinates
         try:
             source_coords = tuple(map(float, source.split(',')))
             dest_coords = tuple(map(float, destination.split(',')))
         except ValueError:
             return "Invalid coordinates format. Please use: latitude,longitude"
 
+        # Get routes from Google Maps
         directions = gmaps.directions(
             source_coords, dest_coords,
             mode=vehicle,
@@ -460,12 +377,14 @@ def fetch_routes():
         if not directions:
             return "No routes found between the specified locations."
 
+        # Store in session
         session['directions'] = directions
         session['source'] = source_coords
         session['destination'] = dest_coords
         session['vehicle'] = vehicle
         session.modified = True
 
+        # Process routes for selection
         routes = []
         for i, route in enumerate(directions):
             try:
@@ -474,6 +393,7 @@ def fetch_routes():
                 duration = route['legs'][0]['duration']['text']
                 summary = route.get('summary', f"Route {i+1}")
 
+                # Create preview map
                 unique_id = uuid4().hex
                 preview_file = f"route_preview_{i}_{unique_id}.html"
                 m = folium.Map(location=coords[len(coords)//2], zoom_start=12)
@@ -491,7 +411,7 @@ def fetch_routes():
                 print(f"Error processing route {i}: {e}")
                 continue
 
-        return render_template("route_select.html", routes=routes)
+        return render_template("route_select.html", routes=routes) # Use existing route_select.html
     
     except Exception as e:
         print(f"Error in fetch_routes: {e}")
@@ -501,6 +421,7 @@ def fetch_routes():
 
 @app.route('/analyze_route', methods=['POST'])
 def analyze_route():
+    """Analyze the selected route"""
     try:
         directions = session.get('directions')
         index = int(request.form['route_index'])
@@ -514,128 +435,162 @@ def analyze_route():
         source = session['source']
         destination = session['destination']
         
+        # Get route details
         total_distance = selected['legs'][0]['distance']['text']
         total_duration = selected['legs'][0]['duration']['text']
 
+        # Interpolate route for more precise mapping (10 points per km)
         detailed_coords = interpolate_route_points(coords, points_per_km=10)
         
-        segments = get_route_segments(steps)
-
         def get_pois(keyword):
             pois = []
             try:
-                for lat, lng in detailed_coords[::50]:
-                    places = gmaps.places_nearby(location=(lat, lng), radius=200, keyword=keyword)
-                    for place in places.get('results', []):
-                        pois.append({
-                            'name': place['name'],
-                            'location': (place['geometry']['location']['lat'], place['geometry']['location']['lng']),
-                            'type': keyword
-                        })
+                # Use detailed coords for more precise POI detection
+                sample_coords = detailed_coords[::20] if len(detailed_coords) > 20 else detailed_coords
+                for lat, lng in sample_coords:
+                    try:
+                        places = gmaps.places_nearby(location=(lat, lng), radius=300, keyword=keyword)
+                        for place in places.get('results', []):
+                            pois.append({
+                                'name': place['name'],
+                                'location': (
+                                    place['geometry']['location']['lat'],
+                                    place['geometry']['location']['lng']
+                                ),
+                                'type': keyword
+                            })
+                    except Exception as e:
+                        print(f"Error getting places for {keyword}: {e}")
+                        continue
             except Exception as e:
-                print(f"Error getting places for {keyword}: {e}")
+                print(f"Error in get_pois for {keyword}: {e}")
             return pois
 
         all_pois = []
-        for keyword in ['hospital', 'police', 'fuel', 'school']:
+        for keyword in ['hospital', 'police', 'fuel']:
             all_pois.extend(get_pois(keyword))
 
+        # Get traffic data
         traffic_data = get_traffic_data(detailed_coords)
-        risk_zones = identify_high_risk_zones(detailed_coords, all_pois, segments, traffic_data)
-        route_report = generate_route_report(detailed_coords, all_pois, risk_zones, traffic_data, total_distance, total_duration, segments)
+        
+        # Identify high-risk zones
+        risk_zones = identify_high_risk_zones(detailed_coords, all_pois)
+        
+        # Generate detailed report
+        route_report = generate_route_report(detailed_coords, all_pois, risk_zones, 
+                                           traffic_data, total_distance, total_duration)
 
+        # Create enhanced map
         m = folium.Map(location=source, zoom_start=13)
         
-        folium.Marker(source, popup='Start', icon=folium.Icon(color='green', icon='flag', prefix='fa')).add_to(m)
-        folium.Marker(destination, popup='End', icon=folium.Icon(color='black', icon='flag-checkered', prefix='fa')).add_to(m)
+        # Add start and end markers
+        folium.Marker(source, popup='Start', 
+                     icon=folium.Icon(color='green', icon='flag', prefix='fa')).add_to(m)
+        folium.Marker(destination, popup='End', 
+                     icon=folium.Icon(color='black', icon='flag-checkered', prefix='fa')).add_to(m)
         
+        # Add main route with speed indicators
+        for i, (lat, lng) in enumerate(detailed_coords):
+            if i > 0 and i < len(detailed_coords) - 1 and i % 50 == 0:
+                try:
+                    # Calculate turn angle for speed recommendation
+                    prev_coord = detailed_coords[i-1]
+                    next_coord = detailed_coords[i+1]
+                    
+                    prev_bearing = calculate_bearing(prev_coord[0], prev_coord[1], lat, lng)
+                    next_bearing = calculate_bearing(lat, lng, next_coord[0], next_coord[1])
+                    turn_angle = calculate_turn_angle(prev_bearing, next_bearing)
+                    
+                    recommended_speed = get_recommended_speed(turn_angle)
+                    
+                    # Add truck icon with speed popup
+                    truck_html = f"""
+                    <div style='text-align: center; font-family: Arial;'>
+                        <div style='font-size: 20px;'>🚛</div>
+                        <div style='background-color: {"red" if recommended_speed < 30 else "orange" if recommended_speed < 45 else "green"}; 
+                                    color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;'>
+                            {recommended_speed} km/h
+                        </div>
+                        <div style='font-size: 10px; margin-top: 2px;'>
+                            Turn: {turn_angle:.1f}° | Weight: {TRUCK_WEIGHT}T
+                        </div>
+                    </div>
+                    """
+                    
+                    folium.Marker(
+                        location=(lat, lng),
+                        popup=truck_html,
+                        icon=folium.DivIcon(html=truck_html, icon_size=(60, 60), icon_anchor=(30, 30))
+                    ).add_to(m)
+                except Exception as e:
+                    print(f"Error adding truck marker: {e}")
+                    continue
+
+        # Add route polyline
         folium.PolyLine(detailed_coords, color='blue', weight=4, opacity=0.8).add_to(m)
-        
-        # Adding truck markers at intervals
-        for i in range(1, len(detailed_coords) - 1, 50): # Every 50 points
-            try:
-                current_coord = detailed_coords[i]
-                prev_coord = detailed_coords[i-1]
-                next_coord = detailed_coords[i+1]
-                prev_bearing = calculate_bearing(prev_coord[0], prev_coord[1], current_coord[0], current_coord[1])
-                next_bearing = calculate_bearing(current_coord[0], current_coord[1], next_coord[0], next_coord[1])
-                turn_angle = calculate_turn_angle(prev_bearing, next_bearing)
-                recommended_speed = get_recommended_speed(turn_angle)
 
-                truck_html = f"""
-                <div style='text-align: center; font-family: Arial;'>
-                    <div style='font-size: 20px;'>🚛</div>
-                    <div style='background-color: {"red" if recommended_speed < 30 else "orange" if recommended_speed < 45 else "green"};
-                                color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;'>
-                        {recommended_speed} km/h
-                    </div>
-                    <div style='font-size: 10px; margin-top: 2px;'>
-                        Turn: {turn_angle:.1f}°
-                    </div>
-                </div>
-                """
-                folium.Marker(
-                    location=current_coord,
-                    popup=folium.IFrame(truck_html, width=120, height=80),
-                    icon=folium.DivIcon(html=truck_html, icon_size=(60, 60), icon_anchor=(30, 30))
-                ).add_to(m)
-            except Exception as e:
-                print(f"Error adding truck marker at {i}: {e}")
-
-        # Adding POI markers
+        # Add POIs with enhanced icons
         marker_styles = {
             'hospital': {'color': 'red', 'icon': 'plus'},
             'police': {'color': 'blue', 'icon': 'shield'},
-            'fuel': {'color': 'orange', 'icon': 'gas-pump'},
-            'school': {'color': 'purple', 'icon': 'school'}
+            'fuel': {'color': 'orange', 'icon': 'gas-pump'}
         }
+
         for poi in all_pois:
             try:
                 props = marker_styles.get(poi['type'], {'color': 'gray', 'icon': 'info-circle'})
                 icon = folium.Icon(color=props['color'], icon=props['icon'], prefix='fa')
-                folium.Marker(location=poi['location'], popup=f"<b>{poi['name']}</b><br>{poi['type'].capitalize()}", icon=icon).add_to(m)
+                folium.Marker(
+                    location=poi['location'],
+                    popup=f"{poi['type'].capitalize()}: {poi['name']}",
+                    icon=icon
+                ).add_to(m)
             except Exception as e:
                 print(f"Error adding POI marker: {e}")
+                continue
 
-        # Adding risk zones
+        # Add high-risk zones
         for zone in risk_zones:
             try:
                 color = 'red' if zone['risk_level'] == 'High' else 'orange'
-                risk_popup = folium.Popup(f"""
+                risk_popup = f"""
                 <div style='font-family: Arial; max-width: 200px;'>
                     <h4 style='color: {color};'>⚠️ {zone['risk_level']} Risk Zone</h4>
-                    <p><b>Risk Score:</b> {zone['risk_score']:.1f}/10</p>
-                    <p><b>Factors:</b><br>{'<br>'.join(zone['risk_factors'])}</p>
+                    <p><strong>Risk Score:</strong> {zone['risk_score']}/10</p>
+                    <p><strong>Factors:</strong><br>{'<br>'.join(zone['risk_factors'])}</p>
                 </div>
-                """, max_width=250)
+                """
+                
                 folium.CircleMarker(
                     location=zone['location'],
                     radius=15,
                     popup=risk_popup,
                     color=color,
                     fillColor=color,
-                    fillOpacity=0.4
+                    fillOpacity=0.3,
+                    weight=3
                 ).add_to(m)
             except Exception as e:
                 print(f"Error adding risk zone: {e}")
+                continue
 
-        # Adding traffic indicators
+        # Add traffic indicators
         for traffic in traffic_data:
             try:
-                color = {'light': 'green', 'moderate': 'orange', 'heavy': 'red'}[traffic['traffic_level']]
-                folium.Circle(
+                color = {'light': 'green', 'moderate': 'yellow', 'heavy': 'red'}[traffic['traffic_level']]
+                folium.CircleMarker(
                     location=traffic['location'],
-                    radius=100,
+                    radius=5,
+                    popup=f"Traffic: {traffic['traffic_level'].title()}<br>Delay Factor: {traffic['delay_factor']:.1f}x",
                     color=color,
-                    fill=True,
                     fillColor=color,
-                    fillOpacity=0.2,
-                    popup=f"Traffic: {traffic['traffic_level'].title()}<br>Delay: {traffic['delay_factor']:.1f}x"
+                    fillOpacity=0.6
                 ).add_to(m)
             except Exception as e:
                 print(f"Error adding traffic indicator: {e}")
+                continue
 
-        # Add the legend
+        # Fixed legend HTML
         legend_html = f"""
         {{% macro html(this, kwargs) %}}
         <div style="
@@ -655,6 +610,9 @@ def analyze_route():
             <div style='margin: 5px 0;'><i class="fa fa-plus fa-lg" style="color:red"></i> Hospital</div>
             <div style='margin: 5px 0;'><i class="fa fa-shield fa-lg" style="color:blue"></i> Police</div>
             <div style='margin: 5px 0;'><i class="fa fa-gas-pump fa-lg" style="color:orange"></i> Fuel Station</div>
+            <div style='margin: 5px 0;'>🚛 <span style='background: green; color: white; padding: 1px 3px;'>50+</span> Safe Speed</div>
+            <div style='margin: 5px 0;'>🚛 <span style='background: orange; color: white; padding: 1px 3px;'>30-45</span> Caution Speed</div>
+            <div style='margin: 5px 0;'>🚛 <span style='background: red; color: white; padding: 1px 3px;'>&lt;30</span> Slow Speed</div>
             <div style='margin: 5px 0;'>🔴 High Risk Zone</div>
             <div style='margin: 5px 0;'>🟡 Medium Risk Zone</div>
             <div style='margin: 5px 0;'>● Traffic: <span style='color: green;'>Light</span> <span style='color: orange;'>Moderate</span> <span style='color: red;'>Heavy</span></div>
@@ -670,14 +628,16 @@ def analyze_route():
         legend._template = Template(legend_html)
         m.get_root().add_child(legend)
 
+        # Save map
         unique_map_id = uuid4().hex
         html_name = f"route_map_{unique_map_id}.html"
         m.save(f"templates/{html_name}")
 
+        # Store report in session for detailed view
         session['route_report'] = route_report
         session.modified = True
 
-        return render_template("route_analysis.html",
+        return render_template("route_analysis.html", # Use existing route_analysis.html
                                mode=session['vehicle'],
                                turns=sum("turn" in s['html_instructions'].lower() for s in steps),
                                poi_count=len(all_pois),
@@ -694,11 +654,14 @@ def analyze_route():
 
 @app.route('/detailed_report')
 def detailed_report():
+    """Show detailed route analysis report"""
     try:
         report = session.get('route_report')
         if not report:
             return "No route analysis data found. Please analyze a route first."
-        return render_template("detailed_report.html", report=report)
+        
+        return render_template("detailed_report.html", report=report) # Use existing detailed_report.html
+        
     except Exception as e:
         print(f"Error in detailed_report: {e}")
         return f"Error generating detailed report: {str(e)}"
