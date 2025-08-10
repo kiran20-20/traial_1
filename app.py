@@ -196,11 +196,9 @@ def fetch_routes():
                     'index': original_index,  # Keep original index for backend processing
                     'distance': distance,
                     'duration': duration,
-                    'distance_km': float(distance_km),  # Ensure it's a float
                     'summary': summary,
                     'preview_file': preview_file,
-                    'tt_info': f"TT {tt_specs['capacity_range']} - {tt_specs['gross_weight']/1000:.1f}T",
-                    'status': 'valid'
+                    'tt_info': f"TT {tt_specs['capacity_range']} - {tt_specs['gross_weight']/1000:.1f}T"
                 })
             except Exception as e:
                 print(f"Error processing valid route {original_index}: {e}")
@@ -215,10 +213,7 @@ def fetch_routes():
 
         return render_template("route_select.html", 
                              routes=routes, 
-                             tt_specs=tt_specs,
-                             total_routes_found=len(directions),
-                             valid_routes_count=len(routes),
-                             max_distance_km=500)
+                             tt_specs=tt_specs)
     
     except Exception as e:
         print(f"Error in fetch_routes: {e}")
