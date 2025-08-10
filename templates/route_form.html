@@ -21,13 +21,10 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
             background-color: var(--iocl-light-gray);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            padding: 15px 20px;
             color: #333;
             position: relative;
-            overflow: hidden;
+            overflow-x: hidden;
         }
 
         /* World-Class Floating Background with Text */
@@ -83,67 +80,77 @@
             100% { transform: translate(0, 0) rotate(0deg); }
         }
 
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: calc(100vh - 30px);
+            position: relative;
+        }
+
         .form-box {
             background-color: var(--iocl-white);
-            padding: 40px;
+            padding: 30px;
             border-radius: 16px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.15);
             width: 100%;
-            max-width: 45%; /* Slightly increased for TT specs */
+            max-width: 500px;
             position: relative;
             z-index: 1;
             text-align: left;
             transition: box-shadow 0.3s ease-in-out;
+            margin: 10px 0;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 15px;
+            gap: 12px;
         }
         .header h1 {
-            font-size: 2.2em;
+            font-size: 1.9em;
             font-weight: 800;
             color: var(--iocl-blue);
             margin: 0;
             display: inline-block;
         }
         .header .logo-text {
-            font-size: 1.1em;
+            font-size: 1.0em;
             color: var(--iocl-orange);
             font-weight: 600;
         }
 
         .section-title {
-            font-size: 1.1em;
+            font-size: 1.0em;
             font-weight: bold;
             color: var(--iocl-blue);
-            margin-top: 25px;
-            margin-bottom: 15px;
+            margin-top: 20px;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .section-title i {
             color: var(--iocl-orange);
-            font-size: 1.2em;
+            font-size: 1.1em;
         }
 
         label {
             font-weight: 600;
-            margin-top: 10px;
+            margin-top: 8px;
             display: block;
             color: #555;
+            font-size: 0.9em;
         }
         input, select {
             width: 100%;
-            padding: 14px;
-            margin: 8px 0;
-            font-size: 1rem;
+            padding: 12px;
+            margin: 6px 0;
+            font-size: 0.95rem;
             border: 1px solid #ddd;
             border-radius: 8px;
             box-sizing: border-box;
@@ -157,29 +164,29 @@
 
         button {
             width: 100%;
-            padding: 16px;
-            font-size: 1.1rem;
+            padding: 14px;
+            font-size: 1.0rem;
             font-weight: bold;
             background-image: linear-gradient(to right, #02164F, #005bb5);
             border: none;
             color: var(--iocl-white);
             border-radius: 8px;
             cursor: pointer;
-            margin-top: 30px;
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+            margin-top: 25px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
             transition: all 0.3s ease-in-out;
             background-size: 200% 100%;
             background-position: left;
         }
         button:hover {
             background-position: right;
-            transform: translateY(-3px);
-            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
         }
 
         .footer {
-            margin-top: 30px;
-            font-size: 0.8rem;
+            margin-top: 20px;
+            font-size: 0.75rem;
             text-align: center;
             color: var(--iocl-mid-gray);
         }
@@ -187,22 +194,22 @@
             display: none;
         }
         datalist option {
-            padding: 10px;
+            padding: 8px;
         }
         .coord-helper {
-            font-size: 0.85em;
+            font-size: 0.8em;
             color: var(--iocl-mid-gray);
-            margin-top: 5px;
+            margin-top: 3px;
             font-style: italic;
         }
 
-        /* TT Specifications Display */
+        /* Compact TT Specifications Display */
         .tt-specs-display {
             background: linear-gradient(135deg, #e8f4f8 0%, #d1ecf1 100%);
             border: 2px solid var(--iocl-blue);
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 15px;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 12px;
             display: none;
             animation: slideDown 0.4s ease;
         }
@@ -212,7 +219,7 @@
         }
 
         @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-15px); }
+            from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
@@ -220,44 +227,44 @@
             text-align: center;
             color: var(--iocl-blue);
             font-weight: bold;
-            font-size: 1.1em;
-            margin-bottom: 15px;
+            font-size: 1.0em;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .specs-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
         }
 
         .spec-item {
             background: white;
-            padding: 12px;
-            border-radius: 8px;
+            padding: 8px;
+            border-radius: 6px;
             text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
             border: 1px solid #e0e0e0;
         }
 
         .spec-item .icon {
-            font-size: 1.5em;
-            margin-bottom: 8px;
+            font-size: 1.2em;
+            margin-bottom: 4px;
             color: var(--iocl-orange);
         }
 
         .spec-item .value {
-            font-size: 1.1em;
+            font-size: 0.9em;
             font-weight: bold;
             color: var(--iocl-blue);
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
 
         .spec-item .label {
-            font-size: 0.8em;
+            font-size: 0.7em;
             color: var(--iocl-mid-gray);
             font-weight: 500;
         }
@@ -266,26 +273,58 @@
             background: #fff3cd;
             border: 1px solid #ffeaa7;
             color: #856404;
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 10px;
-            font-size: 0.9em;
+            padding: 8px;
+            border-radius: 6px;
+            margin-top: 8px;
+            font-size: 0.8em;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .warning-box i {
             color: #f39c12;
         }
 
-        /* Responsive adjustments */
+        /* Mobile Responsive */
         @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
             .form-box {
-                max-width: 95%;
+                max-width: 100%;
+                padding: 20px;
+            }
+            .header h1 {
+                font-size: 1.6em;
             }
             .specs-grid {
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .floating-text-bubble {
+                font-size: 0.85rem;
+                padding: 8px 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .specs-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-box {
+                padding: 15px;
+            }
+        }
+
+        /* Ensure page can scroll properly */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Reduce floating elements on small screens */
+        @media (max-height: 600px) {
+            .floating-text-bubble:nth-child(n+5) {
+                display: none;
             }
         }
     </style>
@@ -310,176 +349,163 @@
     <div class="floating-text-bubble">Future Energy</div>
 </div>
 
-<form class="form-box" method="POST" action="{{ url_for('fetch_routes') }}">
-    <div class="header">
-        <h1>IndianOil <span class="logo-text">Smart Marg</span></h1>
-    </div>
-
-    <div class="section-title">
-        <i class="fa-solid fa-industry"></i>
-        <span>Terminal Location</span>
-    </div>
-    
-    <label for="landmark_name">IOCL Terminal</label>
-    <input type="text" id="landmark_name" list="landmarkList" placeholder="Start typing terminal name...">
-    <datalist id="landmarkList">
-        {% for lm in landmarks %}
-            <option value="{{ lm['name'] }}">
-        {% endfor %}
-    </datalist>
-
-    <label for="source">Terminal Coordinates</label>
-    <input type="text" name="source" id="source" placeholder="Enter coordinates (lat, lng) or select from above" required>
-    <div class="coord-helper">Example: 28.6139, 77.2090</div>
-
-    <div class="section-title">
-        <i class="fa-solid fa-gas-pump"></i>
-        <span>RO Location</span>
-    </div>
-
-    <label for="destination">RO Coordinates</label>
-    <input type="text" name="destination" id="destination" placeholder="Enter coordinates manually (lat, lng)" required>
-    <div class="coord-helper">Example: 19.0760, 72.8777</div>
-
-    <div class="section-title">
-        <i class="fa-solid fa-truck-fast"></i>
-        <span>Truck Tanker (TT) Specifications</span>
-    </div>
-    
-    <label for="tt_type">Select TT Capacity Range</label>
-    <select id="tt_type" name="tt_type" required onchange="showTTSpecs()">
-        <option value="">Choose TT Capacity</option>
-        {% if tt_specifications %}
-        {% for tt_key, tt_data in tt_specifications.items() %}
-        <option value="{{ tt_key }}" 
-                data-capacity="{{ tt_data.avg_capacity_liters }}"
-                data-product-weight="{{ tt_data.product_weight }}"
-                data-tare-weight="{{ tt_data.tare_weight }}"
-                data-gross-weight="{{ tt_data.gross_weight }}"
-                data-axle-load="{{ tt_data.axle_load }}"
-                data-max-speed="{{ tt_data.max_speed }}"
-                data-risk-multiplier="{{ tt_data.risk_multiplier }}"
-                data-turn-sensitivity="{{ tt_data.turn_sensitivity }}">
-            {{ tt_data.capacity_range }} ({{ "%.1f"|format(tt_data.gross_weight/1000) }}T)
-        </option>
-        {% endfor %}
-        {% else %}
-        <option value="12-16KL">12-16 KL (21.1T)</option>
-        <option value="16-20KL">16-20 KL (25.7T)</option>
-        <option value="20-24KL">20-24 KL (30.3T)</option>
-        <option value="24-30KL">24-30 KL (35.8T)</option>
-        <option value="30KL+">30+ KL (44.5T)</option>
-        {% endif %}
-    </select>
-
-    <div id="ttSpecsDisplay" class="tt-specs-display">
-        <div class="specs-title">
-            <i class="fas fa-truck"></i>
-            <span>Selected TT Specifications</span>
+<div class="container">
+    <form class="form-box" method="POST" action="">
+        <div class="header">
+            <h1>IndianOil <span class="logo-text">Smart Marg</span></h1>
         </div>
-        <div class="specs-grid">
-            <div class="spec-item">
-                <div class="icon"><i class="fas fa-gas-pump"></i></div>
-                <div class="value" id="specCapacity">-</div>
-                <div class="label">Fuel Capacity</div>
-            </div>
-            <div class="spec-item">
-                <div class="icon"><i class="fas fa-weight-hanging"></i></div>
-                <div class="value" id="specGrossWeight">-</div>
-                <div class="label">Gross Weight</div>
-            </div>
-            <div class="spec-item">
-                <div class="icon"><i class="fas fa-oil-can"></i></div>
-                <div class="value" id="specProductWeight">-</div>
-                <div class="label">Product Weight</div>
-            </div>
-            <div class="spec-item">
-                <div class="icon"><i class="fas fa-truck"></i></div>
-                <div class="value" id="specTareWeight">-</div>
-                <div class="label">Tare Weight</div>
-            </div>
-            <div class="spec-item">
-                <div class="icon"><i class="fas fa-balance-scale"></i></div>
-                <div class="value" id="specAxleLoad">-</div>
-                <div class="label">Axle Load</div>
-            </div>
-            <div class="spec-item">
-                <div class="icon"><i class="fas fa-tachometer-alt"></i></div>
-                <div class="value" id="specMaxSpeed">-</div>
-                <div class="label">Max Speed</div>
-            </div>
-        </div>
-        <div class="warning-box" id="warningBox" style="display: none;">
-            <i class="fas fa-exclamation-triangle"></i>
-            <span id="warningText"></span>
-        </div>
-    </div>
 
-    <button type="submit">
-        <i class="fa-solid fa-route"></i> Generate Smart Routes
-    </button>
-    
-    <div class="footer">
-        © 2025 IndianOil Corporation Ltd. - Truck Tanker Safety Navigation
-    </div>
-</form>
+        <div class="section-title">
+            <i class="fa-solid fa-industry"></i>
+            <span>Terminal Location</span>
+        </div>
+        
+        <label for="landmark_name">IOCL Terminal</label>
+        <input type="text" id="landmark_name" list="landmarkList" placeholder="Start typing terminal name...">
+        <datalist id="landmarkList">
+            <option value="Jamnagar Terminal">
+            <option value="Mumbai Terminal">
+            <option value="Delhi Terminal">
+            <option value="Kolkata Terminal">
+            <option value="Chennai Terminal">
+            <option value="Bangalore Terminal">
+            <option value="Hyderabad Terminal">
+            <option value="Pune Terminal">
+        </datalist>
+
+        <label for="source">Terminal Coordinates</label>
+        <input type="text" name="source" id="source" placeholder="Enter coordinates (lat, lng) or select from above" required>
+        <div class="coord-helper">Example: 28.6139, 77.2090</div>
+
+        <div class="section-title">
+            <i class="fa-solid fa-gas-pump"></i>
+            <span>RO Location</span>
+        </div>
+
+        <label for="destination">RO Coordinates</label>
+        <input type="text" name="destination" id="destination" placeholder="Enter coordinates manually (lat, lng)" required>
+        <div class="coord-helper">Example: 19.0760, 72.8777</div>
+
+        <div class="section-title">
+            <i class="fa-solid fa-truck-fast"></i>
+            <span>Truck Tanker (TT) Specifications</span>
+        </div>
+        
+        <label for="tt_type">Select TT Capacity Range</label>
+        <select id="tt_type" name="tt_type" required onchange="showTTSpecs()">
+            <option value="">Choose TT Capacity</option>
+            <option value="12-16KL" 
+                    data-capacity="14000"
+                    data-product-weight="12600"
+                    data-tare-weight="8500"
+                    data-gross-weight="21100"
+                    data-axle-load="10.5"
+                    data-max-speed="60">
+                12-16 KL (21.1T)
+            </option>
+            <option value="16-20KL"
+                    data-capacity="18000"
+                    data-product-weight="16200"
+                    data-tare-weight="9500"
+                    data-gross-weight="25700"
+                    data-axle-load="12.85"
+                    data-max-speed="55">
+                16-20 KL (25.7T)
+            </option>
+            <option value="20-24KL"
+                    data-capacity="22000"
+                    data-product-weight="19800"
+                    data-tare-weight="10500"
+                    data-gross-weight="30300"
+                    data-axle-load="15.15"
+                    data-max-speed="50">
+                20-24 KL (30.3T)
+            </option>
+            <option value="24-30KL"
+                    data-capacity="27000"
+                    data-product-weight="24300"
+                    data-tare-weight="11500"
+                    data-gross-weight="35800"
+                    data-axle-load="17.9"
+                    data-max-speed="45">
+                24-30 KL (35.8T)
+            </option>
+            <option value="30KL+"
+                    data-capacity="35000"
+                    data-product-weight="31500"
+                    data-tare-weight="13000"
+                    data-gross-weight="44500"
+                    data-axle-load="22.25"
+                    data-max-speed="40">
+                30+ KL (44.5T)
+            </option>
+        </select>
+
+        <div id="ttSpecsDisplay" class="tt-specs-display">
+            <div class="specs-title">
+                <i class="fas fa-truck"></i>
+                <span>Selected TT Specifications</span>
+            </div>
+            <div class="specs-grid">
+                <div class="spec-item">
+                    <div class="icon"><i class="fas fa-gas-pump"></i></div>
+                    <div class="value" id="specCapacity">-</div>
+                    <div class="label">Capacity</div>
+                </div>
+                <div class="spec-item">
+                    <div class="icon"><i class="fas fa-weight-hanging"></i></div>
+                    <div class="value" id="specGrossWeight">-</div>
+                    <div class="label">Gross Wt</div>
+                </div>
+                <div class="spec-item">
+                    <div class="icon"><i class="fas fa-oil-can"></i></div>
+                    <div class="value" id="specProductWeight">-</div>
+                    <div class="label">Product Wt</div>
+                </div>
+                <div class="spec-item">
+                    <div class="icon"><i class="fas fa-truck"></i></div>
+                    <div class="value" id="specTareWeight">-</div>
+                    <div class="label">Tare Wt</div>
+                </div>
+                <div class="spec-item">
+                    <div class="icon"><i class="fas fa-balance-scale"></i></div>
+                    <div class="value" id="specAxleLoad">-</div>
+                    <div class="label">Axle Load</div>
+                </div>
+                <div class="spec-item">
+                    <div class="icon"><i class="fas fa-tachometer-alt"></i></div>
+                    <div class="value" id="specMaxSpeed">-</div>
+                    <div class="label">Max Speed</div>
+                </div>
+            </div>
+            <div class="warning-box" id="warningBox" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span id="warningText"></span>
+            </div>
+        </div>
+
+        <button type="submit">
+            <i class="fa-solid fa-route"></i> Generate Smart Routes
+        </button>
+        
+        <div class="footer">
+            © 2025 IndianOil Corporation Ltd. - Truck Tanker Safety Navigation
+        </div>
+    </form>
+</div>
 
 <script>
-    const landmarkData = {{ landmarks | tojson if landmarks else [] }};
-    
-    // TT Specifications (fallback if not provided by backend)
-    const ttSpecifications = {
-        "12-16KL": {
-            capacity: 14000,
-            productWeight: 12600,
-            tareWeight: 8500,
-            grossWeight: 21100,
-            axleLoad: 10.5,
-            maxSpeed: 60,
-            riskMultiplier: 1.0,
-            turnSensitivity: 1.0
-        },
-        "16-20KL": {
-            capacity: 18000,
-            productWeight: 16200,
-            tareWeight: 9500,
-            grossWeight: 25700,
-            axleLoad: 12.85,
-            maxSpeed: 55,
-            riskMultiplier: 1.2,
-            turnSensitivity: 1.15
-        },
-        "20-24KL": {
-            capacity: 22000,
-            productWeight: 19800,
-            tareWeight: 10500,
-            grossWeight: 30300,
-            axleLoad: 15.15,
-            maxSpeed: 50,
-            riskMultiplier: 1.4,
-            turnSensitivity: 1.3
-        },
-        "24-30KL": {
-            capacity: 27000,
-            productWeight: 24300,
-            tareWeight: 11500,
-            grossWeight: 35800,
-            axleLoad: 17.9,
-            maxSpeed: 45,
-            riskMultiplier: 1.6,
-            turnSensitivity: 1.5
-        },
-        "30KL+": {
-            capacity: 35000,
-            productWeight: 31500,
-            tareWeight: 13000,
-            grossWeight: 44500,
-            axleLoad: 22.25,
-            maxSpeed: 40,
-            riskMultiplier: 2.0,
-            turnSensitivity: 1.8
-        }
-    };
+    // Sample landmark data
+    const landmarkData = [
+        { name: "Jamnagar Terminal", lat: 22.4707, lng: 70.0577 },
+        { name: "Mumbai Terminal", lat: 19.0760, lng: 72.8777 },
+        { name: "Delhi Terminal", lat: 28.6139, lng: 77.2090 },
+        { name: "Kolkata Terminal", lat: 22.5726, lng: 88.3639 },
+        { name: "Chennai Terminal", lat: 13.0827, lng: 80.2707 },
+        { name: "Bangalore Terminal", lat: 12.9716, lng: 77.5946 },
+        { name: "Hyderabad Terminal", lat: 17.3850, lng: 78.4867 },
+        { name: "Pune Terminal", lat: 18.5204, lng: 73.8567 }
+    ];
     
     document.getElementById('landmark_name').addEventListener('input', function () {
         const name = this.value;
@@ -504,44 +530,32 @@
         const warningText = document.getElementById('warningText');
         
         if (selectedOption.value) {
-            // Get data from HTML attributes or fallback to JS object
-            let specs;
-            if (selectedOption.dataset.capacity) {
-                specs = {
-                    capacity: parseInt(selectedOption.dataset.capacity),
-                    productWeight: parseInt(selectedOption.dataset.productWeight),
-                    tareWeight: parseInt(selectedOption.dataset.tareWeight),
-                    grossWeight: parseInt(selectedOption.dataset.grossWeight),
-                    axleLoad: parseFloat(selectedOption.dataset.axleLoad),
-                    maxSpeed: parseInt(selectedOption.dataset.maxSpeed),
-                    riskMultiplier: parseFloat(selectedOption.dataset.riskMultiplier),
-                    turnSensitivity: parseFloat(selectedOption.dataset.turnSensitivity)
-                };
+            const capacity = parseInt(selectedOption.dataset.capacity);
+            const productWeight = parseInt(selectedOption.dataset.productWeight);
+            const tareWeight = parseInt(selectedOption.dataset.tareWeight);
+            const grossWeight = parseInt(selectedOption.dataset.grossWeight);
+            const axleLoad = parseFloat(selectedOption.dataset.axleLoad);
+            const maxSpeed = parseInt(selectedOption.dataset.maxSpeed);
+            
+            document.getElementById('specCapacity').textContent = capacity.toLocaleString() + ' L';
+            document.getElementById('specGrossWeight').textContent = (grossWeight / 1000).toFixed(1) + ' T';
+            document.getElementById('specProductWeight').textContent = (productWeight / 1000).toFixed(1) + ' T';
+            document.getElementById('specTareWeight').textContent = (tareWeight / 1000).toFixed(1) + ' T';
+            document.getElementById('specAxleLoad').textContent = axleLoad.toFixed(1) + ' T';
+            document.getElementById('specMaxSpeed').textContent = maxSpeed + ' kmph';
+            
+            // Show warnings for heavy TT
+            if (grossWeight > 35000) {
+                warningBox.style.display = 'flex';
+                warningText.textContent = 'Heavy TT: Check bridge limits, reduce speed at turns.';
+            } else if (grossWeight > 25000) {
+                warningBox.style.display = 'flex';
+                warningText.textContent = 'Medium TT: Monitor axle loads and speed limits.';
             } else {
-                specs = ttSpecifications[selectedOption.value];
+                warningBox.style.display = 'none';
             }
             
-            if (specs) {
-                document.getElementById('specCapacity').textContent = specs.capacity.toLocaleString() + ' L';
-                document.getElementById('specGrossWeight').textContent = (specs.grossWeight / 1000).toFixed(1) + ' T';
-                document.getElementById('specProductWeight').textContent = (specs.productWeight / 1000).toFixed(1) + ' T';
-                document.getElementById('specTareWeight').textContent = (specs.tareWeight / 1000).toFixed(1) + ' T';
-                document.getElementById('specAxleLoad').textContent = specs.axleLoad.toFixed(1) + ' T';
-                document.getElementById('specMaxSpeed').textContent = specs.maxSpeed + ' kmph';
-                
-                // Show warnings for heavy TT
-                if (specs.grossWeight > 35000) {
-                    warningBox.style.display = 'flex';
-                    warningText.textContent = 'Heavy TT: Check bridge weight limits, reduce speed at turns, extra caution required.';
-                } else if (specs.grossWeight > 25000) {
-                    warningBox.style.display = 'flex';
-                    warningText.textContent = 'Medium TT: Monitor axle load limits and follow speed recommendations.';
-                } else {
-                    warningBox.style.display = 'none';
-                }
-                
-                display.classList.add('active');
-            }
+            display.classList.add('active');
         } else {
             display.classList.remove('active');
         }
