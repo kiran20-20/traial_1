@@ -9,4 +9,4 @@ pandas
 openpyxl
 numpy
 geopy
-
+pyttsx3
