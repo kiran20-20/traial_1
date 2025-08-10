@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, session, redirect, url_for, s
 import googlemaps
 import polyline
 import folium
-from datetime import datetime, timedelta
+from datetime import datetime
 from flask_session import Session
 from branca.element import Template, MacroElement
 import os
@@ -414,6 +414,82 @@ def extract_distance_km(distance_text):
     except (ValueError, AttributeError, IndexError):
         return 1
 
+def generate_pois(center_lat, center_lng):
+    """Generate mock POIs for the route"""
+    pois = []
+    
+    # Mock POIs (in a real app, this would use a Places API)
+    poi_types = ['hospital', 'fuel', 'police']
+    for _ in range(20):  # Generate 20 mock POIs
+        poi_type = np.random.choice(poi_types)
+        lat = center_lat + np.random.uniform(-0.1, 0.1)
+        lng = center_lng + np.random.uniform(-0.1, 0.1)
+        pois.append({
+            'location': (lat, lng),
+            'type': poi_type,
+            'name': f"Mock {poi_type.capitalize()} {uuid4().hex[:4]}"
+        })
+    return pois
+
+def generate_map(coords, risk_zones, traffic_data, pois, tt_specs, map_filename):
+    """Generate a detailed Folium map with all layers and save it"""
+    try:
+        # Create the map centered on the route
+        m = folium.Map(location=coords[0], zoom_start=12, tiles="cartodbpositron")
+        
+        # Add the route polyline with TT-specific styling
+        route_color = 'red' if tt_specs["gross_weight"] > 35000 else 'orange' if tt_specs["gross_weight"] > 25000 else 'blue'
+        folium.PolyLine(coords, color=route_color, weight=6, opacity=0.7,
+                        popup=f"TT Type: {tt_specs['capacity_range']}").add_to(m)
+
+        # Add risk zones as circles
+        for zone in risk_zones:
+            risk_color = {'Critical': 'red', 'High': 'orange', 'Medium': 'yellow'}.get(zone['risk_level'], 'yellow')
+            folium.CircleMarker(
+                location=zone['location'],
+                radius=10,
+                color=risk_color,
+                fill=True,
+                fill_color=risk_color,
+                fill_opacity=0.6,
+                popup=f"<strong>Risk Zone: {zone['risk_level']}</strong><br>" + "<br>".join(zone['risk_factors'])
+            ).add_to(m)
+        
+        # Add traffic data as colored circles
+        for traffic in traffic_data:
+            traffic_color = {'heavy': 'red', 'moderate': 'orange', 'light': 'green'}.get(traffic['traffic_level'], 'green')
+            folium.Circle(
+                location=traffic['location'],
+                radius=50, # 50 meters
+                color=traffic_color,
+                fill=True,
+                fill_color=traffic_color,
+                fill_opacity=0.4,
+                popup=f"Traffic: {traffic['traffic_level']}"
+            ).add_to(m)
+            
+        # Add Points of Interest (POIs) with custom icons
+        for poi in pois:
+            icon_type = {'hospital': 'fa-hospital', 'fuel': 'fa-gas-pump', 'police': 'fa-shield-alt'}.get(poi['type'], 'fa-info-circle')
+            icon_color = {'hospital': 'red', 'fuel': 'darkgreen', 'police': 'blue'}.get(poi['type'], 'black')
+            folium.Marker(
+                location=poi['location'],
+                icon=folium.Icon(color=icon_color, icon=icon_type, prefix='fa'),
+                popup=f"<strong>{poi['name']}</strong><br>Type: {poi['type'].capitalize()}"
+            ).add_to(m)
+            
+        # Fit map to bounds of the route
+        m.fit_bounds(m.get_bounds())
+        
+        # Save the map to a file in the templates folder
+        m.save(f"templates/{map_filename}")
+        
+    except Exception as e:
+        print(f"Error generating map: {e}")
+        # In case of error, save a simple blank map
+        m = folium.Map(location=coords[0], zoom_start=12)
+        m.save(f"templates/{map_filename}")
+
 @app.route('/health')
 def health():
     """Simple health check endpoint"""
@@ -428,16 +504,11 @@ def test():
 def home():
     """Main route form page"""
     try:
-        # Load IOCL Landmarks with data validation
         landmarks = []
-        
-        # Try to load from Excel file, but handle gracefully if it doesn't exist
         try:
             df_iocl = pd.read_excel("IOCL_Landmark_Details.xlsx")
-            
             for _, row in df_iocl.iterrows():
                 try:
-                    # Validate and convert coordinates
                     lat = float(row['Latitude']) if pd.notna(row['Latitude']) else None
                     lng = float(row['Longitude']) if pd.notna(row['Longitude']) else None
                     name = str(row['Landmark Name']).strip() if pd.notna(row['Landmark Name']) else None
@@ -448,27 +519,19 @@ def home():
                             'lat': lat,
                             'lng': lng
                         })
-                except (ValueError, TypeError) as e:
-                    print(f"Skipping invalid landmark row: {e}")
+                except (ValueError, TypeError):
                     continue
-                    
-            print(f"Loaded {len(landmarks)} landmarks from Excel file")
-            
         except FileNotFoundError:
-            print("IOCL_Landmark_Details.xlsx not found, using sample landmarks")
-            # Provide some sample landmarks if file doesn't exist
+            print("IOCL_Landmark_Details.xlsx not found, using sample landmarks.")
             landmarks = [
                 {'name': 'Delhi Terminal', 'lat': 28.6139, 'lng': 77.2090},
                 {'name': 'Mumbai Terminal', 'lat': 19.0760, 'lng': 72.8777},
-                {'name': 'Bangalore Terminal', 'lat': 12.9716, 'lng': 77.5946},
-                {'name': 'Chennai Terminal', 'lat': 13.0827, 'lng': 80.2707},
-                {'name': 'Kolkata Terminal', 'lat': 22.5726, 'lng': 88.3639}
+                {'name': 'Bangalore Terminal', 'lat': 12.9716, 'lng': 77.5946}
             ]
         except Exception as e:
             print(f"Error loading Excel file: {e}")
             landmarks = []
 
-        # Pass landmarks and TT specifications to template
         return render_template(
             "route_form.html",
             landmarks=landmarks,
@@ -477,47 +540,23 @@ def home():
         )
         
     except Exception as e:
-        print(f"Error loading data: {e}")
         import traceback
         traceback.print_exc()
-        # Return a simple fallback page if everything fails
-        tt_options = ""
-        for tt_key, tt_data in TT_SPECIFICATIONS.items():
-            tt_options += f'<option value="{tt_key}">{tt_data["capacity_range"]} ({tt_data["gross_weight"]/1000:.1f}T)</option>'
-        
-        gmaps_status = "✓ Available" if gmaps else "✗ Not Available (Check API Key)"
-        
-        return f"""
-        <html><body>
-        <h2>IndianOil Smart Marg - Truck Tanker Navigation</h2>
-        <p>Status: Google Maps {gmaps_status}</p>
-        <form method="POST" action="/fetch_routes">
-            <p>Source: <input type="text" name="source" placeholder="lat,lng" required></p>
-            <p>Destination: <input type="text" name="destination" placeholder="lat,lng" required></p>
-            <p>Truck Tanker Type: 
-                <select name="tt_type" required>
-                    <option value="">Choose TT Capacity</option>
-                    {tt_options}
-                </select>
-            </p>
-            <button type="submit">Generate Routes</button>
-        </form>
-        <p>Note: {str(e)}</p>
-        </body></html>
-        """
+        return render_template("error_page.html",
+                               error="An unexpected error occurred",
+                               message="The application encountered an error while loading the home page.",
+                               back_url=url_for('home'))
 
 @app.route('/fetch_routes', methods=['POST'])
 def fetch_routes():
     """Generate routes based on form input with validation"""
     try:
-        # Check if Google Maps is available
         if not gmaps:
             return render_template("error_page.html",
                                    error="Service unavailable",
                                    message="Google Maps service is not available. Please check the API key configuration.",
                                    back_url=url_for('home'))
 
-        # Clear session and old route files
         session.clear()
         for f in glob.glob("templates/route_preview_*.html"):
             try:
@@ -530,20 +569,16 @@ def fetch_routes():
             except:
                 pass
 
-        # Get form data
         source = request.form['source'].strip()
         destination = request.form['destination'].strip()
         tt_type = request.form['tt_type']
 
-        # Get TT specifications
         tt_specs = get_tt_specs(tt_type)
 
-        # Validate coordinates
         try:
             source_coords = tuple(map(float, source.split(',')))
             dest_coords = tuple(map(float, destination.split(',')))
             
-            # Basic coordinate validation
             if not (-90 <= source_coords[0] <= 90 and -180 <= source_coords[1] <= 180):
                 return render_template("error_page.html",
                                        error="Invalid source coordinates",
@@ -556,15 +591,12 @@ def fetch_routes():
                                        message="Destination latitude must be between -90 and 90, longitude between -180 and 180",
                                        back_url=url_for('home'))
                                        
-        except ValueError:
+        except (ValueError, IndexError):
             return render_template("error_page.html",
                                    error="Invalid coordinate format",
                                    message="Please use the format: latitude,longitude (e.g., 28.6139,77.2090)",
                                    back_url=url_for('home'))
 
-        # Get routes from Google Maps
-        print(f"Requesting routes from {source_coords} to {dest_coords}")
-        
         try:
             directions = gmaps.directions(
                 source_coords, dest_coords,
@@ -577,7 +609,7 @@ def fetch_routes():
             print(f"Google Maps API error: {api_error}")
             return render_template("error_page.html",
                                    error="Route service error",
-                                   message="Unable to fetch routes from Google Maps. Please check your internet connection and try again.",
+                                   message="Unable to fetch routes from Google Maps. Please check your internet connection and API key.",
                                    back_url=url_for('home'))
 
         if not directions:
@@ -586,23 +618,17 @@ def fetch_routes():
                                    message="No driving routes could be found between the specified locations.",
                                    back_url=url_for('home'))
 
-        print(f"Found {len(directions)} routes")
-
-        # Validate route distances
         valid_routes = []
         for i, route in enumerate(directions):
             try:
                 distance_text = route['legs'][0]['distance']['text']
                 distance_km = extract_distance_km(distance_text)
                 
-                # Check distance limit for safety
                 if distance_km > 500:
-                    print(f"Route {i+1} exceeds 500km limit: {distance_text}")
                     continue
                 
                 valid_routes.append((i, route, distance_km))
-            except Exception as e:
-                print(f"Error processing route {i}: {e}")
+            except Exception:
                 continue
 
         if not valid_routes:
@@ -611,7 +637,6 @@ def fetch_routes():
                                    message="All available routes exceed the 500 km safety limit for truck tanker operations. Please provide a shorter route.",
                                    back_url=url_for('home'))
 
-        # Store in session
         session['directions'] = directions
         session['source'] = source_coords
         session['destination'] = dest_coords
@@ -620,7 +645,6 @@ def fetch_routes():
         session['valid_route_indices'] = [route[0] for route in valid_routes]
         session.modified = True
 
-        # Process routes for selection
         routes = []
         for original_index, route, distance_km in valid_routes:
             try:
@@ -629,23 +653,16 @@ def fetch_routes():
                 duration = route['legs'][0]['duration']['text']
                 summary = route.get('summary', f"Route {len(routes)+1}")
 
-                # Create preview map
                 unique_id = uuid4().hex
                 preview_file = f"route_preview_{original_index}_{unique_id}.html"
+                
                 m = folium.Map(location=coords[len(coords)//2], zoom_start=10)
-                
-                # Add route with weight-based color
                 route_color = 'red' if tt_specs["gross_weight"] > 35000 else 'orange' if tt_specs["gross_weight"] > 25000 else 'blue'
-                folium.PolyLine(coords, color=route_color, weight=5,
-                                 popup=f"TT {tt_specs['capacity_range']} - {tt_specs['gross_weight']/1000:.1f}T").add_to(m)
+                folium.PolyLine(coords, color=route_color, weight=5, popup=f"TT {tt_specs['capacity_range']}").add_to(m)
+                folium.Marker(source_coords, popup='Start', icon=folium.Icon(color='green', icon='play', prefix='fa')).add_to(m)
+                folium.Marker(dest_coords, popup='End', icon=folium.Icon(color='red', icon='stop', prefix='fa')).add_to(m)
                 
-                # Add markers
-                folium.Marker(source_coords, popup='Start',
-                                 icon=folium.Icon(color='green', icon='play')).add_to(m)
-                folium.Marker(dest_coords, popup='End',
-                                 icon=folium.Icon(color='red', icon='stop')).add_to(m)
-                
-                m.save(f"templates/{preview_file}")
+                m.save(os.path.join(app.root_path, 'templates', preview_file))
 
                 routes.append({
                     'index': original_index,
@@ -653,27 +670,29 @@ def fetch_routes():
                     'duration': duration,
                     'summary': summary,
                     'preview_file': preview_file,
-                    'tt_info': f"TT {tt_specs['capacity_range']} - {tt_specs['gross_weight']/1000:.1f}T",
+                    'tt_info': f"{tt_specs['capacity_range']} ({tt_specs['gross_weight']/1000:.1f}T)",
                     'distance_km': distance_km
                 })
-            except Exception as e:
-                print(f"Error processing route {original_index}: {e}")
+            except Exception:
                 continue
 
         if not routes:
             return render_template("error_page.html",
                                    error="Route processing failed",
-                                   message="Routes were found but could not be processed. Please try again.",
+                                   message="Routes were found but could not be processed for display. Please try again.",
                                    back_url=url_for('home'))
 
-        return render_template("route_selection.html", routes=routes, tt_info=f"{tt_specs['capacity_range']} ({tt_specs['gross_weight']/1000:.1f}T)")
+        return render_template("route_selection.html", 
+                               routes=routes, 
+                               tt_info=f"{tt_specs['capacity_range']} ({tt_specs['gross_weight']/1000:.1f}T)",
+                               total_routes_found=len(directions))
         
     except Exception as e:
         import traceback
         traceback.print_exc()
         return render_template("error_page.html",
                                error="An unexpected error occurred",
-                               message=str(e),
+                               message=f"An unexpected error occurred: {str(e)}",
                                back_url=url_for('home'))
 
 @app.route('/analyze_route/<int:route_index>')
@@ -688,95 +707,52 @@ def analyze_route(route_index):
     if not directions or not tt_specs or route_index not in valid_route_indices:
         return render_template("error_page.html",
                                error="Invalid route",
-                               message="The selected route is no longer available or an error occurred.",
+                               message="The selected route is no longer available or an error occurred. Please go back and select a new route.",
                                back_url=url_for('home'))
-                               
-    try:
-        selected_route = directions[route_index]
-        route_coords = polyline.decode(selected_route['overview_polyline']['points'])
-        total_distance = selected_route['legs'][0]['distance']['text']
-        total_duration = selected_route['legs'][0]['duration']['text']
 
-        # Get relevant POIs along the route
-        # Using a simulated list for this example
-        pois = [
-            {'location': (28.6139, 77.2090), 'type': 'hospital', 'name': 'Delhi Hospital'},
-            {'location': (28.625, 77.215), 'type': 'fuel', 'name': 'IOCL Fuel Pump'},
-            {'location': (28.59, 77.19), 'type': 'police', 'name': 'Delhi Police Station'},
-            # Add more simulated POIs as needed
-        ]
+    route_data = directions[route_index]
+    
+    try:
+        coords = polyline.decode(route_data['overview_polyline']['points'])
+        total_distance = route_data['legs'][0]['distance']['text']
+        total_duration = route_data['legs'][0]['duration']['text']
         
-        # Interpolate coordinates for finer analysis
-        interpolated_coords = interpolate_route_points(route_coords)
-        
-        # Analyze route for risks, traffic, and speed
+        # Mocking data for analysis
+        pois = generate_pois((source_coords[0] + dest_coords[0]) / 2, (source_coords[1] + dest_coords[1]) / 2)
+        interpolated_coords = interpolate_route_points(coords, points_per_km=20)
         risk_zones = identify_high_risk_zones(interpolated_coords, pois, tt_specs)
         traffic_data = get_traffic_data(interpolated_coords)
-        
-        # Create final map with all data layers
-        m = folium.Map(location=source_coords, zoom_start=10)
-
-        # Add route line
-        route_color = 'red' if tt_specs["gross_weight"] > 35000 else 'orange' if tt_specs["gross_weight"] > 25000 else 'blue'
-        folium.PolyLine(interpolated_coords, color=route_color, weight=5, opacity=0.7).add_to(m)
-
-        # Add start and end markers
-        folium.Marker(source_coords, popup=f"Source: {source_coords}", icon=folium.Icon(color='green', icon='play')).add_to(m)
-        folium.Marker(dest_coords, popup=f"Destination: {dest_coords}", icon=folium.Icon(color='red', icon='stop')).add_to(m)
-        
-        # Add risk zones with custom icons and popups
-        for zone in risk_zones:
-            folium.CircleMarker(
-                location=zone['location'],
-                radius=10,
-                color='red',
-                fill=True,
-                fill_color='red',
-                fill_opacity=0.6,
-                popup=f"<b>Risk Level: {zone['risk_level']}</b><br>"
-                      f"Score: {zone['risk_score']:.1f}<br>"
-                      f"Factors: {', '.join(zone['risk_factors'])}<br>"
-                      f"TT Impact: {zone['tt_impact']}x"
-            ).add_to(m)
-            
-        # Add traffic data as colored circles
-        for traffic in traffic_data:
-            color = 'green' if traffic['traffic_level'] == 'light' else 'orange' if traffic['traffic_level'] == 'moderate' else 'red'
-            folium.CircleMarker(
-                location=traffic['location'],
-                radius=5,
-                color=color,
-                fill=True,
-                fill_color=color,
-                fill_opacity=0.4,
-                popup=f"Traffic: {traffic['traffic_level']}"
-            ).add_to(m)
-
-        # Generate report
         report = generate_route_report(interpolated_coords, pois, risk_zones, traffic_data, total_distance, total_duration, tt_specs)
-
-        # Save the map to a temporary file
-        map_file = f"route_map_{uuid4().hex}.html"
-        m.save(f"templates/{map_file}")
         
-        return render_template("route_detail.html",
-                               report=report,
-                               map_file=map_file,
-                               tt_type=tt_specs['capacity_range'])
-
+        unique_id = uuid4().hex
+        map_filename = f"route_map_{route_index}_{unique_id}.html"
+        generate_map(coords, risk_zones, traffic_data, pois, tt_specs, map_filename)
+        
+        return render_template("route_analysis.html", 
+                               report=report, 
+                               map_filename=map_filename,
+                               source=source_coords,
+                               destination=dest_coords)
     except Exception as e:
-        print(f"Error during route analysis: {e}")
         import traceback
         traceback.print_exc()
         return render_template("error_page.html",
-                               error="Analysis Failed",
-                               message="An error occurred while analyzing the route. Please try a different route.",
+                               error="Route analysis failed",
+                               message=f"Could not analyze the selected route due to an error: {str(e)}",
                                back_url=url_for('home'))
+        
+@app.route('/view_preview/<path:filename>')
+def view_preview(filename):
+    """Serve a specific generated HTML map file"""
+    return send_from_directory('templates', filename)
 
-@app.route('/uploads/<path:filename>')
+@app.route('/serve_file/<path:filename>')
 def serve_file(filename):
-    """Serve temporary map files"""
+    """Serve a specific generated HTML file for map previews"""
     return send_from_directory('templates', filename)
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # Ensure a 'templates' directory exists
+    if not os.path.exists('templates'):
+        os.makedirs('templates')
+    app.run(debug=True, port=os.environ.get("PORT", 5000))
