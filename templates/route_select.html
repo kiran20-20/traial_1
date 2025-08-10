@@ -250,28 +250,26 @@
     </style>
 </head>
 <body>
-    <!-- Page loading overlay -->
     <div class="page-loading-overlay" id="pageLoadingOverlay"></div>
     
     <h2 style="text-align: center; margin-bottom: 20px;">
         <i class="fas fa-route"></i> Select the Route You Prefer
     </h2>
     
-    <!-- Validation Information Header -->
     <div class="header-info">
         <div class="validation-info">
             <div class="validation-item validation-success">
                 <i class="fas fa-check-circle"></i>
-                <span><strong>{{ valid_routes_count }}</strong> valid route(s) found from {{ total_routes_found }} total</span>
+                <span><strong>{{ routes | length }}</strong> valid route(s) found from {{ directions | length }} total</span>
             </div>
             
             <div class="validation-item">
                 <i class="fas fa-truck"></i>
-                <span>TT Type: <strong>{{ tt_specs.capacity_range }}</strong> ({{ "%.1f"|format(tt_specs.gross_weight/1000) }}T)</span>
+                <span>TT Type: <strong>{{ tt_info }}</strong></span>
             </div>
             
             <div class="distance-limit">
-                <i class="fas fa-ruler-combined"></i> Max Distance: {{ max_distance_km }} km
+                <i class="fas fa-ruler-combined"></i> Max Distance: 500 km
             </div>
         </div>
     </div>
@@ -312,8 +310,7 @@
                 </div>
                 {% endif %}
                 
-                <form method="POST" action="{{ url_for('analyze_route') }}" class="route-form">
-                    <input type="hidden" name="route_index" value="{{ route.index }}">
+                <form method="GET" action="{{ url_for('analyze_route', route_index=route.index) }}" class="route-form">
                     <button type="submit" class="route-button">
                         <span class="button-text">
                             <i class="fas fa-search"></i> Analyze This Route
@@ -325,7 +322,7 @@
                 </form>
             </div>
             <div class="route-map">
-                <iframe src="{{ url_for('view_preview', filename=route.preview_file) }}?v={{ loop.index }}" 
+                <iframe src="{{ url_for('serve_file', filename=route.preview_file) }}" 
                         title="Route {{ loop.index }} Preview Map"></iframe>
             </div>
         </div>
