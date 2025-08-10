@@ -608,7 +608,7 @@ def fetch_routes():
         if not valid_routes:
             return render_template("error_page.html",
                                    error="No suitable routes",
-                                   message="All available routes exceed the 500 km safety limit for truck tanker operations.",
+                                   message="All available routes exceed the 500 km safety limit for truck tanker operations. Please provide a shorter route.",
                                    back_url=url_for('home'))
 
         # Store in session
