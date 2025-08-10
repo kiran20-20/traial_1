@@ -6,7 +6,7 @@
     <title>IndianOil Smart Marg - Login</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* All of your original CSS */
+        /* All of your original CSS with minor adjustments for positioning */
         * {
             margin: 0;
             padding: 0;
@@ -122,22 +122,42 @@
             transition: all 0.3s ease;
             background-color: #f8f9fa;
         }
-        
-        .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
-            background-color: white;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+
+        /* --- FIX START --- */
+        /* Adjusted padding to make space for the icon on the right */
+        .form-group input#password {
+            padding-right: 50px;
         }
         
-        .form-group i {
+        /* Adjusted icon position to be inside the padding, not overlapping the input area */
+        .form-group i.show-password {
+            top: 50%;
+            transform: translateY(-50%);
+            /* Removed the margin-top that was causing the overlap */
+            margin-top: 0; 
+            right: 15px;
+            left: auto;
+            cursor: pointer;
+            color: #667eea;
+            transition: color 0.3s ease;
+        }
+        
+        .form-group i.fa-lock {
             position: absolute;
             left: 18px;
             top: 50%;
             transform: translateY(-50%);
             color: #667eea;
             font-size: 16px;
-            margin-top: 12px;
+            margin-top: 0; /* Also fixed this one for consistency */
+        }
+        /* --- FIX END --- */
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
         
         .login-btn {
@@ -268,17 +288,6 @@
             .feature-list {
                 grid-template-columns: 1fr;
             }
-        }
-        
-        .show-password {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            margin-top: 12px;
-            cursor: pointer;
-            color: #667eea;
-            transition: color 0.3s ease;
         }
         
         .show-password:hover {
