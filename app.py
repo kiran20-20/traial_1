@@ -14,6 +14,7 @@ import math
 import numpy as np
 from geopy.distance import geodesic
 import time
+from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
@@ -22,6 +23,14 @@ Session(app)
 
 API_KEY = os.environ.get("API_KEY")  # Secure access
 gmaps = googlemaps.Client(key=API_KEY)
+
+# Login credentials - modify these as needed
+LOGIN_CREDENTIALS = {
+    "admin": "iocl@123",
+    "operator": "smartmarg2025",
+    "driver": "tanker@456",
+    "supervisor": "route@789"
+}
 
 # Truck Tanker (TT) Specifications with Indian standards
 TT_SPECIFICATIONS = {
@@ -87,6 +96,15 @@ TRUCK_WEIGHT = 25.0  # Will be dynamically set
 MAX_SPEED_LIMIT = 50  # Will be dynamically set
 SAFE_TURN_ANGLE = 130  # degrees
 DANGEROUS_TURN_ANGLE = 30  # degrees
+
+def login_required(f):
+    """Decorator to require login for protected routes"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('logged_in'):
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 def get_tt_specs(tt_type):
     """Get truck tanker specifications"""
@@ -226,7 +244,7 @@ def identify_high_risk_zones(coords, pois, tt_specs):
                 pass
             
             # Check for intersections with TT-specific sensitivity
-            if i % 10 == 0 and i > 0 and i < len(coords) - 10:
+            if i % 10 == 0 and i > 0 and i < len(coords) - 1:
                 try:
                     prev_bearing = calculate_bearing(coords[i-10][0], coords[i-10][1], lat, lng)
                     next_bearing = calculate_bearing(lat, lng, coords[i+10][0], coords[i+10][1])
@@ -361,6 +379,72 @@ def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance
             ]
         }
 
+# Session timeout check
+@app.before_request
+def check_session_timeout():
+    """Check if session has expired (24 hours)"""
+    if session.get('logged_in'):
+        login_time = session.get('login_time')
+        if login_time:
+            try:
+                login_datetime = datetime.fromisoformat(login_time)
+                if datetime.now() - login_datetime > timedelta(hours=24):
+                    session.clear()
+                    return redirect(url_for('login', error='Session expired. Please login again.'))
+            except:
+                pass
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Login page and authentication"""
+    if request.method == 'POST':
+        try:
+            username = request.form['username'].strip()
+            password = request.form['password']
+            
+            # Check credentials
+            if username in LOGIN_CREDENTIALS and LOGIN_CREDENTIALS[username] == password:
+                session['logged_in'] = True
+                session['username'] = username
+                session['login_time'] = datetime.now().isoformat()
+                session.modified = True
+                
+                return redirect(url_for('home'))
+            else:
+                return redirect(url_for('login', error='Invalid username or password'))
+                
+        except Exception as e:
+            print(f"Login error: {e}")
+            return redirect(url_for('login', error='Login failed. Please try again.'))
+    
+    # GET request - show login form
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    """Logout and clear session"""
+    session.clear()
+    return redirect(url_for('login', success='Successfully logged out'))
+
+@app.route('/user_info')
+@login_required
+def user_info():
+    """Display current user information"""
+    username = session.get('username', 'Unknown')
+    login_time = session.get('login_time', 'Unknown')
+    
+    try:
+        login_datetime = datetime.fromisoformat(login_time)
+        login_formatted = login_datetime.strftime("%Y-%m-%d %H:%M:%S")
+    except:
+        login_formatted = login_time
+    
+    return {
+        'username': username,
+        'login_time': login_formatted,
+        'session_active': True
+    }
+
 @app.route('/health')
 def health():
     """Simple health check endpoint"""
@@ -372,9 +456,13 @@ def test():
     return "<h1>Flask App is Working!</h1><p>If you see this, the basic Flask setup is fine.</p>"
 
 @app.route('/')
+@login_required
 def home():
-    """Main route form page - no login required"""
+    """Main route form page - requires login"""
     try:
+        # Add username to template context
+        username = session.get('username', 'User')
+        
         # Load IOCL Landmarks with data validation
         landmarks = []
         
@@ -415,11 +503,12 @@ def home():
             print(f"Error loading Excel file: {e}")
             landmarks = []
 
-        # Pass landmarks and TT specifications to template
+        # Pass landmarks, TT specifications, and username to template
         return render_template(
             "route_form.html",
             landmarks=landmarks,
-            tt_specifications=TT_SPECIFICATIONS
+            tt_specifications=TT_SPECIFICATIONS,
+            username=username
         )
         
     except Exception as e:
@@ -427,6 +516,7 @@ def home():
         import traceback
         traceback.print_exc()
         # Return a simple fallback page if everything fails
+        username = session.get('username', 'User')
         tt_options = ""
         for tt_key, tt_data in TT_SPECIFICATIONS.items():
             tt_options += f'<option value="{tt_key}">{tt_data["capacity_range"]} ({tt_data["gross_weight"]/1000:.1f}T)</option>'
@@ -434,6 +524,7 @@ def home():
         return f"""
         <html><body>
         <h2>IndianOil Smart Marg - Truck Tanker Navigation</h2>
+        <p>Welcome, {username}! <a href="/logout">Logout</a></p>
         <p>Basic form (landmarks unavailable)</p>
         <form method="POST" action="/fetch_routes">
             <p>Source: <input type="text" name="source" placeholder="lat,lng" required></p>
@@ -451,11 +542,24 @@ def home():
         """
 
 @app.route('/fetch_routes', methods=['POST'])
+@login_required
 def fetch_routes():
     """Generate routes based on form input"""
     try:
         # Clear session and old route files
+        old_directions = session.get('directions')
+        old_route_report = session.get('route_report')
+        username = session.get('username')
+        login_time = session.get('login_time')
+        logged_in = session.get('logged_in')
+        
         session.clear()
+        
+        # Restore login session
+        session['logged_in'] = logged_in
+        session['username'] = username
+        session['login_time'] = login_time
+        
         for f in glob.glob("templates/route_preview_*.html"):
             try:
                 os.remove(f)
@@ -535,7 +639,7 @@ def fetch_routes():
                 print(f"Error processing route {i}: {e}")
                 continue
 
-        return render_template("route_select.html", routes=routes, tt_specs=tt_specs)
+        return render_template("route_select.html", routes=routes, tt_specs=tt_specs, username=username)
     
     except Exception as e:
         print(f"Error in fetch_routes: {e}")
@@ -544,11 +648,13 @@ def fetch_routes():
         return f"Error processing route request: {str(e)}"
 
 @app.route('/analyze_route', methods=['POST'])
+@login_required
 def analyze_route():
     """Analyze the selected route with TT specifications"""
     try:
         directions = session.get('directions')
         tt_specs = session.get('tt_specs')
+        username = session.get('username', 'User')
         index = int(request.form['route_index'])
 
         if not directions or index >= len(directions) or not tt_specs:
@@ -744,7 +850,8 @@ def analyze_route():
             <div style='background: #f0f0f0; padding: 8px; border-radius: 4px; margin: 8px 0;'>
                 <strong>TT Specs: {tt_specs['capacity_range']}</strong><br>
                 Capacity: {tt_specs['avg_capacity_liters']:,}L | Weight: {tt_specs['gross_weight']/1000:.1f}T<br>
-                Max Speed: {tt_specs['max_speed']} km/h | Risk: {tt_specs['risk_multiplier']}x
+                Max Speed: {tt_specs['max_speed']} km/h | Risk: {tt_specs['risk_multiplier']}x<br>
+                User: {username}
             </div>
             <div style='margin: 5px 0;'><i class="fa fa-plus fa-lg" style="color:red"></i> Hospital</div>
             <div style='margin: 5px 0;'><i class="fa fa-shield fa-lg" style="color:blue"></i> Police</div>
@@ -786,7 +893,8 @@ def analyze_route():
                                route_report=route_report,
                                risk_zones=len(risk_zones),
                                high_risk_zones=len([z for z in risk_zones if z['risk_level'] in ['Critical', 'High']]),
-                               tt_specs=tt_specs)
+                               tt_specs=tt_specs,
+                               username=username)
 
     except Exception as e:
         print(f"Error in analyze_route: {e}")
@@ -795,21 +903,24 @@ def analyze_route():
         return f"Error analyzing route: {str(e)}. Please try again."
 
 @app.route('/detailed_report')
+@login_required
 def detailed_report():
     """Show detailed route analysis report with TT specifications"""
     try:
         report = session.get('route_report')
         tt_specs = session.get('tt_specs')
+        username = session.get('username', 'User')
         if not report or not tt_specs:
             return "No route analysis data found. Please analyze a route first."
         
-        return render_template("detailed_report.html", report=report, tt_specs=tt_specs)
+        return render_template("detailed_report.html", report=report, tt_specs=tt_specs, username=username)
         
     except Exception as e:
         print(f"Error in detailed_report: {e}")
         return f"Error generating detailed report: {str(e)}"
 
 @app.route('/view_map/<filename>')
+@login_required
 def view_map(filename):
     try:
         path = os.path.join("templates", filename)
@@ -823,6 +934,7 @@ def view_map(filename):
         return f"Error displaying map: {str(e)}", 500
 
 @app.route('/download/<filename>')
+@login_required
 def download_map(filename):
     try:
         return send_from_directory(directory='templates', path=filename, as_attachment=True)
@@ -831,6 +943,7 @@ def download_map(filename):
         return f"Error downloading file: {str(e)}", 500
 
 @app.route('/preview/<filename>')
+@login_required
 def view_preview(filename):
     try:
         path = os.path.join("templates", filename)
@@ -844,6 +957,7 @@ def view_preview(filename):
         return f"Error displaying preview: {str(e)}", 500
 
 @app.route('/tt_specs/<tt_type>')
+@login_required
 def get_tt_specifications(tt_type):
     """API endpoint to get TT specifications"""
     try:
@@ -858,6 +972,103 @@ def get_tt_specifications(tt_type):
             'error': str(e)
         }
 
+# Additional utility routes
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    """User dashboard with system overview"""
+    username = session.get('username', 'User')
+    login_time = session.get('login_time', 'Unknown')
+    
+    try:
+        login_datetime = datetime.fromisoformat(login_time)
+        login_formatted = login_datetime.strftime("%Y-%m-%d %H:%M:%S")
+        session_duration = str(datetime.now() - login_datetime).split('.')[0]
+    except:
+        login_formatted = login_time
+        session_duration = "Unknown"
+    
+    # Get recent activity (if you want to track route analyses)
+    recent_routes = session.get('recent_routes', [])
+    
+    dashboard_data = {
+        'username': username,
+        'login_time': login_formatted,
+        'session_duration': session_duration,
+        'total_routes_analyzed': len(recent_routes),
+        'tt_specifications': TT_SPECIFICATIONS,
+        'system_status': 'Online',
+        'api_status': 'Connected' if API_KEY else 'Disconnected'
+    }
+    
+    return render_template("dashboard.html", data=dashboard_data)
+
+@app.route('/change_password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    """Change user password"""
+    username = session.get('username')
+    
+    if request.method == 'POST':
+        try:
+            current_password = request.form['current_password']
+            new_password = request.form['new_password']
+            confirm_password = request.form['confirm_password']
+            
+            # Verify current password
+            if LOGIN_CREDENTIALS.get(username) != current_password:
+                return redirect(url_for('change_password', error='Current password is incorrect'))
+            
+            # Check new password confirmation
+            if new_password != confirm_password:
+                return redirect(url_for('change_password', error='New passwords do not match'))
+            
+            # Validate new password strength
+            if len(new_password) < 6:
+                return redirect(url_for('change_password', error='New password must be at least 6 characters'))
+            
+            # Update password (Note: In production, use proper password hashing)
+            LOGIN_CREDENTIALS[username] = new_password
+            
+            return redirect(url_for('dashboard', success='Password changed successfully'))
+            
+        except Exception as e:
+            print(f"Password change error: {e}")
+            return redirect(url_for('change_password', error='Failed to change password'))
+    
+    return render_template('change_password.html', username=username)
+
+@app.route('/system_status')
+@login_required
+def system_status():
+    """System status and diagnostics"""
+    try:
+        # Check various system components
+        status = {
+            'flask_app': 'Running',
+            'google_maps_api': 'Connected' if API_KEY else 'Not Configured',
+            'session_system': 'Active',
+            'templates_directory': 'Available' if os.path.exists('templates') else 'Missing',
+            'landmarks_file': 'Available' if os.path.exists('IOCL_Landmark_Details.xlsx') else 'Missing',
+            'total_users': len(LOGIN_CREDENTIALS),
+            'active_sessions': 1,  # Current user
+            'server_time': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            'app_version': '2.0',
+            'last_restart': 'Unknown'  # You can track this if needed
+        }
+        
+        return {
+            'system_status': status,
+            'tt_specifications_count': len(TT_SPECIFICATIONS),
+            'supported_tt_types': list(TT_SPECIFICATIONS.keys())
+        }
+        
+    except Exception as e:
+        return {
+            'error': str(e),
+            'system_status': 'Error retrieving status'
+        }
+
 @app.errorhandler(500)
 def internal_error(error):
     print(f"Internal server error: {error}")
@@ -867,10 +1078,30 @@ def internal_error(error):
 def not_found_error(error):
     return "Page not found.", 404
 
+@app.errorhandler(403)
+def forbidden_error(error):
+    return redirect(url_for('login', error='Access denied. Please login.'))
+
 if __name__ == '__main__':
     try:
         if not os.path.exists("templates"):
             os.makedirs("templates")
-        app.run(debug=True)
+        
+        # Create session directory if it doesn't exist
+        if not os.path.exists("flask_session"):
+            os.makedirs("flask_session")
+        
+        print("IndianOil Smart Marg - Truck Tanker Navigation System")
+        print("=" * 50)
+        print("Available login credentials:")
+        for username, password in LOGIN_CREDENTIALS.items():
+            print(f"Username: {username} | Password: {password}")
+        print("=" * 50)
+        print("Starting Flask application...")
+        
+        app.run(debug=True, host='0.0.0.0', port=5000)
+        
     except Exception as e:
         print(f"Error starting application: {e}")
+        import traceback
+        traceback.print_exc()
