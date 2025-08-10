@@ -15,10 +15,15 @@ import re
 
 # Initialize Flask app
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-here'  # Change this to a secure random key
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-key-change-in-production')
 
-# Initialize Google Maps client
-gmaps = googlemaps.Client(key='YOUR_GOOGLE_MAPS_API_KEY')  # Replace with your API key
+# Initialize Google Maps client with environment variable
+GOOGLE_MAPS_API_KEY = os.environ.get('GOOGLE_MAPS_API_KEY')
+if not GOOGLE_MAPS_API_KEY:
+    print("WARNING: GOOGLE_MAPS_API_KEY environment variable not set!")
+    gmaps = None
+else:
+    gmaps = googlemaps.Client(key=GOOGLE_MAPS_API_KEY)
 
 # TT (Truck Tanker) specifications
 def get_tt_specs(tt_type):
@@ -351,6 +356,13 @@ def fetch_routes():
                                  message="Please use the format: latitude,longitude (e.g., 28.6139,77.2090)",
                                  back_url=url_for('home'))
 
+        # Check if Google Maps client is available
+        if not gmaps:
+            return render_template("error_page.html", 
+                                 error="Service configuration error", 
+                                 message="Google Maps service is not properly configured. Please contact support.",
+                                 back_url=url_for('home'))
+
         # Get routes from Google Maps - always use driving for trucks
         print(f"Requesting routes from {source_coords} to {dest_coords}")
         
@@ -556,6 +568,8 @@ def analyze_route():
         
         def get_pois(keyword):
             pois = []
+            if not gmaps:
+                return pois
             try:
                 # Use detailed coords for more precise POI detection
                 sample_coords = detailed_coords[::20] if len(detailed_coords) > 20 else detailed_coords
