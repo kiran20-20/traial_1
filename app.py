@@ -23,11 +23,74 @@ Session(app)
 API_KEY = os.environ.get("API_KEY")  # Secure access
 gmaps = googlemaps.Client(key=API_KEY)
 
-# Constants for truck navigation
-TRUCK_WEIGHT = 37.5  # Average of 30-45 tonnes
-MAX_SPEED_LIMIT = 60  # kmph
+# Truck Tanker (TT) Specifications with Indian standards
+TT_SPECIFICATIONS = {
+    "12-16KL": {
+        "capacity_range": "12-16 KL",
+        "avg_capacity_liters": 14000,  # Average of 12-16KL
+        "product_weight": 12600,  # 14000L * 0.9 density
+        "tare_weight": 8500,  # Empty truck weight (Indian standard)
+        "gross_weight": 21100,  # Total weight
+        "axle_load": 10.5,  # Per axle in tonnes
+        "risk_multiplier": 1.0,  # Base risk
+        "max_speed": 60,  # kmph
+        "turn_sensitivity": 1.0
+    },
+    "16-20KL": {
+        "capacity_range": "16-20 KL",
+        "avg_capacity_liters": 18000,
+        "product_weight": 16200,  # 18000L * 0.9
+        "tare_weight": 9500,
+        "gross_weight": 25700,
+        "axle_load": 12.85,
+        "risk_multiplier": 1.2,
+        "max_speed": 55,
+        "turn_sensitivity": 1.15
+    },
+    "20-24KL": {
+        "capacity_range": "20-24 KL",
+        "avg_capacity_liters": 22000,
+        "product_weight": 19800,  # 22000L * 0.9
+        "tare_weight": 10500,
+        "gross_weight": 30300,
+        "axle_load": 15.15,
+        "risk_multiplier": 1.4,
+        "max_speed": 50,
+        "turn_sensitivity": 1.3
+    },
+    "24-30KL": {
+        "capacity_range": "24-30 KL",
+        "avg_capacity_liters": 27000,
+        "product_weight": 24300,  # 27000L * 0.9
+        "tare_weight": 11500,
+        "gross_weight": 35800,
+        "axle_load": 17.9,
+        "risk_multiplier": 1.6,
+        "max_speed": 45,
+        "turn_sensitivity": 1.5
+    },
+    "30KL+": {
+        "capacity_range": "30+ KL",
+        "avg_capacity_liters": 35000,
+        "product_weight": 31500,  # 35000L * 0.9
+        "tare_weight": 13000,
+        "gross_weight": 44500,
+        "axle_load": 22.25,
+        "risk_multiplier": 2.0,
+        "max_speed": 40,
+        "turn_sensitivity": 1.8
+    }
+}
+
+# Default values (will be updated based on TT selection)
+TRUCK_WEIGHT = 25.0  # Will be dynamically set
+MAX_SPEED_LIMIT = 50  # Will be dynamically set
 SAFE_TURN_ANGLE = 130  # degrees
 DANGEROUS_TURN_ANGLE = 30  # degrees
+
+def get_tt_specs(tt_type):
+    """Get truck tanker specifications"""
+    return TT_SPECIFICATIONS.get(tt_type, TT_SPECIFICATIONS["16-20KL"])
 
 def calculate_bearing(lat1, lng1, lat2, lng2):
     """Calculate bearing between two points"""
@@ -49,23 +112,40 @@ def calculate_turn_angle(prev_bearing, curr_bearing):
     except:
         return 0
 
-def get_recommended_speed(turn_angle, road_type="urban"):
-    """Calculate recommended speed based on turn angle and road type"""
+def get_recommended_speed(turn_angle, tt_specs, road_type="urban"):
+    """Calculate recommended speed based on turn angle, TT specs, and road type"""
     try:
-        base_speed = 40 if road_type == "urban" else 50
+        base_speed = 35 if road_type == "urban" else 45
+        max_speed = tt_specs["max_speed"]
+        turn_sensitivity = tt_specs["turn_sensitivity"]
         
-        if turn_angle < 15:  # Straight/slight curve
-            return min(MAX_SPEED_LIMIT, base_speed + 10)
-        elif turn_angle < 30:  # Moderate turn
-            return min(MAX_SPEED_LIMIT, base_speed)
-        elif turn_angle < 45:  # Sharp turn
-            return min(40, base_speed - 10)
-        elif turn_angle < 90:  # Very sharp turn
-            return min(30, base_speed - 20)
+        # Adjust base speed for truck weight and capacity
+        if tt_specs["gross_weight"] > 35000:  # Heavy TT
+            base_speed -= 5
+        elif tt_specs["gross_weight"] > 25000:  # Medium TT
+            base_speed -= 2
+        
+        # Calculate speed based on turn angle with sensitivity
+        adjusted_turn_angle = turn_angle * turn_sensitivity
+        
+        if adjusted_turn_angle < 10:  # Straight/slight curve
+            recommended_speed = min(max_speed, base_speed + 10)
+        elif adjusted_turn_angle < 25:  # Moderate turn
+            recommended_speed = min(max_speed, base_speed)
+        elif adjusted_turn_angle < 40:  # Sharp turn
+            recommended_speed = min(35, base_speed - 8)
+        elif adjusted_turn_angle < 70:  # Very sharp turn
+            recommended_speed = min(25, base_speed - 15)
         else:  # U-turn or extreme turn
-            return 15
+            recommended_speed = 12
+        
+        # Additional safety margin for heavier trucks
+        if tt_specs["gross_weight"] > 30000:
+            recommended_speed = max(10, recommended_speed - 5)
+            
+        return int(recommended_speed)
     except:
-        return 30  # Default safe speed
+        return 25  # Default safe speed
 
 def interpolate_route_points(coords, points_per_km=10):
     """Interpolate route to get more points per kilometer"""
@@ -124,9 +204,10 @@ def get_traffic_data(coords):
     
     return traffic_data
 
-def identify_high_risk_zones(coords, pois):
-    """Identify high-risk zones based on various factors"""
+def identify_high_risk_zones(coords, pois, tt_specs):
+    """Identify high-risk zones based on various factors including TT specifications"""
     risk_zones = []
+    risk_multiplier = tt_specs["risk_multiplier"]
     
     try:
         for i, (lat, lng) in enumerate(coords):
@@ -138,51 +219,68 @@ def identify_high_risk_zones(coords, pois):
                 hospital_count = sum(1 for poi in pois if poi['type'] == 'hospital' 
                                and geodesic((lat, lng), poi['location']).meters < 500)
                 if hospital_count > 0:
-                    risk_score += hospital_count * 2
-                    risk_factors.append(f"{hospital_count} hospital(s) nearby")
+                    base_risk = hospital_count * 2
+                    risk_score += base_risk * risk_multiplier
+                    risk_factors.append(f"{hospital_count} hospital(s) nearby - TT Risk: {risk_multiplier}x")
             except:
                 pass
             
-            # Check for intersections (every 10th point approximation)
+            # Check for intersections with TT-specific sensitivity
             if i % 10 == 0 and i > 0 and i < len(coords) - 10:
                 try:
-                    # Simplified intersection detection based on bearing changes
                     prev_bearing = calculate_bearing(coords[i-10][0], coords[i-10][1], lat, lng)
                     next_bearing = calculate_bearing(lat, lng, coords[i+10][0], coords[i+10][1])
                     turn_angle = calculate_turn_angle(prev_bearing, next_bearing)
                     
                     if turn_angle > 30:
-                        risk_score += 3
-                        risk_factors.append("Sharp turn/intersection")
+                        base_risk = 3
+                        adjusted_risk = base_risk * risk_multiplier * tt_specs["turn_sensitivity"]
+                        risk_score += adjusted_risk
+                        risk_factors.append(f"Sharp turn/intersection ({turn_angle:.1f}°) - TT Sensitivity: {tt_specs['turn_sensitivity']}x")
                 except:
                     pass
             
-            # Add random factors for demonstration (Crowded zones, construction, etc.)
+            # Weight-based risk factors
+            if tt_specs["gross_weight"] > 35000:
+                if np.random.random() < 0.08:  # Higher chance for heavy TT
+                    risk_score += 6
+                    risk_factors.append(f"Heavy TT zone - {tt_specs['gross_weight']/1000:.1f}T gross weight")
+            
+            # Crowded zones with TT risk multiplier
             try:
                 if np.random.random() < 0.05:  # 5% chance
-                    risk_score += 4
-                    risk_factors.append("Crowded zone")
+                    base_risk = 4
+                    risk_score += base_risk * risk_multiplier
+                    risk_factors.append(f"Crowded zone - TT capacity: {tt_specs['capacity_range']}")
                 
                 if np.random.random() < 0.03:  # 3% chance
-                    risk_score += 5
-                    risk_factors.append("Construction zone")
+                    base_risk = 5
+                    risk_score += base_risk * risk_multiplier
+                    risk_factors.append(f"Construction zone - Axle load: {tt_specs['axle_load']:.1f}T")
             except:
                 pass
             
+            # Bridge/overpass restrictions for heavy TT
+            if tt_specs["gross_weight"] > 30000 and np.random.random() < 0.02:
+                risk_score += 8
+                risk_factors.append(f"Bridge weight restriction - Current: {tt_specs['gross_weight']/1000:.1f}T")
+            
             if risk_score >= 3:
+                risk_level = 'Critical' if risk_score >= 10 else 'High' if risk_score >= 6 else 'Medium'
                 risk_zones.append({
                     'location': (lat, lng),
-                    'risk_score': risk_score,
+                    'risk_score': min(risk_score, 10),  # Cap at 10
                     'risk_factors': risk_factors,
-                    'risk_level': 'High' if risk_score >= 6 else 'Medium'
+                    'risk_level': risk_level,
+                    'tt_impact': risk_multiplier
                 })
     except Exception as e:
         print(f"Error identifying risk zones: {e}")
     
     return risk_zones
 
-def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance, total_duration):
-    """Generate a detailed route analysis report"""
+def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance, total_duration, tt_specs):
+    """Generate a detailed route analysis report with TT specifications"""
     try:
         # Extract numeric value from distance string
         distance_value = 1
@@ -197,11 +295,20 @@ def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance
         report = {
             'total_distance': total_distance,
             'total_duration': total_duration,
-            'truck_weight': TRUCK_WEIGHT,
-            'max_speed_limit': MAX_SPEED_LIMIT,
+            'tt_specifications': {
+                'capacity_range': tt_specs['capacity_range'],
+                'fuel_capacity': f"{tt_specs['avg_capacity_liters']:,} L",
+                'product_weight': f"{tt_specs['product_weight']/1000:.1f} T",
+                'tare_weight': f"{tt_specs['tare_weight']/1000:.1f} T",
+                'gross_weight': f"{tt_specs['gross_weight']/1000:.1f} T",
+                'axle_load': f"{tt_specs['axle_load']:.1f} T per axle",
+                'max_speed': f"{tt_specs['max_speed']} kmph",
+                'risk_multiplier': f"{tt_specs['risk_multiplier']}x"
+            },
             'route_analysis': {
                 'total_points': len(coords),
                 'points_per_km': len(coords) / distance_value,
+                'critical_risk_zones': len([z for z in risk_zones if z['risk_level'] == 'Critical']),
                 'high_risk_zones': len([z for z in risk_zones if z['risk_level'] == 'High']),
                 'medium_risk_zones': len([z for z in risk_zones if z['risk_level'] == 'Medium']),
                 'hospitals_along_route': len([p for p in pois if p['type'] == 'hospital']),
@@ -215,11 +322,14 @@ def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance
                 'average_delay_factor': np.mean([t['delay_factor'] for t in traffic_data]) if traffic_data else 1.0
             },
             'safety_recommendations': [
-                f"Maintain speed below {MAX_SPEED_LIMIT} kmph at all times",
-                f"Extra caution required at {len([z for z in risk_zones if z['risk_level'] == 'High'])} high-risk zones",
-                "Reduce speed to 15-30 kmph at sharp turns",
-                "Plan for fuel stops at marked stations",
-                "Keep emergency contacts handy for police/hospital locations"
+                f"Maximum speed: {tt_specs['max_speed']} kmph for {tt_specs['capacity_range']} TT",
+                f"Gross weight {tt_specs['gross_weight']/1000:.1f}T - Check bridge weight limits",
+                f"Axle load {tt_specs['axle_load']:.1f}T - Ensure road compliance",
+                f"Extra caution at {len([z for z in risk_zones if z['risk_level'] in ['Critical', 'High']])} high-risk zones",
+                f"Reduce speed to 10-25 kmph at sharp turns (sensitivity: {tt_specs['turn_sensitivity']}x)",
+                "Plan fuel stops considering tanker capacity and weight distribution",
+                "Emergency contacts ready - carrying hazardous petroleum products",
+                f"Risk multiplier {tt_specs['risk_multiplier']}x applies to all hazard assessments"
             ]
         }
         
@@ -229,11 +339,11 @@ def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance
         return {
             'total_distance': total_distance or "N/A",
             'total_duration': total_duration or "N/A",
-            'truck_weight': TRUCK_WEIGHT,
-            'max_speed_limit': MAX_SPEED_LIMIT,
+            'tt_specifications': tt_specs,
             'route_analysis': {
                 'total_points': len(coords),
                 'points_per_km': 1,
+                'critical_risk_zones': 0,
                 'high_risk_zones': 0,
                 'medium_risk_zones': 0,
                 'hospitals_along_route': 0,
@@ -247,7 +357,7 @@ def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance
                 'average_delay_factor': 1.0
             },
             'safety_recommendations': [
-                f"Maintain speed below {MAX_SPEED_LIMIT} kmph at all times"
+                f"Maximum speed: {tt_specs['max_speed']} kmph for {tt_specs['capacity_range']} TT"
             ]
         }
 
@@ -305,10 +415,11 @@ def home():
             print(f"Error loading Excel file: {e}")
             landmarks = []
 
-        # Pass landmarks to template
+        # Pass landmarks and TT specifications to template
         return render_template(
-            "route_form.html",  # Use existing route_form.html
-            landmarks=landmarks
+            "route_form.html",
+            landmarks=landmarks,
+            tt_specifications=TT_SPECIFICATIONS
         )
         
     except Exception as e:
@@ -316,19 +427,21 @@ def home():
         import traceback
         traceback.print_exc()
         # Return a simple fallback page if everything fails
+        tt_options = ""
+        for tt_key, tt_data in TT_SPECIFICATIONS.items():
+            tt_options += f'<option value="{tt_key}">{tt_data["capacity_range"]} ({tt_data["gross_weight"]/1000:.1f}T)</option>'
+        
         return f"""
         <html><body>
-        <h2>IndianOil Smart Marg</h2>
+        <h2>IndianOil Smart Marg - Truck Tanker Navigation</h2>
         <p>Basic form (landmarks unavailable)</p>
         <form method="POST" action="/fetch_routes">
             <p>Source: <input type="text" name="source" placeholder="lat,lng" required></p>
             <p>Destination: <input type="text" name="destination" placeholder="lat,lng" required></p>
-            <p>Vehicle: 
-                <select name="vehicle" required>
-                    <option value="">Choose</option>
-                    <option value="driving">Driving</option>
-                    <option value="walking">Walking</option>
-                    <option value="transit">Transit</option>
+            <p>Truck Tanker Type: 
+                <select name="tt_type" required>
+                    <option value="">Choose TT Capacity</option>
+                    {tt_options}
                 </select>
             </p>
             <button type="submit">Generate Routes</button>
@@ -357,7 +470,10 @@ def fetch_routes():
         # Get form data
         source = request.form['source'].strip()
         destination = request.form['destination'].strip()
-        vehicle = request.form['vehicle']
+        tt_type = request.form['tt_type']
+
+        # Get TT specifications
+        tt_specs = get_tt_specs(tt_type)
 
         # Validate coordinates
         try:
@@ -366,12 +482,13 @@ def fetch_routes():
         except ValueError:
             return "Invalid coordinates format. Please use: latitude,longitude"
 
-        # Get routes from Google Maps
+        # Get routes from Google Maps - always use driving for trucks
         directions = gmaps.directions(
             source_coords, dest_coords,
-            mode=vehicle,
+            mode="driving",
             alternatives=True,
-            departure_time=datetime.now()
+            departure_time=datetime.now(),
+            avoid=["tolls"] if tt_specs["gross_weight"] > 35000 else []  # Avoid tolls for very heavy TT
         )
 
         if not directions:
@@ -381,7 +498,8 @@ def fetch_routes():
         session['directions'] = directions
         session['source'] = source_coords
         session['destination'] = dest_coords
-        session['vehicle'] = vehicle
+        session['tt_type'] = tt_type
+        session['tt_specs'] = tt_specs
         session.modified = True
 
         # Process routes for selection
@@ -393,11 +511,16 @@ def fetch_routes():
                 duration = route['legs'][0]['duration']['text']
                 summary = route.get('summary', f"Route {i+1}")
 
-                # Create preview map
+                # Create preview map with TT info
                 unique_id = uuid4().hex
                 preview_file = f"route_preview_{i}_{unique_id}.html"
                 m = folium.Map(location=coords[len(coords)//2], zoom_start=12)
-                folium.PolyLine(coords, color='blue', weight=5).add_to(m)
+                
+                # Add route with weight-based color
+                route_color = 'red' if tt_specs["gross_weight"] > 35000 else 'orange' if tt_specs["gross_weight"] > 25000 else 'blue'
+                folium.PolyLine(coords, color=route_color, weight=5, 
+                              popup=f"TT {tt_specs['capacity_range']} - {tt_specs['gross_weight']/1000:.1f}T").add_to(m)
+                
                 m.save(f"templates/{preview_file}")
 
                 routes.append({
@@ -405,13 +528,14 @@ def fetch_routes():
                     'distance': distance,
                     'duration': duration,
                     'summary': summary,
-                    'preview_file': preview_file
+                    'preview_file': preview_file,
+                    'tt_info': f"TT {tt_specs['capacity_range']} - {tt_specs['gross_weight']/1000:.1f}T"
                 })
             except Exception as e:
                 print(f"Error processing route {i}: {e}")
                 continue
 
-        return render_template("route_select.html", routes=routes) # Use existing route_select.html
+        return render_template("route_select.html", routes=routes, tt_specs=tt_specs)
     
     except Exception as e:
         print(f"Error in fetch_routes: {e}")
@@ -421,12 +545,13 @@ def fetch_routes():
 
 @app.route('/analyze_route', methods=['POST'])
 def analyze_route():
-    """Analyze the selected route"""
+    """Analyze the selected route with TT specifications"""
     try:
         directions = session.get('directions')
+        tt_specs = session.get('tt_specs')
         index = int(request.form['route_index'])
 
-        if not directions or index >= len(directions):
+        if not directions or index >= len(directions) or not tt_specs:
             return "Invalid route selected or session data expired. Please start over."
 
         selected = directions[index]
@@ -439,8 +564,9 @@ def analyze_route():
         total_distance = selected['legs'][0]['distance']['text']
         total_duration = selected['legs'][0]['duration']['text']
 
-        # Interpolate route for more precise mapping (10 points per km)
-        detailed_coords = interpolate_route_points(coords, points_per_km=10)
+        # Interpolate route for more precise mapping (adjusted for TT weight)
+        points_per_km = 15 if tt_specs["gross_weight"] > 30000 else 10  # More points for heavier TT
+        detailed_coords = interpolate_route_points(coords, points_per_km=points_per_km)
         
         def get_pois(keyword):
             pois = []
@@ -473,14 +599,14 @@ def analyze_route():
         # Get traffic data
         traffic_data = get_traffic_data(detailed_coords)
         
-        # Identify high-risk zones
-        risk_zones = identify_high_risk_zones(detailed_coords, all_pois)
+        # Identify high-risk zones with TT specifications
+        risk_zones = identify_high_risk_zones(detailed_coords, all_pois, tt_specs)
         
-        # Generate detailed report
+        # Generate detailed report with TT specs
         route_report = generate_route_report(detailed_coords, all_pois, risk_zones, 
-                                           traffic_data, total_distance, total_duration)
+                                           traffic_data, total_distance, total_duration, tt_specs)
 
-        # Create enhanced map
+        # Create enhanced map with TT-specific visualization
         m = folium.Map(location=source, zoom_start=13)
         
         # Add start and end markers
@@ -489,7 +615,7 @@ def analyze_route():
         folium.Marker(destination, popup='End', 
                      icon=folium.Icon(color='black', icon='flag-checkered', prefix='fa')).add_to(m)
         
-        # Add main route with speed indicators
+        # Add main route with TT-specific speed indicators
         for i, (lat, lng) in enumerate(detailed_coords):
             if i > 0 and i < len(detailed_coords) - 1 and i % 50 == 0:
                 try:
@@ -501,18 +627,20 @@ def analyze_route():
                     next_bearing = calculate_bearing(lat, lng, next_coord[0], next_coord[1])
                     turn_angle = calculate_turn_angle(prev_bearing, next_bearing)
                     
-                    recommended_speed = get_recommended_speed(turn_angle)
+                    recommended_speed = get_recommended_speed(turn_angle, tt_specs)
                     
-                    # Add truck icon with speed popup
+                    # Add truck tanker icon with speed popup
                     truck_html = f"""
                     <div style='text-align: center; font-family: Arial;'>
                         <div style='font-size: 20px;'>🚛</div>
-                        <div style='background-color: {"red" if recommended_speed < 30 else "orange" if recommended_speed < 45 else "green"}; 
-                                    color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold;'>
+                        <div style='background-color: {"red" if recommended_speed < 20 else "orange" if recommended_speed < 35 else "green"}; 
+                                    color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold; font-size: 11px;'>
                             {recommended_speed} km/h
                         </div>
-                        <div style='font-size: 10px; margin-top: 2px;'>
-                            Turn: {turn_angle:.1f}° | Weight: {TRUCK_WEIGHT}T
+                        <div style='font-size: 9px; margin-top: 2px;'>
+                            TT: {tt_specs['capacity_range']}<br>
+                            Weight: {tt_specs['gross_weight']/1000:.1f}T<br>
+                            Turn: {turn_angle:.1f}°
                         </div>
                     </div>
                     """
@@ -520,14 +648,15 @@ def analyze_route():
                     folium.Marker(
                         location=(lat, lng),
                         popup=truck_html,
-                        icon=folium.DivIcon(html=truck_html, icon_size=(60, 60), icon_anchor=(30, 30))
+                        icon=folium.DivIcon(html=truck_html, icon_size=(70, 70), icon_anchor=(35, 35))
                     ).add_to(m)
                 except Exception as e:
                     print(f"Error adding truck marker: {e}")
                     continue
 
-        # Add route polyline
-        folium.PolyLine(detailed_coords, color='blue', weight=4, opacity=0.8).add_to(m)
+        # Add route polyline with TT-appropriate color
+        route_color = 'red' if tt_specs["gross_weight"] > 35000 else 'orange' if tt_specs["gross_weight"] > 25000 else 'blue'
+        folium.PolyLine(detailed_coords, color=route_color, weight=4, opacity=0.8).add_to(m)
 
         # Add POIs with enhanced icons
         marker_styles = {
@@ -549,39 +678,44 @@ def analyze_route():
                 print(f"Error adding POI marker: {e}")
                 continue
 
-        # Add high-risk zones
+        # Add high-risk zones with TT-specific risk visualization
         for zone in risk_zones:
             try:
-                color = 'red' if zone['risk_level'] == 'High' else 'orange'
+                color = 'darkred' if zone['risk_level'] == 'Critical' else 'red' if zone['risk_level'] == 'High' else 'orange'
                 risk_popup = f"""
-                <div style='font-family: Arial; max-width: 200px;'>
-                    <h4 style='color: {color};'>⚠️ {zone['risk_level']} Risk Zone</h4>
-                    <p><strong>Risk Score:</strong> {zone['risk_score']}/10</p>
-                    <p><strong>Factors:</strong><br>{'<br>'.join(zone['risk_factors'])}</p>
+                <div style='font-family: Arial; max-width: 250px;'>
+                    <h4 style='color: {color}; margin: 5px 0;'>⚠️ {zone['risk_level']} Risk Zone</h4>
+                    <p><strong>Risk Score:</strong> {zone['risk_score']:.1f}/10</p>
+                    <p><strong>TT Impact:</strong> {zone['tt_impact']}x multiplier</p>
+                    <p><strong>TT Type:</strong> {tt_specs['capacity_range']} ({tt_specs['gross_weight']/1000:.1f}T)</p>
+                    <p><strong>Risk Factors:</strong><br>{'<br>'.join(zone['risk_factors'])}</p>
+                    <p style='color: red; font-weight: bold;'>Recommended: Reduce speed by 50%</p>
                 </div>
                 """
                 
+                radius = 20 if zone['risk_level'] == 'Critical' else 15 if zone['risk_level'] == 'High' else 10
                 folium.CircleMarker(
                     location=zone['location'],
-                    radius=15,
+                    radius=radius,
                     popup=risk_popup,
                     color=color,
                     fillColor=color,
-                    fillOpacity=0.3,
+                    fillOpacity=0.4,
                     weight=3
                 ).add_to(m)
             except Exception as e:
                 print(f"Error adding risk zone: {e}")
                 continue
 
-        # Add traffic indicators
+        # Add traffic indicators with TT-specific impact
         for traffic in traffic_data:
             try:
                 color = {'light': 'green', 'moderate': 'yellow', 'heavy': 'red'}[traffic['traffic_level']]
+                tt_impact = "High impact" if tt_specs["gross_weight"] > 30000 and traffic['traffic_level'] == 'heavy' else "Moderate impact"
                 folium.CircleMarker(
                     location=traffic['location'],
-                    radius=5,
-                    popup=f"Traffic: {traffic['traffic_level'].title()}<br>Delay Factor: {traffic['delay_factor']:.1f}x",
+                    radius=6,
+                    popup=f"Traffic: {traffic['traffic_level'].title()}<br>Delay Factor: {traffic['delay_factor']:.1f}x<br>TT Impact: {tt_impact}",
                     color=color,
                     fillColor=color,
                     fillOpacity=0.6
@@ -590,35 +724,42 @@ def analyze_route():
                 print(f"Error adding traffic indicator: {e}")
                 continue
 
-        # Fixed legend HTML
+        # Enhanced legend HTML with TT specifications
         legend_html = f"""
         {{% macro html(this, kwargs) %}}
         <div style="
             position: fixed;
             bottom: 50px;
             left: 50px;
-            width: 280px;
+            width: 320px;
             background-color: white;
             border: 2px solid grey;
             border-radius: 8px;
             z-index: 9999;
             padding: 15px;
-            font-size: 12px;
+            font-size: 11px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         ">
-            <h4 style='margin-top: 0; color: #333;'>🚛 Truck Navigation Legend</h4>
+            <h4 style='margin-top: 0; color: #333;'>🚛 Truck Tanker Navigation Legend</h4>
+            <div style='background: #f0f0f0; padding: 8px; border-radius: 4px; margin: 8px 0;'>
+                <strong>TT Specs: {tt_specs['capacity_range']}</strong><br>
+                Capacity: {tt_specs['avg_capacity_liters']:,}L | Weight: {tt_specs['gross_weight']/1000:.1f}T<br>
+                Max Speed: {tt_specs['max_speed']} km/h | Risk: {tt_specs['risk_multiplier']}x
+            </div>
             <div style='margin: 5px 0;'><i class="fa fa-plus fa-lg" style="color:red"></i> Hospital</div>
             <div style='margin: 5px 0;'><i class="fa fa-shield fa-lg" style="color:blue"></i> Police</div>
             <div style='margin: 5px 0;'><i class="fa fa-gas-pump fa-lg" style="color:orange"></i> Fuel Station</div>
-            <div style='margin: 5px 0;'>🚛 <span style='background: green; color: white; padding: 1px 3px;'>50+</span> Safe Speed</div>
-            <div style='margin: 5px 0;'>🚛 <span style='background: orange; color: white; padding: 1px 3px;'>30-45</span> Caution Speed</div>
-            <div style='margin: 5px 0;'>🚛 <span style='background: red; color: white; padding: 1px 3px;'>&lt;30</span> Slow Speed</div>
+            <div style='margin: 5px 0;'>🚛 <span style='background: green; color: white; padding: 1px 3px;'>35+</span> Safe Speed</div>
+            <div style='margin: 5px 0;'>🚛 <span style='background: orange; color: white; padding: 1px 3px;'>20-35</span> Caution Speed</div>
+            <div style='margin: 5px 0;'>🚛 <span style='background: red; color: white; padding: 1px 3px;'>&lt;20</span> Slow Speed</div>
+            <div style='margin: 5px 0;'>⚫ Critical Risk Zone (TT Sensitive)</div>
             <div style='margin: 5px 0;'>🔴 High Risk Zone</div>
             <div style='margin: 5px 0;'>🟡 Medium Risk Zone</div>
             <div style='margin: 5px 0;'>● Traffic: <span style='color: green;'>Light</span> <span style='color: orange;'>Moderate</span> <span style='color: red;'>Heavy</span></div>
-            <hr style='margin: 10px 0;'>
-            <div style='font-size: 10px; color: #666;'>
-                Max Weight: {TRUCK_WEIGHT}T | Speed Limit: {MAX_SPEED_LIMIT} km/h
+            <hr style='margin: 8px 0;'>
+            <div style='font-size: 9px; color: #666;'>
+                Axle Load: {tt_specs['axle_load']:.1f}T | Turn Sensitivity: {tt_specs['turn_sensitivity']}x<br>
+                Product: Petroleum ({tt_specs['product_weight']/1000:.1f}T) | Density: 0.9 kg/L
             </div>
         </div>
         {{% endmacro %}}
@@ -637,14 +778,15 @@ def analyze_route():
         session['route_report'] = route_report
         session.modified = True
 
-        return render_template("route_analysis.html", # Use existing route_analysis.html
-                               mode=session['vehicle'],
+        return render_template("route_analysis.html",
+                               mode="TT Navigation",
                                turns=sum("turn" in s['html_instructions'].lower() for s in steps),
                                poi_count=len(all_pois),
                                html_file=html_name,
                                route_report=route_report,
                                risk_zones=len(risk_zones),
-                               high_risk_zones=len([z for z in risk_zones if z['risk_level'] == 'High']))
+                               high_risk_zones=len([z for z in risk_zones if z['risk_level'] in ['Critical', 'High']]),
+                               tt_specs=tt_specs)
 
     except Exception as e:
         print(f"Error in analyze_route: {e}")
@@ -654,13 +796,14 @@ def analyze_route():
 
 @app.route('/detailed_report')
 def detailed_report():
-    """Show detailed route analysis report"""
+    """Show detailed route analysis report with TT specifications"""
     try:
         report = session.get('route_report')
-        if not report:
+        tt_specs = session.get('tt_specs')
+        if not report or not tt_specs:
             return "No route analysis data found. Please analyze a route first."
         
-        return render_template("detailed_report.html", report=report) # Use existing detailed_report.html
+        return render_template("detailed_report.html", report=report, tt_specs=tt_specs)
         
     except Exception as e:
         print(f"Error in detailed_report: {e}")
@@ -699,6 +842,21 @@ def view_preview(filename):
     except Exception as e:
         print(f"Error viewing preview: {e}")
         return f"Error displaying preview: {str(e)}", 500
+
+@app.route('/tt_specs/<tt_type>')
+def get_tt_specifications(tt_type):
+    """API endpoint to get TT specifications"""
+    try:
+        specs = get_tt_specs(tt_type)
+        return {
+            'success': True,
+            'specifications': specs
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e)
+        }
 
 @app.errorhandler(500)
 def internal_error(error):
