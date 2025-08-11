@@ -6,7 +6,15 @@
     <title>IndianOil Smart Marg - Login</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* All of your original CSS with minor adjustments for positioning */
+        /* IndianOil Brand Colors */
+        :root {
+            --iocl-blue: #02164F;
+            --iocl-orange: #F37022;
+            --iocl-white: #FFFFFF;
+            --iocl-light-gray: #f0f4f8;
+            --iocl-mid-gray: #8899a6;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -14,13 +22,67 @@
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+            background-color: var(--iocl-light-gray);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* World-Class Floating Background with Text */
+        .floating-bg-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .floating-text-bubble {
+            position: absolute;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: rgba(255, 255, 255, 0.9);
+            padding: 15px 25px;
+            border-radius: 50px;
+            background-image: linear-gradient(45deg, rgba(2, 22, 79, 0.7), rgba(243, 112, 34, 0.7));
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+            white-space: nowrap;
+            animation: float-and-rotate 20s infinite ease-in-out;
+            opacity: 0.8;
+            letter-spacing: 1px;
+        }
+        
+        /* Individual animations for each bubble */
+        .floating-text-bubble:nth-child(1) { top: 10%; left: 5%; animation-duration: 22s; animation-delay: 0s; transform: scale(1.2) rotate(5deg); }
+        .floating-text-bubble:nth-child(2) { top: 40%; left: 20%; animation-duration: 25s; animation-delay: 2s; transform: scale(0.9) rotate(-10deg); }
+        .floating-text-bubble:nth-child(3) { top: 70%; right: 15%; animation-duration: 28s; animation-delay: 5s; transform: scale(1.1) rotate(15deg); }
+        .floating-text-bubble:nth-child(4) { bottom: 5%; left: 30%; animation-duration: 21s; animation-delay: 3s; transform: scale(1.3) rotate(-5deg); }
+        .floating-text-bubble:nth-child(5) { top: 5%; right: 40%; animation-duration: 24s; animation-delay: 1s; transform: scale(0.8) rotate(20deg); }
+        .floating-text-bubble:nth-child(6) { bottom: 30%; right: 5%; animation-duration: 26s; animation-delay: 4s; transform: scale(1.05) rotate(10deg); }
+        .floating-text-bubble:nth-child(7) { top: 25%; right: 25%; animation-duration: 20s; animation-delay: 6s; transform: scale(1.4) rotate(7deg); }
+        .floating-text-bubble:nth-child(8) { bottom: 40%; left: 10%; animation-duration: 23s; animation-delay: 8s; transform: scale(1.15) rotate(-12deg); }
+        .floating-text-bubble:nth-child(9) { top: 55%; left: 50%; animation-duration: 27s; animation-delay: 9s; transform: scale(0.95) rotate(18deg); }
+        .floating-text-bubble:nth-child(10) { bottom: 15%; right: 35%; animation-duration: 29s; animation-delay: 10s; transform: scale(1.25) rotate(-8deg); }
+        .floating-text-bubble:nth-child(11) { top: 85%; left: 45%; animation-duration: 25s; animation-delay: 11s; transform: scale(1.0) rotate(25deg); }
+        .floating-text-bubble:nth-child(12) { top: 15%; right: 5%; animation-duration: 21s; animation-delay: 12s; transform: scale(1.2) rotate(-15deg); }
+        .floating-text-bubble:nth-child(13) { bottom: 25%; left: 55%; animation-duration: 24s; animation-delay: 13s; transform: scale(0.85) rotate(5deg); }
+        .floating-text-bubble:nth-child(14) { top: 60%; left: 5%; animation-duration: 26s; animation-delay: 14s; transform: scale(1.1) rotate(10deg); }
+        .floating-text-bubble:nth-child(15) { top: 35%; left: 80%; animation-duration: 23s; animation-delay: 15s; transform: scale(1.3) rotate(-20deg); }
+
+        @keyframes float-and-rotate {
+            0%  { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(20px, -20px) rotate(-10deg); }
+            50% { transform: translate(-30px, 15px) rotate(15deg); }
+            75% { transform: translate(10px, 25px) rotate(-5deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
         }
         
         .login-container {
@@ -32,6 +94,8 @@
             max-width: 400px;
             width: 100%;
             animation: slideIn 0.6s ease-out;
+            position: relative;
+            z-index: 1;
         }
         
         @keyframes slideIn {
@@ -46,7 +110,7 @@
         }
         
         .login-header {
-            background: linear-gradient(45deg, #FF6B35, #F7931E);
+            background: linear-gradient(45deg, var(--iocl-blue), var(--iocl-orange));
             color: white;
             padding: 30px 20px;
             text-align: center;
@@ -123,46 +187,42 @@
             background-color: #f8f9fa;
         }
 
-        /* --- FIX START --- */
-        /* Adjusted padding to make space for the icon on the right */
         .form-group input#password {
             padding-right: 50px;
         }
         
-        /* Adjusted icon position to be inside the padding, not overlapping the input area */
         .form-group i.show-password {
+            position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            /* Removed the margin-top that was causing the overlap */
-            margin-top: 0; 
+            margin-top: 0;
             right: 15px;
             left: auto;
             cursor: pointer;
-            color: #667eea;
+            color: var(--iocl-blue);
             transition: color 0.3s ease;
         }
         
-        .form-group i.fa-lock {
+        .form-group i.fa-user, .form-group i.fa-lock {
             position: absolute;
             left: 18px;
             top: 50%;
             transform: translateY(-50%);
-            color: #667eea;
+            color: var(--iocl-blue);
             font-size: 16px;
-            margin-top: 0; /* Also fixed this one for consistency */
+            margin-top: 0;
         }
-        /* --- FIX END --- */
 
         .form-group input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--iocl-blue);
             background-color: white;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            box-shadow: 0 0 0 3px rgba(2, 22, 79, 0.1);
         }
         
         .login-btn {
             width: 100%;
-            background: linear-gradient(45deg, #667eea, #764ba2);
+            background: linear-gradient(45deg, var(--iocl-blue), var(--iocl-orange));
             color: white;
             border: none;
             padding: 15px;
@@ -177,7 +237,7 @@
         
         .login-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 10px 25px rgba(2, 22, 79, 0.3);
         }
         
         .login-btn:active {
@@ -224,14 +284,14 @@
         }
         
         .forgot-password a {
-            color: #667eea;
+            color: var(--iocl-blue);
             text-decoration: none;
             font-size: 14px;
             transition: color 0.3s ease;
         }
         
         .forgot-password a:hover {
-            color: #764ba2;
+            color: var(--iocl-orange);
             text-decoration: underline;
         }
         
@@ -264,7 +324,7 @@
         
         .feature-item i {
             margin-right: 8px;
-            color: #667eea;
+            color: var(--iocl-orange);
         }
         
         .version-info {
@@ -288,14 +348,45 @@
             .feature-list {
                 grid-template-columns: 1fr;
             }
+
+            .floating-text-bubble {
+                font-size: 0.85rem;
+                padding: 8px 14px;
+            }
+        }
+
+        /* Reduce floating elements on small screens */
+        @media (max-height: 600px) {
+            .floating-text-bubble:nth-child(n+8) {
+                display: none;
+            }
         }
         
         .show-password:hover {
-            color: #764ba2;
+            color: var(--iocl-orange);
         }
     </style>
 </head>
 <body>
+    <!-- Floating Background -->
+    <div class="floating-bg-container">
+        <div class="floating-text-bubble">Nation-First</div>
+        <div class="floating-text-bubble">Care</div>
+        <div class="floating-text-bubble">Innovation</div>
+        <div class="floating-text-bubble">Passion</div>
+        <div class="floating-text-bubble">Trust</div>
+        <div class="floating-text-bubble">Indane</div>
+        <div class="floating-text-bubble">SERVO</div>
+        <div class="floating-text-bubble">XtraGreen</div>
+        <div class="floating-text-bubble">Energy</div>
+        <div class="floating-text-bubble">Sustainability</div>
+        <div class="floating-text-bubble">Excellence</div>
+        <div class="floating-text-bubble">Commitment</div>
+        <div class="floating-text-bubble">Integrity</div>
+        <div class="floating-text-bubble">Project SPRINT</div>
+        <div class="floating-text-bubble">Future Energy</div>
+    </div>
+
     <div class="login-container">
         <div class="login-header">
             <div class="truck-icon">🚛</div>
