@@ -29,13 +29,12 @@
             padding: 20px;
             position: relative;
             overflow-x: hidden;
-            overflow-y: auto;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        /* Floating Background Elements */
+        /* Enhanced Floating Background Elements */
         .floating-bg-container {
             position: absolute;
             top: 0;
@@ -46,81 +45,127 @@
             z-index: -1;
             pointer-events: none;
             background: 
-                radial-gradient(circle at 20% 80%, rgba(243, 112, 34, 0.05) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(255, 140, 66, 0.05) 0%, transparent 50%);
+                radial-gradient(circle at 15% 85%, rgba(243, 112, 34, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 85% 15%, rgba(255, 140, 66, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(243, 112, 34, 0.03) 0%, transparent 60%);
         }
 
         .floating-text-bubble {
             position: absolute;
-            font-size: 0.75rem;
-            font-weight: 500;
-            color: rgba(243, 112, 34, 0.6);
-            padding: 6px 12px;
-            border-radius: 15px;
-            background: rgba(243, 112, 34, 0.08);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: rgba(243, 112, 34, 0.7);
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(243, 112, 34, 0.2);
             white-space: nowrap;
-            animation: gentleFloat 25s ease-in-out infinite;
-            opacity: 0.7;
+            animation: gentleFloat 20s ease-in-out infinite;
+            opacity: 0.8;
+            box-shadow: 0 4px 20px rgba(243, 112, 34, 0.1);
         }
 
         @keyframes gentleFloat {
-            0%, 100% { transform: translateY(0) translateX(0); }
-            25% { transform: translateY(-15px) translateX(10px); }
-            50% { transform: translateY(10px) translateX(-8px); }
-            75% { transform: translateY(-8px) translateX(12px); }
+            0%, 100% { 
+                transform: translateY(0) translateX(0) rotate(0deg); 
+                opacity: 0.8;
+            }
+            25% { 
+                transform: translateY(-20px) translateX(15px) rotate(1deg); 
+                opacity: 0.9;
+            }
+            50% { 
+                transform: translateY(15px) translateX(-12px) rotate(-1deg); 
+                opacity: 0.7;
+            }
+            75% { 
+                transform: translateY(-10px) translateX(18px) rotate(0.5deg); 
+                opacity: 0.85;
+            }
         }
+
+        /* Bubble positioning with better distribution */
+        .bubble-1 { top: 8%; left: 5%; animation-delay: 0s; }
+        .bubble-2 { top: 15%; right: 8%; animation-delay: 3s; }
+        .bubble-3 { top: 65%; left: 6%; animation-delay: 6s; }
+        .bubble-4 { bottom: 12%; right: 12%; animation-delay: 9s; }
+        .bubble-5 { top: 35%; left: 10%; animation-delay: 12s; }
+        .bubble-6 { bottom: 35%; left: 15%; animation-delay: 15s; }
+        .bubble-7 { top: 75%; right: 20%; animation-delay: 18s; }
+        .bubble-8 { top: 25%; left: 75%; animation-delay: 21s; }
+        .bubble-9 { top: 55%; right: 25%; animation-delay: 2s; }
+        .bubble-10 { bottom: 20%; left: 70%; animation-delay: 5s; }
 
         /* Main Flow Container */
         .flow-container {
             position: relative;
             width: 100%;
-            max-width: 1000px;
-            height: auto;
-            min-height: 400px;
+            max-width: 1200px;
             padding: 40px 20px;
         }
 
         /* Header */
         .header {
             text-align: center;
-            margin-bottom: 50px;
+            margin-bottom: 60px;
             animation: fadeInDown 0.8s ease-out;
         }
 
+        .truck-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            animation: bounce 3s infinite;
+            filter: drop-shadow(0 4px 20px rgba(243, 112, 34, 0.3));
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { 
+                transform: translateY(0) scale(1); 
+            }
+            40% { 
+                transform: translateY(-20px) scale(1.1); 
+            }
+            60% { 
+                transform: translateY(-10px) scale(1.05); 
+            }
+        }
+
         .header h1 {
-            font-size: 2.5rem;
+            font-size: 3rem;
             font-weight: 800;
             background: linear-gradient(135deg, var(--iocl-primary), var(--iocl-accent));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+            text-shadow: 0 2px 10px rgba(243, 112, 34, 0.1);
         }
 
         .header p {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             color: var(--iocl-dark);
             font-weight: 500;
+            opacity: 0.9;
         }
 
-        .truck-icon {
-            font-size: 3rem;
-            margin-bottom: 20px;
-            animation: bounce 2s infinite;
-        }
-
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% { transform: translateY(0) scale(1); }
-            40% { transform: translateY(-15px) scale(1.1); }
-            60% { transform: translateY(-8px) scale(1.05); }
+        /* Enhanced Flow Layout */
+        .flow-layout {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 40px;
+            padding: 40px 0;
+            position: relative;
         }
 
         /* Flow Steps */
         .flow-step {
             position: relative;
-            display: inline-block;
-            vertical-align: middle;
-            animation: slideInUp 0.6s ease-out;
+            display: flex;
+            align-items: center;
+            animation: slideInUp 0.8s ease-out;
         }
 
         .flow-step:nth-child(1) { animation-delay: 0.2s; }
@@ -132,7 +177,7 @@
         @keyframes slideInUp {
             from {
                 opacity: 0;
-                transform: translateY(30px);
+                transform: translateY(50px);
             }
             to {
                 opacity: 1;
@@ -143,7 +188,7 @@
         @keyframes fadeInDown {
             from {
                 opacity: 0;
-                transform: translateY(-30px);
+                transform: translateY(-40px);
             }
             to {
                 opacity: 1;
@@ -153,51 +198,65 @@
 
         .input-box {
             background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 25px;
+            backdrop-filter: blur(15px);
+            border-radius: 24px;
+            padding: 32px;
             box-shadow: 
-                0 10px 30px rgba(243, 112, 34, 0.15),
-                0 4px 15px rgba(0, 0, 0, 0.1);
+                0 12px 40px rgba(243, 112, 34, 0.15),
+                0 6px 20px rgba(0, 0, 0, 0.1);
             border: 2px solid rgba(243, 112, 34, 0.1);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
-            min-width: 200px;
+            min-width: 280px;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .input-box:hover {
-            transform: translateY(-5px) scale(1.02);
+            transform: translateY(-8px) scale(1.02);
             box-shadow: 
-                0 15px 40px rgba(243, 112, 34, 0.2),
-                0 8px 25px rgba(0, 0, 0, 0.15);
+                0 20px 60px rgba(243, 112, 34, 0.2),
+                0 10px 30px rgba(0, 0, 0, 0.15);
             border-color: rgba(243, 112, 34, 0.3);
         }
 
         .input-box.active {
             border-color: var(--iocl-primary);
             box-shadow: 
-                0 15px 40px rgba(243, 112, 34, 0.25),
+                0 20px 60px rgba(243, 112, 34, 0.25),
                 0 0 0 4px rgba(243, 112, 34, 0.1);
+            transform: translateY(-8px) scale(1.02);
         }
 
         .input-box label {
             display: block;
-            font-size: 0.9rem;
-            font-weight: 600;
+            font-size: 1rem;
+            font-weight: 700;
             color: var(--iocl-dark);
-            margin-bottom: 8px;
+            margin-bottom: 12px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-box label i {
+            color: var(--iocl-primary);
+            font-size: 1.1rem;
         }
 
         .input-box input {
             width: 100%;
-            padding: 12px 15px;
+            padding: 16px 20px;
             border: 2px solid rgba(243, 112, 34, 0.2);
-            border-radius: 10px;
-            font-size: 1rem;
+            border-radius: 16px;
+            font-size: 1.1rem;
             transition: all 0.3s ease;
             background: rgba(255, 255, 255, 0.8);
+            color: #333;
         }
 
         .input-box input:focus {
@@ -205,89 +264,137 @@
             border-color: var(--iocl-primary);
             background: white;
             box-shadow: 0 0 0 3px rgba(243, 112, 34, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .input-box input::placeholder {
+            color: rgba(51, 51, 51, 0.5);
         }
 
         .step-number {
             position: absolute;
-            top: -15px;
-            left: 20px;
+            top: -20px;
+            left: 24px;
             background: linear-gradient(135deg, var(--iocl-primary), var(--iocl-accent));
             color: white;
-            width: 30px;
-            height: 30px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.9rem;
+            font-size: 1.1rem;
             font-weight: bold;
-            box-shadow: 0 4px 15px rgba(243, 112, 34, 0.3);
+            box-shadow: 0 6px 20px rgba(243, 112, 34, 0.4);
+            z-index: 10;
         }
 
-        /* Connection Lines */
+        /* Connection with Arrow - Simple Approach */
         .flow-connection {
-            display: inline-block;
-            vertical-align: middle;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 30px;
             position: relative;
-            margin: 0 20px;
-            height: 4px;
-            width: 80px;
-            background: linear-gradient(90deg, var(--iocl-primary), var(--iocl-accent));
-            border-radius: 2px;
-            animation: flowAnimation 2s ease-in-out infinite;
         }
 
-        .flow-connection::before {
-            content: '';
+        .arrow-line {
+            width: 120px;
+            height: 6px;
+            background: linear-gradient(90deg, var(--iocl-primary), var(--iocl-accent));
+            border-radius: 3px;
+            position: relative;
+            box-shadow: 0 3px 15px rgba(243, 112, 34, 0.3);
+            animation: flowPulse 2s ease-in-out infinite;
+        }
+
+        .arrow-head {
             position: absolute;
-            right: -8px;
+            right: -12px;
             top: 50%;
             transform: translateY(-50%);
-            width: 0;
-            height: 0;
-            border-left: 12px solid var(--iocl-accent);
-            border-top: 8px solid transparent;
-            border-bottom: 8px solid transparent;
-            animation: arrowPulse 2s ease-in-out infinite;
+            width: 24px;
+            height: 24px;
+            background: var(--iocl-accent);
+            clip-path: polygon(0% 0%, 100% 50%, 0% 100%);
+            animation: arrowBounce 2s ease-in-out infinite;
+            box-shadow: 0 3px 10px rgba(243, 112, 34, 0.4);
         }
 
-        @keyframes flowAnimation {
-            0%, 100% { opacity: 0.8; }
-            50% { opacity: 1; box-shadow: 0 2px 15px rgba(243, 112, 34, 0.4); }
+        .flow-shine {
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            border-radius: 3px;
+            animation: shine 3s ease-in-out infinite;
         }
 
-        @keyframes arrowPulse {
-            0%, 100% { transform: translateY(-50%) scale(1); }
-            50% { transform: translateY(-50%) scale(1.2); }
+        @keyframes flowPulse {
+            0%, 100% { 
+                opacity: 0.8;
+                transform: scaleX(1);
+            }
+            50% { 
+                opacity: 1;
+                transform: scaleX(1.02);
+            }
         }
 
-        /* Login Button */
+        @keyframes arrowBounce {
+            0%, 100% { 
+                transform: translateY(-50%) translateX(0);
+            }
+            50% { 
+                transform: translateY(-50%) translateX(3px);
+            }
+        }
+
+        @keyframes shine {
+            0% { left: -100%; }
+            50%, 100% { left: 100%; }
+        }
+
+        /* Enhanced Login Button */
         .login-button {
             background: linear-gradient(135deg, var(--iocl-primary), var(--iocl-secondary));
             color: white;
             border: none;
-            border-radius: 20px;
-            padding: 20px 40px;
-            font-size: 1.1rem;
+            border-radius: 24px;
+            padding: 24px 48px;
+            font-size: 1.2rem;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow: 0 8px 25px rgba(243, 112, 34, 0.3);
-            min-width: 200px;
+            letter-spacing: 1.2px;
+            box-shadow: 0 12px 40px rgba(243, 112, 34, 0.3);
+            min-width: 280px;
+            min-height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
         }
 
         .login-button:hover {
-            transform: translateY(-8px) scale(1.05);
-            box-shadow: 0 15px 40px rgba(243, 112, 34, 0.4);
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 20px 60px rgba(243, 112, 34, 0.4);
             background: linear-gradient(135deg, var(--iocl-accent), var(--iocl-primary));
         }
 
         .login-button:active {
-            transform: translateY(-4px) scale(1.02);
+            transform: translateY(-6px) scale(1.02);
+        }
+
+        .login-button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .login-button::before {
@@ -298,41 +405,62 @@
             width: 100%;
             height: 100%;
             background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-            transition: left 0.6s;
+            transition: left 0.8s;
         }
 
         .login-button:hover::before {
             left: 100%;
         }
 
-        /* Flow Layout */
-        .flow-layout {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 20px;
-            padding: 20px 0;
+        .login-button i {
+            font-size: 1.4rem;
+        }
+
+        /* Password Toggle */
+        .password-toggle {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: var(--iocl-primary);
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            padding: 6px;
+            border-radius: 8px;
+        }
+
+        .password-toggle:hover {
+            color: var(--iocl-accent);
+            background: rgba(243, 112, 34, 0.1);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .password-container {
+            position: relative;
         }
 
         /* Alert System */
         .alert {
-            position: absolute;
-            top: 20px;
+            position: fixed;
+            top: 30px;
             left: 50%;
             transform: translateX(-50%);
-            padding: 12px 20px;
-            border-radius: 10px;
-            font-weight: 500;
+            padding: 16px 28px;
+            border-radius: 16px;
+            font-weight: 600;
             display: none;
             z-index: 1000;
-            animation: alertSlide 0.3s ease-out;
+            animation: alertSlide 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            min-width: 300px;
+            text-align: center;
         }
 
         @keyframes alertSlide {
             from {
                 opacity: 0;
-                transform: translateX(-50%) translateY(-20px);
+                transform: translateX(-50%) translateY(-30px);
             }
             to {
                 opacity: 1;
@@ -341,59 +469,79 @@
         }
 
         .alert-error {
-            background: linear-gradient(135deg, #ff6b6b, #ff5252);
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.95), rgba(255, 82, 82, 0.95));
             color: white;
+            box-shadow: 0 10px 40px rgba(255, 107, 107, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .alert-success {
-            background: linear-gradient(135deg, #4caf50, #45a049);
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.95), rgba(69, 160, 73, 0.95));
             color: white;
+            box-shadow: 0 10px 40px rgba(76, 175, 80, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        /* Password Toggle */
-        .password-toggle {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-            color: var(--iocl-primary);
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
+        /* Loading State */
+        .loading .login-button {
+            pointer-events: none;
         }
 
-        .password-toggle:hover {
-            color: var(--iocl-accent);
-            transform: translateY(-50%) scale(1.1);
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
         }
 
-        .password-container {
-            position: relative;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         /* Responsive Design */
+        @media (max-width: 1024px) {
+            .arrow-line {
+                width: 80px;
+            }
+            
+            .flow-connection {
+                margin: 0 20px;
+            }
+        }
+
         @media (max-width: 768px) {
             .flow-layout {
                 flex-direction: column;
-                gap: 30px;
+                gap: 40px;
             }
 
             .flow-connection {
                 transform: rotate(90deg);
-                margin: 15px 0;
-                width: 50px;
+                margin: 25px 0;
+            }
+            
+            .arrow-line {
+                width: 60px;
+            }
+
+            .arrow-head {
+                transform: translateY(-50%) rotate(-90deg);
             }
 
             .header h1 {
-                font-size: 2rem;
+                font-size: 2.5rem;
             }
 
-            .input-box {
-                min-width: 280px;
+            .truck-icon {
+                font-size: 3.5rem;
             }
 
+            .input-box,
             .login-button {
-                min-width: 280px;
+                min-width: 300px;
             }
         }
 
@@ -402,29 +550,41 @@
                 padding: 20px 10px;
             }
 
-            .input-box {
-                min-width: 260px;
-                padding: 20px;
+            .input-box,
+            .login-button {
+                min-width: 280px;
+                padding: 28px 20px;
             }
 
             .header h1 {
-                font-size: 1.7rem;
+                font-size: 2rem;
+            }
+
+            .truck-icon {
+                font-size: 3rem;
+            }
+
+            .floating-text-bubble {
+                font-size: 0.7rem;
+                padding: 6px 12px;
+            }
+
+            .alert {
+                min-width: calc(100vw - 40px);
+                max-width: calc(100vw - 40px);
             }
         }
 
-        /* Additional floating bubbles positioning */
-        .bubble-1 { top: 10%; left: 5%; animation-delay: 0s; }
-        .bubble-2 { top: 20%; right: 10%; animation-delay: 2s; }
-        .bubble-3 { top: 60%; left: 8%; animation-delay: 4s; }
-        .bubble-4 { bottom: 15%; right: 15%; animation-delay: 6s; }
-        .bubble-5 { top: 40%; left: 15%; animation-delay: 8s; }
-        .bubble-6 { bottom: 30%; left: 20%; animation-delay: 10s; }
-        .bubble-7 { top: 70%; right: 25%; animation-delay: 12s; }
-        .bubble-8 { top: 15%; left: 70%; animation-delay: 14s; }
+        /* Enhanced focus states for accessibility */
+        .input-box input:focus-visible,
+        .login-button:focus-visible {
+            outline: 3px solid var(--iocl-primary);
+            outline-offset: 3px;
+        }
     </style>
 </head>
 <body>
-    <!-- Floating Background -->
+    <!-- Enhanced Floating Background -->
     <div class="floating-bg-container">
         <div class="floating-text-bubble bubble-1">Nation-First</div>
         <div class="floating-text-bubble bubble-2">Energy Security</div>
@@ -434,6 +594,8 @@
         <div class="floating-text-bubble bubble-6">Trust</div>
         <div class="floating-text-bubble bubble-7">Quality</div>
         <div class="floating-text-bubble bubble-8">Future Energy</div>
+        <div class="floating-text-bubble bubble-9">Smart Logistics</div>
+        <div class="floating-text-bubble bubble-10">Digital India</div>
     </div>
 
     <!-- Alert System -->
@@ -445,7 +607,7 @@
         <div class="header">
             <div class="truck-icon">🚛</div>
             <h1>IndianOil Smart Marg</h1>
-            <p>Truck Tanker Navigation System - Login Flow</p>
+            <p>Truck Tanker Navigation System - Secure Login Flow</p>
         </div>
 
         <!-- Login Flow -->
@@ -456,38 +618,49 @@
                     <div class="input-box" id="usernameBox">
                         <div class="step-number">1</div>
                         <label for="username">
-                            <i class="fas fa-user"></i> Username
+                            <i class="fas fa-user"></i> Driver ID
                         </label>
                         <input type="text" id="username" name="username" required 
-                               placeholder="Enter your username" autocomplete="username">
+                               placeholder="Enter your driver ID" autocomplete="username">
                     </div>
                 </div>
 
                 <!-- Connection Arrow -->
-                <div class="flow-connection"></div>
+                <div class="flow-connection">
+                    <div class="arrow-line">
+                        <div class="flow-shine"></div>
+                        <div class="arrow-head"></div>
+                    </div>
+                </div>
 
                 <!-- Step 2: Password -->
                 <div class="flow-step">
                     <div class="input-box" id="passwordBox">
                         <div class="step-number">2</div>
                         <label for="password">
-                            <i class="fas fa-lock"></i> Password
+                            <i class="fas fa-lock"></i> Security Code
                         </label>
                         <div class="password-container">
                             <input type="password" id="password" name="password" required 
-                                   placeholder="Enter your password" autocomplete="current-password">
+                                   placeholder="Enter your security code" autocomplete="current-password">
                             <i class="fas fa-eye password-toggle" id="togglePassword"></i>
                         </div>
                     </div>
                 </div>
 
                 <!-- Connection Arrow -->
-                <div class="flow-connection"></div>
+                <div class="flow-connection">
+                    <div class="arrow-line">
+                        <div class="flow-shine"></div>
+                        <div class="arrow-head"></div>
+                    </div>
+                </div>
 
                 <!-- Step 3: Login Button -->
                 <div class="flow-step">
-                    <button type="submit" class="login-button">
-                        <i class="fas fa-rocket"></i> Launch Navigation
+                    <button type="submit" class="login-button" id="loginButton">
+                        <i class="fas fa-route"></i>
+                        <span>Launch Navigation</span>
                     </button>
                 </div>
             </div>
@@ -495,74 +668,123 @@
     </div>
 
     <script>
-        window.addEventListener('DOMContentLoaded', function() {
-            const usernameInput = document.getElementById('username');
-            const passwordInput = document.getElementById('password');
-            const usernameBox = document.getElementById('usernameBox');
-            const passwordBox = document.getElementById('passwordBox');
-            const togglePassword = document.getElementById('togglePassword');
-            const loginForm = document.getElementById('loginForm');
-
-            // Focus effects for input boxes
-            usernameInput.addEventListener('focus', () => {
-                usernameBox.classList.add('active');
-            });
-
-            usernameInput.addEventListener('blur', () => {
-                usernameBox.classList.remove('active');
-            });
-
-            passwordInput.addEventListener('focus', () => {
-                passwordBox.classList.add('active');
-            });
-
-            passwordInput.addEventListener('blur', () => {
-                passwordBox.classList.remove('active');
-            });
-
-            // Password visibility toggle
-            togglePassword.addEventListener('click', function() {
-                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                passwordInput.setAttribute('type', type);
+        class SmartMargLoginFlow {
+            constructor() {
+                this.form = document.getElementById('loginForm');
+                this.usernameInput = document.getElementById('username');
+                this.passwordInput = document.getElementById('password');
+                this.usernameBox = document.getElementById('usernameBox');
+                this.passwordBox = document.getElementById('passwordBox');
+                this.togglePassword = document.getElementById('togglePassword');
+                this.loginButton = document.getElementById('loginButton');
                 
-                this.classList.toggle('fa-eye');
-                this.classList.toggle('fa-eye-slash');
-            });
+                this.init();
+            }
 
-            // Form submission with validation
-            loginForm.addEventListener('submit', function(e) {
-                const username = usernameInput.value.trim();
-                const password = passwordInput.value;
+            init() {
+                this.bindEvents();
+                this.checkUrlParams();
+                this.initializeAnimations();
+                this.focusFirstField();
+            }
+
+            bindEvents() {
+                // Focus effects for input boxes
+                this.usernameInput.addEventListener('focus', () => {
+                    this.usernameBox.classList.add('active');
+                });
+
+                this.usernameInput.addEventListener('blur', () => {
+                    this.usernameBox.classList.remove('active');
+                });
+
+                this.passwordInput.addEventListener('focus', () => {
+                    this.passwordBox.classList.add('active');
+                });
+
+                this.passwordInput.addEventListener('blur', () => {
+                    this.passwordBox.classList.remove('active');
+                });
+
+                // Password visibility toggle
+                this.togglePassword.addEventListener('click', () => {
+                    this.togglePasswordVisibility();
+                });
+
+                // Form submission with enhanced validation
+                this.form.addEventListener('submit', (e) => {
+                    this.handleSubmit(e);
+                });
+
+                // Enhanced keyboard navigation
+                this.usernameInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        this.passwordInput.focus();
+                    }
+                });
+
+                this.passwordInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.form.dispatchEvent(new Event('submit'));
+                    }
+                });
+            }
+
+            togglePasswordVisibility() {
+                const type = this.passwordInput.type === 'password' ? 'text' : 'password';
+                this.passwordInput.type = type;
+                
+                this.togglePassword.classList.toggle('fa-eye');
+                this.togglePassword.classList.toggle('fa-eye-slash');
+            }
+
+            handleSubmit(e) {
+                const username = this.usernameInput.value.trim();
+                const password = this.passwordInput.value;
                 
                 if (!username) {
                     e.preventDefault();
-                    showAlert('Please enter your username', 'error');
-                    usernameInput.focus();
+                    this.showAlert('Please enter your Driver ID', 'error');
+                    this.usernameInput.focus();
                     return;
                 }
                 
                 if (!password) {
                     e.preventDefault();
-                    showAlert('Please enter your password', 'error');
-                    passwordInput.focus();
+                    this.showAlert('Please enter your Security Code', 'error');
+                    this.passwordInput.focus();
                     return;
                 }
 
-                // Show loading state
-                const button = document.querySelector('.login-button');
-                const originalText = button.innerHTML;
-                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
-                button.disabled = true;
+                // Show loading state with enhanced animation
+                this.setLoadingState(true);
                 
-                // Re-enable button after 3 seconds if form doesn't submit
+                // Auto-reset loading state after timeout
                 setTimeout(() => {
-                    button.innerHTML = originalText;
-                    button.disabled = false;
-                }, 3000);
-            });
+                    this.setLoadingState(false);
+                }, 5000);
+            }
 
-            // Alert system
-            function showAlert(message, type) {
+            setLoadingState(loading) {
+                if (loading) {
+                    this.loginButton.disabled = true;
+                    this.loginButton.innerHTML = `
+                        <span class="spinner"></span>
+                        <span>Authenticating...</span>
+                    `;
+                    document.body.classList.add('loading');
+                } else {
+                    this.loginButton.disabled = false;
+                    this.loginButton.innerHTML = `
+                        <i class="fas fa-route"></i>
+                        <span>Launch Navigation</span>
+                    `;
+                    document.body.classList.remove('loading');
+                }
+            }
+
+            showAlert(message, type) {
                 const alert = document.getElementById('alert');
                 alert.className = `alert alert-${type}`;
                 alert.textContent = message;
@@ -570,51 +792,62 @@
                 
                 setTimeout(() => {
                     alert.style.display = 'none';
-                }, 4000);
+                }, 5000);
             }
 
-            // Check for URL parameters
-            const urlParams = new URLSearchParams(window.location.search);
-            const error = urlParams.get('error');
-            const success = urlParams.get('success');
-            
-            if (error) {
-                showAlert(error, 'error');
-            }
-            if (success) {
-                showAlert(success, 'success');
-            }
-
-            // Enhanced keyboard navigation
-            usernameInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    passwordInput.focus();
+            checkUrlParams() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const error = urlParams.get('error');
+                const success = urlParams.get('success');
+                
+                if (error) {
+                    setTimeout(() => {
+                        this.showAlert(decodeURIComponent(error), 'error');
+                    }, 500);
                 }
-            });
-
-            passwordInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    loginForm.dispatchEvent(new Event('submit'));
+                if (success) {
+                    setTimeout(() => {
+                        this.showAlert(decodeURIComponent(success), 'success');
+                    }, 500);
                 }
-            });
+            }
 
-            // Auto-focus on username
-            usernameInput.focus();
-
-            // Add some interactive effects
-            document.querySelectorAll('.input-box').forEach((box, index) => {
-                setTimeout(() => {
-                    box.style.opacity = '0';
-                    box.style.transform = 'translateY(20px)';
+            initializeAnimations() {
+                // Staggered animation for input boxes
+                document.querySelectorAll('.input-box, .login-button').forEach((element, index) => {
+                    element.style.opacity = '0';
+                    element.style.transform = 'translateY(30px)';
                     
                     setTimeout(() => {
-                        box.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
-                        box.style.opacity = '1';
-                        box.style.transform = 'translateY(0)';
-                    }, 100);
-                }, index * 200);
-            });
+                        element.style.transition = 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+                        element.style.opacity = '1';
+                        element.style.transform = 'translateY(0)';
+                    }, (index + 2) * 200);
+                });
+
+                // Connection lines animation
+                document.querySelectorAll('.flow-connection').forEach((connection, index) => {
+                    connection.style.opacity = '0';
+                    connection.style.transform = 'scaleX(0)';
+                    
+                    setTimeout(() => {
+                        connection.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                        connection.style.opacity = '1';
+                        connection.style.transform = 'scaleX(1)';
+                    }, (index + 3) * 200 + 400);
+                });
+            }
+
+            focusFirstField() {
+                setTimeout(() => {
+                    this.usernameInput.focus();
+                }, 1000);
+            }
+        }
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            new SmartMargLoginFlow();
         });
     </script>
 </body>
