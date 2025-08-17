@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IndianOil Smart Marg</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* IndianOil Brand Colors */
         :root {
             --iocl-blue: #02164F;
             --iocl-orange: #F37022;
@@ -13,6 +15,7 @@
             --iocl-light-gray: #f0f4f8;
             --iocl-mid-gray: #8899a6;
         }
+
         body {
             margin: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
@@ -23,7 +26,69 @@
             position: relative;
             overflow-x: hidden;
         }
-        .container { display: flex; justify-content: center; align-items: flex-start; min-height: calc(100vh - 30px); position: relative; z-index: 1; }
+
+        /* World-Class Floating Background with Text */
+        .floating-bg-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+            pointer-events: none;
+        }
+        .floating-text-bubble {
+            position: absolute;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: rgba(255, 255, 255, 0.9);
+            padding: 15px 25px;
+            border-radius: 50px;
+            background-image: linear-gradient(45deg, rgba(2, 22, 79, 0.7), rgba(243, 112, 34, 0.7));
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+            white-space: nowrap;
+            animation: float-and-rotate 20s infinite ease-in-out;
+            opacity: 0.8;
+            letter-spacing: 1px;
+        }
+        
+        /* Individual animations for each bubble */
+        .floating-text-bubble:nth-child(1) { top: 10%; left: 5%; animation-duration: 22s; animation-delay: 0s; transform: scale(1.2) rotate(5deg); }
+        .floating-text-bubble:nth-child(2) { top: 40%; left: 20%; animation-duration: 25s; animation-delay: 2s; transform: scale(0.9) rotate(-10deg); }
+        .floating-text-bubble:nth-child(3) { top: 70%; right: 15%; animation-duration: 28s; animation-delay: 5s; transform: scale(1.1) rotate(15deg); }
+        .floating-text-bubble:nth-child(4) { bottom: 5%; left: 30%; animation-duration: 21s; animation-delay: 3s; transform: scale(1.3) rotate(-5deg); }
+        .floating-text-bubble:nth-child(5) { top: 5%; right: 40%; animation-duration: 24s; animation-delay: 1s; transform: scale(0.8) rotate(20deg); }
+        .floating-text-bubble:nth-child(6) { bottom: 30%; right: 5%; animation-duration: 26s; animation-delay: 4s; transform: scale(1.05) rotate(10deg); }
+        .floating-text-bubble:nth-child(7) { top: 25%; right: 25%; animation-duration: 20s; animation-delay: 6s; transform: scale(1.4) rotate(7deg); }
+        .floating-text-bubble:nth-child(8) { bottom: 40%; left: 10%; animation-duration: 23s; animation-delay: 8s; transform: scale(1.15) rotate(-12deg); }
+        .floating-text-bubble:nth-child(9) { top: 55%; left: 50%; animation-duration: 27s; animation-delay: 9s; transform: scale(0.95) rotate(18deg); }
+        .floating-text-bubble:nth-child(10) { bottom: 15%; right: 35%; animation-duration: 29s; animation-delay: 10s; transform: scale(1.25) rotate(-8deg); }
+        .floating-text-bubble:nth-child(11) { top: 85%; left: 45%; animation-duration: 25s; animation-delay: 11s; transform: scale(1.0) rotate(25deg); }
+        .floating-text-bubble:nth-child(12) { top: 15%; right: 5%; animation-duration: 21s; animation-delay: 12s; transform: scale(1.2) rotate(-15deg); }
+        .floating-text-bubble:nth-child(13) { bottom: 25%; left: 55%; animation-duration: 24s; animation-delay: 13s; transform: scale(0.85) rotate(5deg); }
+        .floating-text-bubble:nth-child(14) { top: 60%; left: 5%; animation-duration: 26s; animation-delay: 14s; transform: scale(1.1) rotate(10deg); }
+        .floating-text-bubble:nth-child(15) { top: 35%; left: 80%; animation-duration: 23s; animation-delay: 15s; transform: scale(1.3) rotate(-20deg); }
+        .floating-text-bubble:nth-child(16) { top: 80%; right: 25%; animation-duration: 30s; animation-delay: 16s; transform: scale(1.1) rotate(12deg); }
+        .floating-text-bubble:nth-child(17) { top: 5%; left: 60%; animation-duration: 28s; animation-delay: 17s; transform: scale(0.9) rotate(25deg); }
+
+        @keyframes float-and-rotate {
+            0%  { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(20px, -20px) rotate(-10deg); }
+            50% { transform: translate(-30px, 15px) rotate(15deg); }
+            75% { transform: translate(10px, 25px) rotate(-5deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: calc(100vh - 30px);
+            position: relative;
+            z-index: 1; /* Ensure container is above the floating background */
+        }
+
         .form-box {
             background-color: var(--iocl-white);
             padding: 30px;
@@ -34,365 +99,498 @@
             position: relative;
             z-index: 1;
             text-align: left;
+            transition: box-shadow 0.3s ease-in-out;
             margin: 10px 0;
         }
-        .header { text-align: center; margin-bottom: 25px; display: flex; align-items: center; justify-content: center; gap: 12px; }
-        .header h1 { font-size: 1.9em; font-weight: 800; color: var(--iocl-blue); margin: 0; }
-        .header .logo-text { font-size: 1.0em; color: var(--iocl-orange); font-weight: 600; }
-        .user-info { position: absolute; top: 10px; right: 15px; background: rgba(2, 22, 79, 0.1); padding: 5px 10px; border-radius: 15px; font-size: 0.85em; color: var(--iocl-blue); font-weight: 600; }
-        .logout-link { position: absolute; top: 10px; left: 15px; color: var(--iocl-orange); text-decoration: none; font-size: 0.85em; font-weight: 600; }
-        .section-title { font-size: 1.0em; font-weight: bold; color: var(--iocl-blue); margin-top: 20px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-        .section-title i { color: var(--iocl-orange); font-size: 1.1em; }
-        label { font-weight: 600; margin-top: 8px; display: block; color: #555; font-size: 0.9em; }
-        input, select { width: 100%; padding: 12px; margin: 6px 0; font-size: 0.95rem; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; transition: border-color 0.3s, box-shadow 0.3s; }
-        input:focus, select:focus { outline: none; border-color: var(--iocl-blue); box-shadow: 0 0 0 3px rgba(2, 22, 79, 0.2); }
-        button { width: 100%; padding: 14px; font-size: 1.0rem; font-weight: bold; background-image: linear-gradient(to right, #02164F, #005bb5); border: none; color: var(--iocl-white); border-radius: 8px; cursor: pointer; margin-top: 25px; box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2); transition: all 0.3s ease-in-out; background-size: 200% 100%; background-position: left; }
-        button:hover { background-position: right; transform: translateY(-2px); box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25); }
-        .coord-helper { font-size: 0.8em; color: var(--iocl-mid-gray); margin-top: 3px; font-style: italic; }
-        .ro-details-display, .tt-specs-display { background: linear-gradient(135deg, #e8f4f8 0%, #d1ecf1 100%); border: 2px solid var(--iocl-blue); border-radius: 10px; padding: 15px; margin-top: 12px; display: none; animation: slideDown 0.4s ease; }
-        .ro-details-display.active, .tt-specs-display.active { display: block; }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        .ro-details-title, .specs-title { text-align: center; color: var(--iocl-blue); font-weight: bold; font-size: 1.0em; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .ro-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .ro-detail-item { background: white; padding: 10px; border-radius: 6px; border: 1px solid #e0e0e0; }
-        .ro-detail-item .label { font-size: 0.8em; color: var(--iocl-mid-gray); margin-bottom: 4px; }
-        .ro-detail-item .value { font-size: 0.9em; font-weight: bold; color: var(--iocl-blue); }
-        .specs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .spec-item { background: white; padding: 8px; border-radius: 6px; text-align: center; border: 1px solid #e0e0e0; }
-        .spec-item .value { font-size: 0.9em; font-weight: bold; color: var(--iocl-blue); }
-        .spec-item .label { font-size: 0.7em; color: var(--iocl-mid-gray); }
-        .method-selector { display: flex; gap: 10px; margin-bottom: 15px; }
-        .method-option { flex: 1; padding: 10px; background: var(--iocl-light-gray); border: 2px solid #ddd; border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.3s ease; }
-        .method-option.active { background: var(--iocl-blue); color: white; border-color: var(--iocl-blue); }
-        .error-message, .success-message { padding: 10px; border-radius: 5px; margin: 10px 0; }
-        .error-message { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .success-message { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .input-container { position: relative; }
-        .suggestions-list { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 0 0 8px 8px; max-height: 200px; overflow-y: auto; z-index: 1000; display: none; }
-        .suggestion-item { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; }
-        .suggestion-item:hover { background-color: #f8f9fa; }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        .header h1 {
+            font-size: 1.9em;
+            font-weight: 800;
+            color: var(--iocl-blue);
+            margin: 0;
+            display: inline-block;
+        }
+        .header .logo-text {
+            font-size: 1.0em;
+            color: var(--iocl-orange);
+            font-weight: 600;
+        }
+
+        .section-title {
+            font-size: 1.0em;
+            font-weight: bold;
+            color: var(--iocl-blue);
+            margin-top: 20px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title i {
+            color: var(--iocl-orange);
+            font-size: 1.1em;
+        }
+
+        label {
+            font-weight: 600;
+            margin-top: 8px;
+            display: block;
+            color: #555;
+            font-size: 0.9em;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 6px 0;
+            font-size: 0.95rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--iocl-blue);
+            box-shadow: 0 0 0 3px rgba(2, 22, 79, 0.2);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            font-size: 1.0rem;
+            font-weight: bold;
+            background-image: linear-gradient(to right, #02164F, #005bb5);
+            border: none;
+            color: var(--iocl-white);
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 25px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease-in-out;
+            background-size: 200% 100%;
+            background-position: left;
+        }
+        button:hover {
+            background-position: right;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+        }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 0.75rem;
+            text-align: center;
+            color: var(--iocl-mid-gray);
+        }
+        .values-section {
+            display: none;
+        }
+        datalist option {
+            padding: 8px;
+        }
+        .coord-helper {
+            font-size: 0.8em;
+            color: var(--iocl-mid-gray);
+            margin-top: 3px;
+            font-style: italic;
+        }
+
+        /* Compact TT Specifications Display */
+        .tt-specs-display {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1ecf1 100%);
+            border: 2px solid var(--iocl-blue);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 12px;
+            display: none;
+            animation: slideDown 0.4s ease;
+        }
+
+        .tt-specs-display.active {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .specs-title {
+            text-align: center;
+            color: var(--iocl-blue);
+            font-weight: bold;
+            font-size: 1.0em;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .specs-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .spec-item {
+            background: white;
+            padding: 8px;
+            border-radius: 6px;
+            text-align: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
+        }
+
+        .spec-item .icon {
+            font-size: 1.2em;
+            margin-bottom: 4px;
+            color: var(--iocl-orange);
+        }
+
+        .spec-item .value {
+            font-size: 0.9em;
+            font-weight: bold;
+            color: var(--iocl-blue);
+            margin-bottom: 2px;
+        }
+
+        .spec-item .label {
+            font-size: 0.7em;
+            color: var(--iocl-mid-gray);
+            font-weight: 500;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 8px;
+            border-radius: 6px;
+            margin-top: 8px;
+            font-size: 0.8em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .warning-box i {
+            color: #f39c12;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .form-box {
+                max-width: 100%;
+                padding: 20px;
+            }
+            .header h1 {
+                font-size: 1.6em;
+            }
+            .specs-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .floating-text-bubble {
+                font-size: 0.85rem;
+                padding: 8px 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .specs-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-box {
+                padding: 15px;
+            }
+        }
+
+        /* Ensure page can scroll properly */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Reduce floating elements on small screens */
+        @media (max-height: 600px) {
+            .floating-text-bubble:nth-child(n+5) {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <form class="form-box" method="POST" action="{{ url_for('fetch_routes') }}">
-        <div class="user-info">User: <strong>{{ username }}</strong></div>
-        <a href="{{ url_for('logout') }}" class="logout-link">
-            <i class="fas fa-sign-out-alt"></i> Logout
-        </a>
+<div class="floating-bg-container">
+    <div class="floating-text-bubble">Nation-First</div>
+    <div class="floating-text-bubble">Care</div>
+    <div class="floating-text-bubble">Innovation</div>
+    <div class="floating-text-bubble">Passion</div>
+    <div class="floating-text-bubble">Trust</div>
+    <div class="floating-text-bubble">Indane</div>
+    <div class="floating-text-bubble">SERVO</div>
+    <div class="floating-text-bubble">XtraGreen</div>
+    <div class="floating-text-bubble">Energy</div>
+    <div class="floating-text-bubble">Sustainability</div>
+    <div class="floating-text-bubble">Excellence</div>
+    <div class="floating-text-bubble">Commitment</div>
+    <div class="floating-text-bubble">Integrity</div>
+    <div class="floating-text-bubble">Project SPRINT</div>
+    <div class="floating-text-bubble">Future Energy</div>
+</div>
 
+<div class="container">
+    <form class="form-box" method="POST" action="/fetch_routes">
         <div class="header">
             <h1>IndianOil <span class="logo-text">Smart Marg</span></h1>
         </div>
-
-        <div id="errorDisplay" class="error-message" style="display: none;"></div>
-        <div id="successDisplay" class="success-message" style="display: none;"></div>
 
         <div class="section-title">
             <i class="fa-solid fa-industry"></i>
             <span>Terminal Location</span>
         </div>
+        
         <label for="landmark_name">IOCL Terminal</label>
-        <div class="input-container">
-            <input type="text" id="landmark_name" placeholder="Start typing terminal name..." autocomplete="off">
-            <div id="landmarkSuggestions" class="suggestions-list"></div>
-        </div>
+        <input type="text" id="landmark_name" list="landmarkList" placeholder="Start typing terminal name...">
+        <datalist id="landmarkList">
+            {% for landmark in landmarks %}
+            <option value="{{ landmark.name }}" data-lat="{{ landmark.lat }}" data-lng="{{ landmark.lng }}">
+            {% endfor %}
+        </datalist>
+
         <label for="source">Terminal Coordinates</label>
         <input type="text" name="source" id="source" placeholder="Select from above or enter manually" required>
-        <div class="coord-helper">Format: latitude, longitude</div>
+        <div class="coord-helper">Example: 28.6139, 77.2090</div>
 
         <div class="section-title">
-            <i class="fa-solid fa-map-marker-alt"></i>
-            <span>RO Location Selection</span>
-        </div>
-        <div class="method-selector">
-            <div class="method-option active" onclick="setRoMethod('database')" id="method-database">From Database</div>
-            <div class="method-option" onclick="setRoMethod('manual')" id="method-manual">Manual Entry</div>
+            <i class="fa-solid fa-gas-pump"></i>
+            <span>RO Location</span>
         </div>
 
-        <div id="ro-database-section">
-            <label for="state_code">State</label>
-            <div class="input-container">
-                <input type="text" id="state_code" placeholder="Start typing state..." autocomplete="off">
-                <div id="stateSuggestions" class="suggestions-list"></div>
-            </div>
-
-            <label for="sap_code">SAP Code / RO</label>
-            <select id="sap_code" name="sap_code" onchange="loadRoDetails()" disabled>
-                <option value="">Select a state first</option>
-            </select>
-
-            <div id="roDetailsDisplay" class="ro-details-display">
-                <div class="ro-details-title">
-                    <i class="fas fa-info-circle"></i><span>RO Details</span>
-                </div>
-                <div class="ro-details-grid">
-                    <div class="ro-detail-item"><div class="label">Consignee</div><div class="value" id="roConsignee">-</div></div>
-                    <div class="ro-detail-item"><div class="label">Customer Type</div><div class="value" id="roCustomerType">-</div></div>
-                    <div class="ro-detail-item"><div class="label">Sales Group</div><div class="value" id="roSalesGroup">-</div></div>
-                    <div class="ro-detail-item"><div class="label">Coordinates</div><div class="value" id="roCoordinates">-</div></div>
-                </div>
-            </div>
-        </div>
-
-        <div id="ro-manual-section" style="display: none;">
-            <label for="destination_manual">RO Coordinates</label>
-            <input type="text" id="destination_manual" placeholder="Enter coordinates manually (lat, lng)">
-        </div>
-        <input type="hidden" name="destination" id="destination">
+        <label for="destination">RO Coordinates</label>
+        <input type="text" name="destination" id="destination" placeholder="Enter coordinates manually (lat, lng)" required>
+        <div class="coord-helper">Example: 19.0760, 72.8777</div>
 
         <div class="section-title">
             <i class="fa-solid fa-truck-fast"></i>
             <span>Truck Tanker (TT) Specifications</span>
         </div>
+        
         <label for="tt_type">Select TT Capacity Range</label>
         <select id="tt_type" name="tt_type" required onchange="showTTSpecs()">
-            <option value="">-- Choose TT Capacity --</option>
-            {% for key, spec in tt_specifications.items() %}
-                <option value="{{ key }}" 
-                        data-capacity="{{ spec.avg_capacity_liters }}" 
-                        data-gross-weight="{{ spec.gross_weight }}" 
-                        data-axle-load="{{ spec.axle_load }}"
-                        data-max-speed="{{ spec.max_speed }}">
-                    {{ spec.capacity_range }} ({{ (spec.gross_weight / 1000)|round(1) }}T Gross)
-                </option>
+            <option value="">Choose TT Capacity</option>
+            {% for tt_key, tt_data in tt_specifications.items() %}
+            <option value="{{ tt_key }}"
+                    data-capacity="{{ tt_data.avg_capacity_liters }}"
+                    data-product-weight="{{ tt_data.product_weight }}"
+                    data-tare-weight="{{ tt_data.tare_weight }}"
+                    data-gross-weight="{{ tt_data.gross_weight }}"
+                    data-axle-load="{{ tt_data.axle_load }}"
+                    data-max-speed="{{ tt_data.max_speed }}">
+                {{ tt_data.capacity_range }} ({{ (tt_data.gross_weight / 1000) | round(1) }}T)
+            </option>
             {% endfor %}
         </select>
-        
+
         <div id="ttSpecsDisplay" class="tt-specs-display">
             <div class="specs-title">
-                <i class="fas fa-truck"></i><span>Selected TT Specifications</span>
+                <i class="fas fa-truck"></i>
+                <span>Selected TT Specifications</span>
             </div>
             <div class="specs-grid">
-                <div class="spec-item"><div class="value" id="specCapacity">-</div><div class="label">Capacity</div></div>
-                <div class="spec-item"><div class="value" id="specGrossWeight">-</div><div class="label">Gross Wt</div></div>
-                <div class="spec-item"><div class="value" id="specAxleLoad">-</div><div class="label">Axle Load</div></div>
-                <div class="spec-item"><div class="value" id="specMaxSpeed">-</div><div class="label">Max Speed</div></div>
+                <div class="spec-item">
+                    <div class="icon"><i class="fas fa-gas-pump"></i></div>
+                    <div class="value" id="specCapacity">-</div>
+                    <div class="label">Capacity</div>
+                </div>
+                <div class="spec-item">
+                    <div class="icon"><i class="fas fa-weight-hanging"></i></div>
+                    <div class="value" id="specGrossWeight">-</div>
+                    <div class="label">Gross Wt</div>
+                </div>
+                <div class="spec-item">
+                    <div class="icon"><i class="fas fa-oil-can"></i></div>
+                    <div class="value" id="specProductWeight">-</div>
+                    <div class="label">Product Wt</div>
+                </div>
+                <div class="spec-item">
+                    <div class="icon"><i class="fas fa-truck"></i></div>
+                    <div class="value" id="specTareWeight">-</div>
+                    <div class="label">Tare Wt</div>
+                </div>
+                <div class="spec-item">
+                    <div class="icon"><i class="fas fa-balance-scale"></i></div>
+                    <div class="value" id="specAxleLoad">-</div>
+                    <div class="label">Axle Load</div>
+                </div>
+                <div class="spec-item">
+                    <div class="icon"><i class="fas fa-tachometer-alt"></i></div>
+                    <div class="value" id="specMaxSpeed">-</div>
+                    <div class="label">Max Speed</div>
+                </div>
+            </div>
+            <div class="warning-box" id="warningBox" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span id="warningText"></span>
             </div>
         </div>
 
         <button type="submit">
             <i class="fa-solid fa-route"></i> Generate Smart Routes
         </button>
+        
+        <div class="footer">
+            © 2025 IndianOil Corporation Ltd. - Truck Tanker Safety Navigation
+        </div>
     </form>
 </div>
 
 <script>
-    const landmarks = {{ landmarks|tojson }};
-    const states = {{ ro_states|tojson }};
-    let currentRoMethod = 'database';
-    let fetchedRoData = {}; 
+    // This part of the JS is no longer needed since Flask populates the datalist
+    // const landmarkData = [...]
+    // function filterTerminals(query) {...}
+    // landmarkInput.addEventListener('input', ...)
 
-    document.addEventListener('DOMContentLoaded', () => {
-        initializeTerminalSearch();
-        initializeStateSearch();
-        setupFormSubmission();
+    const landmarkInput = document.getElementById('landmark_name');
+    const sourceInput = document.getElementById('source');
+    
+    // Updated event listener to get coordinates from the dynamically populated datalist
+    landmarkInput.addEventListener('change', function () {
+        const name = this.value;
+        const options = document.getElementById('landmarkList').options;
+        let match = null;
+
+        // Find the option with the matching value
+        for (let i = 0; i < options.length; i++) {
+            if (options[i].value === name) {
+                match = options[i];
+                break;
+            }
+        }
+
+        if (match) {
+            const lat = match.getAttribute('data-lat');
+            const lng = match.getAttribute('data-lng');
+            sourceInput.value = `${lat},${lng}`;
+        } else if (name === "") {
+            sourceInput.value = "";
+        }
     });
 
-    function initializeTerminalSearch() {
-        const searchInput = document.getElementById('landmark_name');
-        const suggestionsBox = document.getElementById('landmarkSuggestions');
-
-        searchInput.addEventListener('input', () => {
-            const query = searchInput.value.toLowerCase();
-            suggestionsBox.innerHTML = '';
-            if (query.length < 2) {
-                suggestionsBox.style.display = 'none';
-                return;
-            }
-            const filtered = landmarks.filter(l => l.name.toLowerCase().includes(query));
-            
-            if (filtered.length > 0) {
-                filtered.forEach(item => {
-                    const div = document.createElement('div');
-                    div.className = 'suggestion-item';
-                    div.textContent = item.name;
-                    div.onclick = () => {
-                        searchInput.value = item.name;
-                        document.getElementById('source').value = `${item.lat}, ${item.lng}`;
-                        suggestionsBox.style.display = 'none';
-                    };
-                    suggestionsBox.appendChild(div);
-                });
-                suggestionsBox.style.display = 'block';
-            } else {
-                suggestionsBox.style.display = 'none';
-            }
-        });
-
-        document.addEventListener('click', (e) => {
-            if (!searchInput.contains(e.target)) {
-                suggestionsBox.style.display = 'none';
-            }
-        });
-    }
-
-    function initializeStateSearch() {
-        const searchInput = document.getElementById('state_code');
-        const suggestionsBox = document.getElementById('stateSuggestions');
-
-        searchInput.addEventListener('input', () => {
-            const query = searchInput.value.toLowerCase();
-            suggestionsBox.innerHTML = '';
-            if (query.length < 1) {
-                suggestionsBox.style.display = 'none';
-                return;
-            }
-            const filtered = states.filter(s => s.toLowerCase().includes(query));
-            if (filtered.length > 0) {
-                filtered.forEach(state => {
-                    const div = document.createElement('div');
-                    div.className = 'suggestion-item';
-                    div.textContent = state;
-                    div.onclick = () => {
-                        searchInput.value = state;
-                        suggestionsBox.style.display = 'none';
-                        loadSapCodes(state);
-                    };
-                    suggestionsBox.appendChild(div);
-                });
-                suggestionsBox.style.display = 'block';
-            } else {
-                suggestionsBox.style.display = 'none';
-            }
-        });
-
-        document.addEventListener('click', (e) => {
-            if (!searchInput.contains(e.target)) {
-                suggestionsBox.style.display = 'none';
-            }
-        });
-    }
-
-    async function loadSapCodes(selectedState=null) {
-        const stateCode = selectedState || document.getElementById('state_code').value;
-        const sapSelect = document.getElementById('sap_code');
-        
-        sapSelect.innerHTML = '<option value="">Loading...</option>';
-        sapSelect.disabled = true;
-        document.getElementById('roDetailsDisplay').classList.remove('active');
-        document.getElementById('destination').value = '';
-
-        if (!stateCode) {
-            sapSelect.innerHTML = '<option value="">Select a state first</option>';
-            return;
-        }
-
-        try {
-            if (!fetchedRoData[stateCode]) {
-                const response = await fetch(`/api/ro_plant_data/${stateCode}`);
-                if (!response.ok) throw new Error('Network response was not ok');
-                const result = await response.json();
-                if (!result.success) throw new Error(result.error || 'Failed to fetch RO data');
-                fetchedRoData[stateCode] = result.data;
-            }
-            
-            const roData = fetchedRoData[stateCode];
-            sapSelect.innerHTML = '<option value="">-- Select RO --</option>';
-
-            if (roData.length > 0) {
-                roData.sort((a, b) => a.consignee.localeCompare(b.consignee)).forEach(ro => {
-                    const option = document.createElement('option');
-                    option.value = ro.sap_code;
-                    option.textContent = `${ro.sap_code} - ${ro.consignee}`;
-                    option.setAttribute('data-coordinates', `${ro.latitude}, ${ro.longitude}`);
-                    option.setAttribute('data-consignee', ro.consignee);
-                    option.setAttribute('data-customer-type', ro.customer_type);
-                    option.setAttribute('data-sales-group', ro.sales_group);
-                    sapSelect.appendChild(option);
-                });
-                sapSelect.disabled = false;
-            } else {
-                sapSelect.innerHTML = '<option value="">No ROs found for this state</option>';
-            }
-        } catch (error) {
-            console.error('Error fetching RO data:', error);
-            sapSelect.innerHTML = '<option value="">Error fetching data</option>';
-        }
-    }
-
-    function loadRoDetails() {
-        const sapSelect = document.getElementById('sap_code');
-        const selectedOption = sapSelect.options[sapSelect.selectedIndex];
-        const detailsDisplay = document.getElementById('roDetailsDisplay');
-        const destinationInput = document.getElementById('destination');
-        
-        if (selectedOption.value) {
-            document.getElementById('roConsignee').textContent = selectedOption.getAttribute('data-consignee');
-            document.getElementById('roCustomerType').textContent = selectedOption.getAttribute('data-customer-type');
-            document.getElementById('roSalesGroup').textContent = selectedOption.getAttribute('data-sales-group');
-            const coords = selectedOption.getAttribute('data-coordinates');
-            document.getElementById('roCoordinates').textContent = coords;
-            
-            destinationInput.value = coords;
-            
-            detailsDisplay.classList.add('active');
-        } else {
-            detailsDisplay.classList.remove('active');
-            destinationInput.value = '';
-        }
-    }
-
-    function setRoMethod(method) {
-        currentRoMethod = method;
-        document.getElementById('ro-database-section').style.display = method === 'database' ? 'block' : 'none';
-        document.getElementById('ro-manual-section').style.display = method === 'manual' ? 'block' : 'none';
-
-        document.getElementById('method-database').classList.toggle('active', method === 'database');
-        document.getElementById('method-manual').classList.toggle('active', method === 'manual');
-
-        const destinationInput = document.getElementById('destination');
-        if (method === 'manual') {
-            destinationInput.name = 'destination_manual';
-            destinationInput.value = document.getElementById('destination_manual').value;
-        } else {
-            destinationInput.name = 'sap_code';
-            const sapSelect = document.getElementById('sap_code');
-            destinationInput.value = sapSelect.value;
-        }
-    }
+    document.getElementById('source').addEventListener('focus', function() {
+        this.placeholder = "Enter coordinates manually (lat, lng)";
+    });
 
     function showTTSpecs() {
-        const ttSelect = document.getElementById('tt_type');
-        const selectedOption = ttSelect.options[ttSelect.selectedIndex];
-        const specsDisplay = document.getElementById('ttSpecsDisplay');
-
+        const select = document.getElementById('tt_type');
+        const display = document.getElementById('ttSpecsDisplay');
+        const selectedOption = select.options[select.selectedIndex];
+        const warningBox = document.getElementById('warningBox');
+        const warningText = document.getElementById('warningText');
+        
         if (selectedOption.value) {
-            document.getElementById('specCapacity').textContent = selectedOption.getAttribute('data-capacity') + ' L';
-            document.getElementById('specGrossWeight').textContent = selectedOption.getAttribute('data-gross-weight') + ' kg';
-            document.getElementById('specAxleLoad').textContent = selectedOption.getAttribute('data-axle-load') + 'T';
-            document.getElementById('specMaxSpeed').textContent = selectedOption.getAttribute('data-max-speed') + ' km/h';
-            specsDisplay.classList.add('active');
+            const capacity = parseInt(selectedOption.dataset.capacity);
+            const productWeight = parseInt(selectedOption.dataset.productWeight);
+            const tareWeight = parseInt(selectedOption.dataset.tareWeight);
+            const grossWeight = parseInt(selectedOption.dataset.grossWeight);
+            const axleLoad = parseFloat(selectedOption.dataset.axleLoad);
+            const maxSpeed = parseInt(selectedOption.dataset.maxSpeed);
+            
+            document.getElementById('specCapacity').textContent = capacity.toLocaleString() + ' L';
+            document.getElementById('specGrossWeight').textContent = (grossWeight / 1000).toFixed(1) + ' T';
+            document.getElementById('specProductWeight').textContent = (productWeight / 1000).toFixed(1) + ' T';
+            document.getElementById('specTareWeight').textContent = (tareWeight / 1000).toFixed(1) + ' T';
+            document.getElementById('specAxleLoad').textContent = axleLoad.toFixed(1) + ' T';
+            document.getElementById('specMaxSpeed').textContent = maxSpeed + ' kmph';
+            
+            // Show warnings for heavy TT
+            if (grossWeight > 35000) {
+                warningBox.style.display = 'flex';
+                warningText.textContent = 'Heavy TT: Check bridge limits, reduce speed at turns.';
+            } else if (grossWeight > 25000) {
+                warningBox.style.display = 'flex';
+                warningText.textContent = 'Medium TT: Monitor axle loads and speed limits.';
+            } else {
+                warningBox.style.display = 'none';
+            }
+            
+            display.classList.add('active');
         } else {
-            specsDisplay.classList.remove('active');
+            display.classList.remove('active');
         }
     }
-    
-    function setupFormSubmission() {
-        const form = document.querySelector('.form-box');
-        form.addEventListener('submit', (event) => {
-            const destinationInput = document.getElementById('destination');
-            const sourceInput = document.getElementById('source');
-    
-            event.preventDefault();
-    
-            if (currentRoMethod === 'database') {
-                const sapSelect = document.getElementById('sap_code');
-                destinationInput.value = sapSelect.value;
-            } else {
-                destinationInput.value = document.getElementById('destination_manual').value;
-            }
-    
-            if (!sourceInput.value || !destinationInput.value) {
-                alert('Please select a Terminal and an RO Location.');
-                return;
-            }
-    
-            form.submit();
-        });
-    }
 
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const source = document.getElementById('source').value.trim();
+        const destination = document.getElementById('destination').value.trim();
+        const ttType = document.getElementById('tt_type').value;
+        
+        if (!source || !destination || !ttType) {
+            e.preventDefault();
+            // Using a custom modal instead of alert
+            const modal = document.createElement('div');
+            modal.style.position = 'fixed';
+            modal.style.top = '50%';
+            modal.style.left = '50%';
+            modal.style.transform = 'translate(-50%, -50%)';
+            modal.style.backgroundColor = 'white';
+            modal.style.padding = '20px';
+            modal.style.borderRadius = '10px';
+            modal.style.boxShadow = '0 5px 15px rgba(0,0,0,0.3)';
+            modal.style.zIndex = '1000';
+            modal.innerHTML = `
+                <p>Please fill in all required fields:</p>
+                <ul>
+                    <li>Terminal coordinates</li>
+                    <li>RO coordinates</li>
+                    <li>TT Capacity type</li>
+                </ul>
+                <button onclick="this.parentElement.remove()" style="margin-top:10px; padding:8px 16px; width: auto;">OK</button>
+            `;
+            document.body.appendChild(modal);
+            return;
+        }
+        
+        // Validate coordinate format
+        const coordPattern = /^-?\d+\.?\d*\s*,\s*-?\d+\.?\d*$/;
+        if (!coordPattern.test(source) || !coordPattern.test(destination)) {
+            e.preventDefault();
+            // Using a custom modal instead of alert
+            const modal = document.createElement('div');
+            modal.style.position = 'fixed';
+            modal.style.top = '50%';
+            modal.style.left = '50%';
+            modal.style.transform = 'translate(-50%, -50%)';
+            modal.style.backgroundColor = 'white';
+            modal.style.padding = '20px';
+            modal.style.borderRadius = '10px';
+            modal.style.boxShadow = '0 5px 15px rgba(0,0,0,0.3)';
+            modal.style.zIndex = '1000';
+            modal.innerHTML = `
+                <p>Please enter coordinates in the format:<br>latitude,longitude<br>Example: 28.6139,77.2090</p>
+                <button onclick="this.parentElement.remove()" style="margin-top:10px; padding:8px 16px; width: auto;">OK</button>
+            `;
+            document.body.appendChild(modal);
+            return;
+        }
+        
+        // Show loading state
+        const submitBtn = document.querySelector('button[type="submit"]');
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing TT Route...';
+        submitBtn.disabled = true;
+    });
 </script>
 </body>
 </html>
