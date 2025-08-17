@@ -6,7 +6,6 @@
     <title>IndianOil Smart Marg</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* (The CSS styles from the previous example are used here for consistency) */
         :root {
             --iocl-blue: #02164F;
             --iocl-orange: #F37022;
@@ -24,14 +23,7 @@
             position: relative;
             overflow-x: hidden;
         }
-        .container {
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: calc(100vh - 30px);
-            position: relative;
-            z-index: 1;
-        }
+        .container { display: flex; justify-content: center; align-items: flex-start; min-height: calc(100vh - 30px); position: relative; z-index: 1; }
         .form-box {
             background-color: var(--iocl-white);
             padding: 30px;
@@ -44,9 +36,7 @@
             text-align: left;
             margin: 10px 0;
         }
-        .header {
-            text-align: center; margin-bottom: 25px; display: flex; align-items: center; justify-content: center; gap: 12px;
-        }
+        .header { text-align: center; margin-bottom: 25px; display: flex; align-items: center; justify-content: center; gap: 12px; }
         .header h1 { font-size: 1.9em; font-weight: 800; color: var(--iocl-blue); margin: 0; }
         .header .logo-text { font-size: 1.0em; color: var(--iocl-orange); font-weight: 600; }
         .user-info { position: absolute; top: 10px; right: 15px; background: rgba(2, 22, 79, 0.1); padding: 5px 10px; border-radius: 15px; font-size: 0.85em; color: var(--iocl-blue); font-weight: 600; }
@@ -121,14 +111,13 @@
             <div class="method-option" onclick="setRoMethod('manual')" id="method-manual">Manual Entry</div>
         </div>
 
+        <!-- STATE AUTOCOMPLETE -->
         <div id="ro-database-section">
             <label for="state_code">State</label>
-            <select id="state_code" name="state_code" onchange="loadSapCodes()">
-                <option value="">-- Select State --</option>
-                {% for state in ro_states %}
-                    <option value="{{ state }}">{{ state }}</option>
-                {% endfor %}
-            </select>
+            <div class="input-container">
+                <input type="text" id="state_code" placeholder="Start typing state..." autocomplete="off">
+                <div id="stateSuggestions" class="suggestions-list"></div>
+            </div>
 
             <label for="sap_code">SAP Code / RO</label>
             <select id="sap_code" name="sap_code" onchange="loadRoDetails()" disabled>
@@ -191,13 +180,14 @@
 </div>
 
 <script>
-    // Data passed from Flask/Jinja2
     const landmarks = {{ landmarks|tojson }};
+    const states = {{ ro_states|tojson }};
     let currentRoMethod = 'database';
-    let fetchedRoData = {}; // Cache for fetched RO data by state
+    let fetchedRoData = {}; 
 
     document.addEventListener('DOMContentLoaded', () => {
         initializeTerminalSearch();
+        initializeStateSearch();
         setupFormSubmission();
     });
 
@@ -239,8 +229,45 @@
         });
     }
 
-    async function loadSapCodes() {
-        const stateCode = document.getElementById('state_code').value;
+    function initializeStateSearch() {
+        const searchInput = document.getElementById('state_code');
+        const suggestionsBox = document.getElementById('stateSuggestions');
+
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.toLowerCase();
+            suggestionsBox.innerHTML = '';
+            if (query.length < 1) {
+                suggestionsBox.style.display = 'none';
+                return;
+            }
+            const filtered = states.filter(s => s.toLowerCase().includes(query));
+            if (filtered.length > 0) {
+                filtered.forEach(state => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.textContent = state;
+                    div.onclick = () => {
+                        searchInput.value = state;
+                        suggestionsBox.style.display = 'none';
+                        loadSapCodes(state);
+                    };
+                    suggestionsBox.appendChild(div);
+                });
+                suggestionsBox.style.display = 'block';
+            } else {
+                suggestionsBox.style.display = 'none';
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!searchInput.contains(e.target)) {
+                suggestionsBox.style.display = 'none';
+            }
+        });
+    }
+
+    async function loadSapCodes(selectedState=null) {
+        const stateCode = selectedState || document.getElementById('state_code').value;
         const sapSelect = document.getElementById('sap_code');
         
         sapSelect.innerHTML = '<option value="">Loading...</option>';
@@ -254,7 +281,6 @@
         }
 
         try {
-            // Use cached data if available, otherwise fetch
             if (!fetchedRoData[stateCode]) {
                 const response = await fetch(`/api/ro_plant_data/${stateCode}`);
                 if (!response.ok) throw new Error('Network response was not ok');
@@ -268,95 +294,4 @@
 
             if (roData.length > 0) {
                 roData.sort((a, b) => a.consignee.localeCompare(b.consignee)).forEach(ro => {
-                    const option = document.createElement('option');
-                    option.value = ro.sap_code;
-                    option.textContent = `${ro.sap_code} - ${ro.consignee}`;
-                    sapSelect.appendChild(option);
-                });
-                sapSelect.disabled = false;
-            } else {
-                sapSelect.innerHTML = '<option value="">No ROs found for this state</option>';
-            }
-        } catch (error) {
-            console.error('Error loading SAP codes:', error);
-            sapSelect.innerHTML = '<option value="">Error loading data</option>';
-            showError(`Failed to load RO data for ${stateCode}.`);
-        }
-    }
-
-    function loadRoDetails() {
-        const sapCode = document.getElementById('sap_code').value;
-        const stateCode = document.getElementById('state_code').value;
-        const display = document.getElementById('roDetailsDisplay');
-
-        if (!sapCode || !stateCode || !fetchedRoData[stateCode]) {
-            display.classList.remove('active');
-            return;
-        }
-
-        const ro = fetchedRoData[stateCode].find(r => r.sap_code === sapCode);
-
-        if (ro) {
-            document.getElementById('roConsignee').textContent = ro.consignee;
-            document.getElementById('roCustomerType').textContent = ro.customer_type;
-            document.getElementById('roSalesGroup').textContent = ro.sales_group_desc;
-            document.getElementById('roCoordinates').textContent = `${ro.latitude.toFixed(6)}, ${ro.longitude.toFixed(6)}`;
-            document.getElementById('destination').value = `${ro.latitude},${ro.longitude}`;
-            display.classList.add('active');
-        } else {
-            display.classList.remove('active');
-        }
-    }
-
-    function setRoMethod(method) {
-        currentRoMethod = method;
-        const isDatabase = method === 'database';
-        document.getElementById('method-database').classList.toggle('active', isDatabase);
-        document.getElementById('method-manual').classList.toggle('active', !isDatabase);
-        document.getElementById('ro-database-section').style.display = isDatabase ? 'block' : 'none';
-        document.getElementById('ro-manual-section').style.display = isDatabase ? 'none' : 'block';
-        document.getElementById('destination').value = '';
-    }
-
-    function showTTSpecs() {
-        const select = document.getElementById('tt_type');
-        const display = document.getElementById('ttSpecsDisplay');
-        if (!select.value) {
-            display.classList.remove('active');
-            return;
-        }
-        
-        const option = select.options[select.selectedIndex];
-        document.getElementById('specCapacity').textContent = `${(option.dataset.capacity / 1000)} KL`;
-        document.getElementById('specGrossWeight').textContent = `${(option.dataset.grossWeight / 1000).toFixed(1)} T`;
-        document.getElementById('specAxleLoad').textContent = `${parseFloat(option.dataset.axleLoad).toFixed(1)} T`;
-        document.getElementById('specMaxSpeed').textContent = `${option.dataset.maxSpeed} Kmph`;
-        display.classList.add('active');
-    }
-
-    function setupFormSubmission() {
-        document.querySelector('.form-box').addEventListener('submit', function(e) {
-            if (currentRoMethod === 'manual') {
-                document.getElementById('destination').value = document.getElementById('destination_manual').value;
-            }
-            const destinationValue = document.getElementById('destination').value;
-            if (!destinationValue.trim()) {
-                e.preventDefault();
-                showError("Destination coordinates are required. Please select an RO or enter manually.");
-            }
-        });
-    }
-
-    function showMessage(elementId, message) {
-        const el = document.getElementById(elementId);
-        el.textContent = message;
-        el.style.display = 'block';
-        setTimeout(() => { el.style.display = 'none'; }, 5000);
-    }
-
-    function showError(message) { showMessage('errorDisplay', message); }
-    function showSuccess(message) { showMessage('successDisplay', message); }
-</script>
-
-</body>
-</html>
+                    const option = document.createElement('option
