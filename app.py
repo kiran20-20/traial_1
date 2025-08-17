@@ -15,6 +15,8 @@ import numpy as np
 from geopy.distance import geodesic
 import time
 from functools import wraps
+import json
+from collections import defaultdict
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
@@ -207,7 +209,92 @@ def login_required(f):
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
+#--------------------------------------------------------------------------------------------
+# Add this new function to load RO plant data from Excel
+def load_ro_plant_data():
+    """Load RO plant data from IOCL_Plant_data Excel file"""
+    ro_data = []
+    
+    try:
+        # Load the RO plant data Excel file
+        df_plants = pd.read_excel("IOCL_Plant_data.xlsx")
+        
+        for _, row in df_plants.iterrows():
+            try:
+                # Validate and convert data
+                consignee = str(row['Cosignee']).strip() if pd.notna(row['Cosignee']) else "Unknown"
+                latitude = float(row['Latitude']) if pd.notna(row['Latitude']) else None
+                longitude = float(row['Longitude']) if pd.notna(row['Longitude']) else None
+                sap_code = str(row['SAP Code']).strip() if pd.notna(row['SAP Code']) else "0000"
+                sap_reference = str(row['Sap Code_reference']).strip() if pd.notna(row['Sap Code_reference']) else sap_code
+                sales_group_code = str(row['Sales Group Code']).strip() if pd.notna(row['Sales Group Code']) else ""
+                sales_group_desc = str(row['Sales Group Desc']).strip() if pd.notna(row['Sales Group Desc']) else ""
+                state_code = str(row['State code']).strip() if pd.notna(row['State code']) else "UN"
+                customer_type = str(row['Customer Type']).strip() if pd.notna(row['Customer Type']) else "Unknown"
+                
+                if latitude is not None and longitude is not None:
+                    ro_data.append({
+                        'consignee': consignee,
+                        'latitude': latitude,
+                        'longitude': longitude,
+                        'sap_code': sap_code,
+                        'sap_reference': sap_reference,
+                        'sales_group_code': sales_group_code,
+                        'sales_group_desc': sales_group_desc,
+                        'state_code': state_code,
+                        'customer_type': customer_type
+                    })
+                    
+            except (ValueError, TypeError) as e:
+                print(f"Skipping invalid RO plant row: {e}")
+                continue
+                
+        print(f"Loaded {len(ro_data)} RO plant locations from Excel file")
+        
+    except FileNotFoundError:
+        print("IOCL_Plant_data.xlsx not found, using sample RO data")
+        # Provide sample data if file doesn't exist
+        ro_data = [
+            {
+                'consignee': 'G.S.R.T.C. (BHAVNAGAR DN) MAHUVA',
+                'latitude': 21.09515446,
+                'longitude': 71.76576734,
+                'sap_code': '0000',
+                'sap_reference': '0000',
+                'sales_group_code': 'G17',
+                'sales_group_desc': 'CON-BHAVNAGAR',
+                'state_code': 'GJ',
+                'customer_type': 'Consumers'
+            },
+            {
+                'consignee': 'COLD-Hindalco',
+                'latitude': 21.70031959429167,
+                'longitude': 72.54146767349411,
+                'sap_code': '5209',
+                'sap_reference': '5209',
+                'sales_group_code': 'GC6',
+                'sales_group_desc': 'KAM - BHARUCH',
+                'state_code': 'GJ',
+                'customer_type': 'Consumers'
+            },
+            {
+                'consignee': 'CFA SANAND',
+                'latitude': 23.010695763317024,
+                'longitude': 72.35583600982058,
+                'sap_code': '5766',
+                'sap_reference': '5766',
+                'sales_group_code': 'GR1',
+                'sales_group_desc': 'LSE-AHMEDABAD',
+                'state_code': 'GJ',
+                'customer_type': 'Retail'
+            }
+        ]
+    except Exception as e:
+        print(f"Error loading RO plant Excel file: {e}")
+        ro_data = []
 
+    return ro_data
+#---------------------------------------------------------------------------------------------
 def get_tt_specs(tt_type):
     """Get truck tanker specifications"""
     return TT_SPECIFICATIONS.get(tt_type, TT_SPECIFICATIONS["16-20KL"])
@@ -547,6 +634,180 @@ def user_info():
         'session_active': True
     }
 
+#-----------------------------------------------------------------------------------------------------------
+# Add this new API endpoint to get RO plant data
+@app.route('/api/ro_plant_data')
+@login_required
+def get_ro_plant_data():
+    """API endpoint to get RO plant data"""
+    try:
+        ro_data = load_ro_plant_data()
+        
+        # Organize data by state for easier frontend processing
+        organized_data = defaultdict(list)
+        for item in ro_data:
+            organized_data[item['state_code']].append(item)
+        
+        return {
+            'success': True,
+            'data': dict(organized_data),
+            'total_records': len(ro_data),
+            'states': sorted(organized_data.keys())
+        }
+    except Exception as e:
+        print(f"Error in get_ro_plant_data: {e}")
+        return {
+            'success': False,
+            'error': str(e),
+            'data': {},
+            'total_records': 0,
+            'states': []
+        }
+
+# Add this new API endpoint to get RO data by state
+@app.route('/api/ro_plant_data/<state_code>')
+@login_required
+def get_ro_data_by_state(state_code):
+    """API endpoint to get RO data filtered by state code"""
+    try:
+        ro_data = load_ro_plant_data()
+        filtered_data = [item for item in ro_data if item['state_code'].upper() == state_code.upper()]
+        
+        return {
+            'success': True,
+            'state_code': state_code,
+            'data': filtered_data,
+            'count': len(filtered_data)
+        }
+    except Exception as e:
+        print(f"Error in get_ro_data_by_state: {e}")
+        return {
+            'success': False,
+            'error': str(e),
+            'data': [],
+            'count': 0
+        }
+
+# Add this new API endpoint to get specific RO details by SAP code
+@app.route('/api/ro_details/<sap_code>')
+@login_required
+def get_ro_details(sap_code):
+    """API endpoint to get specific RO details by SAP code"""
+    try:
+        ro_data = load_ro_plant_data()
+        ro_item = next((item for item in ro_data if item['sap_code'] == sap_code), None)
+        
+        if ro_item:
+            return {
+                'success': True,
+                'data': ro_item
+            }
+        else:
+            return {
+                'success': False,
+                'error': 'SAP code not found',
+                'data': None
+            }
+    except Exception as e:
+        print(f"Error in get_ro_details: {e}")
+        return {
+            'success': False,
+            'error': str(e),
+            'data': None
+        }
+
+# Modify the existing home() route to include RO plant data
+@app.route('/')
+@login_required
+def home():
+    """Main route form page - requires login"""
+    try:
+        # Add username to template context
+        username = session.get('username', 'User')
+        
+        # Load IOCL Landmarks with data validation (existing code)
+        landmarks = []
+        
+        try:
+            df_iocl = pd.read_excel("IOCL_Landmark_Details.xlsx")
+            
+            for _, row in df_iocl.iterrows():
+                try:
+                    lat = float(row['Latitude']) if pd.notna(row['Latitude']) else None
+                    lng = float(row['Longitude']) if pd.notna(row['Longitude']) else None
+                    name = str(row['Landmark Name']).strip() if pd.notna(row['Landmark Name']) else None
+                    
+                    if lat is not None and lng is not None and name:
+                        landmarks.append({
+                            'name': name,
+                            'lat': lat,
+                            'lng': lng
+                        })
+                except (ValueError, TypeError) as e:
+                    print(f"Skipping invalid landmark row: {e}")
+                    continue
+                    
+            print(f"Loaded {len(landmarks)} landmarks from Excel file")
+            
+        except FileNotFoundError:
+            print("IOCL_Landmark_Details.xlsx not found, using sample landmarks")
+            landmarks = [
+                {'name': 'Delhi Terminal', 'lat': 28.6139, 'lng': 77.2090},
+                {'name': 'Mumbai Terminal', 'lat': 19.0760, 'lng': 72.8777},
+                {'name': 'Bangalore Terminal', 'lat': 12.9716, 'lng': 77.5946},
+                {'name': 'Chennai Terminal', 'lat': 13.0827, 'lng': 80.2707},
+                {'name': 'Kolkata Terminal', 'lat': 22.5726, 'lng': 88.3639}
+            ]
+        except Exception as e:
+            print(f"Error loading Excel file: {e}")
+            landmarks = []
+
+        # Load RO plant data (new functionality)
+        ro_plant_data = load_ro_plant_data()
+        
+        # Organize RO data by state for template
+        ro_states = sorted(list(set(item['state_code'] for item in ro_plant_data)))
+
+        # Pass landmarks, RO data, TT specifications, and username to template
+        return render_template(
+            "route_form.html",
+            landmarks=landmarks,
+            tt_specifications=TT_SPECIFICATIONS,
+            ro_plant_data=ro_plant_data,
+            ro_states=ro_states,
+            username=username
+        )
+        
+    except Exception as e:
+        print(f"Error loading data: {e}")
+        import traceback
+        traceback.print_exc()
+        # Return a simple fallback page if everything fails
+        username = session.get('username', 'User')
+        tt_options = ""
+        for tt_key, tt_data in TT_SPECIFICATIONS.items():
+            tt_options += f'<option value="{tt_key}">{tt_data["capacity_range"]} ({tt_data["gross_weight"]/1000:.1f}T)</option>'
+        
+        return f"""
+        <html><body>
+        <h2>IndianOil Smart Marg - Truck Tanker Navigation</h2>
+        <p>Welcome, {username}! <a href="/logout">Logout</a></p>
+        <p>Basic form (data files unavailable)</p>
+        <form method="POST" action="/fetch_routes">
+            <p>Source: <input type="text" name="source" placeholder="lat,lng" required></p>
+            <p>Destination: <input type="text" name="destination" placeholder="lat,lng" required></p>
+            <p>Truck Tanker Type: 
+                <select name="tt_type" required>
+                    <option value="">Choose TT Capacity</option>
+                    {tt_options}
+                </select>
+            </p>
+            <button type="submit">Generate Routes</button>
+        </form>
+        <p>Error: {str(e)}</p>
+        </body></html>
+        """
+#----------------------------------------------------------------------------------------------------------------------------------------------------
 @app.route('/health')
 def health():
     """Simple health check endpoint"""
@@ -1207,4 +1468,5 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
