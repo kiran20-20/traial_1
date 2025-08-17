@@ -86,7 +86,7 @@
             align-items: flex-start;
             min-height: calc(100vh - 30px);
             position: relative;
-            z-index: 1; /* Ensure container is above the floating background */
+            z-index: 1;
         }
 
         .form-box {
@@ -121,6 +121,28 @@
         .header .logo-text {
             font-size: 1.0em;
             color: var(--iocl-orange);
+            font-weight: 600;
+        }
+
+        .user-info {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: rgba(2, 22, 79, 0.1);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            color: var(--iocl-blue);
+            font-weight: 600;
+        }
+
+        .logout-link {
+            position: absolute;
+            top: 10px;
+            left: 15px;
+            color: var(--iocl-orange);
+            text-decoration: none;
+            font-size: 0.85em;
             font-weight: 600;
         }
 
@@ -185,15 +207,19 @@
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
         }
 
+        button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .footer {
             margin-top: 20px;
             font-size: 0.75rem;
             text-align: center;
             color: var(--iocl-mid-gray);
         }
-        .values-section {
-            display: none;
-        }
+
         datalist option {
             padding: 8px;
         }
@@ -370,6 +396,30 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
 
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            font-size: 1.2em;
+            color: white;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #f5c6cb;
+            margin: 10px 0;
+        }
+
         /* Mobile Responsive */
         @media (max-width: 768px) {
             body {
@@ -406,12 +456,10 @@
             }
         }
 
-        /* Ensure page can scroll properly */
         html {
             scroll-behavior: smooth;
         }
 
-        /* Reduce floating elements on small screens */
         @media (max-height: 600px) {
             .floating-text-bubble:nth-child(n+5) {
                 display: none;
@@ -441,9 +489,20 @@
 
 <div class="container">
     <form class="form-box" method="POST" action="/fetch_routes">
+        <!-- User info and logout -->
+        {% if username %}
+        <div class="user-info">User: {{ username }}</div>
+        <a href="/logout" class="logout-link">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+        {% endif %}
+
         <div class="header">
             <h1>IndianOil <span class="logo-text">Smart Marg</span></h1>
         </div>
+
+        <!-- Error display area -->
+        <div id="errorDisplay" class="error-message" style="display: none;"></div>
 
         <div class="section-title">
             <i class="fa-solid fa-industry"></i>
@@ -451,10 +510,12 @@
         </div>
         
         <label for="landmark_name">IOCL Terminal</label>
-        <input type="text" id="landmark_name" list="landmarkList" placeholder="Start typing terminal name...">
+        <input type="text" id="landmark_name" list="landmarkList" placeholder="Start typing terminal name..." autocomplete="off">
         <datalist id="landmarkList">
             {% for landmark in landmarks %}
             <option value="{{ landmark.name }}" data-lat="{{ landmark.lat }}" data-lng="{{ landmark.lng }}">
+                {{ landmark.name }} ({{ landmark.lat|round(4) }}, {{ landmark.lng|round(4) }})
+            </option>
             {% endfor %}
         </datalist>
 
@@ -481,9 +542,12 @@
             <label for="state_code">State Code</label>
             <select id="state_code" name="state_code" onchange="loadSapCodes()">
                 <option value="">Select State</option>
+                {% for state in ro_states %}
+                <option value="{{ state }}">{{ state }}</option>
+                {% endfor %}
             </select>
 
-            <label for="sap_code">SAP Code</label>
+            <label for="sap_code">SAP Code / RO</label>
             <select id="sap_code" name="sap_code" onchange="loadRoDetails()" disabled>
                 <option value="">Select SAP Code</option>
             </select>
@@ -596,7 +660,7 @@
             </div>
         </div>
 
-        <button type="submit">
+        <button type="submit" id="submitBtn">
             <i class="fa-solid fa-route"></i> Generate Smart Routes
         </button>
         
@@ -607,18 +671,115 @@
 </div>
 
 <script>
-    // RO plant data - loaded from Flask backend
+    // Global variables
     let roPlantData = [];
     let roDataByState = {};
     let allStates = [];
-
     let currentRoMethod = 'database';
     let selectedRoData = null;
+    let isDataLoaded = false;
+
+    // Initialize RO plant data from Flask backend (fallback to template data)
+    function initializeRoData() {
+        // First try to use template data as fallback
+        const templateRoData = {{ ro_plant_data | tojsonfilter | safe }};
+        const templateStates = {{ ro_states | tojsonfilter | safe }};
+        
+        if (templateRoData && templateRoData.length > 0) {
+            roPlantData = templateRoData;
+            
+            // Organize by state
+            roDataByState = {};
+            templateRoData.forEach(item => {
+                if (!roDataByState[item.state_code]) {
+                    roDataByState[item.state_code] = [];
+                }
+                roDataByState[item.state_code].push(item);
+            });
+            
+            allStates = templateStates || Object.keys(roDataByState).sort();
+            isDataLoaded = true;
+            
+            console.log(`Initialized ${roPlantData.length} RO plants from template data`);
+            populateStateDropdown();
+        }
+        
+        // Then try to load from API for updates
+        loadRoPlantDataFromAPI();
+    }
+
+    // Load RO plant data from Flask API
+    async function loadRoPlantDataFromAPI() {
+        try {
+            const response = await fetch('/api/ro_plant_data');
+            const result = await response.json();
+            
+            if (result.success && result.data && Object.keys(result.data).length > 0) {
+                roDataByState = result.data;
+                allStates = result.states || Object.keys(result.data).sort();
+                
+                // Flatten data
+                roPlantData = [];
+                for (const state in roDataByState) {
+                    roPlantData = roPlantData.concat(roDataByState[state]);
+                }
+                
+                isDataLoaded = true;
+                console.log(`Updated with ${result.total_records} RO plants from API`);
+                populateStateDropdown();
+            } else {
+                console.log('API data not available, using template data');
+                if (!isDataLoaded) {
+                    showError('Unable to load RO plant data from both API and template');
+                }
+            }
+        } catch (error) {
+            console.error('Error loading RO plant data from API:', error);
+            if (!isDataLoaded) {
+                showError('Failed to load RO plant data: ' + error.message);
+            }
+        }
+    }
+
+    // Populate state dropdown
+    function populateStateDropdown() {
+        const stateSelect = document.getElementById('state_code');
+        stateSelect.innerHTML = '<option value="">Select State</option>';
+        
+        allStates.forEach(state => {
+            const option = document.createElement('option');
+            option.value = state;
+            option.textContent = state;
+            stateSelect.appendChild(option);
+        });
+        
+        console.log(`Populated ${allStates.length} states in dropdown`);
+    }
 
     // Terminal/Landmark functionality
     const landmarkInput = document.getElementById('landmark_name');
     const sourceInput = document.getElementById('source');
     
+    landmarkInput.addEventListener('input', function () {
+        const name = this.value;
+        const options = document.getElementById('landmarkList').options;
+        let match = null;
+
+        for (let i = 0; i < options.length; i++) {
+            if (options[i].value === name) {
+                match = options[i];
+                break;
+            }
+        }
+
+        if (match) {
+            const lat = match.getAttribute('data-lat');
+            const lng = match.getAttribute('data-lng');
+            sourceInput.value = `${lat},${lng}`;
+        }
+    });
+
+    // Also handle when user selects from dropdown
     landmarkInput.addEventListener('change', function () {
         const name = this.value;
         const options = document.getElementById('landmarkList').options;
@@ -654,50 +815,15 @@
         
         // Clear destination field
         document.getElementById('destination').value = '';
+        hideRoDetails();
         
+        // Update required fields
+        const manualInput = document.getElementById('destination_manual');
         if (method === 'database') {
-            document.getElementById('destination_manual').removeAttribute('required');
+            manualInput.removeAttribute('required');
         } else {
-            document.getElementById('destination_manual').setAttribute('required', 'required');
+            manualInput.setAttribute('required', 'required');
         }
-    }
-
-    // Load RO plant data from Flask backend
-    async function loadRoPlantData() {
-        try {
-            const response = await fetch('/api/ro_plant_data');
-            const result = await response.json();
-            
-            if (result.success) {
-                roDataByState = result.data;
-                allStates = result.states;
-                
-                // Flatten data for backward compatibility
-                roPlantData = [];
-                for (const state in roDataByState) {
-                    roPlantData = roPlantData.concat(roDataByState[state]);
-                }
-                
-                console.log(`Loaded ${result.total_records} RO plant locations from ${result.states.length} states`);
-            } else {
-                console.error('Failed to load RO plant data:', result.error);
-            }
-        } catch (error) {
-            console.error('Error loading RO plant data:', error);
-        }
-    }
-
-    // Initialize state codes from loaded data
-    function initializeStateCodes() {
-        const stateSelect = document.getElementById('state_code');
-        
-        stateSelect.innerHTML = '<option value="">Select State</option>';
-        allStates.forEach(state => {
-            const option = document.createElement('option');
-            option.value = state;
-            option.textContent = state;
-            stateSelect.appendChild(option);
-        });
     }
 
     // Load SAP codes based on selected state
@@ -709,19 +835,32 @@
         sapSelect.innerHTML = '<option value="">Select SAP Code</option>';
         sapSelect.disabled = true;
         hideRoDetails();
+        document.getElementById('destination').value = '';
         
         if (stateCode && roDataByState[stateCode]) {
             const stateData = roDataByState[stateCode];
             
-            stateData.forEach((item, index) => {
+            // Sort by consignee name for better UX
+            const sortedData = stateData.sort((a, b) => a.consignee.localeCompare(b.consignee));
+            
+            sortedData.forEach((item, index) => {
                 const option = document.createElement('option');
                 option.value = item.sap_code;
-                option.textContent = `${item.sap_code} - ${item.consignee.substring(0, 30)}${item.consignee.length > 30 ? '...' : ''}`;
+                
+                // Create readable option text
+                const consigneeName = item.consignee.length > 35 
+                    ? item.consignee.substring(0, 35) + '...' 
+                    : item.consignee;
+                    
+                option.textContent = `${item.sap_code} - ${consigneeName}`;
                 option.dataset.roData = JSON.stringify(item);
                 sapSelect.appendChild(option);
             });
             
             sapSelect.disabled = false;
+            console.log(`Loaded ${sortedData.length} SAP codes for state ${stateCode}`);
+        } else if (stateCode) {
+            showError(`No RO data found for state: ${stateCode}`);
         }
     }
 
@@ -731,24 +870,32 @@
         const selectedOption = sapSelect.options[sapSelect.selectedIndex];
         
         if (selectedOption.value && selectedOption.dataset.roData) {
-            selectedRoData = JSON.parse(selectedOption.dataset.roData);
-            
-            // Update RO details display
-            document.getElementById('roConsignee').textContent = selectedRoData.consignee;
-            document.getElementById('roCustomerType').textContent = selectedRoData.customer_type;
-            document.getElementById('roSalesGroup').textContent = `${selectedRoData.sales_group_code} - ${selectedRoData.sales_group_desc}`;
-            document.getElementById('roState').textContent = selectedRoData.state_code;
-            document.getElementById('roCoordinates').textContent = `${selectedRoData.latitude.toFixed(6)}, ${selectedRoData.longitude.toFixed(6)}`;
-            document.getElementById('roSapRef').textContent = selectedRoData.sap_reference;
-            
-            // Set destination coordinates
-            document.getElementById('destination').value = `${selectedRoData.latitude},${selectedRoData.longitude}`;
-            
-            // Show RO details
-            document.getElementById('roDetailsDisplay').classList.add('active');
+            try {
+                selectedRoData = JSON.parse(selectedOption.dataset.roData);
+                
+                // Update RO details display
+                document.getElementById('roConsignee').textContent = selectedRoData.consignee;
+                document.getElementById('roCustomerType').textContent = selectedRoData.customer_type;
+                document.getElementById('roSalesGroup').textContent = `${selectedRoData.sales_group_code} - ${selectedRoData.sales_group_desc}`;
+                document.getElementById('roState').textContent = selectedRoData.state_code;
+                document.getElementById('roCoordinates').textContent = `${selectedRoData.latitude.toFixed(6)}, ${selectedRoData.longitude.toFixed(6)}`;
+                document.getElementById('roSapRef').textContent = selectedRoData.sap_reference;
+                
+                // Set destination coordinates
+                document.getElementById('destination').value = `${selectedRoData.latitude},${selectedRoData.longitude}`;
+                
+                // Show RO details
+                document.getElementById('roDetailsDisplay').classList.add('active');
+                
+                console.log('Selected RO:', selectedRoData.consignee);
+            } catch (error) {
+                console.error('Error parsing RO data:', error);
+                showError('Error loading RO details');
+            }
         } else {
             hideRoDetails();
             document.getElementById('destination').value = '';
+            selectedRoData = null;
         }
     }
 
@@ -761,14 +908,22 @@
     // Handle manual destination input
     document.getElementById('destination_manual').addEventListener('input', function() {
         if (currentRoMethod === 'manual') {
-            document.getElementById('destination').value = this.value;
+            document.getElementById('destination').value = this.value.trim();
         }
     });
 
+    // Focus handlers for better UX
     document.getElementById('source').addEventListener('focus', function() {
-        this.placeholder = "Enter coordinates manually (lat, lng)";
+        if (!this.value) {
+            this.placeholder = "Select terminal above or enter coordinates (lat, lng)";
+        }
     });
 
+    document.getElementById('destination_manual').addEventListener('focus', function() {
+        this.placeholder = "Enter coordinates (latitude, longitude)";
+    });
+
+    // TT Specifications Display
     function showTTSpecs() {
         const select = document.getElementById('tt_type');
         const display = document.getElementById('ttSpecsDisplay');
@@ -784,6 +939,7 @@
             const axleLoad = parseFloat(selectedOption.dataset.axleLoad);
             const maxSpeed = parseInt(selectedOption.dataset.maxSpeed);
             
+            // Update display values
             document.getElementById('specCapacity').textContent = capacity.toLocaleString() + ' L';
             document.getElementById('specGrossWeight').textContent = (grossWeight / 1000).toFixed(1) + ' T';
             document.getElementById('specProductWeight').textContent = (productWeight / 1000).toFixed(1) + ' T';
@@ -794,10 +950,10 @@
             // Show warnings for heavy TT
             if (grossWeight > 35000) {
                 warningBox.style.display = 'flex';
-                warningText.textContent = 'Heavy TT: Check bridge limits, reduce speed at turns.';
+                warningText.textContent = 'Heavy TT: Check bridge weight limits, reduce speed at sharp turns, plan fuel stops carefully.';
             } else if (grossWeight > 25000) {
                 warningBox.style.display = 'flex';
-                warningText.textContent = 'Medium TT: Monitor axle loads and speed limits.';
+                warningText.textContent = 'Medium TT: Monitor axle loads, speed limits, and traffic conditions.';
             } else {
                 warningBox.style.display = 'none';
             }
@@ -808,87 +964,146 @@
         }
     }
 
+    // Error display function
+    function showError(message) {
+        const errorDisplay = document.getElementById('errorDisplay');
+        errorDisplay.textContent = message;
+        errorDisplay.style.display = 'block';
+        
+        // Auto-hide after 8 seconds
+        setTimeout(() => {
+            errorDisplay.style.display = 'none';
+        }, 8000);
+    }
+
+    // Clear error display
+    function clearError() {
+        document.getElementById('errorDisplay').style.display = 'none';
+    }
+
     // Form validation
     document.querySelector('form').addEventListener('submit', function(e) {
+        clearError();
+        
         const source = document.getElementById('source').value.trim();
         const destination = document.getElementById('destination').value.trim();
         const ttType = document.getElementById('tt_type').value;
         
-        // Check if destination is properly set based on method
-        let destinationValid = false;
+        // Validation checks
+        const errors = [];
+        
+        if (!source) {
+            errors.push('Terminal coordinates are required');
+        }
+        
+        if (!ttType) {
+            errors.push('TT capacity type is required');
+        }
+        
+        // Check destination based on method
         if (currentRoMethod === 'database') {
-            destinationValid = destination !== '' && selectedRoData !== null;
+            if (!destination || !selectedRoData) {
+                errors.push('Please select an RO from the database');
+            }
         } else {
             const manualDest = document.getElementById('destination_manual').value.trim();
-            destinationValid = manualDest !== '';
-            if (destinationValid) {
+            if (!manualDest) {
+                errors.push('RO coordinates are required for manual entry');
+            } else {
                 document.getElementById('destination').value = manualDest;
             }
         }
         
-        if (!source || !destinationValid || !ttType) {
-            e.preventDefault();
-            showValidationError();
-            return;
+        // Validate coordinate formats
+        const coordPattern = /^-?\d+\.?\d*\s*,\s*-?\d+\.?\d*$/;
+        if (source && !coordPattern.test(source)) {
+            errors.push('Invalid terminal coordinate format. Use: latitude,longitude');
         }
         
-        // Validate coordinate format
-        const coordPattern = /^-?\d+\.?\d*\s*,\s*-?\d+\.?\d*$/;
-        if (!coordPattern.test(source) || !coordPattern.test(document.getElementById('destination').value)) {
+        const finalDestination = document.getElementById('destination').value.trim();
+        if (finalDestination && !coordPattern.test(finalDestination)) {
+            errors.push('Invalid RO coordinate format. Use: latitude,longitude');
+        }
+        
+        // Show errors or proceed
+        if (errors.length > 0) {
             e.preventDefault();
-            showCoordinateError();
-            return;
+            showError('Validation errors: ' + errors.join('; '));
+            return false;
         }
         
         // Show loading state
-        const submitBtn = document.querySelector('button[type="submit"]');
+        const submitBtn = document.getElementById('submitBtn');
+        const originalContent = submitBtn.innerHTML;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing TT Route...';
         submitBtn.disabled = true;
+        
+        // Create loading overlay
+        const loadingOverlay = document.createElement('div');
+        loadingOverlay.className = 'loading-overlay';
+        loadingOverlay.innerHTML = '<div><i class="fas fa-spinner fa-spin"></i> Processing route with TT specifications...</div>';
+        document.body.appendChild(loadingOverlay);
+        
+        // Restore button if form submission fails (fallback)
+        setTimeout(() => {
+            if (document.body.contains(loadingOverlay)) {
+                document.body.removeChild(loadingOverlay);
+                submitBtn.innerHTML = originalContent;
+                submitBtn.disabled = false;
+            }
+        }, 30000); // 30 second timeout
     });
 
-    function showValidationError() {
-        const modal = document.createElement('div');
-        modal.style.cssText = `
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background-color: white; padding: 20px; border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index: 1000;
-        `;
-        modal.innerHTML = `
-            <p><strong>Please complete all required fields:</strong></p>
-            <ul>
-                <li>Terminal coordinates</li>
-                <li>RO location (${currentRoMethod === 'database' ? 'select from database' : 'enter manually'})</li>
-                <li>TT Capacity type</li>
-            </ul>
-            <button onclick="this.parentElement.remove()" style="margin-top:10px; padding:8px 16px; width: auto;">OK</button>
-        `;
-        document.body.appendChild(modal);
-    }
-
-    function showCoordinateError() {
-        const modal = document.createElement('div');
-        modal.style.cssText = `
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background-color: white; padding: 20px; border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index: 1000;
-        `;
-        modal.innerHTML = `
-            <p><strong>Invalid coordinate format!</strong></p>
-            <p>Please enter coordinates as: <code>latitude,longitude</code></p>
-            <p>Example: <code>28.6139,77.2090</code></p>
-            <button onclick="this.parentElement.remove()" style="margin-top:10px; padding:8px 16px; width: auto;">OK</button>
-        `;
-        document.body.appendChild(modal);
-    }
-
-    // Initialize the form
-    document.addEventListener('DOMContentLoaded', async function() {
-        // Load RO plant data from backend first
-        await loadRoPlantData();
+    // Initialize everything when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Initializing IndianOil Smart Marg form...');
         
-        // Then initialize state codes
-        initializeStateCodes();
+        // Initialize RO data
+        initializeRoData();
         
         // Set default method
         setRoMethod('database');
+        
+        // Add some helpful tooltips
+        document.getElementById('landmark_name').title = 'Start typing to search IOCL terminals';
+        document.getElementById('state_code').title = 'Select state to filter RO locations';
+        document.getElementById('tt_type').title = 'Choose truck tanker capacity for route optimization';
+        
+        console.log('Form initialization complete');
     });
+
+    // Utility function to validate coordinates
+    function validateCoordinates(coordString) {
+        const coordPattern = /^-?\d+\.?\d*\s*,\s*-?\d+\.?\d*$/;
+        if (!coordPattern.test(coordString)) {
+            return false;
+        }
+        
+        const [lat, lng] = coordString.split(',').map(s => parseFloat(s.trim()));
+        return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+    }
+
+    // Add real-time coordinate validation
+    document.getElementById('source').addEventListener('blur', function() {
+        const coords = this.value.trim();
+        if (coords && !validateCoordinates(coords)) {
+            this.style.borderColor = '#dc3545';
+            showError('Invalid terminal coordinates format or values');
+        } else {
+            this.style.borderColor = '#ddd';
+        }
+    });
+
+    document.getElementById('destination_manual').addEventListener('blur', function() {
+        const coords = this.value.trim();
+        if (coords && !validateCoordinates(coords)) {
+            this.style.borderColor = '#dc3545';
+            showError('Invalid RO coordinates format or values');
+        } else {
+            this.style.borderColor = '#ddd';
+        }
+    });
+</script>
+
+</body>
+</html>
