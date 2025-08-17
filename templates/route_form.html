@@ -204,6 +204,59 @@
             font-style: italic;
         }
 
+        /* RO Details Display */
+        .ro-details-display {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1ecf1 100%);
+            border: 2px solid var(--iocl-blue);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 12px;
+            display: none;
+            animation: slideDown 0.4s ease;
+        }
+
+        .ro-details-display.active {
+            display: block;
+        }
+
+        .ro-details-title {
+            text-align: center;
+            color: var(--iocl-blue);
+            font-weight: bold;
+            font-size: 1.0em;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .ro-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .ro-detail-item {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .ro-detail-item .label {
+            font-size: 0.8em;
+            color: var(--iocl-mid-gray);
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .ro-detail-item .value {
+            font-size: 0.9em;
+            font-weight: bold;
+            color: var(--iocl-blue);
+        }
+
         /* Compact TT Specifications Display */
         .tt-specs-display {
             background: linear-gradient(135deg, #e8f4f8 0%, #d1ecf1 100%);
@@ -287,6 +340,36 @@
             color: #f39c12;
         }
 
+        .method-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .method-option {
+            flex: 1;
+            padding: 10px;
+            background: var(--iocl-light-gray);
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .method-option.active {
+            background: var(--iocl-blue);
+            color: white;
+            border-color: var(--iocl-blue);
+        }
+
+        .method-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
         /* Mobile Responsive */
         @media (max-width: 768px) {
             body {
@@ -302,6 +385,9 @@
             .specs-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
+            .ro-details-grid {
+                grid-template-columns: 1fr;
+            }
             .floating-text-bubble {
                 font-size: 0.85rem;
                 padding: 8px 14px;
@@ -314,6 +400,9 @@
             }
             .form-box {
                 padding: 15px;
+            }
+            .method-selector {
+                flex-direction: column;
             }
         }
 
@@ -374,13 +463,74 @@
         <div class="coord-helper">Example: 28.6139, 77.2090</div>
 
         <div class="section-title">
-            <i class="fa-solid fa-gas-pump"></i>
-            <span>RO Location</span>
+            <i class="fa-solid fa-map-marker-alt"></i>
+            <span>RO Location Selection</span>
         </div>
 
-        <label for="destination">RO Coordinates</label>
-        <input type="text" name="destination" id="destination" placeholder="Enter coordinates manually (lat, lng)" required>
-        <div class="coord-helper">Example: 19.0760, 72.8777</div>
+        <div class="method-selector">
+            <div class="method-option active" onclick="setRoMethod('database')" id="method-database">
+                <i class="fa-solid fa-database"></i><br>From Database
+            </div>
+            <div class="method-option" onclick="setRoMethod('manual')" id="method-manual">
+                <i class="fa-solid fa-edit"></i><br>Manual Entry
+            </div>
+        </div>
+
+        <!-- Database Selection Method -->
+        <div id="ro-database-section">
+            <label for="state_code">State Code</label>
+            <select id="state_code" name="state_code" onchange="loadSapCodes()">
+                <option value="">Select State</option>
+            </select>
+
+            <label for="sap_code">SAP Code</label>
+            <select id="sap_code" name="sap_code" onchange="loadRoDetails()" disabled>
+                <option value="">Select SAP Code</option>
+            </select>
+
+            <div id="roDetailsDisplay" class="ro-details-display">
+                <div class="ro-details-title">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>RO Details</span>
+                </div>
+                <div class="ro-details-grid">
+                    <div class="ro-detail-item">
+                        <div class="label">Consignee</div>
+                        <div class="value" id="roConsignee">-</div>
+                    </div>
+                    <div class="ro-detail-item">
+                        <div class="label">Customer Type</div>
+                        <div class="value" id="roCustomerType">-</div>
+                    </div>
+                    <div class="ro-detail-item">
+                        <div class="label">Sales Group</div>
+                        <div class="value" id="roSalesGroup">-</div>
+                    </div>
+                    <div class="ro-detail-item">
+                        <div class="label">State</div>
+                        <div class="value" id="roState">-</div>
+                    </div>
+                    <div class="ro-detail-item">
+                        <div class="label">Coordinates</div>
+                        <div class="value" id="roCoordinates">-</div>
+                    </div>
+                    <div class="ro-detail-item">
+                        <div class="label">SAP Reference</div>
+                        <div class="value" id="roSapRef">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual Entry Method -->
+        <div id="ro-manual-section" style="display: none;">
+            <label for="destination_manual">RO Coordinates</label>
+            <input type="text" name="destination_manual" id="destination_manual" placeholder="Enter coordinates manually (lat, lng)">
+            <div class="coord-helper">Example: 19.0760, 72.8777</div>
+        </div>
+
+        <!-- Hidden field for actual destination coordinates -->
+        <input type="hidden" name="destination" id="destination">
 
         <div class="section-title">
             <i class="fa-solid fa-truck-fast"></i>
@@ -457,21 +607,23 @@
 </div>
 
 <script>
-    // This part of the JS is no longer needed since Flask populates the datalist
-    // const landmarkData = [...]
-    // function filterTerminals(query) {...}
-    // landmarkInput.addEventListener('input', ...)
+    // RO plant data - loaded from Flask backend
+    let roPlantData = [];
+    let roDataByState = {};
+    let allStates = [];
 
+    let currentRoMethod = 'database';
+    let selectedRoData = null;
+
+    // Terminal/Landmark functionality
     const landmarkInput = document.getElementById('landmark_name');
     const sourceInput = document.getElementById('source');
     
-    // Updated event listener to get coordinates from the dynamically populated datalist
     landmarkInput.addEventListener('change', function () {
         const name = this.value;
         const options = document.getElementById('landmarkList').options;
         let match = null;
 
-        // Find the option with the matching value
         for (let i = 0; i < options.length; i++) {
             if (options[i].value === name) {
                 match = options[i];
@@ -485,6 +637,131 @@
             sourceInput.value = `${lat},${lng}`;
         } else if (name === "") {
             sourceInput.value = "";
+        }
+    });
+
+    // RO Method Selection
+    function setRoMethod(method) {
+        currentRoMethod = method;
+        
+        // Update UI
+        document.getElementById('method-database').classList.toggle('active', method === 'database');
+        document.getElementById('method-manual').classList.toggle('active', method === 'manual');
+        
+        // Show/hide sections
+        document.getElementById('ro-database-section').style.display = method === 'database' ? 'block' : 'none';
+        document.getElementById('ro-manual-section').style.display = method === 'manual' ? 'block' : 'none';
+        
+        // Clear destination field
+        document.getElementById('destination').value = '';
+        
+        if (method === 'database') {
+            document.getElementById('destination_manual').removeAttribute('required');
+        } else {
+            document.getElementById('destination_manual').setAttribute('required', 'required');
+        }
+    }
+
+    // Load RO plant data from Flask backend
+    async function loadRoPlantData() {
+        try {
+            const response = await fetch('/api/ro_plant_data');
+            const result = await response.json();
+            
+            if (result.success) {
+                roDataByState = result.data;
+                allStates = result.states;
+                
+                // Flatten data for backward compatibility
+                roPlantData = [];
+                for (const state in roDataByState) {
+                    roPlantData = roPlantData.concat(roDataByState[state]);
+                }
+                
+                console.log(`Loaded ${result.total_records} RO plant locations from ${result.states.length} states`);
+            } else {
+                console.error('Failed to load RO plant data:', result.error);
+            }
+        } catch (error) {
+            console.error('Error loading RO plant data:', error);
+        }
+    }
+
+    // Initialize state codes from loaded data
+    function initializeStateCodes() {
+        const stateSelect = document.getElementById('state_code');
+        
+        stateSelect.innerHTML = '<option value="">Select State</option>';
+        allStates.forEach(state => {
+            const option = document.createElement('option');
+            option.value = state;
+            option.textContent = state;
+            stateSelect.appendChild(option);
+        });
+    }
+
+    // Load SAP codes based on selected state
+    function loadSapCodes() {
+        const stateCode = document.getElementById('state_code').value;
+        const sapSelect = document.getElementById('sap_code');
+        
+        // Clear previous selections
+        sapSelect.innerHTML = '<option value="">Select SAP Code</option>';
+        sapSelect.disabled = true;
+        hideRoDetails();
+        
+        if (stateCode && roDataByState[stateCode]) {
+            const stateData = roDataByState[stateCode];
+            
+            stateData.forEach((item, index) => {
+                const option = document.createElement('option');
+                option.value = item.sap_code;
+                option.textContent = `${item.sap_code} - ${item.consignee.substring(0, 30)}${item.consignee.length > 30 ? '...' : ''}`;
+                option.dataset.roData = JSON.stringify(item);
+                sapSelect.appendChild(option);
+            });
+            
+            sapSelect.disabled = false;
+        }
+    }
+
+    // Load RO details based on selected SAP code
+    function loadRoDetails() {
+        const sapSelect = document.getElementById('sap_code');
+        const selectedOption = sapSelect.options[sapSelect.selectedIndex];
+        
+        if (selectedOption.value && selectedOption.dataset.roData) {
+            selectedRoData = JSON.parse(selectedOption.dataset.roData);
+            
+            // Update RO details display
+            document.getElementById('roConsignee').textContent = selectedRoData.consignee;
+            document.getElementById('roCustomerType').textContent = selectedRoData.customer_type;
+            document.getElementById('roSalesGroup').textContent = `${selectedRoData.sales_group_code} - ${selectedRoData.sales_group_desc}`;
+            document.getElementById('roState').textContent = selectedRoData.state_code;
+            document.getElementById('roCoordinates').textContent = `${selectedRoData.latitude.toFixed(6)}, ${selectedRoData.longitude.toFixed(6)}`;
+            document.getElementById('roSapRef').textContent = selectedRoData.sap_reference;
+            
+            // Set destination coordinates
+            document.getElementById('destination').value = `${selectedRoData.latitude},${selectedRoData.longitude}`;
+            
+            // Show RO details
+            document.getElementById('roDetailsDisplay').classList.add('active');
+        } else {
+            hideRoDetails();
+            document.getElementById('destination').value = '';
+        }
+    }
+
+    // Hide RO details
+    function hideRoDetails() {
+        document.getElementById('roDetailsDisplay').classList.remove('active');
+        selectedRoData = null;
+    }
+
+    // Handle manual destination input
+    document.getElementById('destination_manual').addEventListener('input', function() {
+        if (currentRoMethod === 'manual') {
+            document.getElementById('destination').value = this.value;
         }
     });
 
@@ -537,52 +814,29 @@
         const destination = document.getElementById('destination').value.trim();
         const ttType = document.getElementById('tt_type').value;
         
-        if (!source || !destination || !ttType) {
+        // Check if destination is properly set based on method
+        let destinationValid = false;
+        if (currentRoMethod === 'database') {
+            destinationValid = destination !== '' && selectedRoData !== null;
+        } else {
+            const manualDest = document.getElementById('destination_manual').value.trim();
+            destinationValid = manualDest !== '';
+            if (destinationValid) {
+                document.getElementById('destination').value = manualDest;
+            }
+        }
+        
+        if (!source || !destinationValid || !ttType) {
             e.preventDefault();
-            // Using a custom modal instead of alert
-            const modal = document.createElement('div');
-            modal.style.position = 'fixed';
-            modal.style.top = '50%';
-            modal.style.left = '50%';
-            modal.style.transform = 'translate(-50%, -50%)';
-            modal.style.backgroundColor = 'white';
-            modal.style.padding = '20px';
-            modal.style.borderRadius = '10px';
-            modal.style.boxShadow = '0 5px 15px rgba(0,0,0,0.3)';
-            modal.style.zIndex = '1000';
-            modal.innerHTML = `
-                <p>Please fill in all required fields:</p>
-                <ul>
-                    <li>Terminal coordinates</li>
-                    <li>RO coordinates</li>
-                    <li>TT Capacity type</li>
-                </ul>
-                <button onclick="this.parentElement.remove()" style="margin-top:10px; padding:8px 16px; width: auto;">OK</button>
-            `;
-            document.body.appendChild(modal);
+            showValidationError();
             return;
         }
         
         // Validate coordinate format
         const coordPattern = /^-?\d+\.?\d*\s*,\s*-?\d+\.?\d*$/;
-        if (!coordPattern.test(source) || !coordPattern.test(destination)) {
+        if (!coordPattern.test(source) || !coordPattern.test(document.getElementById('destination').value)) {
             e.preventDefault();
-            // Using a custom modal instead of alert
-            const modal = document.createElement('div');
-            modal.style.position = 'fixed';
-            modal.style.top = '50%';
-            modal.style.left = '50%';
-            modal.style.transform = 'translate(-50%, -50%)';
-            modal.style.backgroundColor = 'white';
-            modal.style.padding = '20px';
-            modal.style.borderRadius = '10px';
-            modal.style.boxShadow = '0 5px 15px rgba(0,0,0,0.3)';
-            modal.style.zIndex = '1000';
-            modal.innerHTML = `
-                <p>Please enter coordinates in the format:<br>latitude,longitude<br>Example: 28.6139,77.2090</p>
-                <button onclick="this.parentElement.remove()" style="margin-top:10px; padding:8px 16px; width: auto;">OK</button>
-            `;
-            document.body.appendChild(modal);
+            showCoordinateError();
             return;
         }
         
@@ -591,6 +845,50 @@
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing TT Route...';
         submitBtn.disabled = true;
     });
-</script>
-</body>
-</html>
+
+    function showValidationError() {
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background-color: white; padding: 20px; border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index: 1000;
+        `;
+        modal.innerHTML = `
+            <p><strong>Please complete all required fields:</strong></p>
+            <ul>
+                <li>Terminal coordinates</li>
+                <li>RO location (${currentRoMethod === 'database' ? 'select from database' : 'enter manually'})</li>
+                <li>TT Capacity type</li>
+            </ul>
+            <button onclick="this.parentElement.remove()" style="margin-top:10px; padding:8px 16px; width: auto;">OK</button>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    function showCoordinateError() {
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background-color: white; padding: 20px; border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index: 1000;
+        `;
+        modal.innerHTML = `
+            <p><strong>Invalid coordinate format!</strong></p>
+            <p>Please enter coordinates as: <code>latitude,longitude</code></p>
+            <p>Example: <code>28.6139,77.2090</code></p>
+            <button onclick="this.parentElement.remove()" style="margin-top:10px; padding:8px 16px; width: auto;">OK</button>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    // Initialize the form
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Load RO plant data from backend first
+        await loadRoPlantData();
+        
+        // Then initialize state codes
+        initializeStateCodes();
+        
+        // Set default method
+        setRoMethod('database');
+    });
