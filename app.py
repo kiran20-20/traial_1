@@ -818,91 +818,6 @@ def test():
     """Simple test page"""
     return "<h1>Flask App is Working!</h1><p>If you see this, the basic Flask setup is fine.</p>"
 
-@app.route('/')
-@login_required
-def home():
-    """Main route form page - requires login"""
-    try:
-        # Add username to template context
-        username = session.get('username', 'User')
-        
-        # Load IOCL Landmarks with data validation
-        landmarks = []
-        
-        # Try to load from Excel file, but handle gracefully if it doesn't exist
-        try:
-            df_iocl = pd.read_excel("IOCL_Landmark_Details.xlsx")
-            
-            for _, row in df_iocl.iterrows():
-                try:
-                    # Validate and convert coordinates
-                    lat = float(row['Latitude']) if pd.notna(row['Latitude']) else None
-                    lng = float(row['Longitude']) if pd.notna(row['Longitude']) else None
-                    name = str(row['Landmark Name']).strip() if pd.notna(row['Landmark Name']) else None
-                    
-                    if lat is not None and lng is not None and name:
-                        landmarks.append({
-                            'name': name,
-                            'lat': lat,
-                            'lng': lng
-                        })
-                except (ValueError, TypeError) as e:
-                    print(f"Skipping invalid landmark row: {e}")
-                    continue
-                    
-            print(f"Loaded {len(landmarks)} landmarks from Excel file")
-            
-        except FileNotFoundError:
-            print("IOCL_Landmark_Details.xlsx not found, using sample landmarks")
-            # Provide some sample landmarks if file doesn't exist
-            landmarks = [
-                {'name': 'Delhi Terminal', 'lat': 28.6139, 'lng': 77.2090},
-                {'name': 'Mumbai Terminal', 'lat': 19.0760, 'lng': 72.8777},
-                {'name': 'Bangalore Terminal', 'lat': 12.9716, 'lng': 77.5946},
-                {'name': 'Chennai Terminal', 'lat': 13.0827, 'lng': 80.2707},
-                {'name': 'Kolkata Terminal', 'lat': 22.5726, 'lng': 88.3639}
-            ]
-        except Exception as e:
-            print(f"Error loading Excel file: {e}")
-            landmarks = []
-
-        # Pass landmarks, TT specifications, and username to template
-        return render_template(
-            "route_form.html",
-            landmarks=landmarks,
-            tt_specifications=TT_SPECIFICATIONS,
-            username=username
-        )
-        
-    except Exception as e:
-        print(f"Error loading data: {e}")
-        import traceback
-        traceback.print_exc()
-        # Return a simple fallback page if everything fails
-        username = session.get('username', 'User')
-        tt_options = ""
-        for tt_key, tt_data in TT_SPECIFICATIONS.items():
-            tt_options += f'<option value="{tt_key}">{tt_data["capacity_range"]} ({tt_data["gross_weight"]/1000:.1f}T)</option>'
-        
-        return f"""
-        <html><body>
-        <h2>IndianOil Smart Marg - Truck Tanker Navigation</h2>
-        <p>Welcome, {username}! <a href="/logout">Logout</a></p>
-        <p>Basic form (landmarks unavailable)</p>
-        <form method="POST" action="/fetch_routes">
-            <p>Source: <input type="text" name="source" placeholder="lat,lng" required></p>
-            <p>Destination: <input type="text" name="destination" placeholder="lat,lng" required></p>
-            <p>Truck Tanker Type: 
-                <select name="tt_type" required>
-                    <option value="">Choose TT Capacity</option>
-                    {tt_options}
-                </select>
-            </p>
-            <button type="submit">Generate Routes</button>
-        </form>
-        <p>Error: {str(e)}</p>
-        </body></html>
-        """
 
 @app.route('/fetch_routes', methods=['POST'])
 @login_required
@@ -1468,5 +1383,6 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
