@@ -111,7 +111,6 @@
             <div class="method-option" onclick="setRoMethod('manual')" id="method-manual">Manual Entry</div>
         </div>
 
-        <!-- STATE AUTOCOMPLETE -->
         <div id="ro-database-section">
             <label for="state_code">State</label>
             <div class="input-container">
@@ -294,4 +293,106 @@
 
             if (roData.length > 0) {
                 roData.sort((a, b) => a.consignee.localeCompare(b.consignee)).forEach(ro => {
-                    const option = document.createElement('option
+                    const option = document.createElement('option');
+                    option.value = ro.sap_code;
+                    option.textContent = `${ro.sap_code} - ${ro.consignee}`;
+                    option.setAttribute('data-coordinates', `${ro.latitude}, ${ro.longitude}`);
+                    option.setAttribute('data-consignee', ro.consignee);
+                    option.setAttribute('data-customer-type', ro.customer_type);
+                    option.setAttribute('data-sales-group', ro.sales_group);
+                    sapSelect.appendChild(option);
+                });
+                sapSelect.disabled = false;
+            } else {
+                sapSelect.innerHTML = '<option value="">No ROs found for this state</option>';
+            }
+        } catch (error) {
+            console.error('Error fetching RO data:', error);
+            sapSelect.innerHTML = '<option value="">Error fetching data</option>';
+        }
+    }
+
+    function loadRoDetails() {
+        const sapSelect = document.getElementById('sap_code');
+        const selectedOption = sapSelect.options[sapSelect.selectedIndex];
+        const detailsDisplay = document.getElementById('roDetailsDisplay');
+        const destinationInput = document.getElementById('destination');
+        
+        if (selectedOption.value) {
+            document.getElementById('roConsignee').textContent = selectedOption.getAttribute('data-consignee');
+            document.getElementById('roCustomerType').textContent = selectedOption.getAttribute('data-customer-type');
+            document.getElementById('roSalesGroup').textContent = selectedOption.getAttribute('data-sales-group');
+            const coords = selectedOption.getAttribute('data-coordinates');
+            document.getElementById('roCoordinates').textContent = coords;
+            
+            destinationInput.value = coords;
+            
+            detailsDisplay.classList.add('active');
+        } else {
+            detailsDisplay.classList.remove('active');
+            destinationInput.value = '';
+        }
+    }
+
+    function setRoMethod(method) {
+        currentRoMethod = method;
+        document.getElementById('ro-database-section').style.display = method === 'database' ? 'block' : 'none';
+        document.getElementById('ro-manual-section').style.display = method === 'manual' ? 'block' : 'none';
+
+        document.getElementById('method-database').classList.toggle('active', method === 'database');
+        document.getElementById('method-manual').classList.toggle('active', method === 'manual');
+
+        const destinationInput = document.getElementById('destination');
+        if (method === 'manual') {
+            destinationInput.name = 'destination_manual';
+            destinationInput.value = document.getElementById('destination_manual').value;
+        } else {
+            destinationInput.name = 'sap_code';
+            const sapSelect = document.getElementById('sap_code');
+            destinationInput.value = sapSelect.value;
+        }
+    }
+
+    function showTTSpecs() {
+        const ttSelect = document.getElementById('tt_type');
+        const selectedOption = ttSelect.options[ttSelect.selectedIndex];
+        const specsDisplay = document.getElementById('ttSpecsDisplay');
+
+        if (selectedOption.value) {
+            document.getElementById('specCapacity').textContent = selectedOption.getAttribute('data-capacity') + ' L';
+            document.getElementById('specGrossWeight').textContent = selectedOption.getAttribute('data-gross-weight') + ' kg';
+            document.getElementById('specAxleLoad').textContent = selectedOption.getAttribute('data-axle-load') + 'T';
+            document.getElementById('specMaxSpeed').textContent = selectedOption.getAttribute('data-max-speed') + ' km/h';
+            specsDisplay.classList.add('active');
+        } else {
+            specsDisplay.classList.remove('active');
+        }
+    }
+    
+    function setupFormSubmission() {
+        const form = document.querySelector('.form-box');
+        form.addEventListener('submit', (event) => {
+            const destinationInput = document.getElementById('destination');
+            const sourceInput = document.getElementById('source');
+    
+            event.preventDefault();
+    
+            if (currentRoMethod === 'database') {
+                const sapSelect = document.getElementById('sap_code');
+                destinationInput.value = sapSelect.value;
+            } else {
+                destinationInput.value = document.getElementById('destination_manual').value;
+            }
+    
+            if (!sourceInput.value || !destinationInput.value) {
+                alert('Please select a Terminal and an RO Location.');
+                return;
+            }
+    
+            form.submit();
+        });
+    }
+
+</script>
+</body>
+</html>
