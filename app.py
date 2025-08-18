@@ -728,14 +728,12 @@ def home():
             print(f"Error loading landmarks Excel file: {e}")
             landmarks = []
 
+
         # Load RO data
         ro_data = load_ro_data()
-        
-        # Get unique state codes
         unique_states = list(set([item['stateCode'] for item in ro_data if item['stateCode']]))
         unique_states.sort()
-
-        # Pass all data to template
+    
         return render_template(
             "route_form.html",
             landmarks=landmarks,
@@ -744,6 +742,7 @@ def home():
             unique_states=unique_states,
             username=username
         )
+
         
     except Exception as e:
         print(f"Error loading data: {e}")
@@ -1357,4 +1356,5 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
