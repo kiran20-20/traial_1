@@ -86,7 +86,7 @@
             align-items: flex-start;
             min-height: calc(100vh - 30px);
             position: relative;
-            z-index: 1; /* Ensure container is above the floating background */
+            z-index: 1;
         }
 
         .form-box {
@@ -204,6 +204,69 @@
             font-style: italic;
         }
 
+        /* RO Details Display */
+        .ro-details-display {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1ecf1 100%);
+            border: 2px solid var(--iocl-blue);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 12px;
+            display: none;
+            animation: slideDown 0.4s ease;
+        }
+
+        .ro-details-display.active {
+            display: block;
+        }
+
+        .ro-details-title {
+            text-align: center;
+            color: var(--iocl-blue);
+            font-weight: bold;
+            font-size: 1.0em;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .ro-details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .ro-detail-item {
+            background: white;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+
+        .ro-detail-item .label {
+            font-size: 0.7em;
+            color: var(--iocl-mid-gray);
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .ro-detail-item .value {
+            font-size: 0.9em;
+            font-weight: bold;
+            color: var(--iocl-blue);
+        }
+
+        .ro-location-display {
+            grid-column: 1 / -1;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 8px;
+        }
+
         /* Compact TT Specifications Display */
         .tt-specs-display {
             background: linear-gradient(135deg, #e8f4f8 0%, #d1ecf1 100%);
@@ -287,6 +350,41 @@
             color: #f39c12;
         }
 
+        /* Auto-suggestion styling */
+        .suggestions-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .suggestion-item {
+            padding: 10px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.9em;
+        }
+
+        .suggestion-item:hover {
+            background-color: var(--iocl-light-gray);
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .input-container {
+            position: relative;
+        }
+
         /* Mobile Responsive */
         @media (max-width: 768px) {
             body {
@@ -301,6 +399,9 @@
             }
             .specs-grid {
                 grid-template-columns: repeat(2, 1fr);
+            }
+            .ro-details-grid {
+                grid-template-columns: 1fr;
             }
             .floating-text-bubble {
                 font-size: 0.85rem;
@@ -378,9 +479,50 @@
             <span>RO Location</span>
         </div>
 
-        <label for="destination">RO Coordinates</label>
-        <input type="text" name="destination" id="destination" placeholder="Enter coordinates manually (lat, lng)" required>
-        <div class="coord-helper">Example: 19.0760, 72.8777</div>
+        <label for="state_code">State Code</label>
+        <div class="input-container">
+            <input type="text" id="state_code" placeholder="Enter state code (e.g., GJ, MH, DL)" autocomplete="off">
+            <div id="stateDropdown" class="suggestions-dropdown"></div>
+        </div>
+
+        <label for="sap_code">SAP Code</label>
+        <div class="input-container">
+            <input type="text" id="sap_code" name="sap_code" placeholder="Enter or select SAP code" autocomplete="off">
+            <div id="sapDropdown" class="suggestions-dropdown"></div>
+        </div>
+
+        <div id="roDetailsDisplay" class="ro-details-display">
+            <div class="ro-details-title">
+                <i class="fas fa-building"></i>
+                <span>RO Details</span>
+            </div>
+            <div class="ro-details-grid">
+                <div class="ro-detail-item">
+                    <div class="label">Consignee</div>
+                    <div class="value" id="roConsignee">-</div>
+                </div>
+                <div class="ro-detail-item">
+                    <div class="label">Customer Type</div>
+                    <div class="value" id="roCustomerType">-</div>
+                </div>
+                <div class="ro-detail-item">
+                    <div class="label">Sales Group</div>
+                    <div class="value" id="roSalesGroup">-</div>
+                </div>
+                <div class="ro-detail-item">
+                    <div class="label">Sales Group Desc</div>
+                    <div class="value" id="roSalesGroupDesc">-</div>
+                </div>
+                <div class="ro-location-display">
+                    <div class="label">📍 Location Coordinates</div>
+                    <div class="value" id="roCoordinates">-</div>
+                </div>
+            </div>
+        </div>
+
+        <label for="destination">RO Coordinates (Auto-filled)</label>
+        <input type="text" name="destination" id="destination" placeholder="Will be auto-filled from SAP selection" required readonly>
+        <div class="coord-helper">Coordinates will be populated automatically when SAP code is selected</div>
 
         <div class="section-title">
             <i class="fa-solid fa-truck-fast"></i>
@@ -457,21 +599,38 @@
 </div>
 
 <script>
-    // This part of the JS is no longer needed since Flask populates the datalist
-    // const landmarkData = [...]
-    // function filterTerminals(query) {...}
-    // landmarkInput.addEventListener('input', ...)
+    // RO data loaded from Flask backend
+    let roData = [];
+    let uniqueStates = [];
+    
+    // Load RO data from template variables (passed from Flask)
+    try {
+        {% if ro_data %}
+        roData = {{ ro_data|safe }};
+        {% endif %}
+        
+        {% if unique_states %}
+        uniqueStates = {{ unique_states|tojson }};
+        {% endif %}
+        
+        console.log(`Loaded ${roData.length} RO records from server`);
+        console.log(`Available states: ${uniqueStates.join(', ')}`);
+    } catch (error) {
+        console.error('Error loading RO data:', error);
+        // Fallback to empty arrays if template data is not available
+        roData = [];
+        uniqueStates = [];
+    }
 
+    // Terminal landmark functionality
     const landmarkInput = document.getElementById('landmark_name');
     const sourceInput = document.getElementById('source');
     
-    // Updated event listener to get coordinates from the dynamically populated datalist
     landmarkInput.addEventListener('change', function () {
         const name = this.value;
         const options = document.getElementById('landmarkList').options;
         let match = null;
 
-        // Find the option with the matching value
         for (let i = 0; i < options.length; i++) {
             if (options[i].value === name) {
                 match = options[i];
@@ -488,10 +647,148 @@
         }
     });
 
-    document.getElementById('source').addEventListener('focus', function() {
-        this.placeholder = "Enter coordinates manually (lat, lng)";
+    // State Code Auto-suggestion
+    const stateInput = document.getElementById('state_code');
+    const stateDropdown = document.getElementById('stateDropdown');
+    const sapInput = document.getElementById('sap_code');
+    const sapDropdown = document.getElementById('sapDropdown');
+
+    function showStateSuggestions(query) {
+        const filteredStates = uniqueStates.filter(state => 
+            state.toLowerCase().includes(query.toLowerCase())
+        );
+
+        if (filteredStates.length > 0 && query.length > 0) {
+            stateDropdown.innerHTML = filteredStates.map(state => 
+                `<div class="suggestion-item" onclick="selectState('${state}')">${state}</div>`
+            ).join('');
+            stateDropdown.style.display = 'block';
+        } else {
+            stateDropdown.style.display = 'none';
+        }
+    }
+
+    function selectState(state) {
+        stateInput.value = state;
+        stateDropdown.style.display = 'none';
+        // Clear SAP code when state changes
+        sapInput.value = '';
+        hideRODetails();
+        // Filter SAP codes by selected state
+        updateSAPSuggestions();
+    }
+
+    stateInput.addEventListener('input', function() {
+        showStateSuggestions(this.value);
     });
 
+    stateInput.addEventListener('blur', function() {
+        // Delay hiding to allow click on dropdown
+        setTimeout(() => {
+            stateDropdown.style.display = 'none';
+        }, 200);
+    });
+
+    // SAP Code Auto-suggestion
+    function updateSAPSuggestions() {
+        const selectedState = stateInput.value;
+        if (selectedState) {
+            // Filter RO data by selected state
+            const stateROs = roData.filter(item => item.stateCode === selectedState);
+            sapInput.setAttribute('data-filtered', JSON.stringify(stateROs));
+        }
+    }
+
+    function showSAPSuggestions(query) {
+        let filteredROs = roData;
+        
+        // Filter by state if selected
+        const selectedState = stateInput.value;
+        if (selectedState) {
+            filteredROs = roData.filter(item => item.stateCode === selectedState);
+        }
+
+        // Filter by query
+        if (query.length > 0) {
+            filteredROs = filteredROs.filter(item => 
+                item.sapCode.toString().includes(query) || 
+                item.sapCodeRef.includes(query) ||
+                item.consignee.toLowerCase().includes(query.toLowerCase())
+            );
+        }
+
+        if (filteredROs.length > 0 && query.length > 0) {
+            sapDropdown.innerHTML = filteredROs.slice(0, 10).map(item => // Limit to 10 suggestions
+                `<div class="suggestion-item" onclick="selectSAP('${item.sapCode}')">
+                    <div style="font-weight: bold;">${item.sapCode} - ${item.sapCodeRef}</div>
+                    <div style="font-size: 0.8em; color: #666;">${item.consignee}</div>
+                    <div style="font-size: 0.7em; color: #888;">${item.stateCode} | ${item.customerType}</div>
+                </div>`
+            ).join('');
+            sapDropdown.style.display = 'block';
+        } else {
+            sapDropdown.style.display = 'none';
+        }
+    }
+
+    function selectSAP(sapCode) {
+        const selectedRO = roData.find(item => item.sapCode === sapCode);
+        if (selectedRO) {
+            sapInput.value = sapCode;
+            sapDropdown.style.display = 'none';
+            
+            // Auto-fill state code if not selected
+            if (!stateInput.value) {
+                stateInput.value = selectedRO.stateCode;
+            }
+            
+            // Show RO details
+            showRODetails(selectedRO);
+            
+            // Auto-fill destination coordinates
+            const destination = document.getElementById('destination');
+            destination.value = `${selectedRO.latitude},${selectedRO.longitude}`;
+        }
+    }
+
+    sapInput.addEventListener('input', function() {
+        showSAPSuggestions(this.value);
+        if (this.value === '') {
+            hideRODetails();
+            document.getElementById('destination').value = '';
+        }
+    });
+
+    sapInput.addEventListener('blur', function() {
+        setTimeout(() => {
+            sapDropdown.style.display = 'none';
+        }, 200);
+    });
+
+    // RO Details Display
+    function showRODetails(roDetails) {
+        document.getElementById('roConsignee').textContent = roDetails.consignee || 'N/A';
+        document.getElementById('roCustomerType').textContent = roDetails.customerType || 'N/A';
+        document.getElementById('roSalesGroup').textContent = roDetails.salesGroupCode || 'N/A';
+        document.getElementById('roSalesGroupDesc').textContent = roDetails.salesGroupDesc || 'N/A';
+        document.getElementById('roCoordinates').textContent = `${roDetails.latitude}, ${roDetails.longitude}`;
+        
+        document.getElementById('roDetailsDisplay').classList.add('active');
+    }
+
+    function hideRODetails() {
+        document.getElementById('roDetailsDisplay').classList.remove('active');
+    }
+
+    // Hide dropdowns when clicking outside
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('.input-container')) {
+            stateDropdown.style.display = 'none';
+            sapDropdown.style.display = 'none';
+        }
+    });
+
+    // TT Specifications functionality
     function showTTSpecs() {
         const select = document.getElementById('tt_type');
         const display = document.getElementById('ttSpecsDisplay');
@@ -536,30 +833,20 @@
         const source = document.getElementById('source').value.trim();
         const destination = document.getElementById('destination').value.trim();
         const ttType = document.getElementById('tt_type').value;
+        const sapCode = document.getElementById('sap_code').value.trim();
         
-        if (!source || !destination || !ttType) {
+        if (!source || !destination || !ttType || !sapCode) {
             e.preventDefault();
-            // Using a custom modal instead of alert
-            const modal = document.createElement('div');
-            modal.style.position = 'fixed';
-            modal.style.top = '50%';
-            modal.style.left = '50%';
-            modal.style.transform = 'translate(-50%, -50%)';
-            modal.style.backgroundColor = 'white';
-            modal.style.padding = '20px';
-            modal.style.borderRadius = '10px';
-            modal.style.boxShadow = '0 5px 15px rgba(0,0,0,0.3)';
-            modal.style.zIndex = '1000';
-            modal.innerHTML = `
-                <p>Please fill in all required fields:</p>
-                <ul>
+            showCustomModal(
+                'Missing Required Fields',
+                `Please fill in all required fields:
+                <ul style="text-align: left; margin: 10px 0;">
                     <li>Terminal coordinates</li>
-                    <li>RO coordinates</li>
+                    <li>State code</li>
+                    <li>SAP code (RO selection)</li>
                     <li>TT Capacity type</li>
-                </ul>
-                <button onclick="this.parentElement.remove()" style="margin-top:10px; padding:8px 16px; width: auto;">OK</button>
-            `;
-            document.body.appendChild(modal);
+                </ul>`
+            );
             return;
         }
         
@@ -567,22 +854,21 @@
         const coordPattern = /^-?\d+\.?\d*\s*,\s*-?\d+\.?\d*$/;
         if (!coordPattern.test(source) || !coordPattern.test(destination)) {
             e.preventDefault();
-            // Using a custom modal instead of alert
-            const modal = document.createElement('div');
-            modal.style.position = 'fixed';
-            modal.style.top = '50%';
-            modal.style.left = '50%';
-            modal.style.transform = 'translate(-50%, -50%)';
-            modal.style.backgroundColor = 'white';
-            modal.style.padding = '20px';
-            modal.style.borderRadius = '10px';
-            modal.style.boxShadow = '0 5px 15px rgba(0,0,0,0.3)';
-            modal.style.zIndex = '1000';
-            modal.innerHTML = `
-                <p>Please enter coordinates in the format:<br>latitude,longitude<br>Example: 28.6139,77.2090</p>
-                <button onclick="this.parentElement.remove()" style="margin-top:10px; padding:8px 16px; width: auto;">OK</button>
-            `;
-            document.body.appendChild(modal);
+            showCustomModal(
+                'Invalid Coordinates',
+                'Please enter coordinates in the format:<br><strong>latitude,longitude</strong><br>Example: 28.6139,77.2090'
+            );
+            return;
+        }
+
+        // Validate SAP code exists in data
+        const sapExists = roData.some(item => item.sapCode === sapCode);
+        if (!sapExists) {
+            e.preventDefault();
+            showCustomModal(
+                'Invalid SAP Code',
+                'Please select a valid SAP code from the dropdown suggestions.'
+            );
             return;
         }
         
@@ -591,6 +877,258 @@
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing TT Route...';
         submitBtn.disabled = true;
     });
+
+    // Custom modal function
+    function showCustomModal(title, message) {
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        `;
+        
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = `
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 400px;
+            margin: 20px;
+            text-align: center;
+        `;
+        
+        modalContent.innerHTML = `
+            <div style="color: #02164F; font-size: 1.2em; font-weight: bold; margin-bottom: 15px;">
+                <i class="fas fa-exclamation-circle" style="color: #F37022; margin-right: 8px;"></i>
+                ${title}
+            </div>
+            <div style="margin-bottom: 20px; line-height: 1.4;">${message}</div>
+            <button onclick="this.closest('.modal-backdrop').remove()" 
+                    style="padding: 10px 20px; background: linear-gradient(to right, #02164F, #005bb5); 
+                           color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                OK
+            </button>
+        `;
+        
+        modal.className = 'modal-backdrop';
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        
+        // Close on backdrop click
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    }
+
+    // Initialize focus handlers
+    document.getElementById('source').addEventListener('focus', function() {
+        this.placeholder = "Enter coordinates manually (lat, lng)";
+    });
+
+    // Load RO data from server (AJAX fallback if template data fails)
+    function loadRODataFromServer() {
+        if (roData.length === 0) {
+            fetch('/api/ro_data')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        roData = data.data;
+                        uniqueStates = [...new Set(roData.map(item => item.stateCode))].filter(state => state);
+                        uniqueStates.sort();
+                        console.log(`Loaded ${roData.length} RO records from API`);
+                        console.log(`Available states: ${uniqueStates.join(', ')}`);
+                    } else {
+                        console.error('Error loading RO data:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching RO data:', error);
+                });
+        }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadRODataFromServer();
+        console.log('IndianOil Smart Marg Enhanced Form Loaded');
+        
+        // Add real-time search capability for better UX
+        let searchTimeout;
+        
+        // Enhanced state input with debounced search
+        stateInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                showStateSuggestions(this.value);
+            }, 150);
+        });
+        
+        // Enhanced SAP input with debounced search
+        sapInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                showSAPSuggestions(this.value);
+                if (this.value === '') {
+                    hideRODetails();
+                    document.getElementById('destination').value = '';
+                }
+            }, 150);
+        });
+        
+        // Add keyboard navigation for dropdowns
+        function addKeyboardNavigation(input, dropdown) {
+            input.addEventListener('keydown', function(e) {
+                const items = dropdown.querySelectorAll('.suggestion-item');
+                let currentIndex = Array.from(items).findIndex(item => item.classList.contains('selected'));
+                
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    currentIndex = (currentIndex + 1) % items.length;
+                    updateSelection(items, currentIndex);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    currentIndex = currentIndex <= 0 ? items.length - 1 : currentIndex - 1;
+                    updateSelection(items, currentIndex);
+                } else if (e.key === 'Enter' && currentIndex >= 0) {
+                    e.preventDefault();
+                    items[currentIndex].click();
+                } else if (e.key === 'Escape') {
+                    dropdown.style.display = 'none';
+                }
+            });
+        }
+        
+        function updateSelection(items, index) {
+            items.forEach(item => item.classList.remove('selected'));
+            if (index >= 0 && index < items.length) {
+                items[index].classList.add('selected');
+                items[index].scrollIntoView({ block: 'nearest' });
+            }
+        }
+        
+        // Apply keyboard navigation
+        addKeyboardNavigation(stateInput, stateDropdown);
+        addKeyboardNavigation(sapInput, sapDropdown);
+        
+        // Add loading indicators
+        function showLoadingState(element, message) {
+            element.style.background = 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)';
+            element.style.backgroundSize = '200% 100%';
+            element.style.animation = 'loading 1.5s infinite';
+            element.placeholder = message;
+        }
+        
+        function hideLoadingState(element, originalPlaceholder) {
+            element.style.background = '';
+            element.style.animation = '';
+            element.placeholder = originalPlaceholder;
+        }
+        
+        // Add loading animation CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes loading {
+                0% { background-position: 200% 0; }
+                100% { background-position: -200% 0; }
+            }
+            .suggestion-item.selected {
+                background-color: var(--iocl-blue) !important;
+                color: white;
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Validate coordinates in real-time
+        function validateCoordinates(input) {
+            const value = input.value.trim();
+            const coordPattern = /^-?\d+\.?\d*\s*,\s*-?\d+\.?\d*$/;
+            
+            if (value && !coordPattern.test(value)) {
+                input.style.borderColor = '#e74c3c';
+                input.style.boxShadow = '0 0 0 3px rgba(231, 76, 60, 0.2)';
+            } else {
+                input.style.borderColor = '';
+                input.style.boxShadow = '';
+            }
+        }
+        
+        // Add coordinate validation
+        document.getElementById('source').addEventListener('input', function() {
+            validateCoordinates(this);
+        });
+        
+        document.getElementById('destination').addEventListener('input', function() {
+            validateCoordinates(this);
+        });
+        
+        // Success notification for data loading
+        if (roData.length > 0) {
+            setTimeout(() => {
+                showSuccessMessage(`✅ Successfully loaded ${roData.length} RO locations from ${uniqueStates.length} states`);
+            }, 1000);
+        }
+    });
+    
+    // Success message function
+    function showSuccessMessage(message) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            font-size: 0.9em;
+            max-width: 300px;
+            animation: slideIn 0.3s ease;
+        `;
+        
+        notification.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-check-circle"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Auto remove after 4 seconds
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+        }, 4000);
+        
+        // Add CSS for animations
+        if (!document.getElementById('notification-styles')) {
+            const notificationStyle = document.createElement('style');
+            notificationStyle.id = 'notification-styles';
+            notificationStyle.textContent = `
+                @keyframes slideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes slideOut {
+                    from { transform: translateX(0); opacity: 1; }
+                    to { transform: translateX(100%); opacity: 0; }
+                }
+            `;
+            document.head.appendChild(notificationStyle);
+        }
+    }
 </script>
 </body>
 </html>
