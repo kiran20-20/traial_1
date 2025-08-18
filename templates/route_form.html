@@ -27,7 +27,7 @@
             overflow-x: hidden;
         }
 
-        /* World-Class Floating Background with Text */
+        /* Enhanced Floating Background */
         .floating-bg-container {
             position: absolute;
             top: 0;
@@ -38,6 +38,7 @@
             z-index: -1;
             pointer-events: none;
         }
+        
         .floating-text-bubble {
             position: absolute;
             font-size: 1.2rem;
@@ -53,24 +54,14 @@
             letter-spacing: 1px;
         }
         
-        /* Individual animations for each bubble */
-        .floating-text-bubble:nth-child(1) { top: 10%; left: 5%; animation-duration: 22s; animation-delay: 0s; transform: scale(1.2) rotate(5deg); }
-        .floating-text-bubble:nth-child(2) { top: 40%; left: 20%; animation-duration: 25s; animation-delay: 2s; transform: scale(0.9) rotate(-10deg); }
-        .floating-text-bubble:nth-child(3) { top: 70%; right: 15%; animation-duration: 28s; animation-delay: 5s; transform: scale(1.1) rotate(15deg); }
-        .floating-text-bubble:nth-child(4) { bottom: 5%; left: 30%; animation-duration: 21s; animation-delay: 3s; transform: scale(1.3) rotate(-5deg); }
-        .floating-text-bubble:nth-child(5) { top: 5%; right: 40%; animation-duration: 24s; animation-delay: 1s; transform: scale(0.8) rotate(20deg); }
-        .floating-text-bubble:nth-child(6) { bottom: 30%; right: 5%; animation-duration: 26s; animation-delay: 4s; transform: scale(1.05) rotate(10deg); }
-        .floating-text-bubble:nth-child(7) { top: 25%; right: 25%; animation-duration: 20s; animation-delay: 6s; transform: scale(1.4) rotate(7deg); }
-        .floating-text-bubble:nth-child(8) { bottom: 40%; left: 10%; animation-duration: 23s; animation-delay: 8s; transform: scale(1.15) rotate(-12deg); }
-        .floating-text-bubble:nth-child(9) { top: 55%; left: 50%; animation-duration: 27s; animation-delay: 9s; transform: scale(0.95) rotate(18deg); }
-        .floating-text-bubble:nth-child(10) { bottom: 15%; right: 35%; animation-duration: 29s; animation-delay: 10s; transform: scale(1.25) rotate(-8deg); }
-        .floating-text-bubble:nth-child(11) { top: 85%; left: 45%; animation-duration: 25s; animation-delay: 11s; transform: scale(1.0) rotate(25deg); }
-        .floating-text-bubble:nth-child(12) { top: 15%; right: 5%; animation-duration: 21s; animation-delay: 12s; transform: scale(1.2) rotate(-15deg); }
-        .floating-text-bubble:nth-child(13) { bottom: 25%; left: 55%; animation-duration: 24s; animation-delay: 13s; transform: scale(0.85) rotate(5deg); }
-        .floating-text-bubble:nth-child(14) { top: 60%; left: 5%; animation-duration: 26s; animation-delay: 14s; transform: scale(1.1) rotate(10deg); }
-        .floating-text-bubble:nth-child(15) { top: 35%; left: 80%; animation-duration: 23s; animation-delay: 15s; transform: scale(1.3) rotate(-20deg); }
-        .floating-text-bubble:nth-child(16) { top: 80%; right: 25%; animation-duration: 30s; animation-delay: 16s; transform: scale(1.1) rotate(12deg); }
-        .floating-text-bubble:nth-child(17) { top: 5%; left: 60%; animation-duration: 28s; animation-delay: 17s; transform: scale(0.9) rotate(25deg); }
+        .floating-text-bubble:nth-child(1) { top: 10%; left: 5%; animation-duration: 22s; animation-delay: 0s; }
+        .floating-text-bubble:nth-child(2) { top: 40%; left: 20%; animation-duration: 25s; animation-delay: 2s; }
+        .floating-text-bubble:nth-child(3) { top: 70%; right: 15%; animation-duration: 28s; animation-delay: 5s; }
+        .floating-text-bubble:nth-child(4) { bottom: 5%; left: 30%; animation-duration: 21s; animation-delay: 3s; }
+        .floating-text-bubble:nth-child(5) { top: 5%; right: 40%; animation-duration: 24s; animation-delay: 1s; }
+        .floating-text-bubble:nth-child(6) { bottom: 30%; right: 5%; animation-duration: 26s; animation-delay: 4s; }
+        .floating-text-bubble:nth-child(7) { top: 25%; right: 25%; animation-duration: 20s; animation-delay: 6s; }
+        .floating-text-bubble:nth-child(8) { bottom: 40%; left: 10%; animation-duration: 23s; animation-delay: 8s; }
 
         @keyframes float-and-rotate {
             0%  { transform: translate(0, 0) rotate(0deg); }
@@ -95,7 +86,7 @@
             border-radius: 16px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.15);
             width: 100%;
-            max-width: 500px;
+            max-width: 600px;
             position: relative;
             z-index: 1;
             text-align: left;
@@ -111,6 +102,7 @@
             justify-content: center;
             gap: 12px;
         }
+        
         .header h1 {
             font-size: 1.9em;
             font-weight: 800;
@@ -118,6 +110,7 @@
             margin: 0;
             display: inline-block;
         }
+        
         .header .logo-text {
             font-size: 1.0em;
             color: var(--iocl-orange);
@@ -125,28 +118,31 @@
         }
 
         .section-title {
-            font-size: 1.0em;
+            font-size: 1.1em;
             font-weight: bold;
             color: var(--iocl-blue);
-            margin-top: 20px;
-            margin-bottom: 12px;
+            margin-top: 25px;
+            margin-bottom: 15px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--iocl-light-gray);
         }
 
         .section-title i {
             color: var(--iocl-orange);
-            font-size: 1.1em;
+            font-size: 1.2em;
         }
 
         label {
             font-weight: 600;
-            margin-top: 8px;
+            margin-top: 12px;
             display: block;
             color: #555;
             font-size: 0.9em;
         }
+        
         input, select {
             width: 100%;
             padding: 12px;
@@ -157,6 +153,7 @@
             box-sizing: border-box;
             transition: border-color 0.3s, box-shadow 0.3s;
         }
+        
         input:focus, select:focus {
             outline: none;
             border-color: var(--iocl-blue);
@@ -165,20 +162,21 @@
 
         button {
             width: 100%;
-            padding: 14px;
-            font-size: 1.0rem;
+            padding: 16px;
+            font-size: 1.1rem;
             font-weight: bold;
             background-image: linear-gradient(to right, #02164F, #005bb5);
             border: none;
             color: var(--iocl-white);
             border-radius: 8px;
             cursor: pointer;
-            margin-top: 25px;
+            margin-top: 30px;
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
             transition: all 0.3s ease-in-out;
             background-size: 200% 100%;
             background-position: left;
         }
+        
         button:hover {
             background-position: right;
             transform: translateY(-2px);
@@ -191,26 +189,76 @@
             text-align: center;
             color: var(--iocl-mid-gray);
         }
-        .values-section {
+
+        /* Input Container for Dropdowns */
+        .input-container {
+            position: relative;
+        }
+
+        /* Auto-suggestion Dropdowns */
+        .suggestions-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 1000;
             display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
-        datalist option {
-            padding: 8px;
+
+        .suggestion-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.9em;
+            transition: background-color 0.2s;
         }
-        .coord-helper {
-            font-size: 0.8em;
-            color: var(--iocl-mid-gray);
-            margin-top: 3px;
-            font-style: italic;
+
+        .suggestion-item:hover, .suggestion-item.selected {
+            background-color: var(--iocl-light-gray);
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Enhanced SAP Code Suggestions */
+        .sap-suggestion {
+            padding: 10px 15px;
+        }
+
+        .sap-code-main {
+            font-weight: bold;
+            color: var(--iocl-blue);
+            font-size: 0.95em;
+        }
+
+        .sap-consignee {
+            font-size: 0.85em;
+            color: #666;
+            margin: 2px 0;
+        }
+
+        .sap-details {
+            font-size: 0.75em;
+            color: #888;
+            display: flex;
+            justify-content: space-between;
         }
 
         /* RO Details Display */
         .ro-details-display {
             background: linear-gradient(135deg, #e8f4f8 0%, #d1ecf1 100%);
             border: 2px solid var(--iocl-blue);
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 12px;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 15px;
             display: none;
             animation: slideDown 0.4s ease;
         }
@@ -223,8 +271,8 @@
             text-align: center;
             color: var(--iocl-blue);
             font-weight: bold;
-            font-size: 1.0em;
-            margin-bottom: 12px;
+            font-size: 1.1em;
+            margin-bottom: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -234,46 +282,64 @@
         .ro-details-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
+            gap: 10px;
         }
 
         .ro-detail-item {
             background: white;
-            padding: 8px;
-            border-radius: 6px;
+            padding: 12px;
+            border-radius: 8px;
             border: 1px solid #e0e0e0;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
 
         .ro-detail-item .label {
-            font-size: 0.7em;
+            font-size: 0.75em;
             color: var(--iocl-mid-gray);
-            font-weight: 500;
-            margin-bottom: 2px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            text-transform: uppercase;
         }
 
         .ro-detail-item .value {
             font-size: 0.9em;
             font-weight: bold;
             color: var(--iocl-blue);
+            word-break: break-word;
         }
 
         .ro-location-display {
             grid-column: 1 / -1;
-            background: #fff3cd;
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
             border: 1px solid #ffeaa7;
-            padding: 10px;
-            border-radius: 6px;
+            padding: 15px;
+            border-radius: 8px;
             margin-top: 8px;
         }
 
-        /* Compact TT Specifications Display */
+        .ro-location-display .label {
+            font-size: 0.75em;
+            color: #856404;
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .ro-location-display .value {
+            font-size: 0.95em;
+            font-weight: bold;
+            color: #856404;
+        }
+
+        /* TT Specifications Display */
         .tt-specs-display {
             background: linear-gradient(135deg, #e8f4f8 0%, #d1ecf1 100%);
             border: 2px solid var(--iocl-blue);
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 12px;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 15px;
             display: none;
             animation: slideDown 0.4s ease;
         }
@@ -291,8 +357,8 @@
             text-align: center;
             color: var(--iocl-blue);
             font-weight: bold;
-            font-size: 1.0em;
-            margin-bottom: 12px;
+            font-size: 1.1em;
+            margin-bottom: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -302,21 +368,21 @@
         .specs-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
+            gap: 10px;
         }
 
         .spec-item {
             background: white;
-            padding: 8px;
-            border-radius: 6px;
+            padding: 12px;
+            border-radius: 8px;
             text-align: center;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
             border: 1px solid #e0e0e0;
         }
 
         .spec-item .icon {
-            font-size: 1.2em;
-            margin-bottom: 4px;
+            font-size: 1.3em;
+            margin-bottom: 6px;
             color: var(--iocl-orange);
         }
 
@@ -324,66 +390,65 @@
             font-size: 0.9em;
             font-weight: bold;
             color: var(--iocl-blue);
-            margin-bottom: 2px;
+            margin-bottom: 3px;
         }
 
         .spec-item .label {
-            font-size: 0.7em;
+            font-size: 0.75em;
             color: var(--iocl-mid-gray);
-            font-weight: 500;
+            font-weight: 600;
         }
 
         .warning-box {
-            background: #fff3cd;
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
             border: 1px solid #ffeaa7;
             color: #856404;
-            padding: 8px;
-            border-radius: 6px;
-            margin-top: 8px;
-            font-size: 0.8em;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 0.85em;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
 
         .warning-box i {
             color: #f39c12;
+            font-size: 1.1em;
         }
 
-        /* Auto-suggestion styling */
-        .suggestions-dropdown {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 1px solid #ddd;
-            border-top: none;
-            border-radius: 0 0 8px 8px;
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 1000;
-            display: none;
+        /* Coordinate Helper */
+        .coord-helper {
+            font-size: 0.8em;
+            color: var(--iocl-mid-gray);
+            margin-top: 5px;
+            font-style: italic;
         }
 
-        .suggestion-item {
-            padding: 10px 12px;
-            cursor: pointer;
-            border-bottom: 1px solid #f0f0f0;
-            font-size: 0.9em;
+        /* Loading States */
+        .loading {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
         }
 
-        .suggestion-item:hover {
-            background-color: var(--iocl-light-gray);
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
 
-        .suggestion-item:last-child {
-            border-bottom: none;
+        /* Status Indicators */
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
         }
 
-        .input-container {
-            position: relative;
-        }
+        .status-success { background-color: #27ae60; }
+        .status-warning { background-color: #f39c12; }
+        .status-error { background-color: #e74c3c; }
 
         /* Mobile Responsive */
         @media (max-width: 768px) {
@@ -397,36 +462,21 @@
             .header h1 {
                 font-size: 1.6em;
             }
-            .specs-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            .ro-details-grid {
+            .specs-grid, .ro-details-grid {
                 grid-template-columns: 1fr;
             }
             .floating-text-bubble {
-                font-size: 0.85rem;
+                font-size: 0.9rem;
                 padding: 8px 14px;
+            }
+            .floating-text-bubble:nth-child(n+5) {
+                display: none;
             }
         }
 
         @media (max-width: 480px) {
-            .specs-grid {
-                grid-template-columns: 1fr;
-            }
             .form-box {
                 padding: 15px;
-            }
-        }
-
-        /* Ensure page can scroll properly */
-        html {
-            scroll-behavior: smooth;
-        }
-
-        /* Reduce floating elements on small screens */
-        @media (max-height: 600px) {
-            .floating-text-bubble:nth-child(n+5) {
-                display: none;
             }
         }
     </style>
@@ -435,20 +485,13 @@
 
 <div class="floating-bg-container">
     <div class="floating-text-bubble">Nation-First</div>
-    <div class="floating-text-bubble">Care</div>
-    <div class="floating-text-bubble">Innovation</div>
-    <div class="floating-text-bubble">Passion</div>
-    <div class="floating-text-bubble">Trust</div>
-    <div class="floating-text-bubble">Indane</div>
-    <div class="floating-text-bubble">SERVO</div>
+    <div class="floating-text-bubble">Care & Innovation</div>
+    <div class="floating-text-bubble">Passion & Trust</div>
+    <div class="floating-text-bubble">SERVO Energy</div>
     <div class="floating-text-bubble">XtraGreen</div>
-    <div class="floating-text-bubble">Energy</div>
-    <div class="floating-text-bubble">Sustainability</div>
     <div class="floating-text-bubble">Excellence</div>
-    <div class="floating-text-bubble">Commitment</div>
-    <div class="floating-text-bubble">Integrity</div>
+    <div class="floating-text-bubble">Sustainability</div>
     <div class="floating-text-bubble">Project SPRINT</div>
-    <div class="floating-text-bubble">Future Energy</div>
 </div>
 
 <div class="container">
@@ -457,44 +500,51 @@
             <h1>IndianOil <span class="logo-text">Smart Marg</span></h1>
         </div>
 
+        <!-- Terminal Section -->
         <div class="section-title">
             <i class="fa-solid fa-industry"></i>
             <span>Terminal Location</span>
         </div>
         
         <label for="landmark_name">IOCL Terminal</label>
-        <input type="text" id="landmark_name" list="landmarkList" placeholder="Start typing terminal name...">
+        <input type="text" id="landmark_name" list="landmarkList" placeholder="Start typing terminal name..." autocomplete="off">
         <datalist id="landmarkList">
-            {% for landmark in landmarks %}
-            <option value="{{ landmark.name }}" data-lat="{{ landmark.lat }}" data-lng="{{ landmark.lng }}">
-            {% endfor %}
+            <!-- Will be populated from Flask template -->
         </datalist>
 
         <label for="source">Terminal Coordinates</label>
         <input type="text" name="source" id="source" placeholder="Select from above or enter manually" required>
         <div class="coord-helper">Example: 28.6139, 77.2090</div>
 
+        <!-- RO Section -->
         <div class="section-title">
             <i class="fa-solid fa-gas-pump"></i>
             <span>RO Location</span>
         </div>
 
-        <label for="state_code">State Code</label>
+        <label for="state_code">
+            <span class="status-indicator status-success" id="stateStatus" style="display: none;"></span>
+            State Code
+        </label>
         <div class="input-container">
-            <input type="text" id="state_code" placeholder="Enter state code (e.g., GJ, MH, DL)" autocomplete="off">
+            <input type="text" id="state_code" placeholder="Enter state code (e.g., GJ, MH, DL, UP)" autocomplete="off" maxlength="2">
             <div id="stateDropdown" class="suggestions-dropdown"></div>
         </div>
 
-        <label for="sap_code">SAP Code</label>
+        <label for="sap_code">
+            <span class="status-indicator status-success" id="sapStatus" style="display: none;"></span>
+            SAP Code
+        </label>
         <div class="input-container">
-            <input type="text" id="sap_code" name="sap_code" placeholder="Enter or select SAP code" autocomplete="off">
+            <input type="text" id="sap_code" name="sap_code" placeholder="Enter or search SAP code" autocomplete="off">
             <div id="sapDropdown" class="suggestions-dropdown"></div>
         </div>
 
+        <!-- RO Details Display -->
         <div id="roDetailsDisplay" class="ro-details-display">
             <div class="ro-details-title">
                 <i class="fas fa-building"></i>
-                <span>RO Details</span>
+                <span>Selected RO Details</span>
             </div>
             <div class="ro-details-grid">
                 <div class="ro-detail-item">
@@ -514,7 +564,10 @@
                     <div class="value" id="roSalesGroupDesc">-</div>
                 </div>
                 <div class="ro-location-display">
-                    <div class="label">📍 Location Coordinates</div>
+                    <div class="label">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Location Coordinates
+                    </div>
                     <div class="value" id="roCoordinates">-</div>
                 </div>
             </div>
@@ -524,6 +577,7 @@
         <input type="text" name="destination" id="destination" placeholder="Will be auto-filled from SAP selection" required readonly>
         <div class="coord-helper">Coordinates will be populated automatically when SAP code is selected</div>
 
+        <!-- TT Specifications Section -->
         <div class="section-title">
             <i class="fa-solid fa-truck-fast"></i>
             <span>Truck Tanker (TT) Specifications</span>
@@ -532,19 +586,10 @@
         <label for="tt_type">Select TT Capacity Range</label>
         <select id="tt_type" name="tt_type" required onchange="showTTSpecs()">
             <option value="">Choose TT Capacity</option>
-            {% for tt_key, tt_data in tt_specifications.items() %}
-            <option value="{{ tt_key }}"
-                    data-capacity="{{ tt_data.avg_capacity_liters }}"
-                    data-product-weight="{{ tt_data.product_weight }}"
-                    data-tare-weight="{{ tt_data.tare_weight }}"
-                    data-gross-weight="{{ tt_data.gross_weight }}"
-                    data-axle-load="{{ tt_data.axle_load }}"
-                    data-max-speed="{{ tt_data.max_speed }}">
-                {{ tt_data.capacity_range }} ({{ (tt_data.gross_weight / 1000) | round(1) }}T)
-            </option>
-            {% endfor %}
+            <!-- Options will be populated from Flask template -->
         </select>
 
+        <!-- TT Specifications Display -->
         <div id="ttSpecsDisplay" class="tt-specs-display">
             <div class="specs-title">
                 <i class="fas fa-truck"></i>
@@ -559,17 +604,17 @@
                 <div class="spec-item">
                     <div class="icon"><i class="fas fa-weight-hanging"></i></div>
                     <div class="value" id="specGrossWeight">-</div>
-                    <div class="label">Gross Wt</div>
+                    <div class="label">Gross Weight</div>
                 </div>
                 <div class="spec-item">
                     <div class="icon"><i class="fas fa-oil-can"></i></div>
                     <div class="value" id="specProductWeight">-</div>
-                    <div class="label">Product Wt</div>
+                    <div class="label">Product Weight</div>
                 </div>
                 <div class="spec-item">
                     <div class="icon"><i class="fas fa-truck"></i></div>
                     <div class="value" id="specTareWeight">-</div>
-                    <div class="label">Tare Wt</div>
+                    <div class="label">Tare Weight</div>
                 </div>
                 <div class="spec-item">
                     <div class="icon"><i class="fas fa-balance-scale"></i></div>
@@ -593,121 +638,165 @@
         </button>
         
         <div class="footer">
-            © 2025 IndianOil Corporation Ltd. - Truck Tanker Safety Navigation
+            © 2025 IndianOil Corporation Ltd. - Smart Truck Tanker Navigation System
         </div>
     </form>
 </div>
 
 <script>
-    // RO data loaded from Flask backend
+    // Global variables for RO data
     let roData = [];
     let uniqueStates = [];
+    let currentStateROs = [];
     
-    // Load RO data from template variables (passed from Flask)
-    try {
-        {% if ro_data %}
-        roData = {{ ro_data|safe }};
-        {% endif %}
-        
-        {% if unique_states %}
-        uniqueStates = {{ unique_states|tojson }};
-        {% endif %}
-        
-        console.log(`Loaded ${roData.length} RO records from server`);
-        console.log(`Available states: ${uniqueStates.join(', ')}`);
-    } catch (error) {
-        console.error('Error loading RO data:', error);
-        // Fallback to empty arrays if template data is not available
-        roData = [];
-        uniqueStates = [];
+    // Load sample data for demonstration (replace with actual Flask template data)
+    const sampleROData = [
+        {
+            consignee: "G.S.R.T.C. (BHAVNAGAR DN) MAHUVA",
+            latitude: 21.09515446,
+            longitude: 71.76576734,
+            sapCode: "0",
+            sapCodeRef: "0000",
+            salesGroupCode: "G17",
+            salesGroupDesc: "CON-BHAVNAGAR",
+            stateCode: "GJ",
+            customerType: "Consumers"
+        },
+        {
+            consignee: "COLD-Hindalco",
+            latitude: 21.70031959429167,
+            longitude: 72.54146767349411,
+            sapCode: "5209",
+            sapCodeRef: "5209",
+            salesGroupCode: "GC6",
+            salesGroupDesc: "KAM - BHARUCH",
+            stateCode: "GJ",
+            customerType: "Consumers"
+        },
+        {
+            consignee: "CFA SANAND",
+            latitude: 23.010695763317024,
+            longitude: 72.35583600982058,
+            sapCode: "5766",
+            sapCodeRef: "5766",
+            salesGroupCode: "GR1",
+            salesGroupDesc: "LSE-AHMEDABAD",
+            stateCode: "GJ",
+            customerType: "Retail"
+        },
+        {
+            consignee: "Deep Enterprise",
+            latitude: 22.9895,
+            longitude: 72.8579,
+            sapCode: "33266",
+            sapCodeRef: "000033266",
+            salesGroupCode: "G44",
+            salesGroupDesc: "KHEDA RSA",
+            stateCode: "GJ",
+            customerType: "Retail"
+        },
+        {
+            consignee: "GUJARAT PIPAVAV PORT LTD PIPAVAV",
+            latitude: 20.9295,
+            longitude: 71.4989,
+            sapCode: "108293",
+            sapCodeRef: "0000108293",
+            salesGroupCode: "G17",
+            salesGroupDesc: "CON-BHAVNAGAR",
+            stateCode: "GJ",
+            customerType: "Consumers"
+        }
+    ];
+
+    // Initialize data
+    function initializeData() {
+        // Try to load from Flask template variables (you'll need to populate these)
+        try {
+            // These should be populated from your Flask route
+            // roData = {{ ro_data|safe }};
+            // uniqueStates = {{ unique_states|tojson }};
+            
+            // For now, use sample data
+            roData = sampleROData;
+            uniqueStates = [...new Set(roData.map(item => item.stateCode))].filter(state => state);
+            uniqueStates.sort();
+            
+            console.log(`Loaded ${roData.length} RO records`);
+            console.log(`Available states: ${uniqueStates.join(', ')}`);
+            
+            showSuccessMessage(`Successfully loaded ${roData.length} RO locations from ${uniqueStates.length} states`);
+        } catch (error) {
+            console.error('Error loading RO data:', error);
+            loadRODataFromAPI();
+        }
     }
 
-    // Terminal landmark functionality
-    const landmarkInput = document.getElementById('landmark_name');
-    const sourceInput = document.getElementById('source');
-    
-    landmarkInput.addEventListener('change', function () {
-        const name = this.value;
-        const options = document.getElementById('landmarkList').options;
-        let match = null;
-
-        for (let i = 0; i < options.length; i++) {
-            if (options[i].value === name) {
-                match = options[i];
-                break;
-            }
-        }
-
-        if (match) {
-            const lat = match.getAttribute('data-lat');
-            const lng = match.getAttribute('data-lng');
-            sourceInput.value = `${lat},${lng}`;
-        } else if (name === "") {
-            sourceInput.value = "";
-        }
-    });
+    // Load RO data from API as fallback
+    function loadRODataFromAPI() {
+        fetch('/api/ro_data')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    roData = data.data;
+                    uniqueStates = [...new Set(roData.map(item => item.stateCode))].filter(state => state);
+                    uniqueStates.sort();
+                    console.log(`Loaded ${roData.length} RO records from API`);
+                    showSuccessMessage(`API: Loaded ${roData.length} RO locations`);
+                } else {
+                    console.error('Error loading RO data from API:', data.error);
+                    showErrorMessage('Failed to load RO data. Please refresh the page.');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching RO data:', error);
+                showErrorMessage('Network error loading RO data.');
+            });
+    }
 
     // State Code Auto-suggestion
-    const stateInput = document.getElementById('state_code');
-    const stateDropdown = document.getElementById('stateDropdown');
-    const sapInput = document.getElementById('sap_code');
-    const sapDropdown = document.getElementById('sapDropdown');
-
     function showStateSuggestions(query) {
         const filteredStates = uniqueStates.filter(state => 
             state.toLowerCase().includes(query.toLowerCase())
         );
 
+        const dropdown = document.getElementById('stateDropdown');
+        
         if (filteredStates.length > 0 && query.length > 0) {
-            stateDropdown.innerHTML = filteredStates.map(state => 
+            dropdown.innerHTML = filteredStates.map(state => 
                 `<div class="suggestion-item" onclick="selectState('${state}')">${state}</div>`
             ).join('');
-            stateDropdown.style.display = 'block';
+            dropdown.style.display = 'block';
         } else {
-            stateDropdown.style.display = 'none';
+            dropdown.style.display = 'none';
         }
     }
 
     function selectState(state) {
+        const stateInput = document.getElementById('state_code');
+        const sapInput = document.getElementById('sap_code');
+        
         stateInput.value = state;
-        stateDropdown.style.display = 'none';
-        // Clear SAP code when state changes
+        document.getElementById('stateDropdown').style.display = 'none';
+        document.getElementById('stateStatus').style.display = 'inline-block';
+        
+        // Clear SAP code and hide RO details
         sapInput.value = '';
         hideRODetails();
-        // Filter SAP codes by selected state
-        updateSAPSuggestions();
+        document.getElementById('destination').value = '';
+        document.getElementById('sapStatus').style.display = 'none';
+        
+        // Filter ROs for selected state
+        currentStateROs = roData.filter(item => item.stateCode === state);
+        console.log(`Filtered ${currentStateROs.length} ROs for state ${state}`);
+        
+        // Show info about available ROs
+        showInfoMessage(`Found ${currentStateROs.length} RO locations in ${state}`);
     }
-
-    stateInput.addEventListener('input', function() {
-        showStateSuggestions(this.value);
-    });
-
-    stateInput.addEventListener('blur', function() {
-        // Delay hiding to allow click on dropdown
-        setTimeout(() => {
-            stateDropdown.style.display = 'none';
-        }, 200);
-    });
 
     // SAP Code Auto-suggestion
-    function updateSAPSuggestions() {
-        const selectedState = stateInput.value;
-        if (selectedState) {
-            // Filter RO data by selected state
-            const stateROs = roData.filter(item => item.stateCode === selectedState);
-            sapInput.setAttribute('data-filtered', JSON.stringify(stateROs));
-        }
-    }
-
     function showSAPSuggestions(query) {
-        let filteredROs = roData;
+        let filteredROs = currentStateROs.length > 0 ? currentStateROs : roData;
         
-        // Filter by state if selected
-        const selectedState = stateInput.value;
-        if (selectedState) {
-            filteredROs = roData.filter(item => item.stateCode === selectedState);
-        }
-
         // Filter by query
         if (query.length > 0) {
             filteredROs = filteredROs.filter(item => 
@@ -717,55 +806,54 @@
             );
         }
 
+        const dropdown = document.getElementById('sapDropdown');
+        
         if (filteredROs.length > 0 && query.length > 0) {
-            sapDropdown.innerHTML = filteredROs.slice(0, 10).map(item => // Limit to 10 suggestions
-                `<div class="suggestion-item" onclick="selectSAP('${item.sapCode}')">
-                    <div style="font-weight: bold;">${item.sapCode} - ${item.sapCodeRef}</div>
-                    <div style="font-size: 0.8em; color: #666;">${item.consignee}</div>
-                    <div style="font-size: 0.7em; color: #888;">${item.stateCode} | ${item.customerType}</div>
+            dropdown.innerHTML = filteredROs.slice(0, 8).map(item => 
+                `<div class="suggestion-item sap-suggestion" onclick="selectSAP('${item.sapCode}')">
+                    <div class="sap-code-main">${item.sapCode} - ${item.sapCodeRef}</div>
+                    <div class="sap-consignee">${item.consignee}</div>
+                    <div class="sap-details">
+                        <span>${item.stateCode} | ${item.customerType}</span>
+                        <span>${item.salesGroupCode}</span>
+                    </div>
                 </div>`
             ).join('');
-            sapDropdown.style.display = 'block';
+            dropdown.style.display = 'block';
         } else {
-            sapDropdown.style.display = 'none';
+            dropdown.style.display = 'none';
         }
     }
 
     function selectSAP(sapCode) {
         const selectedRO = roData.find(item => item.sapCode === sapCode);
         if (selectedRO) {
+            const sapInput = document.getElementById('sap_code');
+            const stateInput = document.getElementById('state_code');
+            const destinationInput = document.getElementById('destination');
+            
             sapInput.value = sapCode;
-            sapDropdown.style.display = 'none';
+            document.getElementById('sapDropdown').style.display = 'none';
+            document.getElementById('sapStatus').style.display = 'inline-block';
             
             // Auto-fill state code if not selected
             if (!stateInput.value) {
                 stateInput.value = selectedRO.stateCode;
+                document.getElementById('stateStatus').style.display = 'inline-block';
             }
             
             // Show RO details
             showRODetails(selectedRO);
             
             // Auto-fill destination coordinates
-            const destination = document.getElementById('destination');
-            destination.value = `${selectedRO.latitude},${selectedRO.longitude}`;
+            destinationInput.value = `${selectedRO.latitude},${selectedRO.longitude}`;
+            destinationInput.style.borderColor = '#27ae60';
+            
+            showSuccessMessage(`Selected: ${selectedRO.consignee}`);
         }
     }
 
-    sapInput.addEventListener('input', function() {
-        showSAPSuggestions(this.value);
-        if (this.value === '') {
-            hideRODetails();
-            document.getElementById('destination').value = '';
-        }
-    });
-
-    sapInput.addEventListener('blur', function() {
-        setTimeout(() => {
-            sapDropdown.style.display = 'none';
-        }, 200);
-    });
-
-    // RO Details Display
+    // RO Details Display Functions
     function showRODetails(roDetails) {
         document.getElementById('roConsignee').textContent = roDetails.consignee || 'N/A';
         document.getElementById('roCustomerType').textContent = roDetails.customerType || 'N/A';
@@ -780,15 +868,7 @@
         document.getElementById('roDetailsDisplay').classList.remove('active');
     }
 
-    // Hide dropdowns when clicking outside
-    document.addEventListener('click', function(event) {
-        if (!event.target.closest('.input-container')) {
-            stateDropdown.style.display = 'none';
-            sapDropdown.style.display = 'none';
-        }
-    });
-
-    // TT Specifications functionality
+    // TT Specifications Functions
     function showTTSpecs() {
         const select = document.getElementById('tt_type');
         const display = document.getElementById('ttSpecsDisplay');
@@ -797,12 +877,12 @@
         const warningText = document.getElementById('warningText');
         
         if (selectedOption.value) {
-            const capacity = parseInt(selectedOption.dataset.capacity);
-            const productWeight = parseInt(selectedOption.dataset.productWeight);
-            const tareWeight = parseInt(selectedOption.dataset.tareWeight);
-            const grossWeight = parseInt(selectedOption.dataset.grossWeight);
-            const axleLoad = parseFloat(selectedOption.dataset.axleLoad);
-            const maxSpeed = parseInt(selectedOption.dataset.maxSpeed);
+            const capacity = parseInt(selectedOption.dataset.capacity || '18000');
+            const productWeight = parseInt(selectedOption.dataset.productWeight || '16200');
+            const tareWeight = parseInt(selectedOption.dataset.tareWeight || '9500');
+            const grossWeight = parseInt(selectedOption.dataset.grossWeight || '25700');
+            const axleLoad = parseFloat(selectedOption.dataset.axleLoad || '12.85');
+            const maxSpeed = parseInt(selectedOption.dataset.maxSpeed || '55');
             
             document.getElementById('specCapacity').textContent = capacity.toLocaleString() + ' L';
             document.getElementById('specGrossWeight').textContent = (grossWeight / 1000).toFixed(1) + ' T';
@@ -814,10 +894,10 @@
             // Show warnings for heavy TT
             if (grossWeight > 35000) {
                 warningBox.style.display = 'flex';
-                warningText.textContent = 'Heavy TT: Check bridge limits, reduce speed at turns.';
+                warningText.textContent = 'Heavy TT: Check bridge weight limits, reduce speed at turns, extra safety measures required.';
             } else if (grossWeight > 25000) {
                 warningBox.style.display = 'flex';
-                warningText.textContent = 'Medium TT: Monitor axle loads and speed limits.';
+                warningText.textContent = 'Medium TT: Monitor axle loads, speed limits, and road conditions.';
             } else {
                 warningBox.style.display = 'none';
             }
@@ -828,227 +908,75 @@
         }
     }
 
-    // Form validation
-    document.querySelector('form').addEventListener('submit', function(e) {
-        const source = document.getElementById('source').value.trim();
-        const destination = document.getElementById('destination').value.trim();
-        const ttType = document.getElementById('tt_type').value;
-        const sapCode = document.getElementById('sap_code').value.trim();
-        
-        if (!source || !destination || !ttType || !sapCode) {
-            e.preventDefault();
-            showCustomModal(
-                'Missing Required Fields',
-                `Please fill in all required fields:
-                <ul style="text-align: left; margin: 10px 0;">
-                    <li>Terminal coordinates</li>
-                    <li>State code</li>
-                    <li>SAP code (RO selection)</li>
-                    <li>TT Capacity type</li>
-                </ul>`
-            );
-            return;
-        }
-        
-        // Validate coordinate format
-        const coordPattern = /^-?\d+\.?\d*\s*,\s*-?\d+\.?\d*$/;
-        if (!coordPattern.test(source) || !coordPattern.test(destination)) {
-            e.preventDefault();
-            showCustomModal(
-                'Invalid Coordinates',
-                'Please enter coordinates in the format:<br><strong>latitude,longitude</strong><br>Example: 28.6139,77.2090'
-            );
-            return;
-        }
-
-        // Validate SAP code exists in data
-        const sapExists = roData.some(item => item.sapCode === sapCode);
-        if (!sapExists) {
-            e.preventDefault();
-            showCustomModal(
-                'Invalid SAP Code',
-                'Please select a valid SAP code from the dropdown suggestions.'
-            );
-            return;
-        }
-        
-        // Show loading state
-        const submitBtn = document.querySelector('button[type="submit"]');
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing TT Route...';
-        submitBtn.disabled = true;
-    });
-
-    // Custom modal function
-    function showCustomModal(title, message) {
-        const modal = document.createElement('div');
-        modal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-        `;
-        
-        const modalContent = document.createElement('div');
-        modalContent.style.cssText = `
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            max-width: 400px;
-            margin: 20px;
-            text-align: center;
-        `;
-        
-        modalContent.innerHTML = `
-            <div style="color: #02164F; font-size: 1.2em; font-weight: bold; margin-bottom: 15px;">
-                <i class="fas fa-exclamation-circle" style="color: #F37022; margin-right: 8px;"></i>
-                ${title}
-            </div>
-            <div style="margin-bottom: 20px; line-height: 1.4;">${message}</div>
-            <button onclick="this.closest('.modal-backdrop').remove()" 
-                    style="padding: 10px 20px; background: linear-gradient(to right, #02164F, #005bb5); 
-                           color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
-                OK
-            </button>
-        `;
-        
-        modal.className = 'modal-backdrop';
-        modal.appendChild(modalContent);
-        document.body.appendChild(modal);
-        
-        // Close on backdrop click
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                modal.remove();
-            }
-        });
-    }
-
-    // Initialize focus handlers
-    document.getElementById('source').addEventListener('focus', function() {
-        this.placeholder = "Enter coordinates manually (lat, lng)";
-    });
-
-    // Load RO data from server (AJAX fallback if template data fails)
-    function loadRODataFromServer() {
-        if (roData.length === 0) {
-            fetch('/api/ro_data')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        roData = data.data;
-                        uniqueStates = [...new Set(roData.map(item => item.stateCode))].filter(state => state);
-                        uniqueStates.sort();
-                        console.log(`Loaded ${roData.length} RO records from API`);
-                        console.log(`Available states: ${uniqueStates.join(', ')}`);
-                    } else {
-                        console.error('Error loading RO data:', data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching RO data:', error);
-                });
-        }
-    }
-
-    // Initialize on page load
+    // Event Listeners
     document.addEventListener('DOMContentLoaded', function() {
-        loadRODataFromServer();
-        console.log('IndianOil Smart Marg Enhanced Form Loaded');
+        initializeData();
         
-        // Add real-time search capability for better UX
-        let searchTimeout;
+        const stateInput = document.getElementById('state_code');
+        const sapInput = document.getElementById('sap_code');
+        const landmarkInput = document.getElementById('landmark_name');
+        const sourceInput = document.getElementById('source');
         
-        // Enhanced state input with debounced search
+        // State code input handlers
+        let stateTimeout;
         stateInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
+            clearTimeout(stateTimeout);
+            stateTimeout = setTimeout(() => {
                 showStateSuggestions(this.value);
             }, 150);
         });
-        
-        // Enhanced SAP input with debounced search
+
+        stateInput.addEventListener('blur', function() {
+            setTimeout(() => {
+                document.getElementById('stateDropdown').style.display = 'none';
+            }, 200);
+        });
+
+        // SAP code input handlers
+        let sapTimeout;
         sapInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
+            clearTimeout(sapTimeout);
+            sapTimeout = setTimeout(() => {
                 showSAPSuggestions(this.value);
                 if (this.value === '') {
                     hideRODetails();
                     document.getElementById('destination').value = '';
+                    document.getElementById('sapStatus').style.display = 'none';
                 }
             }, 150);
         });
-        
-        // Add keyboard navigation for dropdowns
-        function addKeyboardNavigation(input, dropdown) {
-            input.addEventListener('keydown', function(e) {
-                const items = dropdown.querySelectorAll('.suggestion-item');
-                let currentIndex = Array.from(items).findIndex(item => item.classList.contains('selected'));
-                
-                if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    currentIndex = (currentIndex + 1) % items.length;
-                    updateSelection(items, currentIndex);
-                } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    currentIndex = currentIndex <= 0 ? items.length - 1 : currentIndex - 1;
-                    updateSelection(items, currentIndex);
-                } else if (e.key === 'Enter' && currentIndex >= 0) {
-                    e.preventDefault();
-                    items[currentIndex].click();
-                } else if (e.key === 'Escape') {
-                    dropdown.style.display = 'none';
+
+        sapInput.addEventListener('blur', function() {
+            setTimeout(() => {
+                document.getElementById('sapDropdown').style.display = 'none';
+            }, 200);
+        });
+
+        // Landmark selection handler
+        landmarkInput.addEventListener('change', function () {
+            const name = this.value;
+            const options = document.getElementById('landmarkList').options;
+            let match = null;
+
+            for (let i = 0; i < options.length; i++) {
+                if (options[i].value === name) {
+                    match = options[i];
+                    break;
                 }
-            });
-        }
-        
-        function updateSelection(items, index) {
-            items.forEach(item => item.classList.remove('selected'));
-            if (index >= 0 && index < items.length) {
-                items[index].classList.add('selected');
-                items[index].scrollIntoView({ block: 'nearest' });
             }
-        }
-        
-        // Apply keyboard navigation
-        addKeyboardNavigation(stateInput, stateDropdown);
-        addKeyboardNavigation(sapInput, sapDropdown);
-        
-        // Add loading indicators
-        function showLoadingState(element, message) {
-            element.style.background = 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)';
-            element.style.backgroundSize = '200% 100%';
-            element.style.animation = 'loading 1.5s infinite';
-            element.placeholder = message;
-        }
-        
-        function hideLoadingState(element, originalPlaceholder) {
-            element.style.background = '';
-            element.style.animation = '';
-            element.placeholder = originalPlaceholder;
-        }
-        
-        // Add loading animation CSS
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes loading {
-                0% { background-position: 200% 0; }
-                100% { background-position: -200% 0; }
+
+            if (match) {
+                const lat = match.getAttribute('data-lat');
+                const lng = match.getAttribute('data-lng');
+                sourceInput.value = `${lat},${lng}`;
+                sourceInput.style.borderColor = '#27ae60';
+            } else if (name === "") {
+                sourceInput.value = "";
+                sourceInput.style.borderColor = '';
             }
-            .suggestion-item.selected {
-                background-color: var(--iocl-blue) !important;
-                color: white;
-            }
-        `;
-        document.head.appendChild(style);
-        
-        // Validate coordinates in real-time
+        });
+
+        // Coordinate validation
         function validateCoordinates(input) {
             const value = input.value.trim();
             const coordPattern = /^-?\d+\.?\d*\s*,\s*-?\d+\.?\d*$/;
@@ -1056,50 +984,145 @@
             if (value && !coordPattern.test(value)) {
                 input.style.borderColor = '#e74c3c';
                 input.style.boxShadow = '0 0 0 3px rgba(231, 76, 60, 0.2)';
+            } else if (value) {
+                input.style.borderColor = '#27ae60';
+                input.style.boxShadow = '0 0 0 3px rgba(39, 174, 96, 0.2)';
             } else {
                 input.style.borderColor = '';
                 input.style.boxShadow = '';
             }
         }
-        
-        // Add coordinate validation
-        document.getElementById('source').addEventListener('input', function() {
+
+        sourceInput.addEventListener('input', function() {
             validateCoordinates(this);
         });
-        
+
         document.getElementById('destination').addEventListener('input', function() {
             validateCoordinates(this);
         });
-        
-        // Success notification for data loading
-        if (roData.length > 0) {
-            setTimeout(() => {
-                showSuccessMessage(`✅ Successfully loaded ${roData.length} RO locations from ${uniqueStates.length} states`);
-            }, 1000);
-        }
+
+        // Form validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const source = document.getElementById('source').value.trim();
+            const destination = document.getElementById('destination').value.trim();
+            const ttType = document.getElementById('tt_type').value;
+            const sapCode = document.getElementById('sap_code').value.trim();
+            
+            if (!source || !destination || !ttType || !sapCode) {
+                e.preventDefault();
+                showErrorMessage('Please fill in all required fields: Terminal coordinates, State code, SAP code, and TT Capacity.');
+                return;
+            }
+            
+            // Validate coordinate format
+            const coordPattern = /^-?\d+\.?\d*\s*,\s*-?\d+\.?\d*$/;
+            if (!coordPattern.test(source) || !coordPattern.test(destination)) {
+                e.preventDefault();
+                showErrorMessage('Invalid coordinates format. Please use: latitude,longitude (Example: 28.6139,77.2090)');
+                return;
+            }
+
+            // Validate SAP code exists
+            const sapExists = roData.some(item => item.sapCode === sapCode);
+            if (!sapExists) {
+                e.preventDefault();
+                showErrorMessage('Please select a valid SAP code from the dropdown suggestions.');
+                return;
+            }
+            
+            // Show loading state
+            const submitBtn = document.querySelector('button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing TT Route...';
+            submitBtn.disabled = true;
+            
+            showInfoMessage('Processing route analysis with TT specifications...');
+        });
+
+        // Hide dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.input-container')) {
+                document.getElementById('stateDropdown').style.display = 'none';
+                document.getElementById('sapDropdown').style.display = 'none';
+            }
+        });
+
+        // Keyboard navigation for dropdowns
+        addKeyboardNavigation(stateInput, document.getElementById('stateDropdown'));
+        addKeyboardNavigation(sapInput, document.getElementById('sapDropdown'));
     });
-    
-    // Success message function
+
+    // Keyboard Navigation Function
+    function addKeyboardNavigation(input, dropdown) {
+        input.addEventListener('keydown', function(e) {
+            const items = dropdown.querySelectorAll('.suggestion-item');
+            let currentIndex = Array.from(items).findIndex(item => item.classList.contains('selected'));
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                currentIndex = (currentIndex + 1) % items.length;
+                updateSelection(items, currentIndex);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                currentIndex = currentIndex <= 0 ? items.length - 1 : currentIndex - 1;
+                updateSelection(items, currentIndex);
+            } else if (e.key === 'Enter' && currentIndex >= 0) {
+                e.preventDefault();
+                items[currentIndex].click();
+            } else if (e.key === 'Escape') {
+                dropdown.style.display = 'none';
+            }
+        });
+    }
+
+    function updateSelection(items, index) {
+        items.forEach(item => item.classList.remove('selected'));
+        if (index >= 0 && index < items.length) {
+            items[index].classList.add('selected');
+            items[index].scrollIntoView({ block: 'nearest' });
+        }
+    }
+
+    // Notification Functions
     function showSuccessMessage(message) {
+        showNotification(message, 'success');
+    }
+
+    function showErrorMessage(message) {
+        showNotification(message, 'error');
+    }
+
+    function showInfoMessage(message) {
+        showNotification(message, 'info');
+    }
+
+    function showNotification(message, type) {
         const notification = document.createElement('div');
+        const colors = {
+            success: { bg: 'linear-gradient(135deg, #27ae60, #2ecc71)', icon: 'fa-check-circle' },
+            error: { bg: 'linear-gradient(135deg, #e74c3c, #c0392b)', icon: 'fa-exclamation-circle' },
+            info: { bg: 'linear-gradient(135deg, #3498db, #2980b9)', icon: 'fa-info-circle' }
+        };
+
+        const config = colors[type] || colors.info;
+
         notification.style.cssText = `
             position: fixed;
             top: 20px;
             right: 20px;
-            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            background: ${config.bg};
             color: white;
-            padding: 12px 20px;
+            padding: 15px 20px;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             z-index: 10000;
             font-size: 0.9em;
-            max-width: 300px;
+            max-width: 350px;
             animation: slideIn 0.3s ease;
         `;
         
         notification.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <i class="fas fa-check-circle"></i>
+            <div style="display: flex; align-items: flex-start; gap: 10px;">
+                <i class="fas ${config.icon}" style="margin-top: 2px;"></i>
                 <span>${message}</span>
             </div>
         `;
@@ -1112,11 +1135,11 @@
             setTimeout(() => notification.remove(), 300);
         }, 4000);
         
-        // Add CSS for animations
+        // Add animation styles if not already present
         if (!document.getElementById('notification-styles')) {
-            const notificationStyle = document.createElement('style');
-            notificationStyle.id = 'notification-styles';
-            notificationStyle.textContent = `
+            const style = document.createElement('style');
+            style.id = 'notification-styles';
+            style.textContent = `
                 @keyframes slideIn {
                     from { transform: translateX(100%); opacity: 0; }
                     to { transform: translateX(0); opacity: 1; }
@@ -1125,10 +1148,82 @@
                     from { transform: translateX(0); opacity: 1; }
                     to { transform: translateX(100%); opacity: 0; }
                 }
+                .suggestion-item.selected {
+                    background-color: var(--iocl-blue) !important;
+                    color: white;
+                }
             `;
-            document.head.appendChild(notificationStyle);
+            document.head.appendChild(style);
         }
     }
+
+    // Sample TT specifications for demonstration
+    const sampleTTSpecs = {
+        "12-16KL": {
+            capacity: 14000,
+            productWeight: 12600,
+            tareWeight: 8500,
+            grossWeight: 21100,
+            axleLoad: 10.5,
+            maxSpeed: 60
+        },
+        "16-20KL": {
+            capacity: 18000,
+            productWeight: 16200,
+            tareWeight: 9500,
+            grossWeight: 25700,
+            axleLoad: 12.85,
+            maxSpeed: 55
+        },
+        "20-24KL": {
+            capacity: 22000,
+            productWeight: 19800,
+            tareWeight: 10500,
+            grossWeight: 30300,
+            axleLoad: 15.15,
+            maxSpeed: 50
+        },
+        "24-30KL": {
+            capacity: 27000,
+            productWeight: 24300,
+            tareWeight: 11500,
+            grossWeight: 35800,
+            axleLoad: 17.9,
+            maxSpeed: 45
+        },
+        "30KL+": {
+            capacity: 35000,
+            productWeight: 31500,
+            tareWeight: 13000,
+            grossWeight: 44500,
+            axleLoad: 22.25,
+            maxSpeed: 40
+        }
+    };
+
+    // Populate TT specifications dropdown
+    function populateTTDropdown() {
+        const select = document.getElementById('tt_type');
+        Object.keys(sampleTTSpecs).forEach(key => {
+            const specs = sampleTTSpecs[key];
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = `${key} (${(specs.grossWeight / 1000).toFixed(1)}T)`;
+            option.setAttribute('data-capacity', specs.capacity);
+            option.setAttribute('data-product-weight', specs.productWeight);
+            option.setAttribute('data-tare-weight', specs.tareWeight);
+            option.setAttribute('data-gross-weight', specs.grossWeight);
+            option.setAttribute('data-axle-load', specs.axleLoad);
+            option.setAttribute('data-max-speed', specs.maxSpeed);
+            select.appendChild(option);
+        });
+    }
+
+    // Initialize TT dropdown when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        populateTTDropdown();
+    });
+
 </script>
 </body>
 </html>
