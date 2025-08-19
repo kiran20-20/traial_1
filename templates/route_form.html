@@ -241,11 +241,20 @@ document.addEventListener('DOMContentLoaded', function() {
         if (landmarksInput && landmarksInput.value) {
             landmarkData = JSON.parse(landmarksInput.value);
             console.log(`Loaded ${landmarkData.length} landmarks`);
+            console.log("First landmark:", landmarkData[0]);
+        } else {
+            console.error("No landmarks data found in hidden input");
         }
     } catch (error) {
         console.error("Error parsing landmark data:", error);
         landmarkData = [];
     }
+
+    // Debug: Check if elements exist
+    console.log("Form elements check:");
+    console.log("- landmarkInput:", document.getElementById('landmark_name') ? "Found" : "NOT FOUND");
+    console.log("- stateInput:", document.getElementById('state_code') ? "Found" : "NOT FOUND");
+    console.log("- sapInput:", document.getElementById('sap_code') ? "Found" : "NOT FOUND");
 
     // --- ELEMENT REFERENCES ---
     const landmarkInput = document.getElementById('landmark_name');
@@ -260,48 +269,102 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- DATA FETCHING ---
     async function initializeData() {
+        console.log("Starting data initialization...");
+        
         try {
-            // Fetch all RO data at once
-            const roResponse = await fetch("{{ url_for('get_ro_data') }}");
+            // Test API endpoints first
+            console.log("Testing RO data API...");
+            const roResponse = await fetch("/api/ro_data");
+            console.log("RO API Response status:", roResponse.status);
+            
+            if (!roResponse.ok) {
+                console.error("RO API returned error:", roResponse.status, roResponse.statusText);
+                alert(`RO API Error: ${roResponse.status} ${roResponse.statusText}`);
+                return;
+            }
+            
             const roResult = await roResponse.json();
+            console.log("RO API Result:", roResult);
+            
             if (roResult.success) {
                 roData = roResult.data;
-                console.log(`Loaded ${roData.length} RO records.`);
+                console.log(`Successfully loaded ${roData.length} RO records.`);
+                if (roData.length > 0) {
+                    console.log("Sample RO record:", roData[0]);
+                }
             } else {
-                console.error("Failed to load RO data:", roResult.error);
-                alert("Error: Could not load RO data. Please refresh the page.");
+                console.error("RO API failed:", roResult.error);
+                alert("Error: Could not load RO data. " + (roResult.error || "Unknown error"));
                 return;
             }
 
-            // Fetch unique states
-            const statesResponse = await fetch("{{ url_for('get_states') }}");
-            const statesResult = await statesResponse.json();
-            if (statesResult.success) {
-                uniqueStates = statesResult.states;
-                console.log(`Loaded ${uniqueStates.length} states`);
+            // Test states API
+            console.log("Testing states API...");
+            const statesResponse = await fetch("/api/states");
+            console.log("States API Response status:", statesResponse.status);
+            
+            if (!statesResponse.ok) {
+                console.error("States API returned error:", statesResponse.status, statesResponse.statusText);
+                // Continue without states - we can derive them from RO data
+                uniqueStates = [...new Set(roData.map(ro => ro.stateCode).filter(Boolean))];
+                console.log("Derived states from RO data:", uniqueStates);
             } else {
-                console.error("Failed to load states:", statesResult.error);
+                const statesResult = await statesResponse.json();
+                console.log("States API Result:", statesResult);
+                
+                if (statesResult.success) {
+                    uniqueStates = statesResult.states;
+                    console.log(`Successfully loaded ${uniqueStates.length} states:`, uniqueStates);
+                } else {
+                    console.error("States API failed:", statesResult.error);
+                    // Fallback to deriving from RO data
+                    uniqueStates = [...new Set(roData.map(ro => ro.stateCode).filter(Boolean))];
+                    console.log("Fallback - derived states:", uniqueStates);
+                }
             }
+            
+            console.log("Data initialization completed successfully");
+            console.log(`Final data summary: ${landmarkData.length} landmarks, ${roData.length} ROs, ${uniqueStates.length} states`);
+            
         } catch (error) {
             console.error("Failed to load initial data:", error);
-            alert("Error: Could not load necessary data. Please refresh the page.");
+            alert("Error: Could not load necessary data. Please check console and refresh the page.");
         }
     }
 
     // --- EVENT LISTENERS ---
     
     // Terminal/Landmark input with suggestions
-    landmarkInput.addEventListener('input', () => showLandmarkSuggestions(landmarkInput.value));
+    landmarkInput.addEventListener('input', (e) => {
+        console.log("Landmark input changed:", e.target.value);
+        showLandmarkSuggestions(e.target.value);
+    });
     
-    stateInput.addEventListener('input', () => {
-        const value = stateInput.value.toUpperCase();
+    landmarkInput.addEventListener('focus', () => {
+        console.log("Landmark input focused");
+        if (landmarkInput.value.length > 0) {
+            showLandmarkSuggestions(landmarkInput.value);
+        }
+    });
+    
+    stateInput.addEventListener('input', (e) => {
+        const value = e.target.value.toUpperCase();
+        console.log("State input changed:", value);
         stateInput.value = value; // Convert to uppercase as user types
         showStateSuggestions(value);
+    });
+    
+    stateInput.addEventListener('focus', () => {
+        console.log("State input focused");
+        if (stateInput.value.length > 0) {
+            showStateSuggestions(stateInput.value);
+        }
     });
     
     stateInput.addEventListener('blur', () => {
         setTimeout(() => { // Delay to allow click on dropdown
             const enteredState = stateInput.value.toUpperCase();
+            console.log("State input blur, value:", enteredState);
             if (uniqueStates.includes(enteredState)) {
                 selectState(enteredState);
             }
@@ -309,10 +372,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 200);
     });
     
-    sapInput.addEventListener('input', () => showSAPSuggestions(sapInput.value));
+    sapInput.addEventListener('input', (e) => {
+        console.log("SAP input changed:", e.target.value);
+        showSAPSuggestions(e.target.value);
+    });
+    
+    sapInput.addEventListener('focus', () => {
+        console.log("SAP input focused");
+        if (sapInput.value.length > 1) {
+            showSAPSuggestions(sapInput.value);
+        }
+    });
     
     sapInput.addEventListener('blur', () => {
         setTimeout(() => { // Delay to allow click on dropdown
+            console.log("SAP input blur");
             sapDropdown.style.display = 'none';
         }, 200);
     });
@@ -321,26 +395,44 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 1. Landmark/Terminal Suggestions
     function showLandmarkSuggestions(query) {
+        console.log("showLandmarkSuggestions called with query:", query);
+        console.log("landmarkData available:", landmarkData.length);
+        
         if (!landmarkData || landmarkData.length === 0) {
             console.log("No landmark data available");
+            landmarkDropdown.style.display = 'none';
             return;
         }
 
-        const filteredLandmarks = landmarkData.filter(landmark =>
-            landmark.name && landmark.name.toLowerCase().includes(query.toLowerCase())
-        );
+        if (!query || query.length === 0) {
+            landmarkDropdown.style.display = 'none';
+            return;
+        }
+
+        const filteredLandmarks = landmarkData.filter(landmark => {
+            if (!landmark || !landmark.name) {
+                console.log("Invalid landmark:", landmark);
+                return false;
+            }
+            return landmark.name.toLowerCase().includes(query.toLowerCase());
+        });
         
-        if (filteredLandmarks.length > 0 && query.length > 0) {
+        console.log("Filtered landmarks:", filteredLandmarks.length);
+        
+        if (filteredLandmarks.length > 0) {
             landmarkDropdown.innerHTML = filteredLandmarks.map(landmark =>
                 `<div class="suggestion-item" onclick="selectLandmark('${landmark.name}', ${landmark.lat}, ${landmark.lng})">${landmark.name}</div>`
             ).join('');
             landmarkDropdown.style.display = 'block';
+            console.log("Showing landmark dropdown");
         } else {
             landmarkDropdown.style.display = 'none';
+            console.log("No matching landmarks found");
         }
     }
 
     window.selectLandmark = function(name, lat, lng) {
+        console.log("selectLandmark called:", name, lat, lng);
         landmarkInput.value = name;
         sourceInput.value = `${lat},${lng}`;
         landmarkDropdown.style.display = 'none';
@@ -349,22 +441,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 2. State Suggestions
     function showStateSuggestions(query) {
+        console.log("showStateSuggestions called with query:", query);
+        console.log("uniqueStates available:", uniqueStates.length);
+        
         if (!uniqueStates || uniqueStates.length === 0) {
             console.log("No state data available");
+            stateDropdown.style.display = 'none';
+            return;
+        }
+
+        if (!query || query.length === 0) {
+            stateDropdown.style.display = 'none';
             return;
         }
 
         const filteredStates = uniqueStates.filter(state =>
-            state.toLowerCase().startsWith(query.toLowerCase())
+            state && state.toLowerCase().startsWith(query.toLowerCase())
         );
         
-        if (filteredStates.length > 0 && query.length > 0) {
+        console.log("Filtered states:", filteredStates);
+        
+        if (filteredStates.length > 0) {
             stateDropdown.innerHTML = filteredStates.map(state =>
                 `<div class="suggestion-item" onclick="selectState('${state}')">${state}</div>`
             ).join('');
             stateDropdown.style.display = 'block';
+            console.log("Showing state dropdown");
         } else {
             stateDropdown.style.display = 'none';
+            console.log("No matching states found");
         }
     }
 
@@ -385,20 +490,37 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 3. SAP Code / Consignee Suggestions
     function showSAPSuggestions(query) {
+        console.log("showSAPSuggestions called with query:", query);
+        console.log("roData available:", roData.length);
+        console.log("currentStateROs available:", currentStateROs.length);
+        
         if (!roData || roData.length === 0) {
             console.log("No RO data available for SAP suggestions");
+            sapDropdown.style.display = 'none';
+            return;
+        }
+
+        if (!query || query.length < 2) {
+            sapDropdown.style.display = 'none';
             return;
         }
 
         const searchPool = currentStateROs.length > 0 ? currentStateROs : roData;
-        let filteredROs = [];
+        console.log("Using search pool size:", searchPool.length);
         
-        if (query.length > 1) { // Start searching after 1 character
-            const lowerQuery = query.toLowerCase();
-            filteredROs = searchPool.filter(item =>
-                (item.sapCode && item.sapCode.toString().includes(query)) ||
-                (item.consignee && item.consignee.toLowerCase().includes(lowerQuery))
-            ).slice(0, 10); // Show top 10 matches
+        const lowerQuery = query.toLowerCase();
+        const filteredROs = searchPool.filter(item => {
+            if (!item) return false;
+            
+            const sapMatch = item.sapCode && item.sapCode.toString().includes(query);
+            const consigneeMatch = item.consignee && item.consignee.toLowerCase().includes(lowerQuery);
+            
+            return sapMatch || consigneeMatch;
+        }).slice(0, 10); // Show top 10 matches
+
+        console.log("Filtered ROs:", filteredROs.length);
+        if (filteredROs.length > 0) {
+            console.log("Sample filtered RO:", filteredROs[0]);
         }
 
         if (filteredROs.length > 0) {
@@ -413,15 +535,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>`
             ).join('');
             sapDropdown.style.display = 'block';
+            console.log("Showing SAP dropdown");
         } else {
             sapDropdown.style.display = 'none';
+            console.log("No matching SAP codes found");
         }
     }
 
     window.selectSAP = function(sapCode) {
-        const selectedRO = roData.find(item => item.sapCode.toString() === sapCode.toString());
+        console.log("selectSAP called with:", sapCode);
+        const selectedRO = roData.find(item => item.sapCode && item.sapCode.toString() === sapCode.toString());
+        
         if (selectedRO) {
-            sapInput.value = selectedRO.sapCode; // Set the actual SAP code
+            console.log("Found matching RO:", selectedRO);
+            sapInput.value = selectedRO.sapCode;
             sapDropdown.style.display = 'none';
             
             // Auto-fill destination coordinates
@@ -437,9 +564,10 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             roDetailsDisplay.classList.add('active');
             
-            console.log(`Selected SAP: ${sapCode}, RO: ${selectedRO.consignee}`);
+            console.log(`Successfully selected SAP: ${sapCode}, RO: ${selectedRO.consignee}`);
         } else {
             console.error(`SAP code ${sapCode} not found in RO data`);
+            alert(`Error: Could not find RO data for SAP code ${sapCode}`);
         }
     }
 
