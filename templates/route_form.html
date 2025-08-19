@@ -176,16 +176,14 @@
         </div>
         
         <label for="landmark_name">IOCL Terminal</label>
-        <input type="text" id="landmark_name" list="landmarkList" placeholder="Start typing terminal name..." autocomplete="off">
-        <datalist id="landmarkList">
-            {% for landmark in landmarks %}
-                <option value="{{ landmark.name }}"></option>
-            {% endfor %}
-        </datalist>
+        <div class="input-container">
+            <input type="text" id="landmark_name" placeholder="Start typing terminal name..." autocomplete="off">
+            <div id="landmarkDropdown" class="suggestions-dropdown"></div>
+        </div>
         <input type="hidden" id="landmarks-data" value="{{ landmarks|tojson }}">
 
         <label for="source">Terminal Coordinates</label>
-        <input type="text" name="source" id="source" placeholder="Select from above or enter manually" required>
+        <input type="text" name="source" id="source" placeholder="Select terminal from above to auto-fill" required readonly>
        
         <div class="section-title">
             <i class="fa-solid fa-gas-pump"></i>
@@ -205,7 +203,7 @@
         </div>
 
         <div id="roDetailsDisplay" class="ro-details-display">
-            </div>
+        </div>
 
         <label for="destination">RO Coordinates (Auto-filled)</label>
         <input type="text" name="destination" id="destination" placeholder="Will be auto-filled from SAP selection" required readonly>
@@ -235,10 +233,23 @@ document.addEventListener('DOMContentLoaded', function() {
     let roData = [];
     let uniqueStates = [];
     let currentStateROs = [];
-    const landmarkData = JSON.parse(document.getElementById('landmarks-data').value);
+    let landmarkData = [];
+    
+    // Parse landmark data from the template
+    try {
+        const landmarksInput = document.getElementById('landmarks-data');
+        if (landmarksInput && landmarksInput.value) {
+            landmarkData = JSON.parse(landmarksInput.value);
+            console.log(`Loaded ${landmarkData.length} landmarks`);
+        }
+    } catch (error) {
+        console.error("Error parsing landmark data:", error);
+        landmarkData = [];
+    }
 
     // --- ELEMENT REFERENCES ---
     const landmarkInput = document.getElementById('landmark_name');
+    const landmarkDropdown = document.getElementById('landmarkDropdown');
     const sourceInput = document.getElementById('source');
     const stateInput = document.getElementById('state_code');
     const sapInput = document.getElementById('sap_code');
@@ -256,6 +267,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (roResult.success) {
                 roData = roResult.data;
                 console.log(`Loaded ${roData.length} RO records.`);
+            } else {
+                console.error("Failed to load RO data:", roResult.error);
+                alert("Error: Could not load RO data. Please refresh the page.");
+                return;
             }
 
             // Fetch unique states
@@ -263,6 +278,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const statesResult = await statesResponse.json();
             if (statesResult.success) {
                 uniqueStates = statesResult.states;
+                console.log(`Loaded ${uniqueStates.length} states`);
+            } else {
+                console.error("Failed to load states:", statesResult.error);
             }
         } catch (error) {
             console.error("Failed to load initial data:", error);
@@ -271,29 +289,75 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- EVENT LISTENERS ---
-    landmarkInput.addEventListener('input', () => {
-        const selectedLandmark = landmarkData.find(l => l.name === landmarkInput.value);
-        if (selectedLandmark) {
-            sourceInput.value = `${selectedLandmark.lat},${selectedLandmark.lng}`;
-        }
+    
+    // Terminal/Landmark input with suggestions
+    landmarkInput.addEventListener('input', () => showLandmarkSuggestions(landmarkInput.value));
+    
+    stateInput.addEventListener('input', () => {
+        const value = stateInput.value.toUpperCase();
+        stateInput.value = value; // Convert to uppercase as user types
+        showStateSuggestions(value);
     });
-
-    stateInput.addEventListener('input', () => showStateSuggestions(stateInput.value));
+    
     stateInput.addEventListener('blur', () => {
-        const enteredState = stateInput.value.toUpperCase();
-        if (uniqueStates.includes(enteredState)) {
-            selectState(enteredState);
-        }
+        setTimeout(() => { // Delay to allow click on dropdown
+            const enteredState = stateInput.value.toUpperCase();
+            if (uniqueStates.includes(enteredState)) {
+                selectState(enteredState);
+            }
+            stateDropdown.style.display = 'none';
+        }, 200);
     });
+    
     sapInput.addEventListener('input', () => showSAPSuggestions(sapInput.value));
+    
+    sapInput.addEventListener('blur', () => {
+        setTimeout(() => { // Delay to allow click on dropdown
+            sapDropdown.style.display = 'none';
+        }, 200);
+    });
 
     // --- AUTO-SUGGESTION FUNCTIONS ---
 
-    // 1. State Suggestions
+    // 1. Landmark/Terminal Suggestions
+    function showLandmarkSuggestions(query) {
+        if (!landmarkData || landmarkData.length === 0) {
+            console.log("No landmark data available");
+            return;
+        }
+
+        const filteredLandmarks = landmarkData.filter(landmark =>
+            landmark.name && landmark.name.toLowerCase().includes(query.toLowerCase())
+        );
+        
+        if (filteredLandmarks.length > 0 && query.length > 0) {
+            landmarkDropdown.innerHTML = filteredLandmarks.map(landmark =>
+                `<div class="suggestion-item" onclick="selectLandmark('${landmark.name}', ${landmark.lat}, ${landmark.lng})">${landmark.name}</div>`
+            ).join('');
+            landmarkDropdown.style.display = 'block';
+        } else {
+            landmarkDropdown.style.display = 'none';
+        }
+    }
+
+    window.selectLandmark = function(name, lat, lng) {
+        landmarkInput.value = name;
+        sourceInput.value = `${lat},${lng}`;
+        landmarkDropdown.style.display = 'none';
+        console.log(`Selected landmark: ${name} at ${lat},${lng}`);
+    }
+
+    // 2. State Suggestions
     function showStateSuggestions(query) {
+        if (!uniqueStates || uniqueStates.length === 0) {
+            console.log("No state data available");
+            return;
+        }
+
         const filteredStates = uniqueStates.filter(state =>
             state.toLowerCase().startsWith(query.toLowerCase())
         );
+        
         if (filteredStates.length > 0 && query.length > 0) {
             stateDropdown.innerHTML = filteredStates.map(state =>
                 `<div class="suggestion-item" onclick="selectState('${state}')">${state}</div>`
@@ -315,30 +379,36 @@ document.addEventListener('DOMContentLoaded', function() {
         sapInput.value = '';
         destinationInput.value = '';
         roDetailsDisplay.classList.remove('active');
-        console.log(`Filtered ${currentStateROs.length} ROs for state ${state}`);
+        
+        console.log(`Selected state: ${state}, filtered ${currentStateROs.length} ROs`);
     }
 
-    // 2. SAP Code / Consignee Suggestions
+    // 3. SAP Code / Consignee Suggestions
     function showSAPSuggestions(query) {
+        if (!roData || roData.length === 0) {
+            console.log("No RO data available for SAP suggestions");
+            return;
+        }
+
         const searchPool = currentStateROs.length > 0 ? currentStateROs : roData;
         let filteredROs = [];
         
         if (query.length > 1) { // Start searching after 1 character
             const lowerQuery = query.toLowerCase();
             filteredROs = searchPool.filter(item =>
-                item.sapCode.toString().includes(query) ||
-                item.consignee.toLowerCase().includes(lowerQuery)
+                (item.sapCode && item.sapCode.toString().includes(query)) ||
+                (item.consignee && item.consignee.toLowerCase().includes(lowerQuery))
             ).slice(0, 10); // Show top 10 matches
         }
 
         if (filteredROs.length > 0) {
             sapDropdown.innerHTML = filteredROs.map(item =>
                 `<div class="suggestion-item sap-suggestion" onclick="selectSAP('${item.sapCode}')">
-                    <div class="sap-code-main">${item.sapCode} - ${item.sapCodeRef}</div>
+                    <div class="sap-code-main">${item.sapCode} - ${item.sapCodeRef || ''}</div>
                     <div class="sap-consignee">${item.consignee}</div>
                     <div class="sap-details">
-                        <span>${item.stateCode} | ${item.customerType}</span>
-                        <span>${item.salesGroupCode}</span>
+                        <span>${item.stateCode} | ${item.customerType || 'N/A'}</span>
+                        <span>${item.salesGroupCode || 'N/A'}</span>
                     </div>
                 </div>`
             ).join('');
@@ -349,7 +419,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     window.selectSAP = function(sapCode) {
-        const selectedRO = roData.find(item => item.sapCode === parseInt(sapCode));
+        const selectedRO = roData.find(item => item.sapCode.toString() === sapCode.toString());
         if (selectedRO) {
             sapInput.value = selectedRO.sapCode; // Set the actual SAP code
             sapDropdown.style.display = 'none';
@@ -360,18 +430,57 @@ document.addEventListener('DOMContentLoaded', function() {
             // Display RO details
             roDetailsDisplay.innerHTML = `
                 <strong>Selected RO:</strong> ${selectedRO.consignee}<br><br>
-                <strong>Type:</strong> ${selectedRO.customerType}<br><br>
-                <strong>Location:</strong> ${selectedRO.stateCode}
+                <strong>SAP Code:</strong> ${selectedRO.sapCode}<br><br>
+                <strong>Type:</strong> ${selectedRO.customerType || 'N/A'}<br><br>
+                <strong>Location:</strong> ${selectedRO.stateCode}<br><br>
+                <strong>Sales Group:</strong> ${selectedRO.salesGroupDesc || 'N/A'}
             `;
             roDetailsDisplay.classList.add('active');
+            
+            console.log(`Selected SAP: ${sapCode}, RO: ${selectedRO.consignee}`);
+        } else {
+            console.error(`SAP code ${sapCode} not found in RO data`);
         }
     }
 
     // Hide dropdowns when clicking outside
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.input-container')) {
+            landmarkDropdown.style.display = 'none';
             stateDropdown.style.display = 'none';
             sapDropdown.style.display = 'none';
+        }
+    });
+
+    // --- FORM VALIDATION ---
+    document.querySelector('form').addEventListener('submit', function(e) {
+        // Validate that coordinates are filled
+        if (!sourceInput.value.trim()) {
+            e.preventDefault();
+            alert('Please select a terminal to auto-fill coordinates');
+            landmarkInput.focus();
+            return;
+        }
+        
+        if (!destinationInput.value.trim()) {
+            e.preventDefault();
+            alert('Please select a SAP code to auto-fill RO coordinates');
+            sapInput.focus();
+            return;
+        }
+
+        // Validate coordinate format
+        const coordPattern = /^-?\d+\.?\d*,-?\d+\.?\d*$/;
+        if (!coordPattern.test(sourceInput.value.trim())) {
+            e.preventDefault();
+            alert('Invalid source coordinates format. Please select a terminal from the dropdown.');
+            return;
+        }
+        
+        if (!coordPattern.test(destinationInput.value.trim())) {
+            e.preventDefault();
+            alert('Invalid destination coordinates format. Please select a SAP code from the dropdown.');
+            return;
         }
     });
 
@@ -382,5 +491,3 @@ document.addEventListener('DOMContentLoaded', function() {
 
 </body>
 </html>
-
-
