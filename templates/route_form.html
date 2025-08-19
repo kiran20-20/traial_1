@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IndianOil Smart Marg</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* IndianOil Brand Colors */
@@ -19,14 +20,71 @@
             margin: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
             background-color: var(--iocl-light-gray);
+            min-height: 100vh;
             padding: 15px 20px;
+            color: #333;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* World-Class Floating Background with Text */
+        .floating-bg-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+            pointer-events: none;
+        }
+        .floating-text-bubble {
+            position: absolute;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: rgba(255, 255, 255, 0.9);
+            padding: 15px 25px;
+            border-radius: 50px;
+            background-image: linear-gradient(45deg, rgba(2, 22, 79, 0.7), rgba(243, 112, 34, 0.7));
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+            white-space: nowrap;
+            animation: float-and-rotate 20s infinite ease-in-out;
+            opacity: 0.8;
+            letter-spacing: 1px;
+        }
+        
+        /* Individual animations for each bubble */
+        .floating-text-bubble:nth-child(1) { top: 10%; left: 5%; animation-duration: 22s; animation-delay: 0s; transform: scale(1.2) rotate(5deg); }
+        .floating-text-bubble:nth-child(2) { top: 40%; left: 20%; animation-duration: 25s; animation-delay: 2s; transform: scale(0.9) rotate(-10deg); }
+        .floating-text-bubble:nth-child(3) { top: 70%; right: 15%; animation-duration: 28s; animation-delay: 5s; transform: scale(1.1) rotate(15deg); }
+        .floating-text-bubble:nth-child(4) { bottom: 5%; left: 30%; animation-duration: 21s; animation-delay: 3s; transform: scale(1.3) rotate(-5deg); }
+        .floating-text-bubble:nth-child(5) { top: 5%; right: 40%; animation-duration: 24s; animation-delay: 1s; transform: scale(0.8) rotate(20deg); }
+        .floating-text-bubble:nth-child(6) { bottom: 30%; right: 5%; animation-duration: 26s; animation-delay: 4s; transform: scale(1.05) rotate(10deg); }
+        .floating-text-bubble:nth-child(7) { top: 25%; right: 25%; animation-duration: 20s; animation-delay: 6s; transform: scale(1.4) rotate(7deg); }
+        .floating-text-bubble:nth-child(8) { bottom: 40%; left: 10%; animation-duration: 23s; animation-delay: 8s; transform: scale(1.15) rotate(-12deg); }
+        .floating-text-bubble:nth-child(9) { top: 55%; left: 50%; animation-duration: 27s; animation-delay: 9s; transform: scale(0.95) rotate(18deg); }
+        .floating-text-bubble:nth-child(10) { bottom: 15%; right: 35%; animation-duration: 29s; animation-delay: 10s; transform: scale(1.25) rotate(-8deg); }
+        .floating-text-bubble:nth-child(11) { top: 85%; left: 45%; animation-duration: 25s; animation-delay: 11s; transform: scale(1.0) rotate(25deg); }
+        .floating-text-bubble:nth-child(12) { top: 15%; right: 5%; animation-duration: 21s; animation-delay: 12s; transform: scale(1.2) rotate(-15deg); }
+        .floating-text-bubble:nth-child(13) { bottom: 25%; left: 55%; animation-duration: 24s; animation-delay: 13s; transform: scale(0.85) rotate(5deg); }
+        .floating-text-bubble:nth-child(14) { top: 60%; left: 5%; animation-duration: 26s; animation-delay: 14s; transform: scale(1.1) rotate(10deg); }
+        .floating-text-bubble:nth-child(15) { top: 35%; left: 80%; animation-duration: 23s; animation-delay: 15s; transform: scale(1.3) rotate(-20deg); }
+
+        @keyframes float-and-rotate {
+            0%  { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(20px, -20px) rotate(-10deg); }
+            50% { transform: translate(-30px, 15px) rotate(15deg); }
+            75% { transform: translate(10px, 25px) rotate(-5deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
         }
 
         .container {
             display: flex;
             justify-content: center;
             align-items: flex-start;
-            padding-top: 20px;
+            min-height: calc(100vh - 30px);
+            position: relative;
+            z-index: 1;
         }
 
         .form-box {
@@ -35,48 +93,58 @@
             border-radius: 16px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.15);
             width: 100%;
-            max-width: 600px;
+            max-width: 500px;
+            position: relative;
+            z-index: 1;
             text-align: left;
+            transition: box-shadow 0.3s ease-in-out;
+            margin: 10px 0;
         }
 
         .header {
             text-align: center;
             margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
         }
-        
         .header h1 {
             font-size: 1.9em;
             font-weight: 800;
             color: var(--iocl-blue);
             margin: 0;
+            display: inline-block;
         }
-        
         .header .logo-text {
+            font-size: 1.0em;
             color: var(--iocl-orange);
             font-weight: 600;
         }
 
         .section-title {
-            font-size: 1.1em;
+            font-size: 1.0em;
             font-weight: bold;
             color: var(--iocl-blue);
-            margin-top: 25px;
-            margin-bottom: 15px;
+            margin-top: 20px;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
-            gap: 10px;
-            border-bottom: 2px solid var(--iocl-light-gray);
-            padding-bottom: 8px;
+            gap: 8px;
         }
-        
+
+        .section-title i {
+            color: var(--iocl-orange);
+            font-size: 1.1em;
+        }
+
         label {
             font-weight: 600;
-            margin-top: 12px;
+            margin-top: 8px;
             display: block;
             color: #555;
             font-size: 0.9em;
         }
-        
         input, select {
             width: 100%;
             padding: 12px;
@@ -87,7 +155,6 @@
             box-sizing: border-box;
             transition: border-color 0.3s, box-shadow 0.3s;
         }
-        
         input:focus, select:focus {
             outline: none;
             border-color: var(--iocl-blue);
@@ -96,25 +163,186 @@
 
         button {
             width: 100%;
-            padding: 16px;
-            font-size: 1.1rem;
+            padding: 14px;
+            font-size: 1.0rem;
             font-weight: bold;
             background-image: linear-gradient(to right, #02164F, #005bb5);
             border: none;
             color: var(--iocl-white);
             border-radius: 8px;
             cursor: pointer;
-            margin-top: 30px;
+            margin-top: 25px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
             transition: all 0.3s ease-in-out;
+            background-size: 200% 100%;
+            background-position: left;
         }
-        
-        /* Input Container for Dropdowns */
-        .input-container {
-            position: relative;
+        button:hover {
+            background-position: right;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
         }
 
-        /* Auto-suggestion Dropdowns */
-        .suggestions-dropdown {
+        .footer {
+            margin-top: 20px;
+            font-size: 0.75rem;
+            text-align: center;
+            color: var(--iocl-mid-gray);
+        }
+        .values-section {
+            display: none;
+        }
+        datalist option {
+            padding: 8px;
+        }
+        .coord-helper {
+            font-size: 0.8em;
+            color: var(--iocl-mid-gray);
+            margin-top: 3px;
+            font-style: italic;
+        }
+
+        /* RO Information Display */
+        .ro-info-display {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1ecf1 100%);
+            border: 2px solid var(--iocl-blue);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 12px;
+            display: none;
+            animation: slideDown 0.4s ease;
+        }
+
+        .ro-info-display.active {
+            display: block;
+        }
+
+        .ro-info-title {
+            text-align: center;
+            color: var(--iocl-blue);
+            font-weight: bold;
+            font-size: 1.0em;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .ro-info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .ro-info-item {
+            background: white;
+            padding: 8px;
+            border-radius: 6px;
+            text-align: left;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
+        }
+
+        .ro-info-item .label {
+            font-size: 0.7em;
+            color: var(--iocl-mid-gray);
+            font-weight: 500;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+        }
+
+        .ro-info-item .value {
+            font-size: 0.9em;
+            font-weight: bold;
+            color: var(--iocl-blue);
+        }
+
+        /* Compact TT Specifications Display */
+        .tt-specs-display {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d1ecf1 100%);
+            border: 2px solid var(--iocl-blue);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 12px;
+            display: none;
+            animation: slideDown 0.4s ease;
+        }
+
+        .tt-specs-display.active {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .specs-title {
+            text-align: center;
+            color: var(--iocl-blue);
+            font-weight: bold;
+            font-size: 1.0em;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .specs-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .spec-item {
+            background: white;
+            padding: 8px;
+            border-radius: 6px;
+            text-align: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
+        }
+
+        .spec-item .icon {
+            font-size: 1.2em;
+            margin-bottom: 4px;
+            color: var(--iocl-orange);
+        }
+
+        .spec-item .value {
+            font-size: 0.9em;
+            font-weight: bold;
+            color: var(--iocl-blue);
+            margin-bottom: 2px;
+        }
+
+        .spec-item .label {
+            font-size: 0.7em;
+            color: var(--iocl-mid-gray);
+            font-weight: 500;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 8px;
+            border-radius: 6px;
+            margin-top: 8px;
+            font-size: 0.8em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .warning-box i {
+            color: #f39c12;
+        }
+
+        /* Dropdown suggestion styling */
+        .suggestion-dropdown {
             position: absolute;
             top: 100%;
             left: 0;
@@ -122,50 +350,95 @@
             background: white;
             border: 1px solid #ddd;
             border-top: none;
-            border-radius: 0 0 8px 8px;
-            max-height: 250px;
+            max-height: 200px;
             overflow-y: auto;
             z-index: 1000;
-            display: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
 
         .suggestion-item {
-            padding: 12px 15px;
+            padding: 10px;
             cursor: pointer;
             border-bottom: 1px solid #f0f0f0;
             font-size: 0.9em;
         }
 
         .suggestion-item:hover {
-            background-color: var(--iocl-light-gray);
+            background-color: #f8f9fa;
         }
-        
-        /* Enhanced SAP Code Suggestions */
-        .sap-suggestion .sap-code-main { font-weight: bold; color: var(--iocl-blue); }
-        .sap-suggestion .sap-consignee { font-size: 0.85em; color: #666; }
-        .sap-suggestion .sap-details { font-size: 0.75em; color: #888; display: flex; justify-content: space-between; }
 
-        /* RO Details Display */
-        .ro-details-display {
-            background: #e8f4f8;
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 15px;
-            display: none;
-            animation: slideDown 0.4s ease;
+        .suggestion-item:last-child {
+            border-bottom: none;
         }
-        .ro-details-display.active { display: block; }
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+
+        .input-container {
+            position: relative;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .form-box {
+                max-width: 100%;
+                padding: 20px;
+            }
+            .header h1 {
+                font-size: 1.6em;
+            }
+            .specs-grid, .ro-info-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .floating-text-bubble {
+                font-size: 0.85rem;
+                padding: 8px 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .specs-grid, .ro-info-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-box {
+                padding: 15px;
+            }
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        @media (max-height: 600px) {
+            .floating-text-bubble:nth-child(n+5) {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
 
+<div class="floating-bg-container">
+    <div class="floating-text-bubble">Nation-First</div>
+    <div class="floating-text-bubble">Care</div>
+    <div class="floating-text-bubble">Innovation</div>
+    <div class="floating-text-bubble">Passion</div>
+    <div class="floating-text-bubble">Trust</div>
+    <div class="floating-text-bubble">Indane</div>
+    <div class="floating-text-bubble">SERVO</div>
+    <div class="floating-text-bubble">XtraGreen</div>
+    <div class="floating-text-bubble">Energy</div>
+    <div class="floating-text-bubble">Sustainability</div>
+    <div class="floating-text-bubble">Excellence</div>
+    <div class="floating-text-bubble">Commitment</div>
+    <div class="floating-text-bubble">Integrity</div>
+    <div class="floating-text-bubble">Project SPRINT</div>
+    <div class="floating-text-bubble">Future Energy</div>
+</div>
+
 <div class="container">
-    <form class="form-box" method="POST" action="{{ url_for('fetch_routes') }}">
+    <form class="form-box" method="POST" action="/fetch_routes">
         <div class="header">
             <h1>IndianOil <span class="logo-text">Smart Marg</span></h1>
         </div>
@@ -176,37 +449,65 @@
         </div>
         
         <label for="landmark_name">IOCL Terminal</label>
-        <div class="input-container">
-            <input type="text" id="landmark_name" placeholder="Start typing terminal name..." autocomplete="off">
-            <div id="landmarkDropdown" class="suggestions-dropdown"></div>
-        </div>
-        <input type="hidden" id="landmarks-data" value="{{ landmarks|tojson }}">
+        <input type="text" id="landmark_name" list="landmarkList" placeholder="Start typing terminal name...">
+        <datalist id="landmarkList">
+            <!-- Landmarks will be populated from Flask -->
+        </datalist>
 
         <label for="source">Terminal Coordinates</label>
-        <input type="text" name="source" id="source" placeholder="Select terminal from above to auto-fill" required readonly>
-       
+        <input type="text" name="source" id="source" placeholder="Select from above or enter manually" required>
+        <div class="coord-helper">Example: 28.6139, 77.2090</div>
+
         <div class="section-title">
             <i class="fa-solid fa-gas-pump"></i>
             <span>RO Location</span>
         </div>
 
-        <label for="state_code">State Code</label>
+        <label for="ro_state">State Code</label>
         <div class="input-container">
-            <input type="text" id="state_code" placeholder="Enter state code (e.g., GJ, MH)" autocomplete="off" maxlength="2">
-            <div id="stateDropdown" class="suggestions-dropdown"></div>
+            <input type="text" id="ro_state" placeholder="Type state code (e.g., GJ, TN, HP)" oninput="filterStates()" onblur="hideStateSuggestions()">
+            <div id="stateSuggestions" class="suggestion-dropdown" style="display: none;"></div>
         </div>
 
-        <label for="sap_code">SAP Code or Consignee Name</label>
+        <label for="ro_sap">SAP Code</label>
         <div class="input-container">
-            <input type="text" id="sap_code" name="sap_code" placeholder="Enter or search SAP code" autocomplete="off" required>
-            <div id="sapDropdown" class="suggestions-dropdown"></div>
+            <input type="text" id="ro_sap" placeholder="Select SAP code after choosing state" oninput="filterSapCodes()" onblur="hideSapSuggestions()" disabled>
+            <div id="sapSuggestions" class="suggestion-dropdown" style="display: none;"></div>
         </div>
 
-        <div id="roDetailsDisplay" class="ro-details-display">
+        <div id="roInfoDisplay" class="ro-info-display">
+            <div class="ro-info-title">
+                <i class="fas fa-gas-pump"></i>
+                <span>Selected RO Information</span>
+            </div>
+            <div class="ro-info-grid">
+                <div class="ro-info-item">
+                    <div class="label">Consignee</div>
+                    <div class="value" id="roConsignee">-</div>
+                </div>
+                <div class="ro-info-item">
+                    <div class="label">SAP Code</div>
+                    <div class="value" id="roSapCode">-</div>
+                </div>
+                <div class="ro-info-item">
+                    <div class="label">State</div>
+                    <div class="value" id="roState">-</div>
+                </div>
+                <div class="ro-info-item">
+                    <div class="label">Customer Type</div>
+                    <div class="value" id="roCustomerType">-</div>
+                </div>
+            </div>
         </div>
 
-        <label for="destination">RO Coordinates (Auto-filled)</label>
-        <input type="text" name="destination" id="destination" placeholder="Will be auto-filled from SAP selection" required readonly>
+        <label for="destination">RO Coordinates</label>
+        <input type="text" name="destination" id="destination" placeholder="Auto-filled after SAP selection" required readonly>
+        <div class="coord-helper">Coordinates will be automatically populated</div>
+
+        <!-- Hidden fields to pass RO selection data to backend -->
+        <input type="hidden" name="ro_state" id="ro_state_hidden">
+        <input type="hidden" name="ro_sap_code" id="ro_sap_code_hidden">
+        <input type="hidden" name="ro_consignee" id="ro_consignee_hidden">
 
         <div class="section-title">
             <i class="fa-solid fa-truck-fast"></i>
@@ -214,408 +515,327 @@
         </div>
         
         <label for="tt_type">Select TT Capacity Range</label>
-        <select id="tt_type" name="tt_type" required>
+        <select id="tt_type" name="tt_type" required onchange="showTTSpecs()">
             <option value="">Choose TT Capacity</option>
-            {% for key, spec in tt_specifications.items() %}
-                <option value="{{ key }}">{{ spec.capacity_range }}</option>
-            {% endfor %}
+            <option value="12-16KL" data-capacity="14000" data-product-weight="12600" data-tare-weight="8500" data-gross-weight="21100" data-axle-load="10.5" data-max-speed="60">12-16 KL (21.1T)</option>
+            <option value="16-20KL" data-capacity="18000" data-product-weight="16200" data-tare-weight="9500" data-gross-weight="25700" data-axle-load="12.85" data-max-speed="55">16-20 KL (25.7T)</option>
+            <option value="20-24KL" data-capacity="22000" data-product-weight="19800" data-tare-weight="10500" data-gross-weight="30300" data-axle-load="15.15" data-max-speed="50">20-24 KL (30.3T)</option>
+            <option value="24-30KL" data-capacity="27000" data-product-weight="24300" data-tare-weight="11500" data-gross-weight="35800" data-axle-load="17.9" data-max-speed="45">24-30 KL (35.8T)</option>
+            <option value="30KL+" data-capacity="35000" data-product-weight="31500" data-tare-weight="13000" data-gross-weight="44500" data-axle-load="22.25" data-max-speed="40">30+ KL (44.5T)</option>
         </select>
+
+        <div id="ttSpecsDisplay" class="tt-specs-display">
+            <div class="specs-title">
+                <i class="fas fa-truck"></i>
+                <span>Selected TT Specifications</span>
+            </div>
+            <div class="specs-grid">
+                <div class="spec-item">
+                    <div class="icon"><i class="fas fa-gas-pump"></i></div>
+                    <div class="value" id="specCapacity">-</div>
+                    <div class="label">Capacity</div>
+                </div>
+                <div class="spec-item">
+                    <div class="icon"><i class="fas fa-weight-hanging"></i></div>
+                    <div class="value" id="specGrossWeight">-</div>
+                    <div class="label">Gross Wt</div>
+                </div>
+                <div class="spec-item">
+                    <div class="icon"><i class="fas fa-oil-can"></i></div>
+                    <div class="value" id="specProductWeight">-</div>
+                    <div class="label">Product Wt</div>
+                </div>
+                <div class="spec-item">
+                    <div class="icon"><i class="fas fa-truck"></i></div>
+                    <div class="value" id="specTareWeight">-</div>
+                    <div class="label">Tare Wt</div>
+                </div>
+                <div class="spec-item">
+                    <div class="icon"><i class="fas fa-balance-scale"></i></div>
+                    <div class="value" id="specAxleLoad">-</div>
+                    <div class="label">Axle Load</div>
+                </div>
+                <div class="spec-item">
+                    <div class="icon"><i class="fas fa-tachometer-alt"></i></div>
+                    <div class="value" id="specMaxSpeed">-</div>
+                    <div class="label">Max Speed</div>
+                </div>
+            </div>
+            <div class="warning-box" id="warningBox" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span id="warningText"></span>
+            </div>
+        </div>
 
         <button type="submit">
             <i class="fa-solid fa-route"></i> Generate Smart Routes
         </button>
+        
+        <div class="footer">
+            © 2025 IndianOil Corporation Ltd. - Truck Tanker Safety Navigation
+        </div>
     </form>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // --- GLOBAL VARIABLES ---
-    let roData = [];
-    let uniqueStates = [];
-    let currentStateROs = [];
-    let landmarkData = [];
-    
-    // Parse landmark data from the template
-    try {
-        const landmarksInput = document.getElementById('landmarks-data');
-        if (landmarksInput && landmarksInput.value) {
-            landmarkData = JSON.parse(landmarksInput.value);
-            console.log(`Loaded ${landmarkData.length} landmarks`);
-            console.log("First landmark:", landmarkData[0]);
-        } else {
-            console.error("No landmarks data found in hidden input");
-        }
-    } catch (error) {
-        console.error("Error parsing landmark data:", error);
-        landmarkData = [];
-    }
+    // Load RO data from Flask backend
+    const ioclPlantData = {{ ro_data|tojson if ro_data else [] }};
 
-    // Debug: Check if elements exist
-    console.log("Form elements check:");
-    console.log("- landmarkInput:", document.getElementById('landmark_name') ? "Found" : "NOT FOUND");
-    console.log("- stateInput:", document.getElementById('state_code') ? "Found" : "NOT FOUND");
-    console.log("- sapInput:", document.getElementById('sap_code') ? "Found" : "NOT FOUND");
+    // Get unique state codes for suggestions
+    const uniqueStates = [...new Set(ioclPlantData.map(item => item.stateCode))].sort();
+    let filteredSapCodes = [];
+    let selectedStateCode = '';
 
-    // --- ELEMENT REFERENCES ---
+    // Terminal/landmark functionality (unchanged)
     const landmarkInput = document.getElementById('landmark_name');
-    const landmarkDropdown = document.getElementById('landmarkDropdown');
     const sourceInput = document.getElementById('source');
-    const stateInput = document.getElementById('state_code');
-    const sapInput = document.getElementById('sap_code');
-    const stateDropdown = document.getElementById('stateDropdown');
-    const sapDropdown = document.getElementById('sapDropdown');
-    const destinationInput = document.getElementById('destination');
-    const roDetailsDisplay = document.getElementById('roDetailsDisplay');
+    
+    landmarkInput.addEventListener('change', function () {
+        const name = this.value;
+        const options = document.getElementById('landmarkList').options;
+        let match = null;
 
-    // --- DATA FETCHING ---
-    async function initializeData() {
-        console.log("Starting data initialization...");
+        for (let i = 0; i < options.length; i++) {
+            if (options[i].value === name) {
+                match = options[i];
+                break;
+            }
+        }
+
+        if (match) {
+            const lat = match.getAttribute('data-lat');
+            const lng = match.getAttribute('data-lng');
+            sourceInput.value = `${lat},${lng}`;
+        } else if (name === "") {
+            sourceInput.value = "";
+        }
+    });
+
+    // RO State filtering functionality
+    function filterStates() {
+        const input = document.getElementById('ro_state');
+        const query = input.value.toUpperCase();
+        const suggestionsDiv = document.getElementById('stateSuggestions');
         
-        try {
-            // Test API endpoints first
-            console.log("Testing RO data API...");
-            const roResponse = await fetch("/api/ro_data");
-            console.log("RO API Response status:", roResponse.status);
-            
-            if (!roResponse.ok) {
-                console.error("RO API returned error:", roResponse.status, roResponse.statusText);
-                alert(`RO API Error: ${roResponse.status} ${roResponse.statusText}`);
-                return;
-            }
-            
-            const roResult = await roResponse.json();
-            console.log("RO API Result:", roResult);
-            
-            if (roResult.success) {
-                roData = roResult.data;
-                console.log(`Successfully loaded ${roData.length} RO records.`);
-                if (roData.length > 0) {
-                    console.log("Sample RO record:", roData[0]);
-                }
-            } else {
-                console.error("RO API failed:", roResult.error);
-                alert("Error: Could not load RO data. " + (roResult.error || "Unknown error"));
-                return;
-            }
-
-            // Test states API
-            console.log("Testing states API...");
-            const statesResponse = await fetch("/api/states");
-            console.log("States API Response status:", statesResponse.status);
-            
-            if (!statesResponse.ok) {
-                console.error("States API returned error:", statesResponse.status, statesResponse.statusText);
-                // Continue without states - we can derive them from RO data
-                uniqueStates = [...new Set(roData.map(ro => ro.stateCode).filter(Boolean))];
-                console.log("Derived states from RO data:", uniqueStates);
-            } else {
-                const statesResult = await statesResponse.json();
-                console.log("States API Result:", statesResult);
-                
-                if (statesResult.success) {
-                    uniqueStates = statesResult.states;
-                    console.log(`Successfully loaded ${uniqueStates.length} states:`, uniqueStates);
-                } else {
-                    console.error("States API failed:", statesResult.error);
-                    // Fallback to deriving from RO data
-                    uniqueStates = [...new Set(roData.map(ro => ro.stateCode).filter(Boolean))];
-                    console.log("Fallback - derived states:", uniqueStates);
-                }
-            }
-            
-            console.log("Data initialization completed successfully");
-            console.log(`Final data summary: ${landmarkData.length} landmarks, ${roData.length} ROs, ${uniqueStates.length} states`);
-            
-        } catch (error) {
-            console.error("Failed to load initial data:", error);
-            alert("Error: Could not load necessary data. Please check console and refresh the page.");
-        }
-    }
-
-    // --- EVENT LISTENERS ---
-    
-    // Terminal/Landmark input with suggestions
-    landmarkInput.addEventListener('input', (e) => {
-        console.log("Landmark input changed:", e.target.value);
-        showLandmarkSuggestions(e.target.value);
-    });
-    
-    landmarkInput.addEventListener('focus', () => {
-        console.log("Landmark input focused");
-        if (landmarkInput.value.length > 0) {
-            showLandmarkSuggestions(landmarkInput.value);
-        }
-    });
-    
-    stateInput.addEventListener('input', (e) => {
-        const value = e.target.value.toUpperCase();
-        console.log("State input changed:", value);
-        stateInput.value = value; // Convert to uppercase as user types
-        showStateSuggestions(value);
-    });
-    
-    stateInput.addEventListener('focus', () => {
-        console.log("State input focused");
-        if (stateInput.value.length > 0) {
-            showStateSuggestions(stateInput.value);
-        }
-    });
-    
-    stateInput.addEventListener('blur', () => {
-        setTimeout(() => { // Delay to allow click on dropdown
-            const enteredState = stateInput.value.toUpperCase();
-            console.log("State input blur, value:", enteredState);
-            if (uniqueStates.includes(enteredState)) {
-                selectState(enteredState);
-            }
-            stateDropdown.style.display = 'none';
-        }, 200);
-    });
-    
-    sapInput.addEventListener('input', (e) => {
-        console.log("SAP input changed:", e.target.value);
-        showSAPSuggestions(e.target.value);
-    });
-    
-    sapInput.addEventListener('focus', () => {
-        console.log("SAP input focused");
-        if (sapInput.value.length > 1) {
-            showSAPSuggestions(sapInput.value);
-        }
-    });
-    
-    sapInput.addEventListener('blur', () => {
-        setTimeout(() => { // Delay to allow click on dropdown
-            console.log("SAP input blur");
-            sapDropdown.style.display = 'none';
-        }, 200);
-    });
-
-    // --- AUTO-SUGGESTION FUNCTIONS ---
-
-    // 1. Landmark/Terminal Suggestions
-    function showLandmarkSuggestions(query) {
-        console.log("showLandmarkSuggestions called with query:", query);
-        console.log("landmarkData available:", landmarkData.length);
-        
-        if (!landmarkData || landmarkData.length === 0) {
-            console.log("No landmark data available");
-            landmarkDropdown.style.display = 'none';
+        if (query.length === 0) {
+            suggestionsDiv.style.display = 'none';
             return;
         }
 
-        if (!query || query.length === 0) {
-            landmarkDropdown.style.display = 'none';
-            return;
-        }
-
-        const filteredLandmarks = landmarkData.filter(landmark => {
-            if (!landmark || !landmark.name) {
-                console.log("Invalid landmark:", landmark);
-                return false;
-            }
-            return landmark.name.toLowerCase().includes(query.toLowerCase());
-        });
-        
-        console.log("Filtered landmarks:", filteredLandmarks.length);
-        
-        if (filteredLandmarks.length > 0) {
-            landmarkDropdown.innerHTML = filteredLandmarks.map(landmark =>
-                `<div class="suggestion-item" onclick="selectLandmark('${landmark.name}', ${landmark.lat}, ${landmark.lng})">${landmark.name}</div>`
-            ).join('');
-            landmarkDropdown.style.display = 'block';
-            console.log("Showing landmark dropdown");
-        } else {
-            landmarkDropdown.style.display = 'none';
-            console.log("No matching landmarks found");
-        }
-    }
-
-    window.selectLandmark = function(name, lat, lng) {
-        console.log("selectLandmark called:", name, lat, lng);
-        landmarkInput.value = name;
-        sourceInput.value = `${lat},${lng}`;
-        landmarkDropdown.style.display = 'none';
-        console.log(`Selected landmark: ${name} at ${lat},${lng}`);
-    }
-
-    // 2. State Suggestions
-    function showStateSuggestions(query) {
-        console.log("showStateSuggestions called with query:", query);
-        console.log("uniqueStates available:", uniqueStates.length);
-        
-        if (!uniqueStates || uniqueStates.length === 0) {
-            console.log("No state data available");
-            stateDropdown.style.display = 'none';
-            return;
-        }
-
-        if (!query || query.length === 0) {
-            stateDropdown.style.display = 'none';
-            return;
-        }
-
-        const filteredStates = uniqueStates.filter(state =>
-            state && state.toLowerCase().startsWith(query.toLowerCase())
+        const filtered = uniqueStates.filter(state => 
+            state.toUpperCase().includes(query)
         );
-        
-        console.log("Filtered states:", filteredStates);
-        
-        if (filteredStates.length > 0) {
-            stateDropdown.innerHTML = filteredStates.map(state =>
+
+        if (filtered.length > 0) {
+            suggestionsDiv.innerHTML = filtered.map(state => 
                 `<div class="suggestion-item" onclick="selectState('${state}')">${state}</div>`
             ).join('');
-            stateDropdown.style.display = 'block';
-            console.log("Showing state dropdown");
+            suggestionsDiv.style.display = 'block';
         } else {
-            stateDropdown.style.display = 'none';
-            console.log("No matching states found");
+            suggestionsDiv.style.display = 'none';
         }
     }
 
-    window.selectState = function(state) {
-        stateInput.value = state.toUpperCase();
-        stateDropdown.style.display = 'none';
+    function selectState(stateCode) {
+        const stateInput = document.getElementById('ro_state');
+        const sapInput = document.getElementById('ro_sap');
+        const suggestionsDiv = document.getElementById('stateSuggestions');
         
-        // Filter ROs for the selected state to speed up SAP search
-        currentStateROs = roData.filter(item => item.stateCode === state);
+        stateInput.value = stateCode;
+        selectedStateCode = stateCode;
+        suggestionsDiv.style.display = 'none';
         
-        // Clear subsequent fields
+        // Enable SAP code input and filter by selected state
+        sapInput.disabled = false;
+        sapInput.placeholder = `Select SAP code for ${stateCode}`;
         sapInput.value = '';
-        destinationInput.value = '';
-        roDetailsDisplay.classList.remove('active');
         
-        console.log(`Selected state: ${state}, filtered ${currentStateROs.length} ROs`);
+        // Clear destination and RO info
+        document.getElementById('destination').value = '';
+        hideRoInfo();
+        
+        // Filter SAP codes for this state
+        filteredSapCodes = ioclPlantData.filter(item => item.stateCode === stateCode);
     }
 
-    // 3. SAP Code / Consignee Suggestions
-    function showSAPSuggestions(query) {
-        console.log("showSAPSuggestions called with query:", query);
-        console.log("roData available:", roData.length);
-        console.log("currentStateROs available:", currentStateROs.length);
+    function hideStateSuggestions() {
+        setTimeout(() => {
+            document.getElementById('stateSuggestions').style.display = 'none';
+        }, 200);
+    }
+
+    // RO SAP Code filtering functionality
+    function filterSapCodes() {
+        const input = document.getElementById('ro_sap');
+        const query = input.value.toLowerCase();
+        const suggestionsDiv = document.getElementById('sapSuggestions');
         
-        if (!roData || roData.length === 0) {
-            console.log("No RO data available for SAP suggestions");
-            sapDropdown.style.display = 'none';
+        if (query.length === 0 || filteredSapCodes.length === 0) {
+            suggestionsDiv.style.display = 'none';
             return;
         }
 
-        if (!query || query.length < 2) {
-            sapDropdown.style.display = 'none';
-            return;
-        }
+        const filtered = filteredSapCodes.filter(item => 
+            item.sapCode.toLowerCase().includes(query) || 
+            item.consignee.toLowerCase().includes(query)
+        );
 
-        const searchPool = currentStateROs.length > 0 ? currentStateROs : roData;
-        console.log("Using search pool size:", searchPool.length);
-        
-        const lowerQuery = query.toLowerCase();
-        const filteredROs = searchPool.filter(item => {
-            if (!item) return false;
-            
-            const sapMatch = item.sapCode && item.sapCode.toString().includes(query);
-            const consigneeMatch = item.consignee && item.consignee.toLowerCase().includes(lowerQuery);
-            
-            return sapMatch || consigneeMatch;
-        }).slice(0, 10); // Show top 10 matches
-
-        console.log("Filtered ROs:", filteredROs.length);
-        if (filteredROs.length > 0) {
-            console.log("Sample filtered RO:", filteredROs[0]);
-        }
-
-        if (filteredROs.length > 0) {
-            sapDropdown.innerHTML = filteredROs.map(item =>
-                `<div class="suggestion-item sap-suggestion" onclick="selectSAP('${item.sapCode}')">
-                    <div class="sap-code-main">${item.sapCode} - ${item.sapCodeRef || ''}</div>
-                    <div class="sap-consignee">${item.consignee}</div>
-                    <div class="sap-details">
-                        <span>${item.stateCode} | ${item.customerType || 'N/A'}</span>
-                        <span>${item.salesGroupCode || 'N/A'}</span>
-                    </div>
+        if (filtered.length > 0) {
+            suggestionsDiv.innerHTML = filtered.map(item => 
+                `<div class="suggestion-item" onclick="selectSapCode('${item.sapCode}')">
+                    <strong>${item.sapCode}</strong> - ${item.consignee}
                 </div>`
             ).join('');
-            sapDropdown.style.display = 'block';
-            console.log("Showing SAP dropdown");
+            suggestionsDiv.style.display = 'block';
         } else {
-            sapDropdown.style.display = 'none';
-            console.log("No matching SAP codes found");
+            suggestionsDiv.style.display = 'none';
         }
     }
 
-    window.selectSAP = function(sapCode) {
-        console.log("selectSAP called with:", sapCode);
-        const selectedRO = roData.find(item => item.sapCode && item.sapCode.toString() === sapCode.toString());
+    function selectSapCode(sapCode) {
+        const sapInput = document.getElementById('ro_sap');
+        const suggestionsDiv = document.getElementById('sapSuggestions');
+        const destinationInput = document.getElementById('destination');
+        
+        sapInput.value = sapCode;
+        suggestionsDiv.style.display = 'none';
+        
+        // Find the selected RO data
+        const selectedRO = ioclPlantData.find(item => item.sapCode === sapCode && item.stateCode === selectedStateCode);
         
         if (selectedRO) {
-            console.log("Found matching RO:", selectedRO);
-            sapInput.value = selectedRO.sapCode;
-            sapDropdown.style.display = 'none';
-            
-            // Auto-fill destination coordinates
+            // Auto-fill coordinates
             destinationInput.value = `${selectedRO.latitude},${selectedRO.longitude}`;
             
-            // Display RO details
-            roDetailsDisplay.innerHTML = `
-                <strong>Selected RO:</strong> ${selectedRO.consignee}<br><br>
-                <strong>SAP Code:</strong> ${selectedRO.sapCode}<br><br>
-                <strong>Type:</strong> ${selectedRO.customerType || 'N/A'}<br><br>
-                <strong>Location:</strong> ${selectedRO.stateCode}<br><br>
-                <strong>Sales Group:</strong> ${selectedRO.salesGroupDesc || 'N/A'}
-            `;
-            roDetailsDisplay.classList.add('active');
-            
-            console.log(`Successfully selected SAP: ${sapCode}, RO: ${selectedRO.consignee}`);
-        } else {
-            console.error(`SAP code ${sapCode} not found in RO data`);
-            alert(`Error: Could not find RO data for SAP code ${sapCode}`);
+            // Show RO information
+            showRoInfo(selectedRO);
         }
     }
 
-    // Hide dropdowns when clicking outside
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.input-container')) {
-            landmarkDropdown.style.display = 'none';
-            stateDropdown.style.display = 'none';
-            sapDropdown.style.display = 'none';
-        }
-    });
+    function hideSapSuggestions() {
+        setTimeout(() => {
+            document.getElementById('sapSuggestions').style.display = 'none';
+        }, 200);
+    }
 
-    // --- FORM VALIDATION ---
+    // RO Information Display
+    function showRoInfo(roData) {
+        const display = document.getElementById('roInfoDisplay');
+        
+        document.getElementById('roConsignee').textContent = roData.consignee;
+        document.getElementById('roSapCode').textContent = roData.sapCode;
+        document.getElementById('roState').textContent = roData.stateCode;
+        document.getElementById('roCustomerType').textContent = roData.customerType;
+        
+        display.classList.add('active');
+    }
+
+    function hideRoInfo() {
+        const display = document.getElementById('roInfoDisplay');
+        display.classList.remove('active');
+    }
+
+    // TT Specifications functionality (unchanged)
+    function showTTSpecs() {
+        const select = document.getElementById('tt_type');
+        const display = document.getElementById('ttSpecsDisplay');
+        const selectedOption = select.options[select.selectedIndex];
+        const warningBox = document.getElementById('warningBox');
+        const warningText = document.getElementById('warningText');
+        
+        if (selectedOption.value) {
+            const capacity = parseInt(selectedOption.dataset.capacity);
+            const productWeight = parseInt(selectedOption.dataset.productWeight);
+            const tareWeight = parseInt(selectedOption.dataset.tareWeight);
+            const grossWeight = parseInt(selectedOption.dataset.grossWeight);
+            const axleLoad = parseFloat(selectedOption.dataset.axleLoad);
+            const maxSpeed = parseInt(selectedOption.dataset.maxSpeed);
+            
+            document.getElementById('specCapacity').textContent = capacity.toLocaleString() + ' L';
+            document.getElementById('specGrossWeight').textContent = (grossWeight / 1000).toFixed(1) + ' T';
+            document.getElementById('specProductWeight').textContent = (productWeight / 1000).toFixed(1) + ' T';
+            document.getElementById('specTareWeight').textContent = (tareWeight / 1000).toFixed(1) + ' T';
+            document.getElementById('specAxleLoad').textContent = axleLoad.toFixed(1) + ' T';
+            document.getElementById('specMaxSpeed').textContent = maxSpeed + ' kmph';
+            
+            // Show warnings for heavy TT
+            if (grossWeight > 35000) {
+                warningBox.style.display = 'flex';
+                warningText.textContent = 'Heavy TT: Check bridge limits, reduce speed at turns.';
+            } else if (grossWeight > 25000) {
+                warningBox.style.display = 'flex';
+                warningText.textContent = 'Medium TT: Monitor axle loads and speed limits.';
+            } else {
+                warningBox.style.display = 'none';
+            }
+            
+            display.classList.add('active');
+        } else {
+            display.classList.remove('active');
+        }
+    }
+
+    // Form validation
     document.querySelector('form').addEventListener('submit', function(e) {
-        // Validate that coordinates are filled
-        if (!sourceInput.value.trim()) {
+        const source = document.getElementById('source').value.trim();
+        const destination = document.getElementById('destination').value.trim();
+        const ttType = document.getElementById('tt_type').value;
+        const stateCode = document.getElementById('ro_state').value.trim();
+        const sapCode = document.getElementById('ro_sap').value.trim();
+        
+        if (!source || !destination || !ttType || !stateCode || !sapCode) {
             e.preventDefault();
-            alert('Please select a terminal to auto-fill coordinates');
-            landmarkInput.focus();
+            showValidationModal('Please fill in all required fields:<br>• Terminal coordinates<br>• RO State Code<br>• RO SAP Code<br>• TT Capacity type');
             return;
         }
         
-        if (!destinationInput.value.trim()) {
-            e.preventDefault();
-            alert('Please select a SAP code to auto-fill RO coordinates');
-            sapInput.focus();
-            return;
-        }
-
         // Validate coordinate format
-        const coordPattern = /^-?\d+\.?\d*,-?\d+\.?\d*$/;
-        if (!coordPattern.test(sourceInput.value.trim())) {
+        const coordPattern = /^-?\d+\.?\d*\s*,\s*-?\d+\.?\d*$/;
+        if (!coordPattern.test(source) || !coordPattern.test(destination)) {
             e.preventDefault();
-            alert('Invalid source coordinates format. Please select a terminal from the dropdown.');
+            showValidationModal('Please enter coordinates in the format:<br>latitude,longitude<br>Example: 28.6139,77.2090');
             return;
         }
         
-        if (!coordPattern.test(destinationInput.value.trim())) {
-            e.preventDefault();
-            alert('Invalid destination coordinates format. Please select a SAP code from the dropdown.');
-            return;
-        }
+        // Show loading state
+        const submitBtn = document.querySelector('button[type="submit"]');
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing TT Route...';
+        submitBtn.disabled = true;
     });
 
-    // --- INITIALIZE ---
-    initializeData();
-});
-</script>
+    function showValidationModal(message) {
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 1000;
+            max-width: 400px;
+            text-align: center;
+        `;
+        modal.innerHTML = `
+            <div style="color: #d32f2f; margin-bottom: 15px;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 24px;"></i>
+            </div>
+            <p>${message}</p>
+            <button onclick="this.parentElement.remove()" style="margin-top:15px; padding:8px 16px; width: auto; background: #02164F; color: white; border: none; border-radius: 5px; cursor: pointer;">OK</button>
+        `;
+        document.body.appendChild(modal);
+    }
 
-</body>
-</html>
+    // Reset SAP input when state changes
+    document.getElementById('ro_state').addEventListener('input', function() {
+        const sapInput = document.getElementById('ro_sap');
+        if (this.value !== selectedStateCode) {
+            sapInput.value = '';
+            sapInput.disabled = true;
+            sapInput.placeholder = 'Select state first';
+            document.getElementById('destination').value = '';
+            hideRoInfo();
+        }
+    });
