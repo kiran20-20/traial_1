@@ -16,11 +16,6 @@ from geopy.distance import geodesic
 import time
 from functools import wraps
 
-# Add these modifications to your Flask app
-
-# Add this import at the top
-import json
-
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 app.config['SESSION_TYPE'] = 'filesystem'
@@ -404,69 +399,6 @@ def identify_high_risk_zones(coords, pois, tt_specs):
     
     return risk_zones
 
-#------------------------------------------------------------------------------------------------------------------------------
-def load_ro_data():
-    """Load RO data from IOCL_Plant_data Excel file"""
-    ro_data = []
-    
-    try:
-        # Load the Excel file
-        df_ro = pd.read_excel("IOCL_Plant_data.xlsx")
-        
-        for _, row in df_ro.iterrows():
-            try:
-                # Validate and convert data
-                consignee = str(row['Consignee']).strip() if pd.notna(row['Consignee']) else ""
-                lat = float(row['Latitude']) if pd.notna(row['Latitude']) else None
-                lng = float(row['Longitude']) if pd.notna(row['Longitude']) else None
-                sap_code = str(row['SAP Code']).strip() if pd.notna(row['SAP Code']) else ""
-                sap_code_ref = str(row['Sap Code_reference']).strip() if pd.notna(row['Sap Code_reference']) else ""
-                sales_group_code = str(row['Sales Group Code']).strip() if pd.notna(row['Sales Group Code']) else ""
-                sales_group_desc = str(row['Sales Group Desc']).strip() if pd.notna(row['Sales Group Desc']) else ""
-                state_code = str(row['State code']).strip() if pd.notna(row['State code']) else ""
-                customer_type = str(row['Customer Type']).strip() if pd.notna(row['Customer Type']) else ""
-                
-                if lat is not None and lng is not None and consignee and sap_code:
-                    ro_data.append({
-                        'consignee': consignee,
-                        'latitude': lat,
-                        'longitude': lng,
-                        'sapCode': sap_code,
-                        'sapCodeRef': sap_code_ref,
-                        'salesGroupCode': sales_group_code,
-                        'salesGroupDesc': sales_group_desc,
-                        'stateCode': state_code,
-                        'customerType': customer_type
-                    })
-                    
-            except (ValueError, TypeError) as e:
-                print(f"Skipping invalid RO row: {e}")
-                continue
-                
-        print(f"Loaded {len(ro_data)} RO records from Excel file")
-        return ro_data
-        
-    except FileNotFoundError:
-        print("IOCL_Plant_data.xlsx not found, using sample data")
-        # Return sample data if file doesn't exist
-        return [
-            {
-                'consignee': 'Sample RO Delhi',
-                'latitude': 28.6139,
-                'longitude': 77.2090,
-                'sapCode': '12345',
-                'sapCodeRef': '000012345',
-                'salesGroupCode': 'DEL1',
-                'salesGroupDesc': 'DELHI REGION',
-                'stateCode': 'DL',
-                'customerType': 'Retail'
-            }
-        ]
-    except Exception as e:
-        print(f"Error loading RO Excel file: {e}")
-        return []
-#----------------------------------------------------------------------------------------------------------------------------
-
 def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance, total_duration, tt_specs):
     """Generate a detailed route analysis report with TT specifications"""
     try:
@@ -625,81 +557,24 @@ def test():
     """Simple test page"""
     return "<h1>Flask App is Working!</h1><p>If you see this, the basic Flask setup is fine.</p>"
 
-#---------------------------------------------------------------------------------------------------------
-# Add this API endpoint
-@app.route('/api/ro_data')
-@login_required
-def get_ro_data():
-    """API endpoint to get RO data"""
-    try:
-        ro_data = load_ro_data()
-        return {
-            'success': True,
-            'data': ro_data,
-            'count': len(ro_data)
-        }
-    except Exception as e:
-        return {
-            'success': False,
-            'error': str(e),
-            'data': []
-        }
-
-# Add this API endpoint to get unique state codes
-@app.route('/api/states')
-@login_required
-def get_states():
-    """API endpoint to get unique state codes"""
-    try:
-        ro_data = load_ro_data()
-        states = list(set([item['stateCode'] for item in ro_data if item['stateCode']]))
-        states.sort()
-        return {
-            'success': True,
-            'states': states
-        }
-    except Exception as e:
-        return {
-            'success': False,
-            'error': str(e),
-            'states': []
-        }
-
-# Add this API endpoint to get SAP codes by state
-@app.route('/api/sap_codes/<state_code>')
-@login_required
-def get_sap_codes_by_state(state_code):
-    """API endpoint to get SAP codes filtered by state"""
-    try:
-        ro_data = load_ro_data()
-        filtered_data = [item for item in ro_data if item['stateCode'].upper() == state_code.upper()]
-        return {
-            'success': True,
-            'data': filtered_data,
-            'count': len(filtered_data)
-        }
-    except Exception as e:
-        return {
-            'success': False,
-            'error': str(e),
-            'data': []
-        }
-#------------------------------------------------------------------------------------------------------------
-
-# Modify the home route to include RO data
 @app.route('/')
 @login_required
 def home():
     """Main route form page - requires login"""
     try:
+        # Add username to template context
         username = session.get('username', 'User')
         
-        # Load IOCL Landmarks
+        # Load IOCL Landmarks with data validation
         landmarks = []
+        
+        # Try to load from Excel file, but handle gracefully if it doesn't exist
         try:
             df_iocl = pd.read_excel("IOCL_Landmark_Details.xlsx")
+            
             for _, row in df_iocl.iterrows():
                 try:
+                    # Validate and convert coordinates
                     lat = float(row['Latitude']) if pd.notna(row['Latitude']) else None
                     lng = float(row['Longitude']) if pd.notna(row['Longitude']) else None
                     name = str(row['Landmark Name']).strip() if pd.notna(row['Landmark Name']) else None
@@ -710,13 +585,15 @@ def home():
                             'lat': lat,
                             'lng': lng
                         })
-                except (ValueError, TypeError):
+                except (ValueError, TypeError) as e:
+                    print(f"Skipping invalid landmark row: {e}")
                     continue
                     
             print(f"Loaded {len(landmarks)} landmarks from Excel file")
             
         except FileNotFoundError:
             print("IOCL_Landmark_Details.xlsx not found, using sample landmarks")
+            # Provide some sample landmarks if file doesn't exist
             landmarks = [
                 {'name': 'Delhi Terminal', 'lat': 28.6139, 'lng': 77.2090},
                 {'name': 'Mumbai Terminal', 'lat': 19.0760, 'lng': 72.8777},
@@ -725,41 +602,47 @@ def home():
                 {'name': 'Kolkata Terminal', 'lat': 22.5726, 'lng': 88.3639}
             ]
         except Exception as e:
-            print(f"Error loading landmarks Excel file: {e}")
+            print(f"Error loading Excel file: {e}")
             landmarks = []
 
-
-        # Load RO data
-        ro_data = load_ro_data()
-        unique_states = list(set([item['stateCode'] for item in ro_data if item['stateCode']]))
-        unique_states.sort()
-    
+        # Pass landmarks, TT specifications, and username to template
         return render_template(
             "route_form.html",
             landmarks=landmarks,
             tt_specifications=TT_SPECIFICATIONS,
-            ro_data=json.dumps(ro_data),  # Convert to JSON for JavaScript
-            unique_states=unique_states,
             username=username
         )
-
         
     except Exception as e:
         print(f"Error loading data: {e}")
         import traceback
         traceback.print_exc()
-        # Return fallback page if everything fails
+        # Return a simple fallback page if everything fails
         username = session.get('username', 'User')
+        tt_options = ""
+        for tt_key, tt_data in TT_SPECIFICATIONS.items():
+            tt_options += f'<option value="{tt_key}">{tt_data["capacity_range"]} ({tt_data["gross_weight"]/1000:.1f}T)</option>'
+        
         return f"""
         <html><body>
         <h2>IndianOil Smart Marg - Truck Tanker Navigation</h2>
         <p>Welcome, {username}! <a href="/logout">Logout</a></p>
-        <p>Error loading data: {str(e)}</p>
-        <p><a href="/api/ro_data">Check RO Data API</a></p>
+        <p>Basic form (landmarks unavailable)</p>
+        <form method="POST" action="/fetch_routes">
+            <p>Source: <input type="text" name="source" placeholder="lat,lng" required></p>
+            <p>Destination: <input type="text" name="destination" placeholder="lat,lng" required></p>
+            <p>Truck Tanker Type: 
+                <select name="tt_type" required>
+                    <option value="">Choose TT Capacity</option>
+                    {tt_options}
+                </select>
+            </p>
+            <button type="submit">Generate Routes</button>
+        </form>
+        <p>Error: {str(e)}</p>
         </body></html>
         """
-#---------------------------------------------------------------------------------------------------------------------
-# Update the fetch_routes function to handle SAP code validation
+
 @app.route('/fetch_routes', methods=['POST'])
 @login_required
 def fetch_routes():
@@ -794,18 +677,6 @@ def fetch_routes():
         source = request.form['source'].strip()
         destination = request.form['destination'].strip()
         tt_type = request.form['tt_type']
-        sap_code = request.form.get('sap_code', '').strip()
-
-        # Validate SAP code against RO data
-        ro_data = load_ro_data()
-        selected_ro = None
-        for ro in ro_data:
-            if ro['sapCode'] == sap_code:
-                selected_ro = ro
-                break
-        
-        if not selected_ro:
-            return f"Invalid SAP code: {sap_code}. Please select a valid SAP code from the dropdown."
 
         # Get TT specifications
         tt_specs = get_tt_specs(tt_type)
@@ -817,18 +688,13 @@ def fetch_routes():
         except ValueError:
             return "Invalid coordinates format. Please use: latitude,longitude"
 
-        # Verify destination coordinates match selected RO
-        ro_coords = (selected_ro['latitude'], selected_ro['longitude'])
-        if abs(dest_coords[0] - ro_coords[0]) > 0.001 or abs(dest_coords[1] - ro_coords[1]) > 0.001:
-            return "Destination coordinates do not match selected RO. Please ensure coordinates are auto-filled from SAP selection."
-
-        # Get routes from Google Maps
+        # Get routes from Google Maps - always use driving for trucks
         directions = gmaps.directions(
             source_coords, dest_coords,
             mode="driving",
             alternatives=True,
             departure_time=datetime.now(),
-            avoid=["tolls"] if tt_specs["gross_weight"] > 35000 else []
+            avoid=["tolls"] if tt_specs["gross_weight"] > 35000 else []  # Avoid tolls for very heavy TT
         )
 
         if not directions:
@@ -840,7 +706,6 @@ def fetch_routes():
         session['destination'] = dest_coords
         session['tt_type'] = tt_type
         session['tt_specs'] = tt_specs
-        session['selected_ro'] = selected_ro  # Store RO details
         session.modified = True
 
         # Process routes for selection
@@ -852,7 +717,7 @@ def fetch_routes():
                 duration = route['legs'][0]['duration']['text']
                 summary = route.get('summary', f"Route {i+1}")
 
-                # Create preview map with TT and RO info
+                # Create preview map with TT info
                 unique_id = uuid4().hex
                 preview_file = f"route_preview_{i}_{unique_id}.html"
                 m = folium.Map(location=coords[len(coords)//2], zoom_start=12)
@@ -860,14 +725,7 @@ def fetch_routes():
                 # Add route with weight-based color
                 route_color = 'red' if tt_specs["gross_weight"] > 35000 else 'orange' if tt_specs["gross_weight"] > 25000 else 'blue'
                 folium.PolyLine(coords, color=route_color, weight=5, 
-                              popup=f"TT {tt_specs['capacity_range']} - {tt_specs['gross_weight']/1000:.1f}T to {selected_ro['consignee']}").add_to(m)
-                
-                # Add RO marker
-                folium.Marker(
-                    dest_coords,
-                    popup=f"<b>{selected_ro['consignee']}</b><br>SAP: {selected_ro['sapCode']}<br>Type: {selected_ro['customerType']}",
-                    icon=folium.Icon(color='green', icon='building', prefix='fa')
-                ).add_to(m)
+                              popup=f"TT {tt_specs['capacity_range']} - {tt_specs['gross_weight']/1000:.1f}T").add_to(m)
                 
                 m.save(f"templates/{preview_file}")
 
@@ -877,26 +735,19 @@ def fetch_routes():
                     'duration': duration,
                     'summary': summary,
                     'preview_file': preview_file,
-                    'tt_info': f"TT {tt_specs['capacity_range']} - {tt_specs['gross_weight']/1000:.1f}T",
-                    'ro_info': f"To: {selected_ro['consignee']} (SAP: {selected_ro['sapCode']})"
+                    'tt_info': f"TT {tt_specs['capacity_range']} - {tt_specs['gross_weight']/1000:.1f}T"
                 })
             except Exception as e:
                 print(f"Error processing route {i}: {e}")
                 continue
 
-        return render_template("route_select.html", 
-                             routes=routes, 
-                             tt_specs=tt_specs, 
-                             selected_ro=selected_ro,
-                             username=username)
+        return render_template("route_select.html", routes=routes, tt_specs=tt_specs, username=username)
     
     except Exception as e:
         print(f"Error in fetch_routes: {e}")
         import traceback
         traceback.print_exc()
         return f"Error processing route request: {str(e)}"
-
-#---------------------------------------------------------------------------------------------------------
 
 @app.route('/analyze_route', methods=['POST'])
 @login_required
@@ -1356,5 +1207,3 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
-
-
