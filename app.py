@@ -199,79 +199,6 @@ MAX_SPEED_LIMIT = 50  # Will be dynamically set
 SAFE_TURN_ANGLE = 130  # degrees
 DANGEROUS_TURN_ANGLE = 30  # degrees
 
-def load_ro_data():
-    """Load RO data from IOCL_Plant_data.xlsx"""
-    ro_data = []
-    try:
-        # Load RO data from Excel file
-        df_ro = pd.read_excel("IOCL_Plant_data.xlsx")
-        
-        for _, row in df_ro.iterrows():
-            try:
-                # Validate and convert data
-                consignee = str(row['Consignee']).strip() if pd.notna(row['Consignee']) else 'Unknown'
-                lat = float(row['Latitude']) if pd.notna(row['Latitude']) else None
-                lng = float(row['Longitude']) if pd.notna(row['Longitude']) else None
-                sap_code = str(row['SAP Code']).strip() if pd.notna(row['SAP Code']) else ''
-                sap_code_ref = str(row['Sap Code_reference']).strip() if pd.notna(row['Sap Code_reference']) else ''
-                state_code = str(row['State code']).strip() if pd.notna(row['State code']) else ''
-                customer_type = str(row['Customer Type']).strip() if pd.notna(row['Customer Type']) else ''
-                
-                # Additional fields if they exist in your Excel
-                sales_group_code = str(row.get('Sales Group Code', '')).strip() if pd.notna(row.get('Sales Group Code')) else ''
-                sales_group_desc = str(row.get('Sales Group Desc', '')).strip() if pd.notna(row.get('Sales Group Desc')) else ''
-                
-                if lat is not None and lng is not None and consignee and sap_code and state_code:
-                    ro_data.append({
-                        'consignee': consignee,
-                        'latitude': lat,
-                        'longitude': lng,
-                        'sapCode': sap_code,
-                        'sapCodeRef': sap_code_ref,
-                        'stateCode': state_code,
-                        'customerType': customer_type,
-                        'salesGroupCode': sales_group_code,
-                        'salesGroupDesc': sales_group_desc
-                    })
-            except (ValueError, TypeError) as e:
-                print(f"Skipping invalid RO row: {e}")
-                continue
-                
-        print(f"Loaded {len(ro_data)} RO locations from Excel file")
-        
-    except FileNotFoundError:
-        print("IOCL_Plant_data.xlsx not found, using sample RO data")
-        # Provide sample RO data if file doesn't exist
-        ro_data = [
-            {
-                'consignee': 'Sample RO Delhi',
-                'latitude': 28.6139,
-                'longitude': 77.2090,
-                'sapCode': '1001',
-                'sapCodeRef': '1001',
-                'stateCode': 'DL',
-                'customerType': 'Retail',
-                'salesGroupCode': 'DL1',
-                'salesGroupDesc': 'Delhi Zone'
-            },
-            {
-                'consignee': 'Sample RO Mumbai',
-                'latitude': 19.0760,
-                'longitude': 72.8777,
-                'sapCode': '2001',
-                'sapCodeRef': '2001',
-                'stateCode': 'MH',
-                'customerType': 'Retail',
-                'salesGroupCode': 'MH1',
-                'salesGroupDesc': 'Mumbai Zone'
-            }
-        ]
-    except Exception as e:
-        print(f"Error loading RO data: {e}")
-        ro_data = []
-
-    return ro_data
-
 def login_required(f):
     """Decorator to require login for protected routes"""
     @wraps(f)
@@ -638,14 +565,16 @@ def home():
         # Add username to template context
         username = session.get('username', 'User')
         
-        # Load IOCL Landmarks with data validation (existing code)
+        # Load IOCL Landmarks with data validation
         landmarks = []
         
+        # Try to load from Excel file, but handle gracefully if it doesn't exist
         try:
             df_iocl = pd.read_excel("IOCL_Landmark_Details.xlsx")
             
             for _, row in df_iocl.iterrows():
                 try:
+                    # Validate and convert coordinates
                     lat = float(row['Latitude']) if pd.notna(row['Latitude']) else None
                     lng = float(row['Longitude']) if pd.notna(row['Longitude']) else None
                     name = str(row['Landmark Name']).strip() if pd.notna(row['Landmark Name']) else None
@@ -664,6 +593,7 @@ def home():
             
         except FileNotFoundError:
             print("IOCL_Landmark_Details.xlsx not found, using sample landmarks")
+            # Provide some sample landmarks if file doesn't exist
             landmarks = [
                 {'name': 'Delhi Terminal', 'lat': 28.6139, 'lng': 77.2090},
                 {'name': 'Mumbai Terminal', 'lat': 19.0760, 'lng': 72.8777},
@@ -675,15 +605,11 @@ def home():
             print(f"Error loading Excel file: {e}")
             landmarks = []
 
-        # NEW: Load RO data
-        ro_data = load_ro_data()
-
-        # Pass landmarks, TT specifications, RO data, and username to template
+        # Pass landmarks, TT specifications, and username to template
         return render_template(
             "route_form.html",
             landmarks=landmarks,
             tt_specifications=TT_SPECIFICATIONS,
-            ro_data=ro_data,  # NEW: Add RO data
             username=username
         )
         
@@ -691,8 +617,7 @@ def home():
         print(f"Error loading data: {e}")
         import traceback
         traceback.print_exc()
-        
-        # Return a fallback page if everything fails
+        # Return a simple fallback page if everything fails
         username = session.get('username', 'User')
         tt_options = ""
         for tt_key, tt_data in TT_SPECIFICATIONS.items():
@@ -702,7 +627,7 @@ def home():
         <html><body>
         <h2>IndianOil Smart Marg - Truck Tanker Navigation</h2>
         <p>Welcome, {username}! <a href="/logout">Logout</a></p>
-        <p>Basic form (landmarks and RO data unavailable)</p>
+        <p>Basic form (landmarks unavailable)</p>
         <form method="POST" action="/fetch_routes">
             <p>Source: <input type="text" name="source" placeholder="lat,lng" required></p>
             <p>Destination: <input type="text" name="destination" placeholder="lat,lng" required></p>
@@ -717,52 +642,13 @@ def home():
         <p>Error: {str(e)}</p>
         </body></html>
         """
-@app.route('/api/ro_data')
-@login_required
-def get_ro_data():
-    """API endpoint to get RO data"""
-    try:
-        ro_data = load_ro_data()
-        return {
-            'success': True,
-            'data': ro_data,
-            'count': len(ro_data)
-        }
-    except Exception as e:
-        return {
-            'success': False,
-            'error': str(e)
-        }
-
-@app.route('/api/ro_by_state/<state_code>')
-@login_required
-def get_ro_by_state(state_code):
-    """API endpoint to get RO data for specific state"""
-    try:
-        ro_data = load_ro_data()
-        filtered_data = [ro for ro in ro_data if ro['stateCode'].upper() == state_code.upper()]
-        return {
-            'success': True,
-            'state': state_code,
-            'data': filtered_data,
-            'count': len(filtered_data)
-        }
-    except Exception as e:
-        return {
-            'success': False,
-            'error': str(e)
-        }
-
-
-# Modify your fetch_routes function to handle RO data (around line 500):
-# Add these lines after getting form data:
 
 @app.route('/fetch_routes', methods=['POST'])
 @login_required
 def fetch_routes():
     """Generate routes based on form input"""
     try:
-        # Clear session and old route files (existing code)
+        # Clear session and old route files
         old_directions = session.get('directions')
         old_route_report = session.get('route_report')
         username = session.get('username')
@@ -770,11 +656,12 @@ def fetch_routes():
         logged_in = session.get('logged_in')
         
         session.clear()
+        
+        # Restore login session
         session['logged_in'] = logged_in
         session['username'] = username
         session['login_time'] = login_time
         
-        # Clear old files (existing code)
         for f in glob.glob("templates/route_preview_*.html"):
             try:
                 os.remove(f)
@@ -786,32 +673,76 @@ def fetch_routes():
             except:
                 pass
 
-        # Get form data (existing + new RO data)
+        # Get form data
         source = request.form['source'].strip()
         destination = request.form['destination'].strip()
         tt_type = request.form['tt_type']
-        
-        # NEW: Get RO selection data (optional - for logging/tracking)
-        ro_state = request.form.get('ro_state', '').strip()
-        ro_sap_code = request.form.get('ro_sap_code', '').strip()
-        
-        # Log RO selection for analytics (optional)
-        if ro_state and ro_sap_code:
-            print(f"Route requested from terminal to RO: State={ro_state}, SAP={ro_sap_code}")
 
-        # Get TT specifications (existing code)
+        # Get TT specifications
         tt_specs = get_tt_specs(tt_type)
 
-        # Validate coordinates (existing code)
+        # Validate coordinates
         try:
             source_coords = tuple(map(float, source.split(',')))
             dest_coords = tuple(map(float, destination.split(',')))
         except ValueError:
             return "Invalid coordinates format. Please use: latitude,longitude"
 
-        # Continue with existing route generation code...
-        # (Rest of the function remains the same)
-        
+        # Get routes from Google Maps - always use driving for trucks
+        directions = gmaps.directions(
+            source_coords, dest_coords,
+            mode="driving",
+            alternatives=True,
+            departure_time=datetime.now(),
+            avoid=["tolls"] if tt_specs["gross_weight"] > 35000 else []  # Avoid tolls for very heavy TT
+        )
+
+        if not directions:
+            return "No routes found between the specified locations."
+
+        # Store in session
+        session['directions'] = directions
+        session['source'] = source_coords
+        session['destination'] = dest_coords
+        session['tt_type'] = tt_type
+        session['tt_specs'] = tt_specs
+        session.modified = True
+
+        # Process routes for selection
+        routes = []
+        for i, route in enumerate(directions):
+            try:
+                coords = polyline.decode(route['overview_polyline']['points'])
+                distance = route['legs'][0]['distance']['text']
+                duration = route['legs'][0]['duration']['text']
+                summary = route.get('summary', f"Route {i+1}")
+
+                # Create preview map with TT info
+                unique_id = uuid4().hex
+                preview_file = f"route_preview_{i}_{unique_id}.html"
+                m = folium.Map(location=coords[len(coords)//2], zoom_start=12)
+                
+                # Add route with weight-based color
+                route_color = 'red' if tt_specs["gross_weight"] > 35000 else 'orange' if tt_specs["gross_weight"] > 25000 else 'blue'
+                folium.PolyLine(coords, color=route_color, weight=5, 
+                              popup=f"TT {tt_specs['capacity_range']} - {tt_specs['gross_weight']/1000:.1f}T").add_to(m)
+                
+                m.save(f"templates/{preview_file}")
+
+                routes.append({
+                    'index': i,
+                    'distance': distance,
+                    'duration': duration,
+                    'summary': summary,
+                    'preview_file': preview_file,
+                    'tt_info': f"TT {tt_specs['capacity_range']} - {tt_specs['gross_weight']/1000:.1f}T"
+                })
+            except Exception as e:
+                print(f"Error processing route {i}: {e}")
+                continue
+
+        return render_template("route_select.html", routes=routes, tt_specs=tt_specs, username=username)
+    
     except Exception as e:
         print(f"Error in fetch_routes: {e}")
         import traceback
@@ -1276,4 +1207,3 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
-
