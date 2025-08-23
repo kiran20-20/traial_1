@@ -69,6 +69,8 @@
         .floating-text-bubble:nth-child(13) { bottom: 25%; left: 55%; animation-duration: 24s; animation-delay: 13s; transform: scale(0.85) rotate(5deg); }
         .floating-text-bubble:nth-child(14) { top: 60%; left: 5%; animation-duration: 26s; animation-delay: 14s; transform: scale(1.1) rotate(10deg); }
         .floating-text-bubble:nth-child(15) { top: 35%; left: 80%; animation-duration: 23s; animation-delay: 15s; transform: scale(1.3) rotate(-20deg); }
+        .floating-text-bubble:nth-child(16) { top: 80%; right: 25%; animation-duration: 30s; animation-delay: 16s; transform: scale(1.1) rotate(12deg); }
+        .floating-text-bubble:nth-child(17) { top: 5%; left: 60%; animation-duration: 28s; animation-delay: 17s; transform: scale(0.9) rotate(25deg); }
 
         @keyframes float-and-rotate {
             0%  { transform: translate(0, 0) rotate(0deg); }
@@ -84,7 +86,7 @@
             align-items: flex-start;
             min-height: calc(100vh - 30px);
             position: relative;
-            z-index: 1;
+            z-index: 1; /* Ensure container is above the floating background */
         }
 
         .form-box {
@@ -202,62 +204,6 @@
             font-style: italic;
         }
 
-        /* RO Information Display */
-        .ro-info-display {
-            background: linear-gradient(135deg, #e8f4f8 0%, #d1ecf1 100%);
-            border: 2px solid var(--iocl-blue);
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 12px;
-            display: none;
-            animation: slideDown 0.4s ease;
-        }
-
-        .ro-info-display.active {
-            display: block;
-        }
-
-        .ro-info-title {
-            text-align: center;
-            color: var(--iocl-blue);
-            font-weight: bold;
-            font-size: 1.0em;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .ro-info-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-        }
-
-        .ro-info-item {
-            background: white;
-            padding: 8px;
-            border-radius: 6px;
-            text-align: left;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-            border: 1px solid #e0e0e0;
-        }
-
-        .ro-info-item .label {
-            font-size: 0.7em;
-            color: var(--iocl-mid-gray);
-            font-weight: 500;
-            margin-bottom: 2px;
-            text-transform: uppercase;
-        }
-
-        .ro-info-item .value {
-            font-size: 0.9em;
-            font-weight: bold;
-            color: var(--iocl-blue);
-        }
-
         /* Compact TT Specifications Display */
         .tt-specs-display {
             background: linear-gradient(135deg, #e8f4f8 0%, #d1ecf1 100%);
@@ -341,41 +287,6 @@
             color: #f39c12;
         }
 
-        /* Dropdown suggestion styling */
-        .suggestion-dropdown {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 1px solid #ddd;
-            border-top: none;
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 1000;
-            border-radius: 0 0 8px 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        .suggestion-item {
-            padding: 10px;
-            cursor: pointer;
-            border-bottom: 1px solid #f0f0f0;
-            font-size: 0.9em;
-        }
-
-        .suggestion-item:hover {
-            background-color: #f8f9fa;
-        }
-
-        .suggestion-item:last-child {
-            border-bottom: none;
-        }
-
-        .input-container {
-            position: relative;
-        }
-
         /* Mobile Responsive */
         @media (max-width: 768px) {
             body {
@@ -388,7 +299,7 @@
             .header h1 {
                 font-size: 1.6em;
             }
-            .specs-grid, .ro-info-grid {
+            .specs-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
             .floating-text-bubble {
@@ -398,7 +309,7 @@
         }
 
         @media (max-width: 480px) {
-            .specs-grid, .ro-info-grid {
+            .specs-grid {
                 grid-template-columns: 1fr;
             }
             .form-box {
@@ -406,10 +317,12 @@
             }
         }
 
+        /* Ensure page can scroll properly */
         html {
             scroll-behavior: smooth;
         }
 
+        /* Reduce floating elements on small screens */
         @media (max-height: 600px) {
             .floating-text-bubble:nth-child(n+5) {
                 display: none;
@@ -451,7 +364,9 @@
         <label for="landmark_name">IOCL Terminal</label>
         <input type="text" id="landmark_name" list="landmarkList" placeholder="Start typing terminal name...">
         <datalist id="landmarkList">
-            <!-- Landmarks will be populated from Flask -->
+            {% for landmark in landmarks %}
+            <option value="{{ landmark.name }}" data-lat="{{ landmark.lat }}" data-lng="{{ landmark.lng }}">
+            {% endfor %}
         </datalist>
 
         <label for="source">Terminal Coordinates</label>
@@ -463,51 +378,9 @@
             <span>RO Location</span>
         </div>
 
-        <label for="ro_state">State Code</label>
-        <div class="input-container">
-            <input type="text" id="ro_state" placeholder="Type state code (e.g., GJ, TN, HP)" oninput="filterStates()" onblur="hideStateSuggestions()">
-            <div id="stateSuggestions" class="suggestion-dropdown" style="display: none;"></div>
-        </div>
-
-        <label for="ro_sap">SAP Code</label>
-        <div class="input-container">
-            <input type="text" id="ro_sap" placeholder="Select SAP code after choosing state" oninput="filterSapCodes()" onblur="hideSapSuggestions()" disabled>
-            <div id="sapSuggestions" class="suggestion-dropdown" style="display: none;"></div>
-        </div>
-
-        <div id="roInfoDisplay" class="ro-info-display">
-            <div class="ro-info-title">
-                <i class="fas fa-gas-pump"></i>
-                <span>Selected RO Information</span>
-            </div>
-            <div class="ro-info-grid">
-                <div class="ro-info-item">
-                    <div class="label">Consignee</div>
-                    <div class="value" id="roConsignee">-</div>
-                </div>
-                <div class="ro-info-item">
-                    <div class="label">SAP Code</div>
-                    <div class="value" id="roSapCode">-</div>
-                </div>
-                <div class="ro-info-item">
-                    <div class="label">State</div>
-                    <div class="value" id="roState">-</div>
-                </div>
-                <div class="ro-info-item">
-                    <div class="label">Customer Type</div>
-                    <div class="value" id="roCustomerType">-</div>
-                </div>
-            </div>
-        </div>
-
         <label for="destination">RO Coordinates</label>
-        <input type="text" name="destination" id="destination" placeholder="Auto-filled after SAP selection" required readonly>
-        <div class="coord-helper">Coordinates will be automatically populated</div>
-
-        <!-- Hidden fields to pass RO selection data to backend -->
-        <input type="hidden" name="ro_state" id="ro_state_hidden">
-        <input type="hidden" name="ro_sap_code" id="ro_sap_code_hidden">
-        <input type="hidden" name="ro_consignee" id="ro_consignee_hidden">
+        <input type="text" name="destination" id="destination" placeholder="Enter coordinates manually (lat, lng)" required>
+        <div class="coord-helper">Example: 19.0760, 72.8777</div>
 
         <div class="section-title">
             <i class="fa-solid fa-truck-fast"></i>
@@ -517,11 +390,17 @@
         <label for="tt_type">Select TT Capacity Range</label>
         <select id="tt_type" name="tt_type" required onchange="showTTSpecs()">
             <option value="">Choose TT Capacity</option>
-            <option value="12-16KL" data-capacity="14000" data-product-weight="12600" data-tare-weight="8500" data-gross-weight="21100" data-axle-load="10.5" data-max-speed="60">12-16 KL (21.1T)</option>
-            <option value="16-20KL" data-capacity="18000" data-product-weight="16200" data-tare-weight="9500" data-gross-weight="25700" data-axle-load="12.85" data-max-speed="55">16-20 KL (25.7T)</option>
-            <option value="20-24KL" data-capacity="22000" data-product-weight="19800" data-tare-weight="10500" data-gross-weight="30300" data-axle-load="15.15" data-max-speed="50">20-24 KL (30.3T)</option>
-            <option value="24-30KL" data-capacity="27000" data-product-weight="24300" data-tare-weight="11500" data-gross-weight="35800" data-axle-load="17.9" data-max-speed="45">24-30 KL (35.8T)</option>
-            <option value="30KL+" data-capacity="35000" data-product-weight="31500" data-tare-weight="13000" data-gross-weight="44500" data-axle-load="22.25" data-max-speed="40">30+ KL (44.5T)</option>
+            {% for tt_key, tt_data in tt_specifications.items() %}
+            <option value="{{ tt_key }}"
+                    data-capacity="{{ tt_data.avg_capacity_liters }}"
+                    data-product-weight="{{ tt_data.product_weight }}"
+                    data-tare-weight="{{ tt_data.tare_weight }}"
+                    data-gross-weight="{{ tt_data.gross_weight }}"
+                    data-axle-load="{{ tt_data.axle_load }}"
+                    data-max-speed="{{ tt_data.max_speed }}">
+                {{ tt_data.capacity_range }} ({{ (tt_data.gross_weight / 1000) | round(1) }}T)
+            </option>
+            {% endfor %}
         </select>
 
         <div id="ttSpecsDisplay" class="tt-specs-display">
@@ -578,23 +457,21 @@
 </div>
 
 <script>
-    // Load RO data from Flask backend
-    const ioclPlantData = {{ ro_data|tojson if ro_data else [] }};
+    // This part of the JS is no longer needed since Flask populates the datalist
+    // const landmarkData = [...]
+    // function filterTerminals(query) {...}
+    // landmarkInput.addEventListener('input', ...)
 
-    // Get unique state codes for suggestions
-    const uniqueStates = [...new Set(ioclPlantData.map(item => item.stateCode))].sort();
-    let filteredSapCodes = [];
-    let selectedStateCode = '';
-
-    // Terminal/landmark functionality (unchanged)
     const landmarkInput = document.getElementById('landmark_name');
     const sourceInput = document.getElementById('source');
     
+    // Updated event listener to get coordinates from the dynamically populated datalist
     landmarkInput.addEventListener('change', function () {
         const name = this.value;
         const options = document.getElementById('landmarkList').options;
         let match = null;
 
+        // Find the option with the matching value
         for (let i = 0; i < options.length; i++) {
             if (options[i].value === name) {
                 match = options[i];
@@ -611,131 +488,10 @@
         }
     });
 
-    // RO State filtering functionality
-    function filterStates() {
-        const input = document.getElementById('ro_state');
-        const query = input.value.toUpperCase();
-        const suggestionsDiv = document.getElementById('stateSuggestions');
-        
-        if (query.length === 0) {
-            suggestionsDiv.style.display = 'none';
-            return;
-        }
+    document.getElementById('source').addEventListener('focus', function() {
+        this.placeholder = "Enter coordinates manually (lat, lng)";
+    });
 
-        const filtered = uniqueStates.filter(state => 
-            state.toUpperCase().includes(query)
-        );
-
-        if (filtered.length > 0) {
-            suggestionsDiv.innerHTML = filtered.map(state => 
-                `<div class="suggestion-item" onclick="selectState('${state}')">${state}</div>`
-            ).join('');
-            suggestionsDiv.style.display = 'block';
-        } else {
-            suggestionsDiv.style.display = 'none';
-        }
-    }
-
-    function selectState(stateCode) {
-        const stateInput = document.getElementById('ro_state');
-        const sapInput = document.getElementById('ro_sap');
-        const suggestionsDiv = document.getElementById('stateSuggestions');
-        
-        stateInput.value = stateCode;
-        selectedStateCode = stateCode;
-        suggestionsDiv.style.display = 'none';
-        
-        // Enable SAP code input and filter by selected state
-        sapInput.disabled = false;
-        sapInput.placeholder = `Select SAP code for ${stateCode}`;
-        sapInput.value = '';
-        
-        // Clear destination and RO info
-        document.getElementById('destination').value = '';
-        hideRoInfo();
-        
-        // Filter SAP codes for this state
-        filteredSapCodes = ioclPlantData.filter(item => item.stateCode === stateCode);
-    }
-
-    function hideStateSuggestions() {
-        setTimeout(() => {
-            document.getElementById('stateSuggestions').style.display = 'none';
-        }, 200);
-    }
-
-    // RO SAP Code filtering functionality
-    function filterSapCodes() {
-        const input = document.getElementById('ro_sap');
-        const query = input.value.toLowerCase();
-        const suggestionsDiv = document.getElementById('sapSuggestions');
-        
-        if (query.length === 0 || filteredSapCodes.length === 0) {
-            suggestionsDiv.style.display = 'none';
-            return;
-        }
-
-        const filtered = filteredSapCodes.filter(item => 
-            item.sapCode.toLowerCase().includes(query) || 
-            item.consignee.toLowerCase().includes(query)
-        );
-
-        if (filtered.length > 0) {
-            suggestionsDiv.innerHTML = filtered.map(item => 
-                `<div class="suggestion-item" onclick="selectSapCode('${item.sapCode}')">
-                    <strong>${item.sapCode}</strong> - ${item.consignee}
-                </div>`
-            ).join('');
-            suggestionsDiv.style.display = 'block';
-        } else {
-            suggestionsDiv.style.display = 'none';
-        }
-    }
-
-    function selectSapCode(sapCode) {
-        const sapInput = document.getElementById('ro_sap');
-        const suggestionsDiv = document.getElementById('sapSuggestions');
-        const destinationInput = document.getElementById('destination');
-        
-        sapInput.value = sapCode;
-        suggestionsDiv.style.display = 'none';
-        
-        // Find the selected RO data
-        const selectedRO = ioclPlantData.find(item => item.sapCode === sapCode && item.stateCode === selectedStateCode);
-        
-        if (selectedRO) {
-            // Auto-fill coordinates
-            destinationInput.value = `${selectedRO.latitude},${selectedRO.longitude}`;
-            
-            // Show RO information
-            showRoInfo(selectedRO);
-        }
-    }
-
-    function hideSapSuggestions() {
-        setTimeout(() => {
-            document.getElementById('sapSuggestions').style.display = 'none';
-        }, 200);
-    }
-
-    // RO Information Display
-    function showRoInfo(roData) {
-        const display = document.getElementById('roInfoDisplay');
-        
-        document.getElementById('roConsignee').textContent = roData.consignee;
-        document.getElementById('roSapCode').textContent = roData.sapCode;
-        document.getElementById('roState').textContent = roData.stateCode;
-        document.getElementById('roCustomerType').textContent = roData.customerType;
-        
-        display.classList.add('active');
-    }
-
-    function hideRoInfo() {
-        const display = document.getElementById('roInfoDisplay');
-        display.classList.remove('active');
-    }
-
-    // TT Specifications functionality (unchanged)
     function showTTSpecs() {
         const select = document.getElementById('tt_type');
         const display = document.getElementById('ttSpecsDisplay');
@@ -780,12 +536,30 @@
         const source = document.getElementById('source').value.trim();
         const destination = document.getElementById('destination').value.trim();
         const ttType = document.getElementById('tt_type').value;
-        const stateCode = document.getElementById('ro_state').value.trim();
-        const sapCode = document.getElementById('ro_sap').value.trim();
         
-        if (!source || !destination || !ttType || !stateCode || !sapCode) {
+        if (!source || !destination || !ttType) {
             e.preventDefault();
-            showValidationModal('Please fill in all required fields:<br>• Terminal coordinates<br>• RO State Code<br>• RO SAP Code<br>• TT Capacity type');
+            // Using a custom modal instead of alert
+            const modal = document.createElement('div');
+            modal.style.position = 'fixed';
+            modal.style.top = '50%';
+            modal.style.left = '50%';
+            modal.style.transform = 'translate(-50%, -50%)';
+            modal.style.backgroundColor = 'white';
+            modal.style.padding = '20px';
+            modal.style.borderRadius = '10px';
+            modal.style.boxShadow = '0 5px 15px rgba(0,0,0,0.3)';
+            modal.style.zIndex = '1000';
+            modal.innerHTML = `
+                <p>Please fill in all required fields:</p>
+                <ul>
+                    <li>Terminal coordinates</li>
+                    <li>RO coordinates</li>
+                    <li>TT Capacity type</li>
+                </ul>
+                <button onclick="this.parentElement.remove()" style="margin-top:10px; padding:8px 16px; width: auto;">OK</button>
+            `;
+            document.body.appendChild(modal);
             return;
         }
         
@@ -793,7 +567,22 @@
         const coordPattern = /^-?\d+\.?\d*\s*,\s*-?\d+\.?\d*$/;
         if (!coordPattern.test(source) || !coordPattern.test(destination)) {
             e.preventDefault();
-            showValidationModal('Please enter coordinates in the format:<br>latitude,longitude<br>Example: 28.6139,77.2090');
+            // Using a custom modal instead of alert
+            const modal = document.createElement('div');
+            modal.style.position = 'fixed';
+            modal.style.top = '50%';
+            modal.style.left = '50%';
+            modal.style.transform = 'translate(-50%, -50%)';
+            modal.style.backgroundColor = 'white';
+            modal.style.padding = '20px';
+            modal.style.borderRadius = '10px';
+            modal.style.boxShadow = '0 5px 15px rgba(0,0,0,0.3)';
+            modal.style.zIndex = '1000';
+            modal.innerHTML = `
+                <p>Please enter coordinates in the format:<br>latitude,longitude<br>Example: 28.6139,77.2090</p>
+                <button onclick="this.parentElement.remove()" style="margin-top:10px; padding:8px 16px; width: auto;">OK</button>
+            `;
+            document.body.appendChild(modal);
             return;
         }
         
@@ -802,40 +591,6 @@
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing TT Route...';
         submitBtn.disabled = true;
     });
-
-    function showValidationModal(message) {
-        const modal = document.createElement('div');
-        modal.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            z-index: 1000;
-            max-width: 400px;
-            text-align: center;
-        `;
-        modal.innerHTML = `
-            <div style="color: #d32f2f; margin-bottom: 15px;">
-                <i class="fas fa-exclamation-triangle" style="font-size: 24px;"></i>
-            </div>
-            <p>${message}</p>
-            <button onclick="this.parentElement.remove()" style="margin-top:15px; padding:8px 16px; width: auto; background: #02164F; color: white; border: none; border-radius: 5px; cursor: pointer;">OK</button>
-        `;
-        document.body.appendChild(modal);
-    }
-
-    // Reset SAP input when state changes
-    document.getElementById('ro_state').addEventListener('input', function() {
-        const sapInput = document.getElementById('ro_sap');
-        if (this.value !== selectedStateCode) {
-            sapInput.value = '';
-            sapInput.disabled = true;
-            sapInput.placeholder = 'Select state first';
-            document.getElementById('destination').value = '';
-            hideRoInfo();
-        }
-    });
+</script>
+</body>
+</html>
