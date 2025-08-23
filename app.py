@@ -749,10 +749,11 @@ def fetch_routes():
         traceback.print_exc()
         return f"Error processing route request: {str(e)}"
 
+# Replace the existing analyze_route function with this enhanced version
 @app.route('/analyze_route', methods=['POST'])
 @login_required
 def analyze_route():
-    """Analyze the selected route with TT specifications"""
+    """Enhanced route analysis with realistic hazard detection"""
     try:
         directions = session.get('directions')
         tt_specs = session.get('tt_specs')
@@ -772,203 +773,431 @@ def analyze_route():
         total_distance = selected['legs'][0]['distance']['text']
         total_duration = selected['legs'][0]['duration']['text']
 
-        # Interpolate route for more precise mapping (adjusted for TT weight)
-        points_per_km = 15 if tt_specs["gross_weight"] > 30000 else 10  # More points for heavier TT
+        # Enhanced route interpolation based on truck weight
+        points_per_km = 25 if tt_specs["gross_weight"] > 35000 else 20 if tt_specs["gross_weight"] > 25000 else 15
         detailed_coords = interpolate_route_points(coords, points_per_km=points_per_km)
         
-        def get_pois(keyword):
-            pois = []
-            try:
-                # Use detailed coords for more precise POI detection
-                sample_coords = detailed_coords[::20] if len(detailed_coords) > 20 else detailed_coords
+        print(f"Route analysis: {len(coords)} original points, {len(detailed_coords)} detailed points")
+        
+        # Get elevation profile for realistic gradient analysis
+        elevations, gradients = [], []
+        try:
+            # Sample coordinates for elevation data
+            elevation_sample = detailed_coords[::max(1, len(detailed_coords)//50)]  # Max 50 elevation points
+            elevation_result = gmaps.elevation(elevation_sample)
+            elevations = [point['elevation'] for point in elevation_result]
+            
+            # Calculate gradients
+            for i in range(1, len(elevations)):
+                if i < len(elevation_sample):
+                    distance_m = geodesic(elevation_sample[i-1], elevation_sample[i]).meters
+                    if distance_m > 0:
+                        elevation_diff = elevations[i] - elevations[i-1]
+                        gradient = (elevation_diff / distance_m) * 100
+                        gradients.append(gradient)
+                    else:
+                        gradients.append(0)
+        except Exception as e:
+            print(f"Elevation data unavailable: {e}")
+            elevations = [100] * len(detailed_coords)
+            gradients = [0] * (len(detailed_coords) - 1)
+        
+        # Enhanced POI collection with better categorization
+        def get_enhanced_pois():
+            all_pois = []
+            poi_types = [
+                ('hospital', 'health'),
+                ('school', 'education'), 
+                ('gas_station', 'fuel'),
+                ('police', 'safety'),
+                ('shopping_mall', 'commercial'),
+                ('place_of_worship', 'religious')
+            ]
+            
+            # Use strategic sampling points
+            sample_coords = detailed_coords[::max(1, len(detailed_coords)//15)]  # 15 sample points max
+            
+            for poi_type, category in poi_types:
                 for lat, lng in sample_coords:
                     try:
-                        places = gmaps.places_nearby(location=(lat, lng), radius=300, keyword=keyword)
-                        for place in places.get('results', []):
-                            pois.append({
+                        places_result = gmaps.places_nearby(
+                            location=(lat, lng), 
+                            radius=400,  # Larger radius for better coverage
+                            type=poi_type
+                        )
+                        
+                        for place in places_result.get('results', [])[:3]:  # Limit to top 3 per location
+                            all_pois.append({
                                 'name': place['name'],
                                 'location': (
                                     place['geometry']['location']['lat'],
                                     place['geometry']['location']['lng']
                                 ),
-                                'type': keyword
+                                'type': category,
+                                'rating': place.get('rating', 3.0),
+                                'place_id': place.get('place_id', '')
                             })
+                        
+                        time.sleep(0.05)  # Rate limiting
+                        
                     except Exception as e:
-                        print(f"Error getting places for {keyword}: {e}")
+                        print(f"Error getting {poi_type} POIs: {e}")
                         continue
-            except Exception as e:
-                print(f"Error in get_pois for {keyword}: {e}")
-            return pois
+            
+            # Remove duplicates based on location proximity
+            unique_pois = []
+            for poi in all_pois:
+                is_duplicate = False
+                for existing in unique_pois:
+                    if geodesic(poi['location'], existing['location']).meters < 100:
+                        is_duplicate = True
+                        break
+                if not is_duplicate:
+                    unique_pois.append(poi)
+            
+            return unique_pois
+        
+        all_pois = get_enhanced_pois()
+        print(f"Collected {len(all_pois)} POIs")
+        
+        # Realistic traffic analysis
+        traffic_data = get_realistic_traffic_data(detailed_coords, gmaps)
+        print(f"Traffic analysis: {len(traffic_data)} data points")
+        
+        # Enhanced hazard zone identification
+        hazard_zones = identify_realistic_poi_hazards(detailed_coords, all_pois, tt_specs)
+        print(f"Identified {len(hazard_zones)} hazard zones")
+        
+        # Precise turn analysis with physics
+        turns = calculate_precise_turn_analysis(detailed_coords, tt_specs)
+        print(f"Analyzed {len(turns)} significant turns")
+        
+        # Braking distance calculations
+        braking_points = calculate_braking_distances(detailed_coords, tt_specs, elevations, gradients)
+        print(f"Calculated braking distances for {len(braking_points)} points")
+        
+        # Generate comprehensive report
+        route_report = generate_enhanced_route_report(
+            detailed_coords, all_pois, hazard_zones, traffic_data, turns, 
+            braking_points, total_distance, total_duration, tt_specs, elevations, gradients
+        )
 
-        all_pois = []
-        for keyword in ['hospital', 'police', 'fuel']:
-            all_pois.extend(get_pois(keyword))
+        # Create enhanced visualization map
+        m = folium.Map(location=source, zoom_start=12)
+        
+        # Add start and end markers with truck-specific info
+        start_popup = f"""
+        <div style='font-family: Arial; text-align: center;'>
+            <h4>🚩 DEPARTURE</h4>
+            <p><strong>TT Specs:</strong> {tt_specs['capacity_range']}<br>
+            <strong>Gross Weight:</strong> {tt_specs['gross_weight']/1000:.1f}T<br>
+            <strong>Cargo:</strong> {tt_specs['avg_capacity_liters']:,}L Petroleum</p>
+        </div>
+        """
+        folium.Marker(source, popup=start_popup, 
+                     icon=folium.Icon(color='green', icon='play', prefix='fa')).add_to(m)
+        
+        end_popup = f"""
+        <div style='font-family: Arial; text-align: center;'>
+            <h4>🏁 DESTINATION</h4>
+            <p><strong>Distance:</strong> {total_distance}<br>
+            <strong>Duration:</strong> {total_duration}<br>
+            <strong>Complexity:</strong> {route_report['route_overview']['complexity_rating']}</p>
+        </div>
+        """
+        folium.Marker(destination, popup=end_popup,
+                     icon=folium.Icon(color='red', icon='stop', prefix='fa')).add_to(m)
+        
+        # Main route with weight-based styling
+        if tt_specs["gross_weight"] > 35000:
+            route_color, route_weight = '#8B0000', 6  # Dark red, thick for heavy TT
+        elif tt_specs["gross_weight"] > 25000:
+            route_color, route_weight = '#FF4500', 5  # Orange red, medium
+        else:
+            route_color, route_weight = '#0066CC', 4  # Blue, normal
+            
+        folium.PolyLine(
+            detailed_coords, 
+            color=route_color, 
+            weight=route_weight, 
+            opacity=0.8,
+            popup=f"TT Route: {tt_specs['capacity_range']} - {tt_specs['gross_weight']/1000:.1f}T"
+        ).add_to(m)
 
-        # Get traffic data
-        traffic_data = get_traffic_data(detailed_coords)
-        
-        # Identify high-risk zones with TT specifications
-        risk_zones = identify_high_risk_zones(detailed_coords, all_pois, tt_specs)
-        
-        # Generate detailed report with TT specs
-        route_report = generate_route_report(detailed_coords, all_pois, risk_zones, 
-                                           traffic_data, total_distance, total_duration, tt_specs)
-
-        # Create enhanced map with TT-specific visualization
-        m = folium.Map(location=source, zoom_start=13)
-        
-        # Add start and end markers
-        folium.Marker(source, popup='Start', 
-                     icon=folium.Icon(color='green', icon='flag', prefix='fa')).add_to(m)
-        folium.Marker(destination, popup='End', 
-                     icon=folium.Icon(color='black', icon='flag-checkered', prefix='fa')).add_to(m)
-        
-        # Add main route with TT-specific speed indicators
-        for i, (lat, lng) in enumerate(detailed_coords):
-            if i > 0 and i < len(detailed_coords) - 1 and i % 50 == 0:
-                try:
-                    # Calculate turn angle for speed recommendation
-                    prev_coord = detailed_coords[i-1]
-                    next_coord = detailed_coords[i+1]
-                    
-                    prev_bearing = calculate_bearing(prev_coord[0], prev_coord[1], lat, lng)
-                    next_bearing = calculate_bearing(lat, lng, next_coord[0], next_coord[1])
-                    turn_angle = calculate_turn_angle(prev_bearing, next_bearing)
-                    
-                    recommended_speed = get_recommended_speed(turn_angle, tt_specs)
-                    
-                    # Add truck tanker icon with speed popup
-                    truck_html = f"""
-                    <div style='text-align: center; font-family: Arial;'>
-                        <div style='font-size: 20px;'>🚛</div>
-                        <div style='background-color: {"red" if recommended_speed < 20 else "orange" if recommended_speed < 35 else "green"}; 
-                                    color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold; font-size: 11px;'>
-                            {recommended_speed} km/h
-                        </div>
-                        <div style='font-size: 9px; margin-top: 2px;'>
-                            TT: {tt_specs['capacity_range']}<br>
-                            Weight: {tt_specs['gross_weight']/1000:.1f}T<br>
-                            Turn: {turn_angle:.1f}°
-                        </div>
+        # Add critical turns with detailed physics information
+        for turn in turns[:15]:  # Limit to top 15 critical turns
+            if turn.get('severity') in ['critical', 'high']:
+                severity_colors = {'critical': '#8B0000', 'high': '#FF4500', 'moderate': '#FFD700'}
+                color = severity_colors.get(turn['severity'], '#FFD700')
+                
+                turn_popup = f"""
+                <div style='font-family: Arial; max-width: 300px;'>
+                    <h4 style='color: {color}; margin: 5px 0;'>⚠️ {turn['severity'].title()} Turn</h4>
+                    <table style='font-size: 11px; width: 100%;'>
+                        <tr><td><strong>Turn Angle:</strong></td><td>{turn['turn_angle']:.1f}°</td></tr>
+                        <tr><td><strong>Radius:</strong></td><td>{turn['radius']:.1f}m</td></tr>
+                        <tr><td><strong>Safe Speed:</strong></td><td style='color: red; font-weight: bold;'>{turn['recommended_speed']} kmph</td></tr>
+                        <tr><td><strong>Rollover Speed:</strong></td><td>{turn['rollover_speed']} kmph</td></tr>
+                        <tr><td><strong>Lateral G-Force:</strong></td><td>{turn['physics_factors']['lateral_g_force']}g</td></tr>
+                        <tr><td><strong>Brake Distance:</strong></td><td>{turn['deceleration_distance']}m</td></tr>
+                    </table>
+                    <p style='color: red; font-weight: bold; margin: 8px 0;'>{turn['warning']}</p>
+                    <div style='background: #f0f0f0; padding: 5px; border-radius: 3px; font-size: 10px;'>
+                        <strong>Physics Factors:</strong><br>
+                        • Weight penalty: {turn['physics_factors']['weight_penalty']:.1%}<br>
+                        • Liquid slosh risk: {turn['physics_factors']['slosh_factor']:.1%}<br>
+                        • Safety margin: {turn['physics_factors']['safety_margin']:.1%}
                     </div>
-                    """
-                    
-                    folium.Marker(
-                        location=(lat, lng),
-                        popup=truck_html,
-                        icon=folium.DivIcon(html=truck_html, icon_size=(70, 70), icon_anchor=(35, 35))
-                    ).add_to(m)
-                except Exception as e:
-                    print(f"Error adding truck marker: {e}")
-                    continue
-
-        # Add route polyline with TT-appropriate color
-        route_color = 'red' if tt_specs["gross_weight"] > 35000 else 'orange' if tt_specs["gross_weight"] > 25000 else 'blue'
-        folium.PolyLine(detailed_coords, color=route_color, weight=4, opacity=0.8).add_to(m)
-
-        # Add POIs with enhanced icons
-        marker_styles = {
-            'hospital': {'color': 'red', 'icon': 'plus'},
-            'police': {'color': 'blue', 'icon': 'shield'},
-            'fuel': {'color': 'orange', 'icon': 'gas-pump'}
-        }
-
-        for poi in all_pois:
-            try:
-                props = marker_styles.get(poi['type'], {'color': 'gray', 'icon': 'info-circle'})
-                icon = folium.Icon(color=props['color'], icon=props['icon'], prefix='fa')
-                folium.Marker(
-                    location=poi['location'],
-                    popup=f"{poi['type'].capitalize()}: {poi['name']}",
-                    icon=icon
-                ).add_to(m)
-            except Exception as e:
-                print(f"Error adding POI marker: {e}")
-                continue
-
-        # Add high-risk zones with TT-specific risk visualization
-        for zone in risk_zones:
-            try:
-                color = 'darkred' if zone['risk_level'] == 'Critical' else 'red' if zone['risk_level'] == 'High' else 'orange'
-                risk_popup = f"""
-                <div style='font-family: Arial; max-width: 250px;'>
-                    <h4 style='color: {color}; margin: 5px 0;'>⚠️ {zone['risk_level']} Risk Zone</h4>
-                    <p><strong>Risk Score:</strong> {zone['risk_score']:.1f}/10</p>
-                    <p><strong>TT Impact:</strong> {zone['tt_impact']}x multiplier</p>
-                    <p><strong>TT Type:</strong> {tt_specs['capacity_range']} ({tt_specs['gross_weight']/1000:.1f}T)</p>
-                    <p><strong>Risk Factors:</strong><br>{'<br>'.join(zone['risk_factors'])}</p>
-                    <p style='color: red; font-weight: bold;'>Recommended: Reduce speed by 50%</p>
                 </div>
                 """
                 
-                radius = 20 if zone['risk_level'] == 'Critical' else 15 if zone['risk_level'] == 'High' else 10
-                folium.CircleMarker(
-                    location=zone['location'],
-                    radius=radius,
-                    popup=risk_popup,
-                    color=color,
-                    fillColor=color,
-                    fillOpacity=0.4,
-                    weight=3
+                # Turn severity icon
+                icon_html = f"""
+                <div style='text-align: center;'>
+                    <div style='background: {color}; color: white; border-radius: 50%; width: 30px; height: 30px; 
+                                line-height: 30px; font-weight: bold; font-size: 12px;'>
+                        {turn['recommended_speed']}
+                    </div>
+                    <div style='font-size: 8px; margin-top: 2px;'>km/h</div>
+                </div>
+                """
+                
+                folium.Marker(
+                    location=turn['location'],
+                    popup=turn_popup,
+                    icon=folium.DivIcon(html=icon_html, icon_size=(35, 40), icon_anchor=(17, 35))
                 ).add_to(m)
+
+        # Add hazard zones with realistic risk visualization
+        hazard_colors = {
+            'Critical': '#8B0000',
+            'High': '#DC143C', 
+            'Medium': '#FF6347'
+        }
+        
+        for zone in hazard_zones[:20]:  # Limit to top 20 hazard zones
+            color = hazard_colors.get(zone['risk_level'], '#FF6347')
+            
+            hazard_popup = f"""
+            <div style='font-family: Arial; max-width: 350px;'>
+                <h4 style='color: {color}; margin: 5px 0;'>🚨 {zone['risk_level']} Risk Zone</h4>
+                <p><strong>Risk Score:</strong> {zone['risk_score']:.1f}/10</p>
+                <p><strong>Hazard Count:</strong> {zone['hazard_count']}</p>
+                
+                <div style='background: #fff3cd; padding: 8px; border-radius: 4px; margin: 5px 0;'>
+                    <strong>Primary Hazards:</strong><br>
+                    {"<br>".join([f"• {h['name']} ({h['distance']:.0f}m)" for h in zone['primary_hazards'][:3]])}
+                </div>
+                
+                <div style='background: #f8d7da; padding: 8px; border-radius: 4px; margin: 5px 0;'>
+                    <strong>TT Specific Risks:</strong><br>
+                    {"<br>".join([f"• {rec}" for rec in zone.get('tt_specific_recommendations', [])][:3])}
+                </div>
+                
+                <div style='background: #e2e3e5; padding: 6px; border-radius: 4px; font-size: 10px;'>
+                    <strong>Tanker Info:</strong> {tt_specs['capacity_range']} | 
+                    {tt_specs['gross_weight']/1000:.1f}T | Class 3 Flammable
+                </div>
+            </div>
+            """
+            
+            radius = min(50, max(15, zone['risk_score'] * 5))
+            folium.CircleMarker(
+                location=zone['location'],
+                radius=radius,
+                popup=hazard_popup,
+                color=color,
+                fillColor=color,
+                fillOpacity=0.3,
+                weight=3
+            ).add_to(m)
+
+        # Add POIs with truck-relevant categorization
+        poi_styles = {
+            'fuel': {'color': 'orange', 'icon': 'gas-pump'},
+            'health': {'color': 'red', 'icon': 'plus-square'},
+            'safety': {'color': 'blue', 'icon': 'shield-alt'},
+            'education': {'color': 'purple', 'icon': 'graduation-cap'},
+            'commercial': {'color': 'green', 'icon': 'shopping-cart'},
+            'religious': {'color': 'darkpurple', 'icon': 'place-of-worship'}
+        }
+
+        for poi in all_pois[:50]:  # Limit POI display
+            try:
+                poi_type = poi.get('type', 'other')
+                style = poi_styles.get(poi_type, {'color': 'gray', 'icon': 'info'})
+                
+                # Special handling for fuel stations (extreme hazard for petroleum tankers)
+                if poi_type == 'fuel':
+                    poi_popup = f"""
+                    <div style='font-family: Arial; text-align: center;'>
+                        <h4 style='color: red;'>⛽ EXTREME HAZARD</h4>
+                        <p><strong>{poi['name']}</strong></p>
+                        <div style='background: #ffcccc; padding: 5px; border-radius: 3px;'>
+                            <strong>PETROLEUM TANKER WARNING</strong><br>
+                            • Reduce speed to 20 kmph<br>
+                            • No smoking/ignition sources<br>
+                            • Emergency protocols ready
+                        </div>
+                    </div>
+                    """
+                else:
+                    poi_popup = f"""
+                    <div style='font-family: Arial; text-align: center;'>
+                        <h4>{poi['name']}</h4>
+                        <p><strong>Type:</strong> {poi_type.title()}<br>
+                        <strong>Rating:</strong> {poi.get('rating', 'N/A')}/5</p>
+                    </div>
+                    """
+                
+                folium.Marker(
+                    location=poi['location'],
+                    popup=poi_popup,
+                    icon=folium.Icon(color=style['color'], icon=style['icon'], prefix='fa')
+                ).add_to(m)
+                
             except Exception as e:
-                print(f"Error adding risk zone: {e}")
                 continue
 
-        # Add traffic indicators with TT-specific impact
-        for traffic in traffic_data:
+        # Add traffic visualization with truck-specific impact
+        for traffic in traffic_data[:30]:  # Limit traffic points
             try:
-                color = {'light': 'green', 'moderate': 'yellow', 'heavy': 'red'}[traffic['traffic_level']]
-                tt_impact = "High impact" if tt_specs["gross_weight"] > 30000 and traffic['traffic_level'] == 'heavy' else "Moderate impact"
+                traffic_colors = {'light': 'green', 'moderate': 'yellow', 'heavy': 'red'}
+                color = traffic_colors.get(traffic['traffic_level'], 'gray')
+                
+                # Calculate truck-specific impact
+                base_delay = traffic['delay_factor']
+                truck_impact = base_delay * (1 + (tt_specs['gross_weight'] / 50000))  # Heavier trucks affected more
+                
+                traffic_popup = f"""
+                <div style='font-family: Arial; max-width: 200px;'>
+                    <h4>🚦 Traffic Conditions</h4>
+                    <p><strong>Level:</strong> {traffic['traffic_level'].title()}<br>
+                    <strong>Delay Factor:</strong> {traffic['delay_factor']:.1f}x<br>
+                    <strong>TT Impact:</strong> {truck_impact:.1f}x<br>
+                    <strong>Data Source:</strong> {'Real-time' if traffic.get('realistic') else 'Estimated'}</p>
+                </div>
+                """
+                
                 folium.CircleMarker(
                     location=traffic['location'],
-                    radius=6,
-                    popup=f"Traffic: {traffic['traffic_level'].title()}<br>Delay Factor: {traffic['delay_factor']:.1f}x<br>TT Impact: {tt_impact}",
+                    radius=8,
+                    popup=traffic_popup,
                     color=color,
                     fillColor=color,
                     fillOpacity=0.6
                 ).add_to(m)
+                
             except Exception as e:
-                print(f"Error adding traffic indicator: {e}")
                 continue
 
-        # Enhanced legend HTML with TT specifications
+        # Add braking distance indicators
+        for braking in braking_points[:10]:  # Show top 10 critical braking zones
+            try:
+                if braking['total_distance'] > 60:  # Only show extended braking distances
+                    braking_popup = f"""
+                    <div style='font-family: Arial; max-width: 250px;'>
+                        <h4>🛑 Extended Braking Zone</h4>
+                        <table style='font-size: 11px; width: 100%;'>
+                            <tr><td><strong>Speed:</strong></td><td>{braking['speed_kmph']} kmph</td></tr>
+                            <tr><td><strong>Total Distance:</strong></td><td style='color: red; font-weight: bold;'>{braking['total_distance']}m</td></tr>
+                            <tr><td><strong>Reaction:</strong></td><td>{braking['reaction_distance']}m</td></tr>
+                            <tr><td><strong>Physics:</strong></td><td>{braking['physics_distance']}m</td></tr>
+                            <tr><td><strong>Weight Factor:</strong></td><td>{braking['weight_factor']}x</td></tr>
+                            <tr><td><strong>Gradient:</strong></td><td>{braking['gradient']:.1f}%</td></tr>
+                        </table>
+                        <p style='color: red; font-size: 10px; font-weight: bold; margin: 5px 0;'>
+                            Maintain {int(braking['total_distance'] * 1.2)}m following distance
+                        </p>
+                    </div>
+                    """
+                    
+                    folium.Marker(
+                        location=braking['location'],
+                        popup=braking_popup,
+                        icon=folium.Icon(color='darkred', icon='hand-paper', prefix='fa')
+                    ).add_to(m)
+                    
+            except Exception as e:
+                continue
+
+        # Enhanced legend with comprehensive truck tanker information
         legend_html = f"""
         {{% macro html(this, kwargs) %}}
         <div style="
             position: fixed;
             bottom: 50px;
             left: 50px;
-            width: 320px;
+            width: 400px;
             background-color: white;
-            border: 2px solid grey;
-            border-radius: 8px;
+            border: 2px solid #333;
+            border-radius: 10px;
             z-index: 9999;
             padding: 15px;
             font-size: 11px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            max-height: 70vh;
+            overflow-y: auto;
         ">
-            <h4 style='margin-top: 0; color: #333;'>🚛 Truck Tanker Navigation Legend</h4>
-            <div style='background: #f0f0f0; padding: 8px; border-radius: 4px; margin: 8px 0;'>
-                <strong>TT Specs: {tt_specs['capacity_range']}</strong><br>
-                Capacity: {tt_specs['avg_capacity_liters']:,}L | Weight: {tt_specs['gross_weight']/1000:.1f}T<br>
-                Max Speed: {tt_specs['max_speed']} km/h | Risk: {tt_specs['risk_multiplier']}x<br>
-                User: {username}
+            <h3 style='margin-top: 0; color: #333; text-align: center;'>🚛 Truck Tanker Navigation System</h3>
+            
+            <div style='background: linear-gradient(90deg, #f0f0f0, #e0e0e0); padding: 10px; border-radius: 6px; margin: 10px 0;'>
+                <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 10px;'>
+                    <div><strong>Capacity:</strong> {tt_specs['capacity_range']}</div>
+                    <div><strong>Fuel:</strong> {tt_specs['avg_capacity_liters']:,}L</div>
+                    <div><strong>Gross Weight:</strong> {tt_specs['gross_weight']/1000:.1f}T</div>
+                    <div><strong>Max Speed:</strong> {tt_specs['max_speed']} kmph</div>
+                    <div><strong>Axle Load:</strong> {tt_specs['axle_load']:.1f}T</div>
+                    <div><strong>Risk Class:</strong> 3 (Flammable)</div>
+                </div>
+                <div style='text-align: center; margin-top: 5px; color: #666; font-size: 9px;'>
+                    User: {username} | Complexity: {route_report['route_overview']['complexity_rating']}
+                </div>
             </div>
-            <div style='margin: 5px 0;'><i class="fa fa-plus fa-lg" style="color:red"></i> Hospital</div>
-            <div style='margin: 5px 0;'><i class="fa fa-shield fa-lg" style="color:blue"></i> Police</div>
-            <div style='margin: 5px 0;'><i class="fa fa-gas-pump fa-lg" style="color:orange"></i> Fuel Station</div>
-            <div style='margin: 5px 0;'>🚛 <span style='background: green; color: white; padding: 1px 3px;'>35+</span> Safe Speed</div>
-            <div style='margin: 5px 0;'>🚛 <span style='background: orange; color: white; padding: 1px 3px;'>20-35</span> Caution Speed</div>
-            <div style='margin: 5px 0;'>🚛 <span style='background: red; color: white; padding: 1px 3px;'>&lt;20</span> Slow Speed</div>
-            <div style='margin: 5px 0;'>⚫ Critical Risk Zone (TT Sensitive)</div>
-            <div style='margin: 5px 0;'>🔴 High Risk Zone</div>
-            <div style='margin: 5px 0;'>🟡 Medium Risk Zone</div>
-            <div style='margin: 5px 0;'>● Traffic: <span style='color: green;'>Light</span> <span style='color: orange;'>Moderate</span> <span style='color: red;'>Heavy</span></div>
-            <hr style='margin: 8px 0;'>
-            <div style='font-size: 9px; color: #666;'>
-                Axle Load: {tt_specs['axle_load']:.1f}T | Turn Sensitivity: {tt_specs['turn_sensitivity']}x<br>
-                Product: Petroleum ({tt_specs['product_weight']/1000:.1f}T) | Density: 0.9 kg/L
+            
+            <div style='margin: 8px 0;'>
+                <div style='font-weight: bold; margin-bottom: 5px;'>🎯 Turn Speed Indicators:</div>
+                <div style='margin: 3px 0;'>🔴 <span style='background: #8B0000; color: white; padding: 1px 4px; border-radius: 2px; font-size: 9px;'>&lt;25</span> Critical Turn</div>
+                <div style='margin: 3px 0;'>🟠 <span style='background: #FF4500; color: white; padding: 1px 4px; border-radius: 2px; font-size: 9px;'>25-35</span> High Risk Turn</div>
+                <div style='margin: 3px 0;'>🟡 <span style='background: #FFD700; color: black; padding: 1px 4px; border-radius: 2px; font-size: 9px;'>35+</span> Moderate Turn</div>
+            </div>
+            
+            <div style='margin: 8px 0;'>
+                <div style='font-weight: bold; margin-bottom: 5px;'>🚨 Hazard Zones:</div>
+                <div style='margin: 3px 0;'>⚫ Critical Risk (Score 8-10)</div>
+                <div style='margin: 3px 0;'>🔴 High Risk (Score 6-8)</div>
+                <div style='margin: 3px 0;'>🟡 Medium Risk (Score 4-6)</div>
+            </div>
+            
+            <div style='margin: 8px 0;'>
+                <div style='font-weight: bold; margin-bottom: 5px;'>📍 Points of Interest:</div>
+                <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 2px; font-size: 10px;'>
+                    <div>⛽ Fuel Station (EXTREME HAZARD)</div>
+                    <div>🏥 Hospital</div>
+                    <div>🎓 School/Education</div>
+                    <div>🛡️ Police Station</div>
+                    <div>🛒 Shopping Center</div>
+                    <div>🕊️ Religious Site</div>
+                </div>
+            </div>
+            
+            <div style='margin: 8px 0;'>
+                <div style='font-weight: bold; margin-bottom: 5px;'>🚦 Traffic Levels:</div>
+                <div style='margin: 3px 0;'>● <span style='color: green; font-weight: bold;'>Light</span> (Delay: 1.0-1.2x)</div>
+                <div style='margin: 3px 0;'>● <span style='color: orange; font-weight: bold;'>Moderate</span> (Delay: 1.3-1.7x)</div>
+                <div style='margin: 3px 0;'>● <span style='color: red; font-weight: bold;'>Heavy</span> (Delay: 1.8x+)</div>
+            </div>
+            
+            <div style='margin: 8px 0;'>
+                <div style='font-weight: bold; margin-bottom: 5px;'>🛑 Special Indicators:</div>
+                <div style='margin: 3px 0; font-size: 10px;'>✋ Extended Braking Zone (&gt;60m)</div>
+                <div style='margin: 3px 0; font-size: 10px;'>🚩 Start/End Points</div>
+            </div>
+            
+            <hr style='margin: 8px 0; border: none; border-top: 1px solid #ccc;'>
+            <div style='text-align: center; font-size: 9px; color: #666;'>
+                Route Statistics: {len(turns)} turns • {len(hazard_zones)} hazards<br>
+                Max Braking: {max([b.get('total_distance', 45) for b in braking_points]) if braking_points else 45}m
             </div>
         </div>
         {{% endmacro %}}
@@ -978,44 +1207,70 @@ def analyze_route():
         legend._template = Template(legend_html)
         m.get_root().add_child(legend)
 
-        # Save map
+        # Save enhanced map
         unique_map_id = uuid4().hex
         html_name = f"route_map_{unique_map_id}.html"
         m.save(f"templates/{html_name}")
 
-        # Store report in session for detailed view
+        # Store comprehensive data in session
         session['route_report'] = route_report
+        session['hazard_zones'] = hazard_zones
+        session['turns'] = turns
+        session['braking_points'] = braking_points
         session.modified = True
 
+        # Return enhanced analysis page
         return render_template("route_analysis.html",
-                               mode="TT Navigation",
-                               turns=sum("turn" in s['html_instructions'].lower() for s in steps),
+                               mode="Enhanced TT Navigation",
+                               turns=len(turns),
+                               critical_turns=len([t for t in turns if t.get('severity') == 'critical']),
                                poi_count=len(all_pois),
                                html_file=html_name,
                                route_report=route_report,
-                               risk_zones=len(risk_zones),
-                               high_risk_zones=len([z for z in risk_zones if z['risk_level'] in ['Critical', 'High']]),
+                               risk_zones=len(hazard_zones),
+                               high_risk_zones=len([z for z in hazard_zones if z['risk_level'] in ['Critical', 'High']]),
+                               critical_hazards=len([z for z in hazard_zones if z['risk_level'] == 'Critical']),
+                               max_braking_distance=max([b.get('total_distance', 45) for b in braking_points]) if braking_points else 45,
                                tt_specs=tt_specs,
-                               username=username)
+                               username=username,
+                               complexity_rating=route_report['route_overview']['complexity_rating'])
 
     except Exception as e:
-        print(f"Error in analyze_route: {e}")
+        print(f"Error in enhanced analyze_route: {e}")
         import traceback
         traceback.print_exc()
-        return f"Error analyzing route: {str(e)}. Please try again."
+        return f"Error analyzing route: {str(e)}. Please try again or contact support."
 
+# Updated detailed report function
 @app.route('/detailed_report')
 @login_required
 def detailed_report():
-    """Show detailed route analysis report with TT specifications"""
+    """Show comprehensive route analysis report"""
     try:
         report = session.get('route_report')
         tt_specs = session.get('tt_specs')
+        hazard_zones = session.get('hazard_zones', [])
+        turns = session.get('turns', [])
+        braking_points = session.get('braking_points', [])
         username = session.get('username', 'User')
+        
         if not report or not tt_specs:
             return "No route analysis data found. Please analyze a route first."
         
-        return render_template("detailed_report.html", report=report, tt_specs=tt_specs, username=username)
+        # Prepare additional analysis data
+        analysis_data = {
+            'critical_hazards': [h for h in hazard_zones if h.get('risk_level') == 'Critical'],
+            'critical_turns': [t for t in turns if t.get('severity') == 'critical'],
+            'extreme_braking_zones': [b for b in braking_points if b.get('total_distance', 0) > 70],
+            'fuel_station_hazards': [h for h in hazard_zones if any('fuel' in str(f).lower() for f in h.get('risk_factors', []))],
+            'school_zone_hazards': [h for h in hazard_zones if any('school' in str(f).lower() for f in h.get('risk_factors', []))]
+        }
+        
+        return render_template("enhanced_detailed_report.html", 
+                             report=report, 
+                             tt_specs=tt_specs,
+                             analysis_data=analysis_data,
+                             username=username)
         
     except Exception as e:
         print(f"Error in detailed_report: {e}")
@@ -1207,3 +1462,4 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
