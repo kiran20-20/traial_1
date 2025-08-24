@@ -511,55 +511,127 @@ def identify_realistic_poi_hazards(coords, pois, tt_specs):
     hazard_zones.sort(key=lambda x: x['risk_score'], reverse=True)
     return hazard_zones[:25]  # Return top 25 most dangerous zones
 
-def calculate_precise_turn_analysis(coords, tt_specs):
-    """Enhanced turn analysis with comprehensive dangerous turn detection"""
+def calculate_enhanced_turn_analysis(coords, tt_specs):
+    """
+    Enhanced turn analysis with comprehensive detection of critical turns including:
+    - Better 90-degree turn detection
+    - Improved blind spot identification
+    - More sensitive curve detection
+    - Multiple analysis methods for accuracy
+    """
     turns = []
     
     try:
-        # Truck physical parameters
-        truck_length = 12.0
-        wheelbase = 6.5
-        cg_height = 2.8
-        track_width = 2.4
-        
-        # Enhanced analysis with smaller windows for better turn detection
-        analysis_window = 3  # Smaller window for better sensitivity
-        min_analysis_points = analysis_window * 4
+        # Enhanced analysis parameters
+        min_analysis_points = 12  # Minimum points needed for analysis
         
         if len(coords) < min_analysis_points:
             return turns
         
-        # Analyze every point (not every 3rd) for comprehensive turn detection
-        for i in range(analysis_window, len(coords) - analysis_window, 1):
+        # Multi-scale analysis for better turn detection
+        analysis_scales = [2, 4, 6]  # Different window sizes for analysis
+        
+        # Analyze every point with multiple scales
+        for i in range(6, len(coords) - 6, 1):  # Skip fewer points for better detection
             try:
-                # Get analysis window
-                points = coords[i-analysis_window:i+analysis_window+1]
-                center_point = coords[i]
+                turn_detections = []
                 
-                if len(points) < analysis_window * 2 + 1:
+                # Multi-scale turn angle calculation
+                for scale in analysis_scales:
+                    if i >= scale and i + scale < len(coords):
+                        # Method 1: Direct bearing comparison
+                        bearing_before = calculate_bearing(
+                            coords[i-scale][0], coords[i-scale][1], 
+                            coords[i][0], coords[i][1]
+                        )
+                        bearing_after = calculate_bearing(
+                            coords[i][0], coords[i][1], 
+                            coords[i+scale][0], coords[i+scale][1]
+                        )
+                        turn_angle1 = calculate_turn_angle(bearing_before, bearing_after)
+                        
+                        # Method 2: Three-point angle calculation
+                        if i >= scale*2 and i + scale*2 < len(coords):
+                            bearing_far_before = calculate_bearing(
+                                coords[i-scale*2][0], coords[i-scale*2][1], 
+                                coords[i-scale][0], coords[i-scale][1]
+                            )
+                            bearing_far_after = calculate_bearing(
+                                coords[i+scale][0], coords[i+scale][1], 
+                                coords[i+scale*2][0], coords[i+scale*2][1]
+                            )
+                            turn_angle2 = calculate_turn_angle(bearing_far_before, bearing_far_after)
+                        else:
+                            turn_angle2 = turn_angle1
+                        
+                        # Method 3: Vector-based angle calculation
+                        try:
+                            # Convert to local coordinate system for better accuracy
+                            p1 = coords[i-scale]
+                            p2 = coords[i]  # Turn point
+                            p3 = coords[i+scale]
+                            
+                            # Convert to meters using approximate conversion
+                            x1 = p1[1] * 111320 * math.cos(math.radians(p1[0]))
+                            y1 = p1[0] * 110540
+                            x2 = p2[1] * 111320 * math.cos(math.radians(p2[0]))
+                            y2 = p2[0] * 110540
+                            x3 = p3[1] * 111320 * math.cos(math.radians(p3[0]))
+                            y3 = p3[0] * 110540
+                            
+                            # Calculate vectors
+                            v1 = (x2 - x1, y2 - y1)
+                            v2 = (x3 - x2, y3 - y2)
+                            
+                            # Calculate angle between vectors
+                            if (v1[0]**2 + v1[1]**2) > 0 and (v2[0]**2 + v2[1]**2) > 0:
+                                dot_product = v1[0]*v2[0] + v1[1]*v2[1]
+                                mag1 = math.sqrt(v1[0]**2 + v1[1]**2)
+                                mag2 = math.sqrt(v2[0]**2 + v2[1]**2)
+                                cos_angle = max(-1, min(1, dot_product / (mag1 * mag2)))
+                                turn_angle3 = math.degrees(math.acos(cos_angle))
+                            else:
+                                turn_angle3 = turn_angle1
+                        except:
+                            turn_angle3 = turn_angle1
+                        
+                        # Store all detection methods for this scale
+                        turn_detections.append({
+                            'scale': scale,
+                            'angle_method1': turn_angle1,
+                            'angle_method2': turn_angle2,
+                            'angle_method3': turn_angle3,
+                            'max_angle': max(turn_angle1, turn_angle2, turn_angle3),
+                            'avg_angle': (turn_angle1 + turn_angle2 + turn_angle3) / 3
+                        })
+                
+                if not turn_detections:
                     continue
                 
-                # Multiple bearing calculations for accuracy
-                bearing1 = calculate_bearing(points[0][0], points[0][1], points[2][0], points[2][1])
-                bearing2 = calculate_bearing(points[2][0], points[2][1], points[4][0], points[4][1])
-                bearing3 = calculate_bearing(points[1][0], points[1][1], points[3][0], points[3][1])
-                bearing4 = calculate_bearing(points[0][0], points[0][1], points[-1][0], points[-1][1])
+                # Find the most significant turn detection across all scales
+                max_detection = max(turn_detections, key=lambda x: x['max_angle'])
                 
-                # Calculate turn angles with multiple methods
-                turn_angle1 = calculate_turn_angle(bearing1, bearing2)
-                turn_angle2 = calculate_turn_angle(bearing2, bearing4)
-                turn_angle3 = calculate_turn_angle(bearing1, bearing3)
+                # Enhanced threshold - lower for better detection
+                significant_angle_threshold = 8  # Reduced from previous value
+                max_turn_angle = max_detection['max_angle']
+                avg_turn_angle = max_detection['avg_angle']
                 
-                # Use maximum turn angle for safety (detect sharpest turn)
-                max_turn_angle = max(turn_angle1, turn_angle2, turn_angle3)
-                avg_turn_angle = (turn_angle1 + turn_angle2 + turn_angle3) / 3
-                
-                # Lower threshold to catch more turns (including moderate ones)
-                if max_turn_angle < 3:  # Very low threshold
+                # Skip if angle is too small
+                if max_turn_angle < significant_angle_threshold:
                     continue
                 
-                # Calculate turn direction (left/right)
-                direction_bearing = bearing2 - bearing1
+                # Calculate turn direction with enhanced accuracy
+                scale = max_detection['scale']
+                bearing_before = calculate_bearing(
+                    coords[i-scale][0], coords[i-scale][1], 
+                    coords[i][0], coords[i][1]
+                )
+                bearing_after = calculate_bearing(
+                    coords[i][0], coords[i][1], 
+                    coords[i+scale][0], coords[i+scale][1]
+                )
+                
+                direction_bearing = bearing_after - bearing_before
                 if direction_bearing > 180:
                     direction_bearing -= 360
                 elif direction_bearing < -180:
@@ -567,134 +639,75 @@ def calculate_precise_turn_analysis(coords, tt_specs):
                 
                 turn_direction = "Right" if direction_bearing > 0 else "Left"
                 
-                # Enhanced turn radius calculation using multiple methods
-                try:
-                    # Method 1: 3-point circle
-                    p1, p2, p3 = points[0], points[len(points)//2], points[-1]
-                    
-                    x1, y1 = p1[1] * 111320 * math.cos(math.radians(p1[0])), p1[0] * 110540
-                    x2, y2 = p2[1] * 111320 * math.cos(math.radians(p2[0])), p2[0] * 110540
-                    x3, y3 = p3[1] * 111320 * math.cos(math.radians(p3[0])), p3[0] * 110540
-                    
-                    a = math.sqrt((x2-x1)**2 + (y2-y1)**2)
-                    b = math.sqrt((x3-x2)**2 + (y3-y2)**2)
-                    c = math.sqrt((x1-x3)**2 + (y1-y3)**2)
-                    
-                    if a > 0 and b > 0 and c > 0:
-                        s = (a + b + c) / 2
-                        area = math.sqrt(max(0, s * (s-a) * (s-b) * (s-c)))
-                        if area > 0:
-                            radius = (a * b * c) / (4 * area)
-                        else:
-                            radius = 1000
-                    else:
-                        radius = 1000
-                    
-                    # Method 2: Curvature-based radius (backup)
-                    if radius > 2000 or radius < 5:
-                        radius = max(10, 180 * (90 / max(max_turn_angle, 1)))
-                    
-                    radius = max(5, min(radius, 2000))  # Reasonable bounds
-                    
-                except Exception as e:
-                    radius = max(15, 150 * (90 / max(max_turn_angle, 1)))
+                # Enhanced turn radius calculation
+                radius = calculate_enhanced_turn_radius(coords, i, scale, max_turn_angle)
                 
-                # Comprehensive turn classification
-                turn_type = classify_turn_type(max_turn_angle, radius, turn_direction)
+                # Enhanced turn classification with better thresholds
+                turn_type = classify_enhanced_turn_type(max_turn_angle, avg_turn_angle, radius, turn_direction)
                 
-                # Physics-based speed calculations with enhanced parameters
-                gross_weight_kg = tt_specs["gross_weight"]
-                liquid_capacity = tt_specs["avg_capacity_liters"]
+                # Special blind spot detection for 90-degree turns
+                is_blind_spot = detect_blind_spot_conditions(max_turn_angle, avg_turn_angle, radius, turn_direction)
                 
-                loaded_cg_height = cg_height + (liquid_capacity / 5000) * 0.3
-                
-                # Enhanced lateral acceleration limits based on turn type
-                if turn_type in ['blind_spot', 'hairpin']:
-                    max_lateral_g = 0.20  # Very conservative for dangerous turns
-                elif turn_type == 'sharp_right_angle':
-                    max_lateral_g = 0.25
-                elif gross_weight_kg > 35000:
-                    max_lateral_g = 0.28
-                elif gross_weight_kg > 25000:
-                    max_lateral_g = 0.32
-                else:
-                    max_lateral_g = 0.38
-                
-                liquid_slosh_factor = 0.80 if liquid_capacity > 25000 else 0.85 if liquid_capacity > 15000 else 0.90
-                effective_max_g = max_lateral_g * liquid_slosh_factor
+                # Override turn type if blind spot conditions are met
+                if is_blind_spot and turn_type != 'u_turn':
+                    turn_type = 'blind_spot'
                 
                 # Enhanced speed calculations
-                friction_coeff = 0.65 if turn_type in ['blind_spot', 'hairpin'] else 0.7
-                max_physics_speed_ms = math.sqrt(effective_max_g * 9.81 * radius)
-                max_physics_speed_kmph = max_physics_speed_ms * 3.6
-                
-                rollover_speed_ms = math.sqrt((track_width / 2) / loaded_cg_height * 9.81 * radius)
-                rollover_speed_kmph = rollover_speed_ms * 3.6
-                
-                # Enhanced safety margins based on turn type
-                if turn_type == 'blind_spot':
-                    safety_margin = 0.60  # 40% safety margin for blind spots
-                elif turn_type in ['hairpin', 'sharp_right_angle']:
-                    safety_margin = 0.65
-                elif turn_type == 'u_turn':
-                    safety_margin = 0.70
-                else:
-                    safety_margin = 0.75
-                
-                recommended_speed = min(
-                    max_physics_speed_kmph * safety_margin,
-                    rollover_speed_kmph * 0.6,
-                    tt_specs["max_speed"],
-                    get_turn_type_max_speed(turn_type, tt_specs)
+                recommended_speed, physics_data = calculate_enhanced_turn_speed(
+                    max_turn_angle, radius, turn_type, tt_specs
                 )
                 
                 # Enhanced severity classification
-                severity = determine_enhanced_severity(recommended_speed, turn_type, max_turn_angle, radius)
+                severity = determine_enhanced_turn_severity(
+                    recommended_speed, turn_type, max_turn_angle, radius, is_blind_spot
+                )
                 
-                # Calculate visibility and blind spot factors
-                visibility_factor = calculate_visibility_factor(max_turn_angle, radius, turn_direction)
+                # Visibility factor calculation
+                visibility_factor = calculate_enhanced_visibility_factor(
+                    max_turn_angle, radius, turn_direction, turn_type
+                )
                 
-                # Enhanced warning messages
-                warning = generate_enhanced_warning(turn_type, recommended_speed, max_turn_angle, visibility_factor)
+                # Generate enhanced warnings
+                warning = generate_enhanced_turn_warning(
+                    turn_type, recommended_speed, max_turn_angle, visibility_factor, is_blind_spot
+                )
                 
-                # Deceleration distance with turn-specific factors
-                current_speed = min(50, tt_specs["max_speed"] * 0.8)
-                if recommended_speed < current_speed:
-                    speed_diff_ms = (current_speed - recommended_speed) / 3.6
-                    # Enhanced deceleration based on turn type
-                    if turn_type in ['blind_spot', 'hairpin']:
-                        deceleration = 2.5  # More gradual for dangerous turns
-                    else:
-                        deceleration = 3.0
-                    deceleration_distance = (speed_diff_ms ** 2) / (2 * deceleration)
-                else:
-                    deceleration_distance = 0
+                # Risk factors
+                risk_factors = generate_enhanced_turn_risk_factors(
+                    turn_type, max_turn_angle, radius, tt_specs, is_blind_spot
+                )
+                
+                # Calculate deceleration distance
+                deceleration_distance = calculate_turn_deceleration_distance(
+                    recommended_speed, turn_type, tt_specs
+                )
                 
                 # Comprehensive turn data
                 turn_data = {
-                    'location': center_point,
+                    'location': coords[i],
                     'turn_angle': max_turn_angle,
                     'avg_turn_angle': avg_turn_angle,
                     'radius': radius,
                     'turn_direction': turn_direction,
                     'turn_type': turn_type,
+                    'is_blind_spot': is_blind_spot,
                     'recommended_speed': max(5, int(recommended_speed)),
-                    'rollover_speed': int(rollover_speed_kmph),
-                    'max_physics_speed': int(max_physics_speed_kmph),
+                    'rollover_speed': physics_data['rollover_speed'],
+                    'max_physics_speed': physics_data['max_physics_speed'],
                     'deceleration_distance': int(deceleration_distance),
                     'severity': severity,
                     'warning': warning,
                     'visibility_factor': visibility_factor,
-                    'blind_spot_risk': turn_type == 'blind_spot' or visibility_factor < 0.3,
-                    'physics_factors': {
-                        'lateral_g_force': round(effective_max_g, 2),
-                        'weight_penalty': (gross_weight_kg - 15000) / 30000,
-                        'slosh_factor': round(1 - liquid_slosh_factor, 2),
-                        'safety_margin': safety_margin,
-                        'cg_height': loaded_cg_height,
-                        'friction_coeff': friction_coeff
-                    },
-                    'risk_factors': generate_turn_risk_factors(turn_type, max_turn_angle, radius, tt_specs)
+                    'blind_spot_risk': is_blind_spot or visibility_factor < 0.3,
+                    'detection_confidence': len(turn_detections),
+                    'physics_factors': physics_data['physics_factors'],
+                    'risk_factors': risk_factors,
+                    'analysis_scale': max_detection['scale'],
+                    'detection_methods': {
+                        'method1_angle': max_detection['angle_method1'],
+                        'method2_angle': max_detection['angle_method2'],
+                        'method3_angle': max_detection['angle_method3']
+                    }
                 }
                 
                 turns.append(turn_data)
@@ -708,135 +721,434 @@ def calculate_precise_turn_analysis(coords, tt_specs):
         import traceback
         traceback.print_exc()
     
-    # Sort by danger level and return all significant turns
+    # Enhanced post-processing to catch missed critical turns
+    turns = post_process_turn_detection(turns, coords)
+    
+    # Sort by danger level
     severity_order = {'critical': 4, 'high': 3, 'moderate': 2, 'low': 1}
     turns.sort(key=lambda x: (severity_order.get(x['severity'], 0), -x['turn_angle']), reverse=True)
     
-    return turns  # Return all turns, not just top 20
+    return turns
 
-def classify_turn_type(turn_angle, radius, direction):
-    """Classify turn into specific dangerous categories"""
-    if turn_angle >= 160:
-        return 'u_turn'
-    elif turn_angle >= 120:
-        return 'hairpin'
-    elif 80 <= turn_angle < 100:
-        return 'sharp_right_angle'
-    elif turn_angle >= 100:
-        return 'sharp_turn'
-    elif turn_angle >= 70 and radius < 25:
-        return 'blind_spot'  # Sharp turn with small radius = blind spot
-    elif turn_angle >= 45:
-        return 'moderate_turn'
-    elif turn_angle >= 25:
-        return 'gentle_curve'
-    elif turn_angle >= 10:
-        return 'slight_curve'
-    else:
-        return 'straight'
-
-def get_turn_type_max_speed(turn_type, tt_specs):
-    """Get maximum safe speed for specific turn types"""
-    base_max = tt_specs["max_speed"]
+def calculate_enhanced_turn_radius(coords, center_index, scale, turn_angle):
+    """Enhanced turn radius calculation using multiple methods"""
+    try:
+        # Method 1: Three-point circle radius
+        if center_index >= scale and center_index + scale < len(coords):
+            p1 = coords[center_index - scale]
+            p2 = coords[center_index]
+            p3 = coords[center_index + scale]
+            
+            # Convert to local coordinate system
+            x1 = p1[1] * 111320 * math.cos(math.radians(p1[0]))
+            y1 = p1[0] * 110540
+            x2 = p2[1] * 111320 * math.cos(math.radians(p2[0]))
+            y2 = p2[0] * 110540
+            x3 = p3[1] * 111320 * math.cos(math.radians(p3[0]))
+            y3 = p3[0] * 110540
+            
+            # Calculate circumradius
+            a = math.sqrt((x2-x1)**2 + (y2-y1)**2)
+            b = math.sqrt((x3-x2)**2 + (y3-y2)**2)
+            c = math.sqrt((x1-x3)**2 + (y1-y3)**2)
+            
+            if a > 0 and b > 0 and c > 0:
+                s = (a + b + c) / 2
+                area = math.sqrt(max(0, s * (s-a) * (s-b) * (s-c)))
+                if area > 0:
+                    radius = (a * b * c) / (4 * area)
+                else:
+                    radius = 1000
+            else:
+                radius = 1000
+        else:
+            radius = 1000
+        
+        # Method 2: Curvature-based radius (backup/validation)
+        if radius > 2000 or radius < 3:
+            # Use relationship: radius ≈ chord_length / (2 * sin(angle/2))
+            chord_distance = geodesic(coords[center_index - scale], coords[center_index + scale]).meters
+            if turn_angle > 0:
+                sin_half_angle = math.sin(math.radians(turn_angle / 2))
+                if sin_half_angle > 0:
+                    radius_method2 = chord_distance / (2 * sin_half_angle)
+                    # Use the more reasonable radius
+                    if 5 <= radius_method2 <= 1000:
+                        radius = radius_method2
+        
+        # Ensure reasonable bounds
+        radius = max(3, min(radius, 2000))
+        
+    except Exception as e:
+        # Fallback calculation
+        radius = max(10, 150 * (90 / max(turn_angle, 1)))
     
-    speed_limits = {
+    return radius
+
+def classify_enhanced_turn_type(max_angle, avg_angle, radius, direction):
+    """Enhanced turn classification with better thresholds for critical detection"""
+    
+    # U-turn detection (most critical)
+    if max_angle >= 150:
+        return 'u_turn'
+    
+    # Hairpin detection (very critical)
+    if max_angle >= 120 or (max_angle >= 100 and radius < 20):
+        return 'hairpin'
+    
+    # 90-degree turn detection (critical - enhanced detection)
+    if (85 <= max_angle <= 105) or (80 <= avg_angle <= 100 and radius < 40):
+        return 'sharp_right_angle'
+    
+    # Blind spot conditions (critical)
+    if (max_angle >= 60 and radius < 25) or (max_angle >= 70 and radius < 35):
+        return 'blind_spot'
+    
+    # Sharp turn (high risk)
+    if max_angle >= 45 or (max_angle >= 35 and radius < 30):
+        return 'sharp_turn'
+    
+    # Moderate turn
+    if max_angle >= 25:
+        return 'moderate_turn'
+    
+    # Gentle curve
+    if max_angle >= 15:
+        return 'gentle_curve'
+    
+    # Slight curve
+    if max_angle >= 8:
+        return 'slight_curve'
+    
+    return 'straight'
+
+def detect_blind_spot_conditions(max_angle, avg_angle, radius, direction):
+    """Enhanced blind spot detection for critical turn identification"""
+    
+    # Multiple conditions that indicate blind spot risk
+    blind_spot_conditions = [
+        # Condition 1: Sharp turn with small radius
+        max_angle >= 60 and radius < 30,
+        
+        # Condition 2: 90-degree turn with limited visibility
+        85 <= max_angle <= 105 and radius < 50,
+        
+        # Condition 3: Moderate angle but very tight radius
+        max_angle >= 45 and radius < 20,
+        
+        # Condition 4: Consistent sharp turning (average vs max)
+        avg_angle >= 50 and max_angle >= 70,
+        
+        # Condition 5: Right turns tend to have more blind spots (driver position)
+        direction == "Right" and max_angle >= 55 and radius < 40
+    ]
+    
+    return any(blind_spot_conditions)
+
+def calculate_enhanced_turn_speed(max_angle, radius, turn_type, tt_specs):
+    """Enhanced speed calculation with physics-based analysis"""
+    
+    # Truck parameters
+    gross_weight_kg = tt_specs["gross_weight"]
+    liquid_capacity = tt_specs["avg_capacity_liters"]
+    
+    # Enhanced lateral g-force limits based on turn type
+    max_lateral_g_limits = {
+        'u_turn': 0.15,
+        'hairpin': 0.18,
+        'blind_spot': 0.20,
+        'sharp_right_angle': 0.22,
+        'sharp_turn': 0.25
+    }
+    
+    base_max_g = max_lateral_g_limits.get(turn_type, 0.30)
+    
+    # Weight penalties
+    if gross_weight_kg > 35000:
+        weight_factor = 0.85
+    elif gross_weight_kg > 25000:
+        weight_factor = 0.90
+    else:
+        weight_factor = 0.95
+    
+    # Liquid sloshing effect
+    slosh_factor = 0.75 if liquid_capacity > 25000 else 0.80 if liquid_capacity > 15000 else 0.85
+    
+    effective_max_g = base_max_g * weight_factor * slosh_factor
+    
+    # Physics calculations
+    friction_coeff = 0.65 if turn_type in ['blind_spot', 'u_turn', 'hairpin'] else 0.7
+    max_physics_speed_ms = math.sqrt(effective_max_g * 9.81 * radius)
+    max_physics_speed_kmph = max_physics_speed_ms * 3.6
+    
+    # Rollover calculation
+    cg_height = 2.8 + (liquid_capacity / 8000) * 0.4  # Height increases with capacity
+    track_width = 2.4
+    rollover_speed_ms = math.sqrt((track_width / 2) / cg_height * 9.81 * radius)
+    rollover_speed_kmph = rollover_speed_ms * 3.6
+    
+    # Safety margins based on turn type
+    safety_margins = {
+        'u_turn': 0.50,
+        'hairpin': 0.55,
+        'blind_spot': 0.60,
+        'sharp_right_angle': 0.65,
+        'sharp_turn': 0.70
+    }
+    
+    safety_margin = safety_margins.get(turn_type, 0.75)
+    
+    # Type-specific maximum speeds
+    type_max_speeds = {
         'u_turn': 8,
         'hairpin': 12,
-        'sharp_right_angle': 15,
-        'blind_spot': 18,
-        'sharp_turn': 25,
-        'moderate_turn': 35,
-        'gentle_curve': min(45, base_max),
-        'slight_curve': min(55, base_max),
-        'straight': base_max
+        'blind_spot': 15,
+        'sharp_right_angle': 18,
+        'sharp_turn': 25
     }
     
-    return speed_limits.get(turn_type, base_max)
+    type_max = type_max_speeds.get(turn_type, tt_specs["max_speed"])
+    
+    # Final recommended speed
+    recommended_speed = min(
+        max_physics_speed_kmph * safety_margin,
+        rollover_speed_kmph * 0.6,
+        type_max,
+        tt_specs["max_speed"]
+    )
+    
+    physics_data = {
+        'max_physics_speed': int(max_physics_speed_kmph),
+        'rollover_speed': int(rollover_speed_kmph),
+        'physics_factors': {
+            'lateral_g_force': round(effective_max_g, 2),
+            'weight_penalty': round(1 - weight_factor, 2),
+            'slosh_factor': round(1 - slosh_factor, 2),
+            'safety_margin': safety_margin,
+            'cg_height': cg_height,
+            'friction_coeff': friction_coeff
+        }
+    }
+    
+    return recommended_speed, physics_data
 
-def calculate_visibility_factor(turn_angle, radius, direction):
-    """Calculate visibility factor for blind spot detection"""
-    # Lower values = more dangerous (less visibility)
-    if turn_angle >= 90 and radius < 30:
-        return 0.1  # Very poor visibility - blind spot
-    elif turn_angle >= 70 and radius < 40:
-        return 0.2  # Poor visibility
-    elif turn_angle >= 60 and radius < 60:
-        return 0.4  # Limited visibility
-    elif turn_angle >= 45:
-        return 0.6  # Moderate visibility
-    else:
-        return 1.0  # Good visibility
-
-def determine_enhanced_severity(speed, turn_type, angle, radius):
-    """Enhanced severity classification"""
-    if turn_type in ['blind_spot', 'u_turn', 'hairpin'] or speed <= 12:
+def determine_enhanced_turn_severity(speed, turn_type, angle, radius, is_blind_spot):
+    """Enhanced severity determination with better critical detection"""
+    
+    # Critical conditions
+    critical_conditions = [
+        turn_type in ['u_turn', 'hairpin'],
+        is_blind_spot and turn_type == 'sharp_right_angle',
+        speed <= 12,
+        angle >= 120,
+        radius < 15
+    ]
+    
+    if any(critical_conditions):
         return 'critical'
-    elif turn_type == 'sharp_right_angle' or speed <= 20:
+    
+    # High risk conditions
+    high_risk_conditions = [
+        turn_type in ['blind_spot', 'sharp_right_angle'],
+        speed <= 20,
+        angle >= 80,
+        radius < 25
+    ]
+    
+    if any(high_risk_conditions):
         return 'high'
-    elif turn_type == 'sharp_turn' or speed <= 30:
+    
+    # Moderate risk
+    if turn_type == 'sharp_turn' or speed <= 35:
         return 'moderate'
-    else:
-        return 'low'
+    
+    return 'low'
 
-def generate_enhanced_warning(turn_type, speed, angle, visibility):
-    """Generate specific warning messages for different turn types"""
+def calculate_enhanced_visibility_factor(angle, radius, direction, turn_type):
+    """Enhanced visibility calculation"""
+    
+    # Base visibility factors
+    if turn_type in ['blind_spot', 'u_turn']:
+        base_visibility = 0.1
+    elif turn_type == 'hairpin':
+        base_visibility = 0.2
+    elif turn_type == 'sharp_right_angle':
+        base_visibility = 0.3 if radius < 30 else 0.4
+    elif angle >= 60:
+        base_visibility = 0.3
+    elif angle >= 45:
+        base_visibility = 0.5
+    else:
+        base_visibility = 0.8
+    
+    # Radius adjustment
+    if radius < 20:
+        base_visibility *= 0.7
+    elif radius < 35:
+        base_visibility *= 0.85
+    
+    # Direction adjustment (right turns typically have worse visibility)
+    if direction == "Right":
+        base_visibility *= 0.9
+    
+    return max(0.05, min(1.0, base_visibility))
+
+def generate_enhanced_turn_warning(turn_type, speed, angle, visibility, is_blind_spot):
+    """Generate specific warnings for enhanced turn types"""
+    
+    speed_int = int(speed)
+    
     warnings = {
-        'u_turn': f"U-TURN AHEAD: Max {int(speed)} kmph - Complete stop may be required",
-        'hairpin': f"HAIRPIN TURN: {int(speed)} kmph MAX - Extreme rollover risk",
-        'sharp_right_angle': f"90° TURN: {int(speed)} kmph - Sharp angle ahead",
-        'blind_spot': f"BLIND SPOT TURN: {int(speed)} kmph - LIMITED VISIBILITY",
-        'sharp_turn': f"SHARP TURN: {int(speed)} kmph - Reduce speed gradually",
-        'moderate_turn': f"Moderate turn: {int(speed)} kmph recommended",
-        'gentle_curve': f"Gentle curve: {int(speed)} kmph",
-        'slight_curve': f"Slight curve ahead",
-        'straight': "Straight road"
+        'u_turn': f"U-TURN AHEAD: {speed_int} kmph MAX - Complete stop likely required",
+        'hairpin': f"HAIRPIN CURVE: {speed_int} kmph MAX - EXTREME rollover risk",
+        'sharp_right_angle': f"90° INTERSECTION: {speed_int} kmph - Check cross traffic",
+        'blind_spot': f"BLIND SPOT TURN: {speed_int} kmph - LIMITED VISIBILITY",
+        'sharp_turn': f"SHARP TURN: {speed_int} kmph - Reduce speed gradually"
     }
     
-    warning = warnings.get(turn_type, f"Turn ahead: {int(speed)} kmph")
+    base_warning = warnings.get(turn_type, f"Turn ahead: {speed_int} kmph")
     
+    # Add blind spot warning if detected
+    if is_blind_spot and turn_type != 'blind_spot':
+        base_warning += " - BLIND SPOT RISK"
+    
+    # Add visibility warning
     if visibility < 0.3:
-        warning += " - VISIBILITY WARNING"
+        base_warning += " - POOR VISIBILITY"
     
-    return warning
+    return base_warning
 
-def generate_turn_risk_factors(turn_type, angle, radius, tt_specs):
-    """Generate specific risk factors for each turn type"""
+def generate_enhanced_turn_risk_factors(turn_type, angle, radius, tt_specs, is_blind_spot):
+    """Generate comprehensive risk factors"""
+    
     factors = []
     
-    if turn_type == 'blind_spot':
+    # Turn-specific factors
+    if turn_type == 'blind_spot' or is_blind_spot:
         factors.extend([
             f"BLIND SPOT: Limited visibility around {angle:.1f}° turn",
             f"Small radius ({radius:.1f}m) creates vision obstruction",
-            "Oncoming traffic may not be visible",
-            f"Heavy TT ({tt_specs['gross_weight']/1000:.1f}T) requires early braking"
+            "Oncoming traffic may not be visible"
         ])
-    elif turn_type == 'u_turn':
+    
+    if turn_type == 'sharp_right_angle':
+        factors.extend([
+            f"90° TURN: Standard intersection turn ({angle:.1f}°)",
+            f"Turn radius: {radius:.1f}m",
+            "Check for cross traffic and pedestrians"
+        ])
+    
+    if turn_type == 'u_turn':
         factors.extend([
             f"U-TURN: {angle:.1f}° requires multiple maneuvers",
-            "Complete traffic stoppage likely required",
-            f"TT length ({12}m) may need wide turning space"
+            "Complete traffic stoppage likely required"
         ])
-    elif turn_type == 'hairpin':
+    
+    if turn_type == 'hairpin':
         factors.extend([
-            f"HAIRPIN: {angle:.1f}° extreme turn",
+            f"HAIRPIN: {angle:.1f}° extreme curve",
             f"Very tight radius ({radius:.1f}m)",
             "Maximum rollover risk zone"
         ])
-    elif turn_type == 'sharp_right_angle':
-        factors.extend([
-            f"90° TURN: Standard right-angle intersection",
-            f"Turning radius: {radius:.1f}m",
-            "Check for cross traffic"
-        ])
     
-    # Add truck-specific factors
+    # Truck-specific factors
     if tt_specs['gross_weight'] > 35000:
-        factors.append(f"Heavy TT warning: {tt_specs['gross_weight']/1000:.1f}T increases turn difficulty")
+        factors.append(f"Heavy TT: {tt_specs['gross_weight']/1000:.1f}T increases difficulty")
     
     if tt_specs['avg_capacity_liters'] > 25000:
         factors.append(f"Large capacity: {tt_specs['avg_capacity_liters']:,}L liquid surge risk")
     
     return factors
+
+def calculate_turn_deceleration_distance(target_speed, turn_type, tt_specs):
+    """Calculate deceleration distance for turn approach"""
+    
+    current_speed = min(50, tt_specs["max_speed"] * 0.8)
+    
+    if target_speed >= current_speed:
+        return 0
+    
+    speed_diff_ms = (current_speed - target_speed) / 3.6
+    
+    # Deceleration rates based on turn type
+    deceleration_rates = {
+        'u_turn': 2.0,
+        'hairpin': 2.2,
+        'blind_spot': 2.5,
+        'sharp_right_angle': 2.8,
+        'sharp_turn': 3.0
+    }
+    
+    deceleration = deceleration_rates.get(turn_type, 3.5)
+    
+    # Weight adjustment
+    if tt_specs['gross_weight'] > 35000:
+        deceleration *= 0.85
+    elif tt_specs['gross_weight'] > 25000:
+        deceleration *= 0.90
+    
+    distance = (speed_diff_ms ** 2) / (2 * deceleration)
+    return max(10, distance)
+
+def post_process_turn_detection(turns, coords):
+    """Post-process to catch any missed critical turns"""
+    
+    # Look for potential missed 90-degree turns by checking spacing
+    processed_locations = set((round(t['location'][0], 4), round(t['location'][1], 4)) for t in turns)
+    
+    # Additional scan for missed right-angle turns
+    for i in range(10, len(coords) - 10, 5):  # Wider spacing scan
+        location_key = (round(coords[i][0], 4), round(coords[i][1], 4))
+        
+        if location_key in processed_locations:
+            continue
+        
+        try:
+            # Check for potential 90-degree pattern
+            bearing1 = calculate_bearing(coords[i-10][0], coords[i-10][1], coords[i][0], coords[i][1])
+            bearing2 = calculate_bearing(coords[i][0], coords[i][1], coords[i+10][0], coords[i+10][1])
+            angle = calculate_turn_angle(bearing1, bearing2)
+            
+            # Specifically look for missed 90-degree turns
+            if 75 <= angle <= 110:
+                # This might be a missed right-angle turn
+                radius = geodesic(coords[i-5], coords[i+5]).meters / 2  # Approximate radius
+                
+                if radius < 60:  # Tight enough to be significant
+                    direction_bearing = bearing2 - bearing1
+                    if direction_bearing > 180:
+                        direction_bearing -= 360
+                    elif direction_bearing < -180:
+                        direction_bearing += 360
+                    
+                    turn_direction = "Right" if direction_bearing > 0 else "Left"
+                    
+                    # Add as potential missed critical turn
+                    missed_turn = {
+                        'location': coords[i],
+                        'turn_angle': angle,
+                        'avg_turn_angle': angle,
+                        'radius': radius,
+                        'turn_direction': turn_direction,
+                        'turn_type': 'sharp_right_angle',
+                        'is_blind_spot': radius < 35,
+                        'recommended_speed': 18,
+                        'severity': 'high',
+                        'warning': f"90° TURN: 18 kmph - Potentially missed detection",
+                        'visibility_factor': 0.4 if radius < 35 else 0.6,
+                        'blind_spot_risk': radius < 35,
+                        'detection_confidence': 1,
+                        'risk_factors': [f"Potentially missed 90° turn - {angle:.1f}°", f"Radius: {radius:.1f}m"],
+                        'post_processed': True
+                    }
+                    
+                    turns.append(missed_turn)
+                    processed_locations.add(location_key)
+        
+        except Exception as e:
+            continue
+    
+    return turns
 
 def calculate_braking_distances(coords, tt_specs, elevations, gradients):
     """Calculate braking distances for truck at various points considering weight and gradient"""
@@ -2454,6 +2766,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
