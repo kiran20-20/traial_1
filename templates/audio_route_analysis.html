@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Marg Audio Navigation - Route Analysis</title>
+    <title>Smart Marg - Map-Audio Bridge Integration</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -13,55 +14,41 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             color: #fff;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
             padding: 20px;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             background: rgba(0, 0, 0, 0.3);
             padding: 20px;
             border-radius: 15px;
             backdrop-filter: blur(10px);
         }
 
-        .header h1 {
-            font-size: 2.5rem;
-            color: #00ff88;
-            margin-bottom: 10px;
-            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
-        }
-
-        .header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-
-        .content-grid {
+        .main-grid {
             display: grid;
-            grid-template-columns: 1fr 400px;
+            grid-template-columns: 1fr 380px;
             gap: 20px;
-            height: calc(100vh - 180px);
+            height: calc(100vh - 160px);
         }
 
-        .map-container {
+        .map-section {
             background: rgba(0, 0, 0, 0.2);
             border-radius: 15px;
             overflow: hidden;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             position: relative;
         }
 
-        .map-frame {
+        .map-container {
             width: 100%;
             height: 100%;
             border: none;
@@ -72,15 +59,16 @@
             border-radius: 15px;
             padding: 20px;
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
             overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
 
         .audio-controls {
             background: linear-gradient(45deg, #28a745, #20c997);
             padding: 20px;
             border-radius: 12px;
-            margin-bottom: 20px;
             text-align: center;
         }
 
@@ -88,51 +76,70 @@
             background: rgba(255, 255, 255, 0.2);
             color: white;
             border: none;
-            padding: 12px 20px;
-            margin: 5px;
-            border-radius: 8px;
+            padding: 10px 16px;
+            margin: 4px;
+            border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
             transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
         }
 
-        .audio-btn:hover {
+        .audio-btn:hover:not(:disabled) {
             background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
+            transform: translateY(-1px);
+        }
+
+        .audio-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         .audio-btn.primary {
             background: linear-gradient(45deg, #dc3545, #c82333);
             font-size: 1.1rem;
-            padding: 15px 25px;
+            padding: 12px 20px;
+            margin-bottom: 10px;
+        }
+
+        .section-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .section-header {
+            color: #00ff88;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
-            margin-bottom: 20px;
         }
 
         .stat-card {
             background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 10px;
+            padding: 12px;
+            border-radius: 8px;
             text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .stat-number {
-            font-size: 2rem;
+            font-size: 1.5rem;
             font-weight: bold;
             color: #00ff88;
         }
 
         .stat-label {
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             opacity: 0.8;
-            margin-top: 5px;
+            margin-top: 4px;
         }
 
         .alert-feed {
@@ -141,24 +148,15 @@
             padding: 15px;
             max-height: 200px;
             overflow-y: auto;
-            margin-bottom: 20px;
         }
 
         .alert-item {
             background: rgba(220, 53, 69, 0.2);
-            padding: 8px 12px;
-            border-radius: 6px;
-            margin-bottom: 8px;
-            border-left: 4px solid #dc3545;
-            font-size: 0.9rem;
-        }
-
-        .vehicle-tracker {
-            background: rgba(40, 167, 69, 0.2);
-            padding: 15px;
-            border-radius: 10px;
-            border: 2px solid #28a745;
-            margin-bottom: 20px;
+            padding: 6px 10px;
+            border-radius: 4px;
+            margin-bottom: 6px;
+            border-left: 3px solid #dc3545;
+            font-size: 0.85rem;
         }
 
         .progress-bar {
@@ -176,118 +174,107 @@
             transition: width 0.5s ease;
         }
 
-        .bottom-controls {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .control-btn {
-            flex: 1;
-            min-width: 120px;
-            padding: 12px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border: none;
+        .map-data-status {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
             border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s ease;
+            font-size: 0.85rem;
         }
 
-        .control-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
         }
 
-        .loading {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100%;
-            font-size: 1.2rem;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-
-        .pulsing {
-            animation: pulse 2s infinite;
-        }
-
-        @media (max-width: 768px) {
-            .content-grid {
-                grid-template-columns: 1fr;
-                grid-template-rows: 60vh auto;
-            }
-            
-            .header h1 {
-                font-size: 1.8rem;
-            }
-            
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-        }
+        .status-connected { background: #28a745; }
+        .status-loading { background: #ffc107; }
+        .status-error { background: #dc3545; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎵 Smart Marg Audio Navigation</h1>
-            <p>{{ tt_specs.capacity_range }} TT | {{ tt_specs.gross_weight/1000 }}T | Route Complexity: {{ complexity_rating }}</p>
-            <p>Welcome, {{ username }} | {{ mode }} Analysis Complete</p>
+            <h1><i class="fas fa-truck"></i> Smart Marg Audio Navigation</h1>
+            <p>Real-time Map Integration with Audio Guidance</p>
         </div>
 
-        <div class="content-grid">
-            <!-- Interactive Map Section -->
-            <div class="map-container">
-                <iframe id="routeMap" class="map-frame" src="/view_map/{{ html_file }}" 
-                        onload="initializeAudioNavigation()">
+        <div class="main-grid">
+            <div class="map-section">
+                <iframe id="routeMap" class="map-container" 
+                        src="{{ url_for('view_map', filename=html_file) }}" 
+                        onload="initializeMapBridge()">
                 </iframe>
             </div>
 
-            <!-- Audio Navigation Controls -->
             <div class="controls-panel">
-                <!-- Main Audio Controls -->
+                <!-- Audio Controls -->
                 <div class="audio-controls">
-                    <h3 style="margin-bottom: 15px;">🚛 Audio Navigation</h3>
+                    <div class="section-header" style="color: white;">
+                        <i class="fas fa-volume-up"></i> Audio Navigation
+                    </div>
                     <button class="audio-btn primary" onclick="startAudioNavigation()" id="startBtn">
-                        🎵 Start Audio Navigation
+                        <i class="fas fa-play"></i> Start Navigation
                     </button>
-                    <div style="margin-top: 10px;">
-                        <button class="audio-btn" onclick="pauseAudio()" id="pauseBtn">⏸️ Pause</button>
-                        <button class="audio-btn" onclick="resumeAudio()" id="resumeBtn">▶️ Resume</button>
-                        <button class="audio-btn" onclick="stopAudio()" id="stopBtn">⏹️ Stop</button>
+                    <div>
+                        <button class="audio-btn" onclick="pauseAudio()" id="pauseBtn" disabled>
+                            <i class="fas fa-pause"></i> Pause
+                        </button>
+                        <button class="audio-btn" onclick="resumeAudio()" id="resumeBtn" disabled>
+                            <i class="fas fa-play"></i> Resume
+                        </button>
+                        <button class="audio-btn" onclick="stopAudio()" id="stopBtn" disabled>
+                            <i class="fas fa-stop"></i> Stop
+                        </button>
                     </div>
                 </div>
 
-                <!-- Route Statistics -->
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-number">{{ critical_hazards }}</div>
-                        <div class="stat-label">Critical Hazards</div>
+                <!-- Map Connection Status -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <i class="fas fa-link"></i> Map Integration Status
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-number">{{ critical_turns }}</div>
-                        <div class="stat-label">Critical Turns</div>
+                    <div class="map-data-status" id="mapStatus">
+                        <span class="status-indicator status-loading"></span>
+                        <span id="statusText">Connecting to map...</span>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-number">{{ audio_instructions_count }}</div>
-                        <div class="stat-label">Audio Instructions</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">{{ max_braking_distance }}m</div>
-                        <div class="stat-label">Max Braking</div>
+                    <div id="mapDataInfo" style="margin-top: 10px; font-size: 0.8rem; opacity: 0.8;">
+                        Waiting for map data...
                     </div>
                 </div>
 
-                <!-- Vehicle Progress Tracker -->
-                <div class="vehicle-tracker">
-                    <h4>🚛 Vehicle Position</h4>
+                <!-- Real-time Map Data -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <i class="fas fa-map-marker-alt"></i> Live Map Data
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number" id="hazardCount">-</div>
+                            <div class="stat-label">Hazards Detected</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="turnCount">-</div>
+                            <div class="stat-label">Critical Turns</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="poiCount">-</div>
+                            <div class="stat-label">Points of Interest</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="routePoints">-</div>
+                            <div class="stat-label">Route Points</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Progress -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <i class="fas fa-truck"></i> Navigation Progress
+                    </div>
                     <div id="currentInstruction">Click 'Start Navigation' to begin</div>
                     <div class="progress-bar">
                         <div class="progress-fill" id="routeProgress"></div>
@@ -295,92 +282,232 @@
                     <div id="progressText">0% Complete</div>
                 </div>
 
-                <!-- Live Audio Alerts -->
+                <!-- Live Alerts from Map -->
                 <div class="alert-feed">
-                    <h4>🔊 Audio Alerts</h4>
-                    <div id="alertFeed">
-                        <div class="alert-item">System ready for audio navigation</div>
+                    <div class="section-header">
+                        <i class="fas fa-exclamation-triangle"></i> Live Map Alerts
                     </div>
-                </div>
-
-                <!-- Navigation Controls -->
-                <div class="bottom-controls">
-                    <button class="control-btn" onclick="showDetailedReport()">
-                        📊 Detailed Report
-                    </button>
-                    <button class="control-btn" onclick="downloadMap()">
-                        💾 Download Map
-                    </button>
-                    <button class="control-btn" onclick="goHome()">
-                        🏠 New Route
-                    </button>
+                    <div id="alertFeed">
+                        <div class="alert-item">System initializing...</div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Audio Navigation JavaScript -->
     <script>
-        // Global variables for audio navigation
-        let audioContext = null;
-        let currentInstructionIndex = 0;
-        let audioQueue = [];
+        // Global variables for map-audio bridge
         let isNavigating = false;
-        let vehiclePosition = 0;
-        let totalInstructions = {{ audio_instructions_count }};
-        let routeInstructions = [];
-        let simulationInterval = null;
+        let mapDataLoaded = false;
+        let realMapData = {
+            hazards: [],
+            turns: [],
+            pois: [],
+            routePoints: 0
+        };
 
-        // Initialize speech synthesis
-        function initSpeech() {
-            if ('speechSynthesis' in window) {
-                return true;
-            } else {
-                alert('Speech synthesis not supported in this browser');
-                return false;
+        // Initialize map-audio communication bridge
+        function initializeMapBridge() {
+            console.log('Initializing map-audio communication bridge...');
+            
+            // Set up postMessage listener for map communication
+            window.addEventListener('message', handleMapMessage, false);
+            
+            // Try to establish connection with map
+            setTimeout(() => {
+                requestMapData();
+            }, 2000);
+
+            updateAlertFeed('Bridge initializing - connecting to map...');
+        }
+
+        // Handle messages from the map iframe
+        function handleMapMessage(event) {
+            // Verify origin for security (adjust domain as needed)
+            // if (event.origin !== 'your-domain.com') return;
+            
+            const data = event.data;
+            
+            switch(data.type) {
+                case 'mapDataReady':
+                    handleMapDataReady(data.payload);
+                    break;
+                case 'hazardAlert':
+                    handleMapHazard(data.payload);
+                    break;
+                case 'turnAlert':
+                    handleMapTurn(data.payload);
+                    break;
+                case 'poiAlert':
+                    handleMapPOI(data.payload);
+                    break;
+                case 'routeProgress':
+                    handleRouteProgress(data.payload);
+                    break;
+                default:
+                    console.log('Unknown message from map:', data);
             }
         }
 
-        // Initialize audio navigation system
-        function initializeAudioNavigation() {
-            console.log('Initializing audio navigation system...');
-            
-            // Initialize speech synthesis
-            initSpeech();
-            
-            // Get route instructions from server (you'll need to pass this data)
-            routeInstructions = [
-                {
-                    type: 'introduction',
-                    message: 'Audio navigation started for {{ tt_specs.capacity_range }} petroleum tanker. Gross weight {{ tt_specs.gross_weight/1000 }} tonnes. Class 3 flammable cargo. Exercise extreme caution.',
-                    priority: 'high'
-                }
-                // Additional instructions would be loaded here
-            ];
-
-            updateAlertFeed('Audio navigation system initialized');
+        // Request map data from iframe
+        function requestMapData() {
+            const mapFrame = document.getElementById('routeMap');
+            try {
+                mapFrame.contentWindow.postMessage({
+                    type: 'requestMapData',
+                    source: 'audioNavigation'
+                }, '*');
+                
+                // Fallback: try to extract data from map directly
+                setTimeout(() => {
+                    if (!mapDataLoaded) {
+                        extractMapDataDirectly();
+                    }
+                }, 3000);
+                
+            } catch (error) {
+                console.warn('Cannot communicate with map iframe:', error);
+                extractMapDataDirectly();
+            }
         }
 
-        // Start audio navigation
+        // Handle map data ready event
+        function handleMapDataReady(mapData) {
+            console.log('Received map data:', mapData);
+            
+            realMapData = mapData;
+            mapDataLoaded = true;
+            
+            // Update UI with real map data
+            document.getElementById('hazardCount').textContent = mapData.hazards.length;
+            document.getElementById('turnCount').textContent = mapData.turns.length;
+            document.getElementById('poiCount').textContent = mapData.pois.length;
+            document.getElementById('routePoints').textContent = mapData.routePoints;
+            
+            // Update status
+            const statusElement = document.getElementById('mapStatus');
+            statusElement.innerHTML = '<span class="status-indicator status-connected"></span><span>Map connected successfully</span>';
+            
+            document.getElementById('mapDataInfo').textContent = 
+                `Found ${mapData.hazards.length} hazards, ${mapData.turns.length} critical turns, ${mapData.pois.length} POIs`;
+            
+            updateAlertFeed(`Map data loaded: ${mapData.hazards.length} hazards, ${mapData.turns.length} turns detected`);
+        }
+
+        // Extract map data directly (fallback method)
+        function extractMapDataDirectly() {
+            try {
+                const mapFrame = document.getElementById('routeMap');
+                const mapDoc = mapFrame.contentDocument || mapFrame.contentWindow.document;
+                const scripts = mapDoc.querySelectorAll('script');
+                
+                let hazardCount = 0, turnCount = 0, poiCount = 0;
+                
+                scripts.forEach(script => {
+                    if (script.textContent) {
+                        const content = script.textContent;
+                        
+                        // Count hazard markers
+                        const hazardMatches = content.match(/hazard|danger|risk/gi);
+                        hazardCount += hazardMatches ? hazardMatches.length : 0;
+                        
+                        // Count turn markers
+                        const turnMatches = content.match(/turn|curve|bend/gi);
+                        turnCount += turnMatches ? turnMatches.length : 0;
+                        
+                        // Count POI markers
+                        const poiMatches = content.match(/hospital|school|station|fuel/gi);
+                        poiCount += poiMatches ? poiMatches.length : 0;
+                    }
+                });
+                
+                // Update with extracted data
+                realMapData = {
+                    hazards: Array(hazardCount).fill().map((_, i) => ({id: i, type: 'hazard'})),
+                    turns: Array(turnCount).fill().map((_, i) => ({id: i, type: 'turn'})),
+                    pois: Array(poiCount).fill().map((_, i) => ({id: i, type: 'poi'})),
+                    routePoints: hazardCount + turnCount + poiCount
+                };
+                
+                mapDataLoaded = true;
+                
+                document.getElementById('hazardCount').textContent = hazardCount;
+                document.getElementById('turnCount').textContent = turnCount;
+                document.getElementById('poiCount').textContent = poiCount;
+                document.getElementById('routePoints').textContent = hazardCount + turnCount + poiCount;
+                
+                const statusElement = document.getElementById('mapStatus');
+                statusElement.innerHTML = '<span class="status-indicator status-connected"></span><span>Map data extracted</span>';
+                
+                updateAlertFeed(`Map analysis complete: ${hazardCount} hazards, ${turnCount} turns found`);
+                
+            } catch (error) {
+                console.error('Failed to extract map data:', error);
+                const statusElement = document.getElementById('mapStatus');
+                statusElement.innerHTML = '<span class="status-indicator status-error"></span><span>Map connection failed</span>';
+                updateAlertFeed('Warning: Could not connect to map data');
+            }
+        }
+
+        // Handle real-time hazard alerts from map
+        function handleMapHazard(hazardData) {
+            if (isNavigating) {
+                const message = `Critical hazard detected: ${hazardData.description || 'Unknown hazard'}. Reduce speed immediately.`;
+                speakInstruction(message, 'critical');
+                updateAlertFeed(`🚨 HAZARD: ${hazardData.description || 'Critical hazard'}`);
+            }
+        }
+
+        // Handle turn alerts from map
+        function handleMapTurn(turnData) {
+            if (isNavigating) {
+                const message = `Sharp ${turnData.direction || ''} turn ahead. Recommended speed ${turnData.speed || '30'} km/h.`;
+                speakInstruction(message, 'high');
+                updateAlertFeed(`🔄 TURN: ${turnData.direction || 'Sharp'} turn ahead`);
+            }
+        }
+
+        // Handle POI alerts from map
+        function handleMapPOI(poiData) {
+            if (isNavigating) {
+                const message = `${poiData.type || 'Point of interest'} nearby: ${poiData.name || 'Unknown location'}.`;
+                speakInstruction(message, 'normal');
+                updateAlertFeed(`📍 POI: ${poiData.type || 'Location'} - ${poiData.name || 'Unknown'}`);
+            }
+        }
+
+        // Start audio navigation with real map data
         function startAudioNavigation() {
             if (isNavigating) return;
             
+            if (!mapDataLoaded) {
+                alert('Please wait for map data to load before starting navigation.');
+                return;
+            }
+            
             isNavigating = true;
-            currentInstructionIndex = 0;
-            vehiclePosition = 0;
             
             document.getElementById('startBtn').disabled = true;
             document.getElementById('pauseBtn').disabled = false;
-            document.getElementById('resumeBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
             
-            updateAlertFeed('🎵 Audio navigation started');
-            updateCurrentInstruction('Starting navigation...');
+            updateAlertFeed('🎵 Audio navigation started with live map data');
+            updateCurrentInstruction('Navigation started - processing real map data...');
             
-            // Start with introduction
-            speakInstruction('Audio navigation started for {{ tt_specs.capacity_range }} petroleum tanker. Gross weight {{ tt_specs.gross_weight/1000 }} tonnes. Class 3 flammable cargo. Exercise extreme caution.');
+            // Start with real route data
+            const introMessage = `Audio navigation started. Route contains ${realMapData.hazards.length} hazards and ${realMapData.turns.length} critical turns. Exercise caution.`;
+            speakInstruction(introMessage, 'high');
             
-            // Start vehicle simulation
-            startVehicleSimulation();
+            // Notify map that navigation started
+            try {
+                const mapFrame = document.getElementById('routeMap');
+                mapFrame.contentWindow.postMessage({
+                    type: 'navigationStarted',
+                    source: 'audioNavigation'
+                }, '*');
+            } catch (error) {
+                console.warn('Could not notify map of navigation start:', error);
+            }
         }
 
         // Pause audio navigation
@@ -388,7 +515,6 @@
             if (window.speechSynthesis) {
                 window.speechSynthesis.pause();
             }
-            clearInterval(simulationInterval);
             document.getElementById('pauseBtn').disabled = true;
             document.getElementById('resumeBtn').disabled = false;
             updateAlertFeed('⏸️ Navigation paused');
@@ -399,7 +525,6 @@
             if (window.speechSynthesis) {
                 window.speechSynthesis.resume();
             }
-            startVehicleSimulation();
             document.getElementById('pauseBtn').disabled = false;
             document.getElementById('resumeBtn').disabled = true;
             updateAlertFeed('▶️ Navigation resumed');
@@ -411,13 +536,12 @@
             if (window.speechSynthesis) {
                 window.speechSynthesis.cancel();
             }
-            clearInterval(simulationInterval);
             
             document.getElementById('startBtn').disabled = false;
             document.getElementById('pauseBtn').disabled = true;
             document.getElementById('resumeBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = true;
             
-            vehiclePosition = 0;
             updateProgress(0);
             updateCurrentInstruction('Navigation stopped');
             updateAlertFeed('⏹️ Navigation stopped');
@@ -428,62 +552,26 @@
             if (!text) return;
             
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = priority === 'critical' ? 0.8 : 0.9;
-            utterance.pitch = priority === 'critical' ? 1.2 : 1.0;
-            utterance.volume = priority === 'critical' ? 1.0 : 0.8;
             
-            // Add to alert feed
-            updateAlertFeed(`🔊 ${text.substring(0, 50)}...`);
+            switch(priority) {
+                case 'critical':
+                    utterance.rate = 0.7;
+                    utterance.pitch = 1.3;
+                    utterance.volume = 1.0;
+                    break;
+                case 'high':
+                    utterance.rate = 0.8;
+                    utterance.pitch = 1.1;
+                    utterance.volume = 0.9;
+                    break;
+                default:
+                    utterance.rate = 0.9;
+                    utterance.pitch = 1.0;
+                    utterance.volume = 0.8;
+            }
+            
             updateCurrentInstruction(text);
-            
             window.speechSynthesis.speak(utterance);
-        }
-
-        // Start vehicle position simulation
-        function startVehicleSimulation() {
-            simulationInterval = setInterval(() => {
-                if (!isNavigating) return;
-                
-                vehiclePosition += 1;
-                const progress = (vehiclePosition / 100) * 100; // Simulate 100 steps
-                updateProgress(Math.min(progress, 100));
-                
-                // Trigger audio instructions based on position
-                if (vehiclePosition % 10 === 0) { // Every 10th step
-                    triggerLocationBasedInstructions();
-                }
-                
-                // Complete navigation at 100%
-                if (progress >= 100) {
-                    completeNavigation();
-                }
-            }, 2000); // Update every 2 seconds
-        }
-
-        // Trigger location-based instructions
-        function triggerLocationBasedInstructions() {
-            const instructions = [
-                'Hazard zone detected ahead. Reduce speed and maintain caution.',
-                'Sharp turn approaching. Recommended speed 25 kilometers per hour.',
-                'School zone ahead. Children crossing. Reduce speed to 20 kilometers per hour.',
-                'Fuel station nearby. Extreme caution required for petroleum cargo.',
-                'Heavy traffic detected. Maintain safe following distance.',
-                'Steep gradient ahead. Monitor braking distance.',
-                'Construction zone approaching. Reduce speed and follow traffic signs.',
-                'Rest area available. Consider driver break if needed.'
-            ];
-            
-            const randomInstruction = instructions[Math.floor(Math.random() * instructions.length)];
-            speakInstruction(randomInstruction);
-        }
-
-        // Complete navigation
-        function completeNavigation() {
-            clearInterval(simulationInterval);
-            speakInstruction('Destination reached. Navigation complete. Thank you for using Smart Marg audio navigation system.');
-            isNavigating = false;
-            updateCurrentInstruction('Navigation completed successfully');
-            updateAlertFeed('🏁 Destination reached');
         }
 
         // Update progress bar
@@ -512,70 +600,25 @@
             }
         }
 
-        // Handle map audio interactions
-        function handleMapAudio(action, data) {
-            switch (action) {
-                case 'mapLoaded':
-                    console.log('Map loaded with audio features');
-                    break;
-                case 'hazardAlert':
-                    speakInstruction(data.message, 'critical');
-                    break;
-                case 'turnAlert':
-                    speakInstruction(data.message, 'high');
-                    break;
-                case 'poiAlert':
-                    speakInstruction(data.message, 'normal');
-                    break;
-            }
-        }
-
-        // Individual alert functions (called from map markers)
-        function speakHazardAlert(message, critical = false) {
-            speakInstruction(message, critical ? 'critical' : 'high');
-        }
-
-        function speakTurnAlert(message, critical = false) {
-            speakInstruction(message, critical ? 'critical' : 'high');
-        }
-
-        function speakPOIAlert(message) {
-            speakInstruction(message, 'normal');
-        }
-
-        function addToAudioQueue(message, type) {
-            audioQueue.push({ message, type, timestamp: new Date() });
-            updateAlertFeed(`Added to queue: ${message.substring(0, 30)}...`);
-        }
-
-        // Navigation functions
-        function showDetailedReport() {
-            window.open('/detailed_report', '_blank');
-        }
-
-        function downloadMap() {
-            window.open('/download/{{ html_file }}', '_blank');
-        }
-
-        function goHome() {
-            if (isNavigating) {
-                if (confirm('Navigation is active. Are you sure you want to leave?')) {
-                    stopAudio();
-                    window.location.href = '/';
+        // Initialize speech synthesis
+        function initSpeech() {
+            if ('speechSynthesis' in window) {
+                if (speechSynthesis.getVoices().length === 0) {
+                    speechSynthesis.addEventListener('voiceschanged', function() {
+                        console.log('Speech voices loaded');
+                    });
                 }
+                return true;
             } else {
-                window.location.href = '/';
+                alert('Speech synthesis not supported in this browser');
+                return false;
             }
         }
 
-        // Initialize when page loads
+        // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize audio system
-            setTimeout(initializeAudioNavigation, 1000);
-            
-            // Set initial button states
-            document.getElementById('pauseBtn').disabled = true;
-            document.getElementById('resumeBtn').disabled = true;
+            initSpeech();
+            setTimeout(initializeMapBridge, 1000);
         });
 
         // Handle page unload
