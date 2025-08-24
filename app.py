@@ -2097,7 +2097,7 @@ def analyze_route():
         print(f"Identified {len(hazard_zones)} hazard zones")
         
         # Precise turn analysis with physics
-        turns = calculate_precise_turn_analysis(detailed_coords, tt_specs)
+        turns = calculate_enhanced_turn_analysis(detailed_coords, tt_specs)
         print(f"Analyzed {len(turns)} significant turns")
         
         # Braking distance calculations
@@ -2766,6 +2766,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
