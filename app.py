@@ -731,6 +731,316 @@ def calculate_enhanced_turn_analysis(coords, tt_specs):
     
     return turns
 
+def generate_audio_navigation_data(coords, hazard_zones, turns, braking_points, pois, tt_specs):
+    """Generate comprehensive audio navigation instructions for truck tanker route"""
+    
+    instructions = []
+    waypoints = []
+    
+    try:
+        # Generate route introduction
+        intro_instruction = {
+            'type': 'introduction',
+            'location': coords[0] if coords else (0, 0),
+            'distance_from_start': 0,
+            'message': f"Audio navigation started for {tt_specs['capacity_range']} petroleum tanker. Gross weight {tt_specs['gross_weight']/1000:.1f} tonnes. Class 3 flammable cargo. Exercise extreme caution.",
+            'priority': 'high',
+            'duration_seconds': 8
+        }
+        instructions.append(intro_instruction)
+        
+        # Generate instructions for hazard zones (highest priority)
+        for i, hazard in enumerate(hazard_zones[:20]):  # Limit to top 20 most critical
+            try:
+                # Find closest route point to hazard
+                hazard_location = hazard['location']
+                closest_distance = float('inf')
+                closest_coord_index = 0
+                
+                for j, coord in enumerate(coords):
+                    from geopy.distance import geodesic
+                    distance = geodesic(coord, hazard_location).meters
+                    if distance < closest_distance:
+                        closest_distance = distance
+                        closest_coord_index = j
+                
+                # Only include if hazard is close to route
+                if closest_distance <= 300:  # Within 300 meters of route
+                    
+                    # Calculate distance from route start
+                    distance_from_start = 0
+                    for k in range(closest_coord_index):
+                        if k + 1 < len(coords):
+                            distance_from_start += geodesic(coords[k], coords[k+1]).meters
+                    
+                    # Generate appropriate audio message based on hazard type
+                    audio_message = generate_hazard_audio_message(hazard, tt_specs)
+                    
+                    hazard_instruction = {
+                        'type': 'hazard_alert',
+                        'location': coords[closest_coord_index],
+                        'distance_from_start': distance_from_start,
+                        'hazard_data': hazard,
+                        'message': audio_message,
+                        'priority': 'critical' if hazard.get('risk_level') == 'Critical' else 'high',
+                        'duration_seconds': 6 if 'fuel' in audio_message.lower() else 4,
+                        'repeat_count': 2 if 'fuel' in audio_message.lower() else 1
+                    }
+                    instructions.append(hazard_instruction)
+                    
+            except Exception as e:
+                print(f"Error processing hazard {i}: {e}")
+                continue
+        
+        # Generate instructions for critical turns
+        for i, turn in enumerate(turns[:30]):  # Top 30 most critical turns
+            try:
+                # Find turn location in route
+                turn_location = turn['location']
+                closest_distance = float('inf')
+                closest_coord_index = 0
+                
+                for j, coord in enumerate(coords):
+                    distance = geodesic(coord, turn_location).meters
+                    if distance < closest_distance:
+                        closest_distance = distance
+                        closest_coord_index = j
+                
+                if closest_distance <= 100:  # Within 100 meters of route
+                    
+                    # Calculate distance from start
+                    distance_from_start = 0
+                    for k in range(closest_coord_index):
+                        if k + 1 < len(coords):
+                            distance_from_start += geodesic(coords[k], coords[k+1]).meters
+                    
+                    # Generate turn audio message
+                    turn_audio_message = generate_turn_audio_message(turn, tt_specs)
+                    
+                    turn_instruction = {
+                        'type': 'turn_guidance',
+                        'location': coords[closest_coord_index],
+                        'distance_from_start': distance_from_start,
+                        'turn_data': turn,
+                        'message': turn_audio_message,
+                        'priority': 'critical' if turn.get('severity') == 'critical' else 'medium',
+                        'duration_seconds': 5,
+                        'advance_warning_distance': max(100, turn.get('deceleration_distance', 50))
+                    }
+                    instructions.append(turn_instruction)
+                    
+            except Exception as e:
+                print(f"Error processing turn {i}: {e}")
+                continue
+        
+        # Generate instructions for extreme braking zones
+        for i, braking_point in enumerate(braking_points[:10]):  # Top 10 braking zones
+            try:
+                if braking_point.get('total_distance', 0) > 60:  # Only extreme braking distances
+                    
+                    braking_location = braking_point['location']
+                    closest_distance = float('inf')
+                    closest_coord_index = 0
+                    
+                    for j, coord in enumerate(coords):
+                        distance = geodesic(coord, braking_location).meters
+                        if distance < closest_distance:
+                            closest_distance = distance
+                            closest_coord_index = j
+                    
+                    if closest_distance <= 150:
+                        
+                        # Calculate distance from start
+                        distance_from_start = 0
+                        for k in range(closest_coord_index):
+                            if k + 1 < len(coords):
+                                distance_from_start += geodesic(coords[k], coords[k+1]).meters
+                        
+                        braking_message = f"Extended braking zone ahead. {braking_point['total_distance']} meter stopping distance required at {braking_point['speed_kmph']} kilometers per hour. Weight factor {braking_point['weight_factor']:.1f}."
+                        
+                        if braking_point.get('gradient', 0) > 3:
+                            braking_message += f" Downhill gradient {braking_point['gradient']:.1f}% increases braking distance."
+                        elif braking_point.get('gradient', 0) < -3:
+                            braking_message += f" Uphill gradient assists braking."
+                        
+                        braking_instruction = {
+                            'type': 'braking_alert',
+                            'location': coords[closest_coord_index],
+                            'distance_from_start': distance_from_start,
+                            'braking_data': braking_point,
+                            'message': braking_message,
+                            'priority': 'medium',
+                            'duration_seconds': 4
+                        }
+                        instructions.append(braking_instruction)
+                        
+            except Exception as e:
+                print(f"Error processing braking point {i}: {e}")
+                continue
+        
+        # Generate instructions for critical POIs (fuel stations, schools)
+        critical_poi_types = ['fuel', 'education']
+        for poi in pois:
+            try:
+                if poi.get('type') in critical_poi_types:
+                    
+                    poi_location = poi['location']
+                    closest_distance = float('inf')
+                    closest_coord_index = 0
+                    
+                    for j, coord in enumerate(coords):
+                        distance = geodesic(coord, poi_location).meters
+                        if distance < closest_distance:
+                            closest_distance = distance
+                            closest_coord_index = j
+                    
+                    if closest_distance <= 400:  # Within 400 meters of route
+                        
+                        # Calculate distance from start
+                        distance_from_start = 0
+                        for k in range(closest_coord_index):
+                            if k + 1 < len(coords):
+                                distance_from_start += geodesic(coords[k], coords[k+1]).meters
+                        
+                        poi_message = generate_poi_audio_message(poi, tt_specs)
+                        
+                        if poi_message:  # Only add if there's a relevant message
+                            poi_instruction = {
+                                'type': 'poi_alert',
+                                'location': coords[closest_coord_index],
+                                'distance_from_start': distance_from_start,
+                                'poi_data': poi,
+                                'message': poi_message,
+                                'priority': 'critical' if poi.get('type') == 'fuel' else 'high',
+                                'duration_seconds': 5 if poi.get('type') == 'fuel' else 3
+                            }
+                            instructions.append(poi_instruction)
+                            
+            except Exception as e:
+                print(f"Error processing POI {poi.get('name', 'Unknown')}: {e}")
+                continue
+        
+        # Add periodic safety reminders every 10km
+        try:
+            route_distance_km = 0
+            reminder_interval_km = 10
+            next_reminder_km = reminder_interval_km
+            
+            for i in range(1, len(coords)):
+                segment_distance = geodesic(coords[i-1], coords[i]).kilometers
+                route_distance_km += segment_distance
+                
+                if route_distance_km >= next_reminder_km:
+                    safety_reminders = [
+                        f"Safety reminder: {tt_specs['capacity_range']} tanker carrying {tt_specs['avg_capacity_liters']:,} liters petroleum. Maintain safe following distance.",
+                        f"Checkpoint: {route_distance_km:.1f} kilometers completed. Gross weight {tt_specs['gross_weight']/1000:.1f} tonnes affects all maneuvers.",
+                        f"Safety update: Class 3 flammable cargo. Emergency contact ready. Speed limit {tt_specs['max_speed']} kilometers per hour maximum.",
+                        f"Progress update: {route_distance_km:.1f} kilometers traveled. Check mirrors and blind spots regularly for tanker vehicle."
+                    ]
+                    
+                    reminder_index = int(next_reminder_km / reminder_interval_km) % len(safety_reminders)
+                    
+                    distance_from_start = 0
+                    for k in range(i):
+                        if k + 1 < len(coords):
+                            distance_from_start += geodesic(coords[k], coords[k+1]).meters
+                    
+                    reminder_instruction = {
+                        'type': 'safety_reminder',
+                        'location': coords[i],
+                        'distance_from_start': distance_from_start,
+                        'message': safety_reminders[reminder_index],
+                        'priority': 'low',
+                        'duration_seconds': 4
+                    }
+                    instructions.append(reminder_instruction)
+                    
+                    next_reminder_km += reminder_interval_km
+                    
+        except Exception as e:
+            print(f"Error generating safety reminders: {e}")
+        
+        # Sort instructions by distance from start
+        instructions.sort(key=lambda x: x.get('distance_from_start', 0))
+        
+        # Generate waypoints for major navigation points
+        waypoint_intervals = max(1, len(coords) // 20)  # ~20 waypoints
+        for i in range(0, len(coords), waypoint_intervals):
+            try:
+                distance_from_start = 0
+                for k in range(i):
+                    if k + 1 < len(coords):
+                        distance_from_start += geodesic(coords[k], coords[k+1]).meters
+                
+                waypoint = {
+                    'location': coords[i],
+                    'distance_from_start': distance_from_start,
+                    'coordinate_index': i,
+                    'progress_percentage': (i / len(coords)) * 100
+                }
+                waypoints.append(waypoint)
+                
+            except Exception as e:
+                print(f"Error creating waypoint {i}: {e}")
+                continue
+        
+        # Add route completion instruction
+        if coords:
+            total_distance = 0
+            for i in range(1, len(coords)):
+                total_distance += geodesic(coords[i-1], coords[i]).meters
+                
+            completion_instruction = {
+                'type': 'route_completion',
+                'location': coords[-1],
+                'distance_from_start': total_distance,
+                'message': f"Destination reached. Total distance {total_distance/1000:.1f} kilometers completed. {tt_specs['capacity_range']} petroleum tanker navigation complete. Thank you for using Smart Marg audio navigation.",
+                'priority': 'high',
+                'duration_seconds': 6
+            }
+            instructions.append(completion_instruction)
+        
+        # Compile final audio navigation data
+        audio_data = {
+            'instructions': instructions,
+            'waypoints': waypoints,
+            'total_instructions': len(instructions),
+            'route_length_km': sum(geodesic(coords[i], coords[i+1]).kilometers for i in range(len(coords)-1)) if len(coords) > 1 else 0,
+            'estimated_audio_duration_minutes': sum(inst.get('duration_seconds', 3) for inst in instructions) / 60,
+            'tt_specifications': tt_specs,
+            'priority_breakdown': {
+                'critical': len([i for i in instructions if i.get('priority') == 'critical']),
+                'high': len([i for i in instructions if i.get('priority') == 'high']),
+                'medium': len([i for i in instructions if i.get('priority') == 'medium']),
+                'low': len([i for i in instructions if i.get('priority') == 'low'])
+            }
+        }
+        
+        return audio_data
+        
+    except Exception as e:
+        print(f"Error generating audio navigation data: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        # Return minimal fallback data
+        return {
+            'instructions': [{
+                'type': 'introduction',
+                'location': coords[0] if coords else (0, 0),
+                'distance_from_start': 0,
+                'message': f"Basic audio navigation for {tt_specs.get('capacity_range', 'TT')} petroleum tanker.",
+                'priority': 'high',
+                'duration_seconds': 3
+            }],
+            'waypoints': [],
+            'total_instructions': 1,
+            'route_length_km': 0,
+            'estimated_audio_duration_minutes': 0.05,
+            'tt_specifications': tt_specs,
+            'priority_breakdown': {'critical': 0, 'high': 1, 'medium': 0, 'low': 0}
+        }
+
 def calculate_enhanced_turn_radius(coords, center_index, scale, turn_angle):
     """Enhanced turn radius calculation using multiple methods"""
     try:
@@ -2826,6 +3136,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
