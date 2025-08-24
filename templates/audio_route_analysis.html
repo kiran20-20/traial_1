@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Marg Audio Navigation - Route Analysis</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .header h1 {
+            color: #00ff88;
+            margin-bottom: 10px;
+        }
+
+        .user-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 20px;
+            padding: 20px;
+            min-height: calc(100vh - 120px);
+        }
+
+        .map-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            position: relative;
+            backdrop-filter: blur(10px);
+        }
+
+        .map-frame {
+            width: 100%;
+            height: 70vh;
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .sidebar {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            overflow-y: auto;
+            max-height: 80vh;
+        }
+
+        .audio-section {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
+        }
+
+        .audio-section h3 {
+            margin-bottom: 15px;
+            color: white;
+        }
+
+        .audio-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 15px 0;
+        }
+
+        .audio-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .audio-btn:hover {
+            background: white;
+            color: #28a745;
+            transform: translateY(-2px);
+        }
+
+        .audio-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .volume-control {
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .volume-slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.3);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #00ff88;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .hazard-list {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .hazard-item {
+            background: rgba(220, 53, 69, 0.2);
+            border-left: 4px solid #dc3545;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 5px;
+            font-size: 13px;
+        }
+
+        .hazard-item.critical {
+            border-left-color: #8B0000;
+            background: rgba(139, 0, 0, 0.2);
+        }
+
+        .hazard-item.high {
+            border-left-color: #dc3545;
+            background: rgba(220, 53, 69, 0.2);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #6c757d, #495057);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .tt-specs {
+            background: linear-gradient(45deg, #fd7e14, #e07b14);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .tt-specs h4 {
+            margin-bottom: 10px;
+            color: white;
+        }
+
+        .tt-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            font-size: 12px;
+        }
+
+        .audio-status {
+            background: rgba(40, 167, 69, 0.2);
+            border: 2px solid #28a745;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(220, 53, 69, 0.95);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            z-index: 2000;
+            display: none;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        .progress-container {
+            margin: 15px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            width: 0%;
+            transition: width 1s ease;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+            }
+            
+            .sidebar {
+                max-height: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Smart Marg Audio Navigation System</h1>
+        <p>Enhanced Truck Tanker Route Analysis with Voice Guidance</p>
+        <div class="user-info">
+            Welcome, {{ username }}
+            <br><a href="/logout" style="color: #ff6b6b;">Logout</a>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="map-container">
+            <h3>Interactive Route Map with Audio Navigation</h3>
+            <iframe src="/view_map/{{ html_file }}" class="map-frame" id="routeMap"></iframe>
+            
+            <div class="progress-container">
+                <label>Navigation Progress:</label>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="navigationProgress"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <!-- Audio Navigation Section -->
+            <div class="audio-section">
+                <h3>Audio Navigation System</h3>
+                <div class="audio-status" id="audioStatus">
+                    Ready to start audio-guided navigation
+                </div>
+                
+                <div class="audio-controls">
+                    <button class="audio-btn" id="startAudioBtn" onclick="startAudioNavigation()">
+                        <i class="fas fa-play"></i> Start Audio
+                    </button>
+                    <button class="audio-btn" id="pauseAudioBtn" onclick="pauseAudioNavigation()" disabled>
+                        <i class="fas fa-pause"></i> Pause
+                    </button>
+                    <button class="audio-btn" id="stopAudioBtn" onclick="stopAudioNavigation()" disabled>
+                        <i class="fas fa-stop"></i> Stop
+                    </button>
+                    <button class="audio-btn" onclick="repeatLastInstruction()">
+                        <i class="fas fa-redo"></i> Repeat
+                    </button>
+                </div>
+
+                <div class="volume-control">
+                    <label>Volume: <span id="volumeDisplay">80%</span></label>
+                    <input type="range" class="volume-slider" id="volumeSlider" 
+                           min="0" max="100" value="80" 
+                           onchange="updateVolume(this.value)">
+                </div>
+            </div>
+
+            <!-- Route Statistics -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">{{ turns }}</div>
+                    <div class="stat-label">Total Turns</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ critical_turns }}</div>
+                    <div class="stat-label">Critical Turns</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ risk_zones }}</div>
+                    <div class="stat-label">Risk Zones</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">{{ critical_hazards }}</div>
+                    <div class="stat-label">Critical Hazards</div>
+                </div>
+            </div>
+
+            <!-- Truck Tanker Specifications -->
+            <div class="tt-specs">
+                <h4>Truck Tanker Specifications</h4>
+                <div class="tt-grid">
+                    <div>Capacity: {{ tt_specs.capacity_range }}</div>
+                    <div>Fuel: {{ "{:,}".format(tt_specs.avg_capacity_liters) }}L</div>
+                    <div>Gross Weight: {{ "%.1f"|format(tt_specs.gross_weight/1000) }}T</div>
+                    <div>Max Speed: {{ tt_specs.max_speed }} kmph</div>
+                    <div>Axle Load: {{ "%.1f"|format(tt_specs.axle_load) }}T</div>
+                    <div>Risk Class: 3 (Flammable)</div>
+                </div>
+            </div>
+
+            <!-- Critical Hazards List -->
+            <div>
+                <h4>Critical Hazards (Voice Alerts)</h4>
+                <div class="hazard-list" id="hazardsList">
+                    {% for hazard in route_report.hazard_analysis %}
+                    {% if hazard.risk_level == 'Critical' %}
+                    <div class="hazard-item critical">
+                        <strong>CRITICAL:</strong> {{ hazard.type }}<br>
+                        <small>Distance: {{ hazard.distance }}m | Risk: {{ hazard.risk_score }}/10</small>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    <div class="hazard-item critical">
+                        <strong>FUEL STATIONS:</strong> Extreme hazard for petroleum tankers<br>
+                        <small>Class 3 flammable cargo - No ignition sources</small>
+                    </div>
+                    
+                    <div class="hazard-item high">
+                        <strong>SCHOOL ZONES:</strong> Children crossing areas<br>
+                        <small>Heavy vehicle awareness required</small>
+                    </div>
+                    
+                    <div class="hazard-item high">
+                        <strong>SHARP TURNS:</strong> Rollover risk zones<br>
+                        <small>Liquid surge with {{ "{:,}".format(tt_specs.avg_capacity_liters) }}L cargo</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <a href="/detailed_report" class="btn btn-primary">
+                    <i class="fas fa-file-alt"></i> Detailed Report
+                </a>
+                <a href="/" class="btn btn-secondary">
+                    <i class="fas fa-home"></i> New Route
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification popup -->
+    <div class="notification" id="notificationPopup">
+        <div id="notificationContent">Alert message</div>
+        <button onclick="closeNotification()" style="margin-left: 15px; background: white; color: #dc3545; border: none; padding: 5px 10px; border-radius: 4px;">OK</button>
+    </div>
+
+    <script>
+        // Audio Navigation System
+        let isAudioNavigating = false;
+        let speechSynthesis = window.speechSynthesis;
+        let currentVoice = null;
+        let lastInstruction = "";
+        let instructionQueue = [];
+        let currentInstructionIndex = 0;
+
+        // Sample audio instructions - replace with actual data from Flask
+        const audioInstructions = [
+            {
+                message: "Starting navigation for {{ tt_specs.capacity_range }} petroleum tanker. Route analysis complete. {{ route_report.route_overview.complexity_rating }} complexity detected.",
+                priority: "high",
+                type: "welcome"
+            },
+            {
+                message: "EXTREME HAZARD: Fuel station ahead in 200 meters. Petroleum tanker warning. Reduce speed to 15 kilometers per hour immediately.",
+                priority: "critical",
+                type: "hazard"
+            },
+            {
+                message: "Sharp right turn ahead. 90 degrees. Reduce speed to 25 kilometers per hour. Check for cross traffic.",
+                priority: "high", 
+                type: "turn"
+            },
+            {
+                message: "School zone ahead. Children crossing area. Reduce speed to 20 kilometers per hour. Extra vigilance required.",
+                priority: "critical",
+                type: "hazard"
+            },
+            {
+                message: "Navigation completed successfully. All hazards navigated safely. Thank you for using Smart Marg audio navigation.",
+                priority: "high",
+                type: "completion"
+            }
+        ];
+
+        // Initialize voice synthesis
+        function initializeVoice() {
+            speechSynthesis.onvoiceschanged = () => {
+                const voices = speechSynthesis.getVoices();
+                currentVoice = voices.find(voice => 
+                    voice.lang.startsWith('en') && voice.localService
+                ) || voices[0];
+            };
+        }
+
+        // Speak instruction
+        function speakInstruction(message, isUrgent = false) {
+            if (!speechSynthesis) return;
+            
+            speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(message);
+            utterance.voice = currentVoice;
+            utterance.rate = isUrgent ? 1.0 : 0.9;
+            utterance.pitch = isUrgent ? 1.1 : 1.0;
+            utterance.volume = document.getElementById('volumeSlider').value / 100;
+            
+            utterance.onstart = () => {
+                document.getElementById('audioStatus').innerHTML = 'Speaking: "' + message.substring(0, 40) + '..."';
+                if (isUrgent) {
+                    showNotification(message, 'critical');
+                }
+            };
+            
+            utterance.onend = () => {
+                document.getElementById('audioStatus').innerHTML = 'Ready for next instruction';
+            };
+            
+            speechSynthesis.speak(utterance);
+            lastInstruction = message;
+        }
+
+        // Start audio navigation
+        function startAudioNavigation() {
+            if (isAudioNavigating) return;
+            
+            isAudioNavigating = true;
+            currentInstructionIndex = 0;
+            
+            // Update button states
+            document.getElementById('startAudioBtn').disabled = true;
+            document.getElementById('pauseAudioBtn').disabled = false;
+            document.getElementById('stopAudioBtn').disabled = false;
+            
+            // Update status
+            document.getElementById('audioStatus').innerHTML = 'Audio navigation active - Following route';
+            
+            // Start with welcome message
+            speakInstruction(audioInstructions[0].message, true);
+            
+            // Start instruction sequence
+            setTimeout(playNextInstruction, 5000);
+        }
+
+        // Play next instruction
+        function playNextInstruction() {
+            if (!isAudioNavigating || currentInstructionIndex >= audioInstructions.length - 1) {
+                completeAudioNavigation();
+                return;
+            }
+            
+            currentInstructionIndex++;
+            const instruction = audioInstructions[currentInstructionIndex];
+            
+            speakInstruction(instruction.message, instruction.priority === 'critical');
+            
+            // Update progress
+            const progress = (currentInstructionIndex / (audioInstructions.length - 1)) * 100;
+            document.getElementById('navigationProgress').style.width = progress + '%';
+            
+            // Schedule next instruction
+            const delay = instruction.priority === 'critical' ? 8000 : 6000;
+            setTimeout(playNextInstruction, delay);
+        }
+
+        // Pause audio navigation
+        function pauseAudioNavigation() {
+            isAudioNavigating = false;
+            speechSynthesis.cancel();
+            
+            document.getElementById('startAudioBtn').disabled = false;
+            document.getElementById('pauseAudioBtn').disabled = true;
+            document.getElementById('audioStatus').innerHTML = 'Navigation paused - Click start to continue';
+            
+            speakInstruction("Navigation paused. Click start to continue.");
+        }
+
+        // Stop audio navigation
+        function stopAudioNavigation() {
+            isAudioNavigating = false;
+            speechSynthesis.cancel();
+            currentInstructionIndex = 0;
+            
+            // Reset button states
+            document.getElementById('startAudioBtn').disabled = false;
+            document.getElementById('pauseAudioBtn').disabled = true;
+            document.getElementById('stopAudioBtn').disabled = true;
+            
+            // Reset progress
+            document.getElementById('navigationProgress').style.width = '0%';
+            document.getElementById('audioStatus').innerHTML = 'Navigation stopped - Ready to restart';
+            
+            speakInstruction("Audio navigation stopped. Have a safe journey.");
+        }
+
+        // Complete navigation
+        function completeAudioNavigation() {
+            isAudioNavigating = false;
+            
+            document.getElementById('navigationProgress').style.width = '100%';
+            document.getElementById('audioStatus').innerHTML = 'Navigation completed successfully!';
+            
+            speakInstruction(audioInstructions[audioInstructions.length - 1].message, true);
+            
+            showNotification("Journey completed successfully!", 'success');
+        }
+
+        // Repeat last instruction
+        function repeatLastInstruction() {
+            if (lastInstruction) {
+                speakInstruction("Repeating: " + lastInstruction);
+            } else {
+                speakInstruction("No previous instruction to repeat.");
+            }
+        }
+
+        // Update volume
+        function updateVolume(value) {
+            document.getElementById('volumeDisplay').innerHTML = value + '%';
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const popup = document.getElementById('notificationPopup');
+            const content = document.getElementById('notificationContent');
+            
+            content.innerHTML = message;
+            
+            if (type === 'critical') {
+                popup.style.background = 'rgba(220, 53, 69, 0.95)';
+            } else if (type === 'success') {
+                popup.style.background = 'rgba(40, 167, 69, 0.95)';
+            } else {
+                popup.style.background = 'rgba(0, 123, 255, 0.95)';
+            }
+            
+            popup.style.display = 'block';
+            
+            // Auto-close after 5 seconds
+            setTimeout(closeNotification, 5000);
+        }
+
+        // Close notification
+        function closeNotification() {
+            document.getElementById('notificationPopup').style.display = 'none';
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', function() {
+            initializeVoice();
+            
+            // Welcome message after 2 seconds
+            setTimeout(() => {
+                speakInstruction("Smart Marg Audio Navigation System loaded. Route analysis complete with {{ route_report.route_overview.complexity_rating.lower() }} complexity rating. Click start audio navigation when ready.");
+            }, 2000);
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            if (speechSynthesis) {
+                speechSynthesis.cancel();
+            }
+        });
+
+        // Add vehicle tracking simulation
+        let vehiclePosition = 0;
+        let trackingInterval;
+
+        function startVehicleTracking() {
+            trackingInterval = setInterval(() => {
+                if (isAudioNavigating && vehiclePosition < 100) {
+                    vehiclePosition += 2;
+                    // Update vehicle position in map iframe if needed
+                    // This would require communication with the embedded map
+                }
+            }, 1000);
+        }
+
+        function stopVehicleTracking() {
+            clearInterval(trackingInterval);
+            vehiclePosition = 0;
+        }
+
+        // Start vehicle tracking when audio navigation starts
+        document.getElementById('startAudioBtn').addEventListener('click', startVehicleTracking);
+        document.getElementById('stopAudioBtn').addEventListener('click', stopVehicleTracking);
+    </script>
+</body>
+</html>
