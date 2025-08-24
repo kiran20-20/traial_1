@@ -3,654 +3,430 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🚛 Enhanced Route Analysis - Heavy Vehicle Navigation</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>Route Analysis - IndianOil Smart Marg</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
+        
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
-
+        
         .container {
             max-width: 1400px;
-            width: 100%;
+            margin: 0 auto;
             background: white;
             border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             overflow: hidden;
-            margin: 0 auto;
         }
-
+        
         .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             color: white;
-            padding: 25px 30px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 2.2em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-        }
-
-        .header p {
-            font-size: 1.1em;
-            opacity: 0.9;
-            margin: 0;
-        }
-
-        .main-content {
-            display: flex;
-            flex-direction: column;
-            gap: 0;
-        }
-
-        .map-section {
-            position: relative;
-            background: #f8f9fa;
-            width: 100%;
-            height: 70vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .map-container {
-            width: 100%;
-            height: 100%;
-            border: none;
-            border-radius: 0;
-        }
-
-        .map-overlay {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(255,255,255,0.95);
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            min-width: 200px;
-            z-index: 1000;
-        }
-
-        .speed-indicator {
-            text-align: center;
-            margin-bottom: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .speed-gauge {
-            font-size: 2em;
-            font-weight: bold;
-            color: #e74c3c;
-        }
-
-        .sidebar {
-            background: #f8f9fa;
-            padding: 30px;
-            border-top: 3px solid #e9ecef;
-            overflow-y: visible;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 20px;
-            align-items: start;
-        }
-
-        .info-card {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border-left: 4px solid #3498db;
-            display: flex;
-            flex-direction: column;
-            height: fit-content;
-        }
-
-        .info-card h3 {
-            color: #2c3e50;
-            margin-bottom: 15px;
-            font-size: 1.2em;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            gap: 10px;
-        }
-
-        .stat-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin: 15px 0;
-            align-items: stretch;
-        }
-
-        .stat-item {
-            text-align: center;
-            padding: 12px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border: 1px solid #e9ecef;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .stat-value {
-            font-size: 1.4em;
-            font-weight: bold;
-            color: #2c3e50;
-            display: block;
-            text-align: center;
-        }
-
-        .stat-label {
-            font-size: 0.9em;
-            color: #6c757d;
-            margin-top: 4px;
-            text-align: center;
-        }
-
-        .risk-indicator {
-            padding: 8px 12px;
-            border-radius: 20px;
-            font-size: 0.9em;
-            font-weight: bold;
-            text-align: center;
-            margin: 5px 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .risk-high {
-            background: #ff6b6b;
-            color: white;
-        }
-
-        .risk-medium {
-            background: #ffa726;
-            color: white;
-        }
-
-        .risk-low {
-            background: #66bb6a;
-            color: white;
-        }
-
-        .safety-recommendations {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-        .safety-recommendations li {
-            padding: 8px 0;
-            border-bottom: 1px solid #e9ecef;
-            color: #495057;
-            display: flex;
-            align-items: center;
-        }
-
-        .safety-recommendations li:before {
-            content: "⚠️";
-            margin-right: 8px;
-            flex-shrink: 0;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 15px;
-            margin-top: 20px;
-            align-items: center;
-            justify-content: center;
-            grid-column: 1 / -1;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1em;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            text-align: center;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            color: white;
-        }
-
-        .btn-secondary {
-            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
-            color: white;
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, #27ae60, #229954);
-            color: white;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-
-        .traffic-status {
+            padding: 20px 30px;
             display: flex;
             justify-content: space-between;
-            align-items: stretch;
-            margin: 10px 0;
-            gap: 10px;
-        }
-
-        .traffic-item {
-            text-align: center;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 10px;
         }
-
-        .traffic-circle {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            margin: 0 auto 5px;
+        
+        .header h1 {
+            font-size: 2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
-
-        .traffic-light { background: #27ae60; }
-        .traffic-moderate { background: #f39c12; }
-        .traffic-heavy { background: #e74c3c; }
-
-        .truck-info {
-            background: linear-gradient(135deg, #34495e, #2c3e50);
+        
+        .user-info {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+        
+        .analysis-summary {
+            padding: 30px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             color: white;
-            border-radius: 10px;
-            padding: 15px;
-            margin: 0;
             text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: fit-content;
         }
-
-        .truck-specs {
+        
+        .complexity-rating {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 20px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .critical {
+            color: #ff4757;
+        }
+        
+        .high {
+            color: #ff6b35;
+        }
+        
+        .moderate {
+            color: #ffa502;
+        }
+        
+        .low {
+            color: #2ed573;
+        }
+        
+        .stats-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 10px;
-            width: 100%;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
         }
-
+        
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+        
+        .truck-specs {
+            padding: 30px;
+            background: #34495e;
+            color: white;
+        }
+        
+        .truck-specs h3 {
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            text-align: center;
+        }
+        
+        .specs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
         .spec-item {
             background: rgba(255,255,255,0.1);
-            padding: 8px;
-            border-radius: 5px;
-            font-size: 0.9em;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .progress-bar {
-            background: #e9ecef;
-            border-radius: 10px;
-            height: 8px;
-            overflow: hidden;
-            margin: 5px 0;
-            width: 100%;
-        }
-
-        .progress-fill {
-            height: 100%;
-            border-radius: 10px;
-            transition: width 0.3s ease;
-        }
-
-        .progress-success { background: #27ae60; }
-        .progress-warning { background: #f39c12; }
-        .progress-danger { background: #e74c3c; }
-
-        @media (max-width: 768px) {
-            .sidebar {
-                grid-template-columns: 1fr;
-                padding: 20px;
-            }
-            
-            .map-section {
-                height: 50vh;
-            }
-            
-            .action-buttons {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .stat-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .truck-specs {
-                grid-template-columns: 1fr;
-            }
-            
-            .traffic-status {
-                flex-direction: column;
-                gap: 5px;
-            }
-        }
-
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-
-        .alert {
-            padding: 12px;
+            padding: 15px;
             border-radius: 8px;
-            margin: 10px 0;
-            border-left: 4px solid;
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 8px;
         }
-
-        .alert-danger {
-            background: #f8d7da;
-            color: #721c24;
-            border-color: #dc3545;
+        
+        .spec-label {
+            font-weight: 500;
         }
-
+        
+        .spec-value {
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .map-container {
+            padding: 30px;
+            background: #2c3e50;
+            text-align: center;
+        }
+        
+        .map-container h3 {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        .map-frame {
+            width: 100%;
+            height: 600px;
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+        
+        .action-buttons {
+            padding: 30px;
+            background: #ecf0f1;
+            text-align: center;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            margin: 0 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #95e1d3 0%, #fce38a 100%);
+            color: #2c3e50;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        }
+        
+        .alert {
+            padding: 20px;
+            margin: 20px 30px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        
         .alert-warning {
             background: #fff3cd;
             color: #856404;
-            border-color: #ffc107;
+            border: 1px solid #ffeaa7;
         }
-
-        .alert-info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border-color: #17a2b8;
+        
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
-
-        .route-timeline {
-            position: relative;
-            padding: 20px 0;
+        
+        .safety-recommendations {
+            padding: 30px;
+            background: #fff3cd;
         }
-
-        .timeline-item {
-            display: flex;
-            align-items: center;
+        
+        .safety-recommendations h3 {
+            color: #856404;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .recommendation-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .recommendation-list li {
+            background: white;
             margin: 10px 0;
-            padding: 10px;
-            background: rgba(52, 152, 219, 0.1);
+            padding: 15px;
             border-radius: 8px;
-            border-left: 3px solid #3498db;
+            border-left: 4px solid #ffc107;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-
-        .timeline-icon {
+        
+        .recommendation-list li:before {
+            content: "⚠️";
             margin-right: 10px;
-            font-size: 1.2em;
         }
-
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #3498db;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .specs-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .user-info {
+                margin-top: 15px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Header -->
         <div class="header">
-            <h1><i class="fas fa-truck"></i> Enhanced Route Analysis</h1>
-            <p>Heavy Vehicle Navigation System - {{ route_report.truck_weight }}T Truck Route</p>
+            <h1>Route Analysis Complete</h1>
+            <div class="user-info">
+                Logged in as: {{ username }}
+            </div>
         </div>
 
-        <div class="main-content">
-            <div class="map-section">
-                <iframe src="{{ url_for('view_map', filename=html_file) }}" 
-                        class="map-container" 
-                        frameborder="0">
-                </iframe>
-                
-                <div class="map-overlay">
-                    <div class="speed-indicator">
-                        <div class="speed-gauge pulse">≤{{ route_report.max_speed_limit }}</div>
-                        <div style="font-size: 0.9em; color: #666;">MAX SPEED (km/h)</div>
-                    </div>
-                    <div style="font-size: 0.8em; color: #666; text-align: center; margin-top: 10px;">
-                        🚛 {{ route_report.truck_weight }}T Loaded Vehicle
-                    </div>
+        <!-- Analysis Summary -->
+        <div class="analysis-summary">
+            <h2>{{ mode }} Analysis</h2>
+            <div class="complexity-rating 
+                {% if complexity_rating == 'EXTREME RISK' %}critical
+                {% elif complexity_rating == 'HIGH COMPLEXITY' %}high
+                {% elif complexity_rating == 'MODERATE COMPLEXITY' %}moderate
+                {% else %}low{% endif %}">
+                {{ complexity_rating }}
+            </div>
+            <p>Comprehensive analysis completed with advanced truck tanker physics calculations</p>
+        </div>
+
+        <!-- Key Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ critical_turns }}</div>
+                <div class="stat-label">Critical Turns</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ critical_hazards }}</div>
+                <div class="stat-label">Critical Hazards</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ poi_count }}</div>
+                <div class="stat-label">Points of Interest</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ max_braking_distance }}m</div>
+                <div class="stat-label">Max Braking Distance</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ turns }}</div>
+                <div class="stat-label">Total Significant Turns</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ risk_zones }}</div>
+                <div class="stat-label">Risk Zones Identified</div>
+            </div>
+        </div>
+
+        <!-- Truck Specifications -->
+        <div class="truck-specs">
+            <h3>Truck Tanker Specifications</h3>
+            <div class="specs-grid">
+                <div class="spec-item">
+                    <span class="spec-label">Capacity Range:</span>
+                    <span class="spec-value">{{ tt_specs.capacity_range }}</span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">Average Capacity:</span>
+                    <span class="spec-value">{{ "{:,}".format(tt_specs.avg_capacity_liters) }} L</span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">Gross Weight:</span>
+                    <span class="spec-value">{{ "%.1f"|format(tt_specs.gross_weight/1000) }} T</span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">Tare Weight:</span>
+                    <span class="spec-value">{{ "%.1f"|format(tt_specs.tare_weight/1000) }} T</span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">Axle Load:</span>
+                    <span class="spec-value">{{ "%.1f"|format(tt_specs.axle_load) }} T per axle</span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">Max Speed:</span>
+                    <span class="spec-value">{{ tt_specs.max_speed }} kmph</span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">Risk Multiplier:</span>
+                    <span class="spec-value">{{ tt_specs.risk_multiplier }}x</span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">Turn Sensitivity:</span>
+                    <span class="spec-value">{{ tt_specs.turn_sensitivity }}x</span>
                 </div>
             </div>
+        </div>
 
-            <div class="sidebar">
-                <div class="info-card">
-                    <h3><i class="fas fa-route"></i> Route Overview</h3>
-                    <div class="stat-grid">
-                        <div class="stat-item">
-                            <span class="stat-value">{{ route_report.total_distance }}</span>
-                            <div class="stat-label">Total Distance</div>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value">{{ route_report.total_duration }}</span>
-                            <div class="stat-label">Est. Duration</div>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value">{{ route_report.route_analysis.total_points }}</span>
-                            <div class="stat-label">Route Points</div>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value">{{ "%.1f"|format(route_report.route_analysis.points_per_km) }}</span>
-                            <div class="stat-label">Points/km</div>
-                        </div>
-                    </div>
-                </div>
+        <!-- Alerts -->
+        {% if critical_turns > 5 %}
+        <div class="alert alert-danger">
+            <strong>HIGH RISK ALERT:</strong> Route contains {{ critical_turns }} critical turns requiring extreme caution. Consider alternative routes if available.
+        </div>
+        {% endif %}
 
-                <div class="truck-info">
-                    <h4><i class="fas fa-truck"></i> Vehicle Specifications</h4>
-                    <div class="truck-specs">
-                        <div class="spec-item">
-                            <strong>{{ route_report.truck_weight }}T</strong><br>
-                            <small>Max Weight</small>
-                        </div>
-                        <div class="spec-item">
-                            <strong>{{ route_report.max_speed_limit }} km/h</strong><br>
-                            <small>Speed Limit</small>
-                        </div>
-                    </div>
-                </div>
+        {% if critical_hazards > 3 %}
+        <div class="alert alert-warning">
+            <strong>HAZARD WARNING:</strong> {{ critical_hazards }} critical hazard zones identified. Review detailed analysis before proceeding.
+        </div>
+        {% endif %}
 
-                <div class="info-card">
-                    <h3><i class="fas fa-exclamation-triangle"></i> Risk Assessment</h3>
-                    <div class="stat-grid">
-                        <div class="stat-item">
-                            <span class="stat-value" style="color: #e74c3c;">{{ route_report.route_analysis.high_risk_zones }}</span>
-                            <div class="stat-label">High Risk Zones</div>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value" style="color: #f39c12;">{{ route_report.route_analysis.medium_risk_zones }}</span>
-                            <div class="stat-label">Medium Risk Zones</div>
-                        </div>
-                    </div>
-                    
-                    {% if route_report.route_analysis.high_risk_zones > 0 %}
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <strong>High Risk Alert:</strong> {{ route_report.route_analysis.high_risk_zones }} zones require extreme caution!
-                    </div>
-                    {% endif %}
-                </div>
+        {% if max_braking_distance > 80 %}
+        <div class="alert alert-warning">
+            <strong>EXTENDED BRAKING:</strong> Maximum braking distance of {{ max_braking_distance }}m requires increased following distances.
+        </div>
+        {% endif %}
 
-                <div class="info-card">
-                    <h3><i class="fas fa-volume-up"></i> Audio Instructions</h3>
-                    {% if audio_instructions %}
-                        <ul class="list-group" style="list-style: none; padding: 0;">
-                            {% for instruction in audio_instructions %}
-                                <li class="list-group-item" style="display: flex; flex-direction: column; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid #eee;">
-                                    <p class="mb-2" style="font-size: 0.9em; margin: 0 0 5px 0;">{{ instruction.text }}</p>
-                                    <audio controls src="{{ instruction.audio_url }}" style="width: 100%;"></audio>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p class="text-center" style="font-size: 0.9em; color: #6c757d;">No high-risk audio instructions generated for this route.</p>
-                    {% endif %}
-                </div>
-                <div class="info-card">
-                    <h3><i class="fas fa-traffic-light"></i> Traffic Analysis</h3>
-                    <div class="traffic-status">
-                        <div class="traffic-item">
-                            <div class="traffic-circle traffic-light"></div>
-                            <div style="font-size: 0.8em;">Light</div>
-                            <div style="font-weight: bold;">{{ route_report.traffic_analysis.light_traffic_segments }}</div>
-                        </div>
-                        <div class="traffic-item">
-                            <div class="traffic-circle traffic-moderate"></div>
-                            <div style="font-size: 0.8em;">Moderate</div>
-                            <div style="font-weight: bold;">{{ route_report.traffic_analysis.moderate_traffic_segments }}</div>
-                        </div>
-                        <div class="traffic-item">
-                            <div class="traffic-circle traffic-heavy"></div>
-                            <div style="font-size: 0.8em;">Heavy</div>
-                            <div style="font-weight: bold;">{{ route_report.traffic_analysis.heavy_traffic_segments }}</div>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-top: 15px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                            <span style="font-size: 0.9em;">Avg Delay Factor:</span>
-                            <span style="font-weight: bold;">{{ "%.1f"|format(route_report.traffic_analysis.average_delay_factor) }}x</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill {% if route_report.traffic_analysis.average_delay_factor < 1.2 %}progress-success{% elif route_report.traffic_analysis.average_delay_factor < 1.5 %}progress-warning{% else %}progress-danger{% endif %}" 
-                                 style="width: {{ ((route_report.traffic_analysis.average_delay_factor - 1) * 50)|int }}%;"></div>
-                        </div>
-                    </div>
-                </div>
+        <!-- Interactive Map -->
+        <div class="map-container">
+            <h3>Interactive Route Analysis Map</h3>
+            <iframe src="/view_map/{{ html_file }}" class="map-frame"></iframe>
+        </div>
 
-                <div class="info-card">
-                    <h3><i class="fas fa-map-marked-alt"></i> Infrastructure</h3>
-                    <div class="stat-grid">
-                        <div class="stat-item">
-                            <span class="stat-value" style="color: #e74c3c;">{{ route_report.route_analysis.hospitals_along_route }}</span>
-                            <div class="stat-label">Hospitals</div>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value" style="color: #3498db;">{{ route_report.route_analysis.police_stations }}</span>
-                            <div class="stat-label">Police</div>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value" style="color: #f39c12;">{{ route_report.route_analysis.fuel_stations }}</span>
-                            <div class="stat-label">Fuel Stations</div>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value">{{ poi_count }}</span>
-                            <div class="stat-label">Total POIs</div>
-                        </div>
-                    </div>
-                </div>
+        <!-- Safety Recommendations -->
+        <div class="safety-recommendations">
+            <h3>Critical Safety Recommendations</h3>
+            <ul class="recommendation-list">
+                {% for recommendation in route_report.safety_recommendations[:8] %}
+                <li>{{ recommendation }}</li>
+                {% endfor %}
+            </ul>
+        </div>
 
-                <div class="info-card">
-                    <h3><i class="fas fa-shield-alt"></i> Safety Recommendations</h3>
-                    <ul class="safety-recommendations">
-                        {% for recommendation in route_report.safety_recommendations %}
-                        <li>{{ recommendation }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-
-                <div class="action-buttons">
-                    <a href="{{ url_for('detailed_report') }}" class="btn btn-primary">
-                        <i class="fas fa-chart-bar"></i> Detailed Report
-                    </a>
-                    <a href="{{ url_for('download_map', filename=html_file) }}" class="btn btn-success">
-                        <i class="fas fa-download"></i> Download Map
-                    </a>
-                    <a href="{{ url_for('home') }}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> New Route
-                    </a>
-                </div>
-            </div>
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <a href="/detailed_report" class="btn">View Detailed Analysis Report</a>
+            <a href="/download/{{ html_file }}" class="btn btn-secondary">Download Map</a>
+            <a href="/" class="btn btn-secondary">Plan New Route</a>
+            <button onclick="window.print()" class="btn btn-secondary">Print Analysis</button>
+            <a href="/logout" class="btn btn-danger">Logout</a>
         </div>
     </div>
 
     <script>
-        // Auto-refresh traffic data every 5 minutes
-        setInterval(function() {
-            console.log('Traffic data would be refreshed here in production');
-        }, 300000);
+        // Auto-refresh map after 2 seconds to ensure proper loading
+        setTimeout(function() {
+            const iframe = document.querySelector('.map-frame');
+            if (iframe) {
+                iframe.src = iframe.src;
+            }
+        }, 2000);
 
-        // Add loading animation for map
+        // Print function
+        function printAnalysis() {
+            window.print();
+        }
+
+        // Show loading indicator
         document.addEventListener('DOMContentLoaded', function() {
-            const mapFrame = document.querySelector('.map-container');
-            mapFrame.addEventListener('load', function() {
+            const iframe = document.querySelector('.map-frame');
+            iframe.addEventListener('load', function() {
                 console.log('Map loaded successfully');
             });
         });
-
-        // Pulse animation for high risk alerts
-        if ({{ route_report.route_analysis.high_risk_zones }} > 0) {
-            setInterval(function() {
-                const alerts = document.querySelectorAll('.alert-danger');
-                alerts.forEach(alert => {
-                    alert.style.backgroundColor = alert.style.backgroundColor === 'rgb(248, 215, 218)' ? '#ffebee' : '#f8d7da';
-                });
-            }, 1000);
-        }
     </script>
 </body>
 </html>
