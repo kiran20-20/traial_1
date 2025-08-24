@@ -16,6 +16,7 @@ from geopy.distance import geodesic
 import time
 from functools import wraps
 
+
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 app.config['SESSION_TYPE'] = 'filesystem'
@@ -1709,6 +1710,505 @@ def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance
             ]
         }
 
+
+
+#------------------------------------------------------------------------------------
+def get_enhanced_pois_for_audio(detailed_coords):
+    """Get POIs specifically optimized for audio navigation"""
+    all_pois = []
+    poi_types = [
+        ('hospital', 'health'),
+        ('school', 'education'), 
+        ('gas_station', 'fuel'),
+        ('police', 'safety'),
+        ('shopping_mall', 'commercial'),
+        ('place_of_worship', 'religious')
+    ]
+    
+    # Use strategic sampling points for audio-relevant POIs
+    sample_coords = detailed_coords[::max(1, len(detailed_coords)//12)]  # 12 sample points
+    
+    for poi_type, category in poi_types:
+        for lat, lng in sample_coords:
+            try:
+                places_result = gmaps.places_nearby(
+                    location=(lat, lng), 
+                    radius=500,  # Larger radius for audio alerts
+                    type=poi_type
+                )
+                
+                for place in places_result.get('results', [])[:4]:  # Top 4 per location
+                    all_pois.append({
+                        'name': place['name'],
+                        'location': (
+                            place['geometry']['location']['lat'],
+                            place['geometry']['location']['lng']
+                        ),
+                        'type': category,
+                        'rating': place.get('rating', 3.0),
+                        'place_id': place.get('place_id', ''),
+                        'audio_priority': get_audio_priority(category)
+                    })
+                
+                time.sleep(0.08)  # Rate limiting
+                
+            except Exception as e:
+                print(f"Error getting {poi_type} POIs: {e}")
+                continue
+    
+    # Remove duplicates and sort by audio priority
+    unique_pois = []
+    for poi in all_pois:
+        is_duplicate = False
+        for existing in unique_pois:
+            if geodesic(poi['location'], existing['location']).meters < 150:
+                is_duplicate = True
+                break
+        if not is_duplicate:
+            unique_pois.append(poi)
+    
+    # Sort by audio priority (higher priority first)
+    unique_pois.sort(key=lambda x: x['audio_priority'], reverse=True)
+    
+    return unique_pois
+
+def get_audio_priority(poi_type):
+    """Get audio priority for POI types (higher = more important for audio alerts)"""
+    priorities = {
+        'fuel': 10,      # Extreme priority for petroleum tankers
+        'education': 9,  # High priority for school zones
+        'health': 7,     # High priority for hospitals
+        'safety': 6,     # Medium-high for police stations
+        'commercial': 4, # Medium for shopping areas
+        'religious': 3   # Lower for religious sites
+    }
+    return priorities.get(poi_type, 1)
+
+def create_audio_enabled_folium_map(source, destination, coords, hazard_zones, turns, pois, traffic_data, braking_points, tt_specs, audio_data):
+    """Create Folium map with embedded audio navigation features"""
+    try:
+        # Create map
+        m = folium.Map(location=source, zoom_start=13)
+        
+        # Add start marker with audio start button
+        start_popup = f"""
+        <div style='font-family: Arial; text-align: center; max-width: 300px;'>
+            <h4 style='color: #28a745; margin-bottom: 10px;'>🚩 AUDIO NAVIGATION START</h4>
+            <div style='background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 8px 0;'>
+                <strong>TT Specs:</strong> {tt_specs['capacity_range']}<br>
+                <strong>Gross Weight:</strong> {tt_specs['gross_weight']/1000:.1f}T<br>
+                <strong>Cargo:</strong> {tt_specs['avg_capacity_liters']:,}L Petroleum<br>
+                <strong>Audio Instructions:</strong> {len(audio_data['instructions'])}
+            </div>
+            <button onclick="window.parent.startAudioNavigation()" 
+                    style="background: linear-gradient(45deg, #28a745, #20c997); color: white; 
+                           border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; 
+                           font-weight: bold; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);">
+                🎵 Start Audio Navigation
+            </button>
+        </div>
+        """
+        folium.Marker(source, popup=start_popup, 
+                     icon=folium.Icon(color='green', icon='play', prefix='fa')).add_to(m)
+        
+        # Add destination marker
+        end_popup = f"""
+        <div style='font-family: Arial; text-align: center; max-width: 300px;'>
+            <h4 style='color: #dc3545; margin-bottom: 10px;'>🏁 DESTINATION</h4>
+            <div style='background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 8px 0;'>
+                <strong>Total Distance:</strong> {total_distance}<br>
+                <strong>Duration:</strong> {total_duration}<br>
+                <strong>Complexity:</strong> {route_report['route_overview']['complexity_rating']}
+            </div>
+        </div>
+        """
+        folium.Marker(destination, popup=end_popup,
+                     icon=folium.Icon(color='red', icon='stop', prefix='fa')).add_to(m)
+        
+        # Main route with weight-based styling
+        route_color = '#8B0000' if tt_specs["gross_weight"] > 35000 else '#FF4500' if tt_specs["gross_weight"] > 25000 else '#0066CC'
+        route_weight = 6 if tt_specs["gross_weight"] > 35000 else 5 if tt_specs["gross_weight"] > 25000 else 4
+            
+        folium.PolyLine(
+            coords, 
+            color=route_color, 
+            weight=route_weight, 
+            opacity=0.8,
+            popup=f"Audio-Enabled TT Route: {tt_specs['capacity_range']} - {tt_specs['gross_weight']/1000:.1f}T"
+        ).add_to(m)
+
+        # Add vehicle tracking marker placeholder
+        vehicle_icon_html = f"""
+        <div id="vehicleTracker" style="text-align: center; z-index: 1000;">
+            <div style="background: #28a745; color: white; width: 45px; height: 45px; border-radius: 50%; 
+                        display: flex; align-items: center; justify-content: center; font-size: 20px; 
+                        border: 3px solid white; box-shadow: 0 6px 20px rgba(0,0,0,0.4); 
+                        animation: vehiclePulse 2s infinite;">
+                🚛
+            </div>
+            <div style="font-size: 9px; margin-top: 3px; color: #28a745; font-weight: bold;">
+                {tt_specs['capacity_range']}
+            </div>
+        </div>
+        <style>
+        @keyframes vehiclePulse {{
+            0% {{ transform: scale(1); }}
+            50% {{ transform: scale(1.15); }}
+            100% {{ transform: scale(1); }}
+        }}
+        </style>
+        """
+        
+        # Vehicle marker will be added dynamically by JavaScript
+        
+        # Add enhanced hazard markers with audio integration
+        for i, hazard in enumerate(hazard_zones[:30]):
+            color = '#8B0000' if hazard['risk_level'] == 'Critical' else '#DC143C' if hazard['risk_level'] == 'High' else '#FF6347'
+            
+            # Generate audio message for hazard
+            audio_message = generate_hazard_audio_message(hazard, tt_specs)
+            
+            hazard_popup = f"""
+            <div style='font-family: Arial; max-width: 400px;' id="hazard_{i}">
+                <h4 style='color: {color}; margin: 8px 0;'>🚨 {hazard['risk_level']} Risk Zone</h4>
+                <div style='background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 8px 0;'>
+                    <strong>Risk Score:</strong> {hazard['risk_score']:.1f}/10<br>
+                    <strong>Hazard Count:</strong> {hazard['hazard_count']}<br>
+                    <strong>Primary Risks:</strong><br>
+                    {"<br>".join([f"• {h['name']}" for h in hazard.get('primary_hazards', [])][:2])}
+                </div>
+                
+                <div style='background: #fff3cd; padding: 8px; border-radius: 4px; margin: 8px 0; font-size: 12px;'>
+                    <strong>Audio Alert:</strong><br>
+                    "{audio_message[:80]}..."
+                </div>
+                
+                <div style='text-align: center; margin: 8px 0;'>
+                    <button onclick="window.parent.speakHazardAlert('{audio_message.replace("'", "\\'")}', true)" 
+                            style="background: linear-gradient(45deg, #dc3545, #c82333); color: white; 
+                                   border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; 
+                                   font-weight: bold; margin: 3px;">
+                        🔊 Play Audio Alert
+                    </button>
+                    <button onclick="window.parent.addToAudioQueue('{audio_message.replace("'", "\\'")}', 'hazard')" 
+                            style="background: linear-gradient(45deg, #007bff, #0056b3); color: white; 
+                                   border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; 
+                                   font-weight: bold; margin: 3px;">
+                        ➕ Add to Queue
+                    </button>
+                </div>
+                
+                <div style='background: #e2e3e5; padding: 6px; border-radius: 4px; font-size: 10px; margin-top: 5px;'>
+                    <strong>TT Impact:</strong> {tt_specs['capacity_range']} | 
+                    {tt_specs['gross_weight']/1000:.1f}T | Class 3 Flammable
+                </div>
+            </div>
+            """
+            
+            radius = min(50, max(15, hazard['risk_score'] * 5))
+            folium.CircleMarker(
+                location=hazard['location'],
+                radius=radius,
+                popup=hazard_popup,
+                color=color,
+                fillColor=color,
+                fillOpacity=0.4,
+                weight=3
+            ).add_to(m)
+
+        # Add enhanced turn markers with audio integration
+        for i, turn in enumerate(turns[:25]):
+            # Turn-specific colors and audio messages
+            if turn.get('turn_type') == 'blind_spot':
+                color = '#8B0000'
+                icon_text = 'BLIND'
+            elif turn.get('turn_type') == 'sharp_right_angle':
+                color = '#FF4500'
+                icon_text = '90°'
+            elif turn.get('turn_type') == 'u_turn':
+                color = '#8B0000'
+                icon_text = 'U'
+            elif turn.get('severity') == 'critical':
+                color = '#DC143C'
+                icon_text = str(turn['recommended_speed'])
+            else:
+                color = '#FFC107'
+                icon_text = str(turn['recommended_speed'])
+            
+            # Generate audio message for turn
+            turn_audio_message = generate_turn_audio_message(turn, tt_specs)
+            
+            turn_popup = f"""
+            <div style='font-family: Arial; max-width: 380px;'>
+                <h4 style='color: {color}; margin: 8px 0;'>🔄 {turn.get('turn_type', 'turn').replace('_', ' ').title()}</h4>
+                
+                <div style='background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 8px 0;'>
+                    <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;'>
+                        <div><strong>Angle:</strong> {turn['turn_angle']:.1f}°</div>
+                        <div><strong>Direction:</strong> {turn.get('turn_direction', 'Unknown')}</div>
+                        <div><strong>Safe Speed:</strong> {turn['recommended_speed']} kmph</div>
+                        <div><strong>Radius:</strong> {turn['radius']:.1f}m</div>
+                    </div>
+                </div>
+                
+                <div style='background: #fff3cd; padding: 8px; border-radius: 4px; margin: 8px 0; font-size: 12px;'>
+                    <strong>Audio Guidance:</strong><br>
+                    "{turn_audio_message[:75]}..."
+                </div>
+                
+                <div style='text-align: center; margin: 8px 0;'>
+                    <button onclick="window.parent.speakTurnAlert('{turn_audio_message.replace("'", "\\'")}', {str(turn.get('severity') == 'critical').lower()})" 
+                            style="background: linear-gradient(45deg, {color}, {color}dd); color: white; 
+                                   border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; 
+                                   font-weight: bold; margin: 3px;">
+                        🔊 Turn Guidance
+                    </button>
+                </div>
+                
+                {f'<div style="background: #f8d7da; padding: 6px; border-radius: 3px; font-size: 11px; color: #721c24; margin: 5px 0;"><strong>⚠️ BLIND SPOT WARNING</strong></div>' if turn.get('blind_spot_risk') else ''}
+            </div>
+            """
+            
+            # Enhanced turn icon
+            turn_icon_html = f"""
+            <div style='text-align: center;'>
+                <div style='background: {color}; color: white; border-radius: 12px; width: 38px; height: 38px; 
+                            line-height: 38px; font-weight: bold; font-size: 11px; border: 3px solid white;
+                            box-shadow: 0 4px 15px rgba(0,0,0,0.3);'>
+                    {icon_text}
+                </div>
+                <div style='font-size: 8px; margin-top: 2px; color: {color}; font-weight: bold;'>
+                    {turn['recommended_speed']}km/h
+                </div>
+            </div>
+            """
+            
+            folium.Marker(
+                location=turn['location'],
+                popup=turn_popup,
+                icon=folium.DivIcon(html=turn_icon_html, icon_size=(44, 50), icon_anchor=(22, 45))
+            ).add_to(m)
+
+        # Add POIs with audio relevance
+        for poi in pois[:40]:  # Limit to 40 most relevant POIs
+            poi_type = poi.get('type', 'other')
+            
+            # POI-specific styling and audio messages
+            poi_styles = {
+                'fuel': {'color': 'orange', 'icon': 'gas-pump', 'priority': 'EXTREME'},
+                'health': {'color': 'red', 'icon': 'plus-square', 'priority': 'HIGH'},
+                'safety': {'color': 'blue', 'icon': 'shield-alt', 'priority': 'MEDIUM'},
+                'education': {'color': 'purple', 'icon': 'graduation-cap', 'priority': 'CRITICAL'},
+                'commercial': {'color': 'green', 'icon': 'shopping-cart', 'priority': 'MEDIUM'},
+                'religious': {'color': 'darkpurple', 'icon': 'place-of-worship', 'priority': 'LOW'}
+            }
+            
+            style = poi_styles.get(poi_type, {'color': 'gray', 'icon': 'info', 'priority': 'LOW'})
+            
+            poi_audio_message = generate_poi_audio_message(poi, tt_specs)
+            
+            poi_popup = f"""
+            <div style='font-family: Arial; text-align: center; max-width: 250px;'>
+                <h4 style='color: {"red" if poi_type == "fuel" else "black"}; margin: 8px 0;'>
+                    {poi['name']}
+                </h4>
+                <div style='background: #f8f9fa; padding: 8px; border-radius: 4px; margin: 8px 0;'>
+                    <strong>Type:</strong> {poi_type.title()}<br>
+                    <strong>Priority:</strong> {style['priority']}<br>
+                    <strong>Rating:</strong> {poi.get('rating', 'N/A')}/5
+                </div>
+                
+                {f'<div style="background: #ffcccc; padding: 8px; border-radius: 4px; margin: 8px 0; font-size: 12px;"><strong>Audio Alert:</strong><br>"{poi_audio_message[:60]}..."</div>' if poi_audio_message else ''}
+                
+                {f'<button onclick="window.parent.speakPOIAlert(\'{poi_audio_message.replace("\'", "\\\'")}\')" style="background: {"#dc3545" if poi_type == "fuel" else "#007bff"}; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; margin: 5px;">🔊 Audio Alert</button>' if poi_audio_message else ''}
+            </div>
+            """
+            
+            folium.Marker(
+                location=poi['location'],
+                popup=poi_popup,
+                icon=folium.Icon(color=style['color'], icon=style['icon'], prefix='fa')
+            ).add_to(m)
+
+        # Add comprehensive legend with audio features
+        legend_html = f"""
+        <div style="position: fixed; bottom: 20px; left: 20px; width: 380px; background-color: rgba(0,0,0,0.9); 
+                    border: 2px solid #333; border-radius: 10px; z-index: 9999; padding: 15px; font-size: 11px; 
+                    box-shadow: 0 8px 25px rgba(0,0,0,0.4); max-height: 60vh; overflow-y: auto; color: white;">
+            <h3 style='margin-top: 0; color: #00ff88; text-align: center;'>🎵 Smart Marg Audio Navigation</h3>
+            
+            <div style='background: linear-gradient(90deg, #28a745, #20c997); padding: 12px; border-radius: 8px; margin: 10px 0;'>
+                <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 10px; text-align: center;'>
+                    <div><strong>Capacity:</strong> {tt_specs['capacity_range']}</div>
+                    <div><strong>Weight:</strong> {tt_specs['gross_weight']/1000:.1f}T</div>
+                    <div><strong>Max Speed:</strong> {tt_specs['max_speed']} kmph</div>
+                    <div><strong>Audio Alerts:</strong> {len(audio_data['instructions'])}</div>
+                </div>
+                <div style='text-align: center; margin-top: 8px; font-size: 9px; background: rgba(255,255,255,0.2); padding: 4px; border-radius: 4px;'>
+                    Click markers for individual audio alerts
+                </div>
+            </div>
+            
+            <div style='margin: 8px 0;'>
+                <div style='font-weight: bold; margin-bottom: 5px; color: #ffc107;'>🎯 Audio-Enabled Features:</div>
+                <div style='font-size: 10px; line-height: 1.4;'>
+                    • Click hazard zones for immediate audio alerts<br>
+                    • Turn markers provide guidance instructions<br>
+                    • POI markers announce relevant warnings<br>
+                    • Vehicle tracking with live audio narration<br>
+                    • Queue audio instructions for replay
+                </div>
+            </div>
+            
+            <div style='margin: 8px 0;'>
+                <div style='font-weight: bold; margin-bottom: 5px; color: #dc3545;'>🚨 Priority Audio Alerts:</div>
+                <div style='font-size: 10px;'>
+                    🟥 Fuel Stations (EXTREME) - Class 3 cargo risk<br>
+                    🟧 School Zones (CRITICAL) - Children crossing<br>
+                    🟨 Sharp Turns (HIGH) - Rollover prevention<br>
+                    🟦 Blind Spots (HIGH) - Limited visibility
+                </div>
+            </div>
+            
+            <hr style='margin: 8px 0; border: none; border-top: 1px solid #555;'>
+            <div style='text-align: center; font-size: 9px; color: #ccc;'>
+                Interactive Audio Navigation System<br>
+                {route_report['route_overview']['complexity_rating']} Route Complexity
+            </div>
+        </div>
+        """
+        
+        m.get_root().html.add_child(folium.Element(legend_html))
+        
+        # Add JavaScript for audio integration
+        audio_js_integration = f"""
+        <script>
+            // Audio navigation integration with parent window
+            window.audioEnabled = true;
+            window.ttSpecs = {json.dumps(tt_specs)};
+            window.audioInstructions = {json.dumps(audio_data['instructions'])};
+            
+            // Communication with parent window for audio features
+            function notifyParent(action, data) {{
+                if (window.parent && window.parent.handleMapAudio) {{
+                    window.parent.handleMapAudio(action, data);
+                }}
+            }}
+            
+            // Vehicle position tracking
+            let vehicleMarker = null;
+            let routeCoords = {json.dumps(coords)};
+            
+            function initVehicleTracking() {{
+                if (vehicleMarker) {{
+                    map.removeLayer(vehicleMarker);
+                }}
+                
+                vehicleMarker = L.marker(routeCoords[0], {{
+                    icon: L.divIcon({{
+                        html: '{vehicle_icon_html}',
+                        iconSize: [50, 55],
+                        iconAnchor: [25, 50],
+                        className: 'vehicle-tracking-marker'
+                    }}),
+                    zIndexOffset: 1000
+                }}).addTo(map);
+            }}
+            
+            function updateVehiclePosition(index) {{
+                if (vehicleMarker && index < routeCoords.length) {{
+                    vehicleMarker.setLatLng(routeCoords[index]);
+                    map.setView(routeCoords[index], map.getZoom());
+                }}
+            }}
+            
+            // Initialize when map loads
+            window.addEventListener('load', function() {{
+                setTimeout(initVehicleTracking, 1000);
+                notifyParent('mapLoaded', {{ 
+                    totalInstructions: window.audioInstructions.length,
+                    routeComplexity: '{route_report['route_overview']['complexity_rating']}'
+                }});
+            }});
+            
+            // Expose functions to parent window
+            window.initVehicleTracking = initVehicleTracking;
+            window.updateVehiclePosition = updateVehiclePosition;
+        </script>
+        """
+        
+        m.get_root().html.add_child(folium.Element(audio_js_integration))
+        
+        return m
+        
+    except Exception as e:
+        print(f"Error creating audio-enabled map: {e}")
+        return folium.Map(location=source, zoom_start=12)
+
+def generate_hazard_audio_message(hazard, tt_specs):
+    """Generate specific audio message for a hazard"""
+    risk_factors = hazard.get('risk_factors', [])
+    risk_level = hazard.get('risk_level', 'Medium')
+    
+    if any('fuel' in str(factor).lower() for factor in risk_factors):
+        return f"EXTREME HAZARD ALERT. Fuel station detected. Petroleum tanker warning. Your {tt_specs['avg_capacity_liters']} liter Class 3 flammable cargo requires immediate speed reduction to 15 kilometers per hour. No smoking or ignition sources permitted."
+    
+    elif any('school' in str(factor).lower() for factor in risk_factors):
+        return f"CRITICAL ALERT. School zone detected. Children crossing area. Heavy vehicle with {tt_specs['gross_weight']/1000:.1f} tonne gross weight requires immediate speed reduction to 20 kilometers per hour. Extended braking distance applies."
+    
+    elif any('hospital' in str(factor).lower() for factor in risk_factors):
+        return f"Hospital zone ahead. Emergency vehicle traffic expected. Reduce speed and maintain awareness. Your {tt_specs['gross_weight']/1000:.1f} tonne vehicle requires extended stopping distance."
+    
+    elif risk_level == 'Critical':
+        return f"Critical hazard zone ahead. Risk score {hazard.get('risk_score', 8):.1f} out of 10. Reduce speed immediately and proceed with extreme caution. Tanker vehicle safety protocols apply."
+    
+    else:
+        return f"{risk_level} risk zone detected. Maintain reduced speed and heightened awareness appropriate for {tt_specs['capacity_range']} petroleum tanker."
+
+def generate_turn_audio_message(turn, tt_specs):
+    """Generate specific audio message for a turn"""
+    turn_type = turn.get('turn_type', 'turn')
+    angle = turn.get('turn_angle', 0)
+    speed = turn.get('recommended_speed', 30)
+    direction = turn.get('turn_direction', 'ahead')
+    
+    messages = {
+        'u_turn': f"U-turn maneuver required ahead. Complete stop may be necessary. Maximum safe speed {speed} kilometers per hour. Extreme rollover risk with {tt_specs['avg_capacity_liters']} liters liquid cargo. Check all directions before proceeding.",
+        
+        'hairpin': f"Hairpin curve ahead. {angle:.0f} degree sharp turn. Immediate speed reduction to {speed} kilometers per hour required. Maximum rollover risk zone for tanker vehicle. Liquid surge danger with petroleum cargo.",
+        
+        'sharp_right_angle': f"90 degree intersection ahead. {direction} turn required. Reduce speed to {speed} kilometers per hour. Check for cross traffic. Wide turning radius needed for {tt_specs['capacity_range']} tanker vehicle.",
+        
+        'blind_spot': f"BLIND SPOT TURN ahead. Severely limited visibility conditions. Reduce speed to {speed} kilometers per hour immediately. Proceed with extreme caution. Sound horn if necessary to alert other vehicles.",
+        
+        'sharp_turn': f"Sharp {direction} turn ahead. {angle:.0f} degree curve. Reduce speed to {speed} kilometers per hour. Maintain vehicle stability with {tt_specs['gross_weight']/1000:.1f} tonne gross weight."
+    }
+    
+    return messages.get(turn_type, f"{direction} turn ahead requiring speed reduction to {speed} kilometers per hour for safe navigation.")
+
+def generate_poi_audio_message(poi, tt_specs):
+    """Generate audio message for POI if relevant for truck safety"""
+    poi_type = poi.get('type', '')
+    
+    if poi_type == 'fuel':
+        return f"EXTREME HAZARD. Fuel station {poi['name']}. Petroleum tanker with Class 3 flammable cargo. Reduce speed to 15 kilometers per hour. No smoking. Emergency protocols ready."
+    
+    elif poi_type == 'education':
+        return f"School zone. {poi['name']}. Children crossing area. Reduce speed to 20 kilometers per hour. Heavy vehicle awareness required."
+    
+    elif poi_type == 'health':
+        return f"Hospital zone. {poi['name']}. Emergency vehicle traffic possible. Maintain awareness for ambulances."
+    
+    # Return None for POIs that don't need audio alerts
+    return None
+
+# Save the audio_route_analysis.html template file
+def save_audio_template():
+    """Save the audio route analysis template"""
+    # This would save the HTML template we created earlier
+    # to templates/audio_route_analysis.html
+    pass
+#-------------------------------------------------------------------------------------
 # Session timeout check
 @app.before_request
 def check_session_timeout():
@@ -1977,11 +2477,12 @@ def fetch_routes():
         traceback.print_exc()
         return f"Error processing route request: {str(e)}"
 
-# Replace the existing analyze_route function with this enhanced version
+
+# Replace your existing analyze_route function with this enhanced version
 @app.route('/analyze_route', methods=['POST'])
 @login_required
 def analyze_route():
-    """Enhanced route analysis with realistic hazard detection"""
+    """Enhanced route analysis with realistic hazard detection and audio navigation"""
     try:
         directions = session.get('directions')
         tt_specs = session.get('tt_specs')
@@ -2010,12 +2511,10 @@ def analyze_route():
         # Get elevation profile for realistic gradient analysis
         elevations, gradients = [], []
         try:
-            # Sample coordinates for elevation data
-            elevation_sample = detailed_coords[::max(1, len(detailed_coords)//50)]  # Max 50 elevation points
+            elevation_sample = detailed_coords[::max(1, len(detailed_coords)//50)]
             elevation_result = gmaps.elevation(elevation_sample)
             elevations = [point['elevation'] for point in elevation_result]
             
-            # Calculate gradients
             for i in range(1, len(elevations)):
                 if i < len(elevation_sample):
                     distance_m = geodesic(elevation_sample[i-1], elevation_sample[i]).meters
@@ -2030,62 +2529,8 @@ def analyze_route():
             elevations = [100] * len(detailed_coords)
             gradients = [0] * (len(detailed_coords) - 1)
         
-        # Enhanced POI collection with better categorization
-        def get_enhanced_pois():
-            all_pois = []
-            poi_types = [
-                ('hospital', 'health'),
-                ('school', 'education'), 
-                ('gas_station', 'fuel'),
-                ('police', 'safety'),
-                ('shopping_mall', 'commercial'),
-                ('place_of_worship', 'religious')
-            ]
-            
-            # Use strategic sampling points
-            sample_coords = detailed_coords[::max(1, len(detailed_coords)//15)]  # 15 sample points max
-            
-            for poi_type, category in poi_types:
-                for lat, lng in sample_coords:
-                    try:
-                        places_result = gmaps.places_nearby(
-                            location=(lat, lng), 
-                            radius=400,  # Larger radius for better coverage
-                            type=poi_type
-                        )
-                        
-                        for place in places_result.get('results', [])[:3]:  # Limit to top 3 per location
-                            all_pois.append({
-                                'name': place['name'],
-                                'location': (
-                                    place['geometry']['location']['lat'],
-                                    place['geometry']['location']['lng']
-                                ),
-                                'type': category,
-                                'rating': place.get('rating', 3.0),
-                                'place_id': place.get('place_id', '')
-                            })
-                        
-                        time.sleep(0.05)  # Rate limiting
-                        
-                    except Exception as e:
-                        print(f"Error getting {poi_type} POIs: {e}")
-                        continue
-            
-            # Remove duplicates based on location proximity
-            unique_pois = []
-            for poi in all_pois:
-                is_duplicate = False
-                for existing in unique_pois:
-                    if geodesic(poi['location'], existing['location']).meters < 100:
-                        is_duplicate = True
-                        break
-                if not is_duplicate:
-                    unique_pois.append(poi)
-            
-            return unique_pois
-        
-        all_pois = get_enhanced_pois()
+        # Enhanced POI collection
+        all_pois = get_enhanced_pois_for_audio(detailed_coords)
         print(f"Collected {len(all_pois)} POIs")
         
         # Realistic traffic analysis
@@ -2104,416 +2549,27 @@ def analyze_route():
         braking_points = calculate_braking_distances(detailed_coords, tt_specs, elevations, gradients)
         print(f"Calculated braking distances for {len(braking_points)} points")
         
+        # Generate audio navigation data
+        audio_navigation_data = generate_audio_navigation_data(
+            detailed_coords, hazard_zones, turns, braking_points, all_pois, tt_specs
+        )
+        print(f"Generated {len(audio_navigation_data['instructions'])} audio instructions")
+        
         # Generate comprehensive report
         route_report = generate_enhanced_route_report(
             detailed_coords, all_pois, hazard_zones, traffic_data, turns, 
             braking_points, total_distance, total_duration, tt_specs, elevations, gradients
         )
 
-        # Create enhanced visualization map
-        m = folium.Map(location=source, zoom_start=12)
-        
-        # Add start and end markers with truck-specific info
-        start_popup = f"""
-        <div style='font-family: Arial; text-align: center;'>
-            <h4>🚩 DEPARTURE</h4>
-            <p><strong>TT Specs:</strong> {tt_specs['capacity_range']}<br>
-            <strong>Gross Weight:</strong> {tt_specs['gross_weight']/1000:.1f}T<br>
-            <strong>Cargo:</strong> {tt_specs['avg_capacity_liters']:,}L Petroleum</p>
-        </div>
-        """
-        folium.Marker(source, popup=start_popup, 
-                     icon=folium.Icon(color='green', icon='play', prefix='fa')).add_to(m)
-        
-        end_popup = f"""
-        <div style='font-family: Arial; text-align: center;'>
-            <h4>🏁 DESTINATION</h4>
-            <p><strong>Distance:</strong> {total_distance}<br>
-            <strong>Duration:</strong> {total_duration}<br>
-            <strong>Complexity:</strong> {route_report['route_overview']['complexity_rating']}</p>
-        </div>
-        """
-        folium.Marker(destination, popup=end_popup,
-                     icon=folium.Icon(color='red', icon='stop', prefix='fa')).add_to(m)
-        
-        # Main route with weight-based styling
-        if tt_specs["gross_weight"] > 35000:
-            route_color, route_weight = '#8B0000', 6  # Dark red, thick for heavy TT
-        elif tt_specs["gross_weight"] > 25000:
-            route_color, route_weight = '#FF4500', 5  # Orange red, medium
-        else:
-            route_color, route_weight = '#0066CC', 4  # Blue, normal
-            
-        folium.PolyLine(
-            detailed_coords, 
-            color=route_color, 
-            weight=route_weight, 
-            opacity=0.8,
-            popup=f"TT Route: {tt_specs['capacity_range']} - {tt_specs['gross_weight']/1000:.1f}T"
-        ).add_to(m)
+        # Create enhanced audio-enabled visualization map
+        m = create_audio_enabled_folium_map(
+            source, destination, detailed_coords, hazard_zones, turns, 
+            all_pois, traffic_data, braking_points, tt_specs, audio_navigation_data
+        )
 
-      # The problematic section around line 1843 should be fixed like this:
-
-        # Add turn analysis with enhanced visualization  
-        for turn in turns[:30]:  # Show more turns now that we detect them properly
-            try:
-                # Enhanced color coding based on turn type and severity
-                if turn.get('turn_type') == 'blind_spot':
-                    color = '#8B0000'  # Dark red for blind spots
-                    icon_symbol = '👁️'
-                elif turn.get('turn_type') == 'u_turn':
-                    color = '#8B0000'  # Dark red for U-turns
-                    icon_symbol = '↩️'
-                elif turn.get('turn_type') == 'hairpin':
-                    color = '#DC143C'  # Crimson for hairpins
-                    icon_symbol = '🪝'
-                elif turn.get('turn_type') == 'sharp_right_angle':
-                    color = '#FF4500'  # Orange red for 90-degree turns
-                    icon_symbol = '📐'
-                elif turn.get('severity') == 'critical':
-                    color = '#8B0000'  # Dark red for other critical turns
-                    icon_symbol = '⚠️'
-                elif turn.get('severity') == 'high':
-                    color = '#FF4500'  # Orange red for high risk
-                    icon_symbol = '⚠️'
-                else:
-                    color = '#FFD700'  # Gold for moderate turns
-                    icon_symbol = '↻'
-                
-                # Enhanced popup with turn type information
-                turn_popup = f"""
-                <div style='font-family: Arial; max-width: 350px;'>
-                    <h4 style='color: {color}; margin: 5px 0;'>{icon_symbol} {turn.get('turn_type', 'turn').replace('_', ' ').title()}</h4>
-                    <div style='background: #f0f0f0; padding: 8px; border-radius: 4px; margin: 5px 0;'>
-                        <table style='font-size: 11px; width: 100%;'>
-                            <tr><td><strong>Turn Angle:</strong></td><td>{turn['turn_angle']:.1f}°</td></tr>
-                            <tr><td><strong>Direction:</strong></td><td>{turn.get('turn_direction', 'Unknown')}</td></tr>
-                            <tr><td><strong>Turn Type:</strong></td><td style='color: {color}; font-weight: bold;'>{turn.get('turn_type', 'turn').replace('_', ' ').title()}</td></tr>
-                            <tr><td><strong>Radius:</strong></td><td>{turn['radius']:.1f}m</td></tr>
-                            <tr><td><strong>Safe Speed:</strong></td><td style='color: red; font-weight: bold;'>{turn['recommended_speed']} kmph</td></tr>
-                            <tr><td><strong>Visibility:</strong></td><td>{'Poor' if turn.get('visibility_factor', 1) < 0.3 else 'Fair' if turn.get('visibility_factor', 1) < 0.6 else 'Good'}</td></tr>
-                        </table>
-                    </div>
-                    
-                    <div style='background: #fff3cd; padding: 6px; border-radius: 3px; margin: 5px 0;'>
-                        <strong>Warning:</strong><br>
-                        <span style='color: red; font-weight: bold;'>{turn['warning']}</span>
-                    </div>
-                    
-                    {f'<div style="background: #f8d7da; padding: 6px; border-radius: 3px; margin: 5px 0;"><strong>Risk Factors:</strong><br>{"<br>".join([f"• {risk}" for risk in turn.get("risk_factors", [])][:3])}</div>' if turn.get('risk_factors') else ''}
-                    
-                    <div style='background: #e2e3e5; padding: 5px; border-radius: 3px; font-size: 10px;'>
-                        <strong>Physics:</strong> {turn['physics_factors']['lateral_g_force']}g lateral force, 
-                        {turn['deceleration_distance']}m braking distance
-                    </div>
-                    
-                    {f'<div style="background: #ffcccc; padding: 5px; border-radius: 3px; font-size: 10px; color: red; font-weight: bold;">⚠️ BLIND SPOT WARNING</div>' if turn.get('blind_spot_risk') else ''}
-                </div>
-                """
-                
-                # Enhanced icon with turn type and speed
-                if turn.get('turn_type') == 'blind_spot':
-                    icon_html = f"""
-                    <div style='text-align: center;'>
-                        <div style='background: {color}; color: white; border-radius: 50%; width: 35px; height: 35px; 
-                                    line-height: 35px; font-weight: bold; font-size: 10px; border: 2px solid white;'>
-                            BLIND
-                        </div>
-                        <div style='font-size: 8px; margin-top: 2px; color: {color}; font-weight: bold;'>{turn['recommended_speed']}km/h</div>
-                    </div>
-                    """
-                elif turn.get('turn_type') == 'sharp_right_angle':
-                    icon_html = f"""
-                    <div style='text-align: center;'>
-                        <div style='background: {color}; color: white; border-radius: 10%; width: 35px; height: 35px; 
-                                    line-height: 35px; font-weight: bold; font-size: 12px; border: 2px solid white;'>
-                            90°
-                        </div>
-                        <div style='font-size: 8px; margin-top: 2px; color: {color}; font-weight: bold;'>{turn['recommended_speed']}km/h</div>
-                    </div>
-                    """
-                else:
-                    icon_html = f"""
-                    <div style='text-align: center;'>
-                        <div style='background: {color}; color: white; border-radius: 50%; width: 32px; height: 32px; 
-                                    line-height: 32px; font-weight: bold; font-size: 11px; border: 2px solid white;'>
-                            {turn['recommended_speed']}
-                        </div>
-                        <div style='font-size: 8px; margin-top: 2px; color: {color}; font-weight: bold;'>{turn.get('turn_type', 'turn')[:4].upper()}</div>
-                    </div>
-                    """
-                
-                folium.Marker(
-                    location=turn['location'],
-                    popup=turn_popup,
-                    icon=folium.DivIcon(html=icon_html, icon_size=(40, 45), icon_anchor=(20, 40))
-                ).add_to(m)
-                
-            except Exception as e:
-                print(f"Error adding turn marker: {e}")
-                continue
-                
-                # Turn severity icon
-                icon_html = f"""
-                <div style='text-align: center;'>
-                    <div style='background: {color}; color: white; border-radius: 50%; width: 30px; height: 30px; 
-                                line-height: 30px; font-weight: bold; font-size: 12px;'>
-                        {turn['recommended_speed']}
-                    </div>
-                    <div style='font-size: 8px; margin-top: 2px;'>km/h</div>
-                </div>
-                """
-                
-                folium.Marker(
-                    location=turn['location'],
-                    popup=turn_popup,
-                    icon=folium.DivIcon(html=icon_html, icon_size=(35, 40), icon_anchor=(17, 35))
-                ).add_to(m)
-
-        # Add hazard zones with realistic risk visualization
-        hazard_colors = {
-            'Critical': '#8B0000',
-            'High': '#DC143C', 
-            'Medium': '#FF6347'
-        }
-        
-        for zone in hazard_zones[:20]:  # Limit to top 20 hazard zones
-            color = hazard_colors.get(zone['risk_level'], '#FF6347')
-            
-            hazard_popup = f"""
-            <div style='font-family: Arial; max-width: 350px;'>
-                <h4 style='color: {color}; margin: 5px 0;'>🚨 {zone['risk_level']} Risk Zone</h4>
-                <p><strong>Risk Score:</strong> {zone['risk_score']:.1f}/10</p>
-                <p><strong>Hazard Count:</strong> {zone['hazard_count']}</p>
-                
-                <div style='background: #fff3cd; padding: 8px; border-radius: 4px; margin: 5px 0;'>
-                    <strong>Primary Hazards:</strong><br>
-                    {"<br>".join([f"• {h['name']} ({h['distance']:.0f}m)" for h in zone['primary_hazards'][:3]])}
-                </div>
-                
-                <div style='background: #f8d7da; padding: 8px; border-radius: 4px; margin: 5px 0;'>
-                    <strong>TT Specific Risks:</strong><br>
-                    {"<br>".join([f"• {rec}" for rec in zone.get('tt_specific_recommendations', [])][:3])}
-                </div>
-                
-                <div style='background: #e2e3e5; padding: 6px; border-radius: 4px; font-size: 10px;'>
-                    <strong>Tanker Info:</strong> {tt_specs['capacity_range']} | 
-                    {tt_specs['gross_weight']/1000:.1f}T | Class 3 Flammable
-                </div>
-            </div>
-            """
-            
-            radius = min(50, max(15, zone['risk_score'] * 5))
-            folium.CircleMarker(
-                location=zone['location'],
-                radius=radius,
-                popup=hazard_popup,
-                color=color,
-                fillColor=color,
-                fillOpacity=0.3,
-                weight=3
-            ).add_to(m)
-
-        # Add POIs with truck-relevant categorization
-        poi_styles = {
-            'fuel': {'color': 'orange', 'icon': 'gas-pump'},
-            'health': {'color': 'red', 'icon': 'plus-square'},
-            'safety': {'color': 'blue', 'icon': 'shield-alt'},
-            'education': {'color': 'purple', 'icon': 'graduation-cap'},
-            'commercial': {'color': 'green', 'icon': 'shopping-cart'},
-            'religious': {'color': 'darkpurple', 'icon': 'place-of-worship'}
-        }
-
-        for poi in all_pois[:50]:  # Limit POI display
-            try:
-                poi_type = poi.get('type', 'other')
-                style = poi_styles.get(poi_type, {'color': 'gray', 'icon': 'info'})
-                
-                # Special handling for fuel stations (extreme hazard for petroleum tankers)
-                if poi_type == 'fuel':
-                    poi_popup = f"""
-                    <div style='font-family: Arial; text-align: center;'>
-                        <h4 style='color: red;'>⛽ EXTREME HAZARD</h4>
-                        <p><strong>{poi['name']}</strong></p>
-                        <div style='background: #ffcccc; padding: 5px; border-radius: 3px;'>
-                            <strong>PETROLEUM TANKER WARNING</strong><br>
-                            • Reduce speed to 20 kmph<br>
-                            • No smoking/ignition sources<br>
-                            • Emergency protocols ready
-                        </div>
-                    </div>
-                    """
-                else:
-                    poi_popup = f"""
-                    <div style='font-family: Arial; text-align: center;'>
-                        <h4>{poi['name']}</h4>
-                        <p><strong>Type:</strong> {poi_type.title()}<br>
-                        <strong>Rating:</strong> {poi.get('rating', 'N/A')}/5</p>
-                    </div>
-                    """
-                
-                folium.Marker(
-                    location=poi['location'],
-                    popup=poi_popup,
-                    icon=folium.Icon(color=style['color'], icon=style['icon'], prefix='fa')
-                ).add_to(m)
-                
-            except Exception as e:
-                continue
-
-        # Add traffic visualization with truck-specific impact
-        for traffic in traffic_data[:30]:  # Limit traffic points
-            try:
-                traffic_colors = {'light': 'green', 'moderate': 'yellow', 'heavy': 'red'}
-                color = traffic_colors.get(traffic['traffic_level'], 'gray')
-                
-                # Calculate truck-specific impact
-                base_delay = traffic['delay_factor']
-                truck_impact = base_delay * (1 + (tt_specs['gross_weight'] / 50000))  # Heavier trucks affected more
-                
-                traffic_popup = f"""
-                <div style='font-family: Arial; max-width: 200px;'>
-                    <h4>🚦 Traffic Conditions</h4>
-                    <p><strong>Level:</strong> {traffic['traffic_level'].title()}<br>
-                    <strong>Delay Factor:</strong> {traffic['delay_factor']:.1f}x<br>
-                    <strong>TT Impact:</strong> {truck_impact:.1f}x<br>
-                    <strong>Data Source:</strong> {'Real-time' if traffic.get('realistic') else 'Estimated'}</p>
-                </div>
-                """
-                
-                folium.CircleMarker(
-                    location=traffic['location'],
-                    radius=8,
-                    popup=traffic_popup,
-                    color=color,
-                    fillColor=color,
-                    fillOpacity=0.6
-                ).add_to(m)
-                
-            except Exception as e:
-                continue
-
-        # Add braking distance indicators
-        for braking in braking_points[:10]:  # Show top 10 critical braking zones
-            try:
-                if braking['total_distance'] > 60:  # Only show extended braking distances
-                    braking_popup = f"""
-                    <div style='font-family: Arial; max-width: 250px;'>
-                        <h4>🛑 Extended Braking Zone</h4>
-                        <table style='font-size: 11px; width: 100%;'>
-                            <tr><td><strong>Speed:</strong></td><td>{braking['speed_kmph']} kmph</td></tr>
-                            <tr><td><strong>Total Distance:</strong></td><td style='color: red; font-weight: bold;'>{braking['total_distance']}m</td></tr>
-                            <tr><td><strong>Reaction:</strong></td><td>{braking['reaction_distance']}m</td></tr>
-                            <tr><td><strong>Physics:</strong></td><td>{braking['physics_distance']}m</td></tr>
-                            <tr><td><strong>Weight Factor:</strong></td><td>{braking['weight_factor']}x</td></tr>
-                            <tr><td><strong>Gradient:</strong></td><td>{braking['gradient']:.1f}%</td></tr>
-                        </table>
-                        <p style='color: red; font-size: 10px; font-weight: bold; margin: 5px 0;'>
-                            Maintain {int(braking['total_distance'] * 1.2)}m following distance
-                        </p>
-                    </div>
-                    """
-                    
-                    folium.Marker(
-                        location=braking['location'],
-                        popup=braking_popup,
-                        icon=folium.Icon(color='darkred', icon='hand-paper', prefix='fa')
-                    ).add_to(m)
-                    
-            except Exception as e:
-                continue
-
-        # Enhanced legend with comprehensive truck tanker information
-        legend_html = f"""
-        {{% macro html(this, kwargs) %}}
-        <div style="
-            position: fixed;
-            bottom: 50px;
-            left: 50px;
-            width: 400px;
-            background-color: white;
-            border: 2px solid #333;
-            border-radius: 10px;
-            z-index: 9999;
-            padding: 15px;
-            font-size: 11px;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-            max-height: 70vh;
-            overflow-y: auto;
-        ">
-            <h3 style='margin-top: 0; color: #333; text-align: center;'>🚛 Truck Tanker Navigation System</h3>
-            
-            <div style='background: linear-gradient(90deg, #f0f0f0, #e0e0e0); padding: 10px; border-radius: 6px; margin: 10px 0;'>
-                <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 10px;'>
-                    <div><strong>Capacity:</strong> {tt_specs['capacity_range']}</div>
-                    <div><strong>Fuel:</strong> {tt_specs['avg_capacity_liters']:,}L</div>
-                    <div><strong>Gross Weight:</strong> {tt_specs['gross_weight']/1000:.1f}T</div>
-                    <div><strong>Max Speed:</strong> {tt_specs['max_speed']} kmph</div>
-                    <div><strong>Axle Load:</strong> {tt_specs['axle_load']:.1f}T</div>
-                    <div><strong>Risk Class:</strong> 3 (Flammable)</div>
-                </div>
-                <div style='text-align: center; margin-top: 5px; color: #666; font-size: 9px;'>
-                    User: {username} | Complexity: {route_report['route_overview']['complexity_rating']}
-                </div>
-            </div>
-            
-            <div style='margin: 8px 0;'>
-                <div style='font-weight: bold; margin-bottom: 5px;'>🎯 Turn Classifications:</div>
-                <div style='margin: 3px 0; font-size: 10px;'>🔴 <span style='background: #8B0000; color: white; padding: 1px 4px; border-radius: 2px;'>BLIND</span> Blind Spot Turn</div>
-                <div style='margin: 3px 0; font-size: 10px;'>🟠 <span style='background: #FF4500; color: white; padding: 1px 4px; border-radius: 2px;'>90°</span> Right Angle Turn</div>
-                <div style='margin: 3px 0; font-size: 10px;'>🔴 <span style='background: #DC143C; color: white; padding: 1px 4px; border-radius: 2px;'>HAIR</span> Hairpin Turn</div>
-                <div style='margin: 3px 0; font-size: 10px;'>🔴 <span style='background: #8B0000; color: white; padding: 1px 4px; border-radius: 2px;'>U</span> U-Turn</div>
-                <div style='margin: 3px 0; font-size: 10px;'>🟡 <span style='background: #FFD700; color: black; padding: 1px 4px; border-radius: 2px;'>MOD</span> Moderate Turn</div>
-            </div>
-            
-            <div style='margin: 8px 0;'>
-                <div style='font-weight: bold; margin-bottom: 5px;'>🚨 Hazard Zones:</div>
-                <div style='margin: 3px 0;'>⚫ Critical Risk (Score 8-10)</div>
-                <div style='margin: 3px 0;'>🔴 High Risk (Score 6-8)</div>
-                <div style='margin: 3px 0;'>🟡 Medium Risk (Score 4-6)</div>
-            </div>
-            
-            <div style='margin: 8px 0;'>
-                <div style='font-weight: bold; margin-bottom: 5px;'>📍 Points of Interest:</div>
-                <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 2px; font-size: 10px;'>
-                    <div>⛽ Fuel Station (EXTREME HAZARD)</div>
-                    <div>🏥 Hospital</div>
-                    <div>🎓 School/Education</div>
-                    <div>🛡️ Police Station</div>
-                    <div>🛒 Shopping Center</div>
-                    <div>🕊️ Religious Site</div>
-                </div>
-            </div>
-            
-            <div style='margin: 8px 0;'>
-                <div style='font-weight: bold; margin-bottom: 5px;'>🚦 Traffic Levels:</div>
-                <div style='margin: 3px 0;'>● <span style='color: green; font-weight: bold;'>Light</span> (Delay: 1.0-1.2x)</div>
-                <div style='margin: 3px 0;'>● <span style='color: orange; font-weight: bold;'>Moderate</span> (Delay: 1.3-1.7x)</div>
-                <div style='margin: 3px 0;'>● <span style='color: red; font-weight: bold;'>Heavy</span> (Delay: 1.8x+)</div>
-            </div>
-            
-            <div style='margin: 8px 0;'>
-                <div style='font-weight: bold; margin-bottom: 5px;'>🛑 Special Indicators:</div>
-                <div style='margin: 3px 0; font-size: 10px;'>✋ Extended Braking Zone (&gt;60m)</div>
-                <div style='margin: 3px 0; font-size: 10px;'>🚩 Start/End Points</div>
-            </div>
-            
-            <hr style='margin: 8px 0; border: none; border-top: 1px solid #ccc;'>
-            <div style='text-align: center; font-size: 9px; color: #666;'>
-                Route Statistics: {len(turns)} turns • {len(hazard_zones)} hazards<br>
-                Max Braking: {max([b.get('total_distance', 45) for b in braking_points]) if braking_points else 45}m
-            </div>
-        </div>
-        {{% endmacro %}}
-        """
-        
-        legend = MacroElement()
-        legend._template = Template(legend_html)
-        m.get_root().add_child(legend)
-
-        # Save enhanced map
+        # Save enhanced map with audio features
         unique_map_id = uuid4().hex
-        html_name = f"route_map_{unique_map_id}.html"
+        html_name = f"audio_route_map_{unique_map_id}.html"
         m.save(f"templates/{html_name}")
 
         # Store comprehensive data in session
@@ -2521,11 +2577,12 @@ def analyze_route():
         session['hazard_zones'] = hazard_zones
         session['turns'] = turns
         session['braking_points'] = braking_points
+        session['audio_navigation_data'] = audio_navigation_data
         session.modified = True
 
-        # Return enhanced analysis page
-        return render_template("route_analysis.html",
-                               mode="Enhanced TT Navigation",
+        # Return enhanced analysis page with audio features
+        return render_template("audio_route_analysis.html",
+                               mode="Enhanced Audio TT Navigation",
                                turns=len(turns),
                                critical_turns=len([t for t in turns if t.get('severity') == 'critical']),
                                poi_count=len(all_pois),
@@ -2537,6 +2594,8 @@ def analyze_route():
                                max_braking_distance=max([b.get('total_distance', 45) for b in braking_points]) if braking_points else 45,
                                tt_specs=tt_specs,
                                username=username,
+                               audio_features_enabled=True,
+                               audio_instructions_count=len(audio_navigation_data['instructions']),
                                complexity_rating=route_report['route_overview']['complexity_rating'])
 
     except Exception as e:
@@ -2544,6 +2603,7 @@ def analyze_route():
         import traceback
         traceback.print_exc()
         return f"Error analyzing route: {str(e)}. Please try again or contact support."
+
 
 # Updated detailed report function
 @app.route('/detailed_report')
@@ -2766,6 +2826,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
