@@ -2143,10 +2143,12 @@ def analyze_route():
             </div>
             
             <div style='margin: 8px 0;'>
-                <div style='font-weight: bold; margin-bottom: 5px;'>🎯 Turn Speed Indicators:</div>
-                <div style='margin: 3px 0;'>🔴 <span style='background: #8B0000; color: white; padding: 1px 4px; border-radius: 2px; font-size: 9px;'>&lt;25</span> Critical Turn</div>
-                <div style='margin: 3px 0;'>🟠 <span style='background: #FF4500; color: white; padding: 1px 4px; border-radius: 2px; font-size: 9px;'>25-35</span> High Risk Turn</div>
-                <div style='margin: 3px 0;'>🟡 <span style='background: #FFD700; color: black; padding: 1px 4px; border-radius: 2px; font-size: 9px;'>35+</span> Moderate Turn</div>
+                <div style='font-weight: bold; margin-bottom: 5px;'>🎯 Turn Classifications:</div>
+                <div style='margin: 3px 0; font-size: 10px;'>🔴 <span style='background: #8B0000; color: white; padding: 1px 4px; border-radius: 2px;'>BLIND</span> Blind Spot Turn</div>
+                <div style='margin: 3px 0; font-size: 10px;'>🟠 <span style='background: #FF4500; color: white; padding: 1px 4px; border-radius: 2px;'>90°</span> Right Angle Turn</div>
+                <div style='margin: 3px 0; font-size: 10px;'>🔴 <span style='background: #DC143C; color: white; padding: 1px 4px; border-radius: 2px;'>HAIR</span> Hairpin Turn</div>
+                <div style='margin: 3px 0; font-size: 10px;'>🔴 <span style='background: #8B0000; color: white; padding: 1px 4px; border-radius: 2px;'>U</span> U-Turn</div>
+                <div style='margin: 3px 0; font-size: 10px;'>🟡 <span style='background: #FFD700; color: black; padding: 1px 4px; border-radius: 2px;'>MOD</span> Moderate Turn</div>
             </div>
             
             <div style='margin: 8px 0;'>
@@ -2449,6 +2451,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
