@@ -512,164 +512,189 @@ def identify_realistic_poi_hazards(coords, pois, tt_specs):
     return hazard_zones[:25]  # Return top 25 most dangerous zones
 
 def calculate_precise_turn_analysis(coords, tt_specs):
-    """Calculate precise turn analysis using truck physics"""
+    """Enhanced turn analysis with comprehensive dangerous turn detection"""
     turns = []
     
     try:
         # Truck physical parameters
-        truck_length = 12.0  # meters - typical tanker truck
-        wheelbase = 6.5      # meters
-        cg_height = 2.8      # center of gravity height
-        track_width = 2.4    # meters
+        truck_length = 12.0
+        wheelbase = 6.5
+        cg_height = 2.8
+        track_width = 2.4
         
-        # Calculate for every significant coordinate with 5-point analysis
-        analysis_window = 5
-        min_analysis_points = analysis_window * 2
+        # Enhanced analysis with smaller windows for better turn detection
+        analysis_window = 3  # Smaller window for better sensitivity
+        min_analysis_points = analysis_window * 4
         
         if len(coords) < min_analysis_points:
             return turns
         
-        for i in range(analysis_window, len(coords) - analysis_window, 3):  # Every 3rd point
+        # Analyze every point (not every 3rd) for comprehensive turn detection
+        for i in range(analysis_window, len(coords) - analysis_window, 1):
             try:
-                # Get 5-point window for accurate curve analysis
+                # Get analysis window
                 points = coords[i-analysis_window:i+analysis_window+1]
                 center_point = coords[i]
                 
                 if len(points) < analysis_window * 2 + 1:
                     continue
                 
-                # Calculate bearings for turn detection
+                # Multiple bearing calculations for accuracy
                 bearing1 = calculate_bearing(points[0][0], points[0][1], points[2][0], points[2][1])
-                bearing2 = calculate_bearing(points[3][0], points[3][1], points[5][0], points[5][1])
-                bearing3 = calculate_bearing(points[1][0], points[1][1], points[4][0], points[4][1])
+                bearing2 = calculate_bearing(points[2][0], points[2][1], points[4][0], points[4][1])
+                bearing3 = calculate_bearing(points[1][0], points[1][1], points[3][0], points[3][1])
+                bearing4 = calculate_bearing(points[0][0], points[0][1], points[-1][0], points[-1][1])
                 
-                # Average bearing change for smoother analysis
+                # Calculate turn angles with multiple methods
                 turn_angle1 = calculate_turn_angle(bearing1, bearing2)
-                turn_angle2 = calculate_turn_angle(bearing1, bearing3)
-                avg_turn_angle = (turn_angle1 + turn_angle2) / 2
+                turn_angle2 = calculate_turn_angle(bearing2, bearing4)
+                turn_angle3 = calculate_turn_angle(bearing1, bearing3)
                 
-                # Only analyze significant turns
-                if avg_turn_angle < 8:  # Skip nearly straight segments
+                # Use maximum turn angle for safety (detect sharpest turn)
+                max_turn_angle = max(turn_angle1, turn_angle2, turn_angle3)
+                avg_turn_angle = (turn_angle1 + turn_angle2 + turn_angle3) / 3
+                
+                # Lower threshold to catch more turns (including moderate ones)
+                if max_turn_angle < 3:  # Very low threshold
                     continue
                 
-                # Calculate turn radius using 3-point circle approximation
+                # Calculate turn direction (left/right)
+                direction_bearing = bearing2 - bearing1
+                if direction_bearing > 180:
+                    direction_bearing -= 360
+                elif direction_bearing < -180:
+                    direction_bearing += 360
+                
+                turn_direction = "Right" if direction_bearing > 0 else "Left"
+                
+                # Enhanced turn radius calculation using multiple methods
                 try:
-                    p1, p2, p3 = points[1], points[len(points)//2], points[-2]
+                    # Method 1: 3-point circle
+                    p1, p2, p3 = points[0], points[len(points)//2], points[-1]
                     
-                    # Convert to meters for calculation
                     x1, y1 = p1[1] * 111320 * math.cos(math.radians(p1[0])), p1[0] * 110540
                     x2, y2 = p2[1] * 111320 * math.cos(math.radians(p2[0])), p2[0] * 110540
                     x3, y3 = p3[1] * 111320 * math.cos(math.radians(p3[0])), p3[0] * 110540
                     
-                    # Calculate circle radius through 3 points
                     a = math.sqrt((x2-x1)**2 + (y2-y1)**2)
                     b = math.sqrt((x3-x2)**2 + (y3-y2)**2)
                     c = math.sqrt((x1-x3)**2 + (y1-y3)**2)
                     
                     if a > 0 and b > 0 and c > 0:
                         s = (a + b + c) / 2
-                        area = math.sqrt(s * (s-a) * (s-b) * (s-c))
+                        area = math.sqrt(max(0, s * (s-a) * (s-b) * (s-c)))
                         if area > 0:
                             radius = (a * b * c) / (4 * area)
                         else:
-                            radius = 1000  # Default for straight sections
+                            radius = 1000
                     else:
                         radius = 1000
                     
-                    radius = max(10, min(radius, 2000))  # Reasonable bounds
+                    # Method 2: Curvature-based radius (backup)
+                    if radius > 2000 or radius < 5:
+                        radius = max(10, 180 * (90 / max(max_turn_angle, 1)))
                     
-                except:
-                    # Fallback radius calculation based on turn angle
-                    radius = max(50, 200 * (90 / max(avg_turn_angle, 1)))
+                    radius = max(5, min(radius, 2000))  # Reasonable bounds
+                    
+                except Exception as e:
+                    radius = max(15, 150 * (90 / max(max_turn_angle, 1)))
                 
-                # Physics-based speed calculations
+                # Comprehensive turn classification
+                turn_type = classify_turn_type(max_turn_angle, radius, turn_direction)
+                
+                # Physics-based speed calculations with enhanced parameters
                 gross_weight_kg = tt_specs["gross_weight"]
                 liquid_capacity = tt_specs["avg_capacity_liters"]
                 
-                # Calculate center of gravity effects
-                loaded_cg_height = cg_height + (liquid_capacity / 5000) * 0.3  # Higher CG when loaded
+                loaded_cg_height = cg_height + (liquid_capacity / 5000) * 0.3
                 
-                # Lateral acceleration limits for truck stability
-                # Typical truck: 0.4g, loaded tanker: 0.35g, heavy tanker: 0.3g
-                if gross_weight_kg > 35000:
+                # Enhanced lateral acceleration limits based on turn type
+                if turn_type in ['blind_spot', 'hairpin']:
+                    max_lateral_g = 0.20  # Very conservative for dangerous turns
+                elif turn_type == 'sharp_right_angle':
+                    max_lateral_g = 0.25
+                elif gross_weight_kg > 35000:
                     max_lateral_g = 0.28
                 elif gross_weight_kg > 25000:
                     max_lateral_g = 0.32
                 else:
                     max_lateral_g = 0.38
                 
-                # Liquid surge effect reduces stability by ~15%
-                liquid_slosh_factor = 0.85 if liquid_capacity > 15000 else 0.90
+                liquid_slosh_factor = 0.80 if liquid_capacity > 25000 else 0.85 if liquid_capacity > 15000 else 0.90
                 effective_max_g = max_lateral_g * liquid_slosh_factor
                 
-                # Calculate maximum safe speed for this turn
-                # v = sqrt(μ * g * r) where μ is friction coefficient
-                friction_coeff = 0.7  # Dry asphalt
+                # Enhanced speed calculations
+                friction_coeff = 0.65 if turn_type in ['blind_spot', 'hairpin'] else 0.7
                 max_physics_speed_ms = math.sqrt(effective_max_g * 9.81 * radius)
                 max_physics_speed_kmph = max_physics_speed_ms * 3.6
                 
-                # Calculate rollover threshold speed
-                # Rollover occurs when centripetal force creates moment > stability moment
-                stability_factor = (track_width / 2) / loaded_cg_height
-                rollover_speed_ms = math.sqrt(stability_factor * 9.81 * radius)
+                rollover_speed_ms = math.sqrt((track_width / 2) / loaded_cg_height * 9.81 * radius)
                 rollover_speed_kmph = rollover_speed_ms * 3.6
                 
-                # Apply safety margins
-                safety_margin = 0.75  # 25% safety margin
+                # Enhanced safety margins based on turn type
+                if turn_type == 'blind_spot':
+                    safety_margin = 0.60  # 40% safety margin for blind spots
+                elif turn_type in ['hairpin', 'sharp_right_angle']:
+                    safety_margin = 0.65
+                elif turn_type == 'u_turn':
+                    safety_margin = 0.70
+                else:
+                    safety_margin = 0.75
+                
                 recommended_speed = min(
                     max_physics_speed_kmph * safety_margin,
-                    rollover_speed_kmph * 0.6,  # 40% margin for rollover
-                    tt_specs["max_speed"]  # Never exceed truck max speed
+                    rollover_speed_kmph * 0.6,
+                    tt_specs["max_speed"],
+                    get_turn_type_max_speed(turn_type, tt_specs)
                 )
                 
-                # Calculate deceleration distance needed
-                current_speed = min(45, tt_specs["max_speed"] * 0.8)  # Assume reasonable current speed
+                # Enhanced severity classification
+                severity = determine_enhanced_severity(recommended_speed, turn_type, max_turn_angle, radius)
+                
+                # Calculate visibility and blind spot factors
+                visibility_factor = calculate_visibility_factor(max_turn_angle, radius, turn_direction)
+                
+                # Enhanced warning messages
+                warning = generate_enhanced_warning(turn_type, recommended_speed, max_turn_angle, visibility_factor)
+                
+                # Deceleration distance with turn-specific factors
+                current_speed = min(50, tt_specs["max_speed"] * 0.8)
                 if recommended_speed < current_speed:
                     speed_diff_ms = (current_speed - recommended_speed) / 3.6
-                    deceleration = 3.0  # m/s² - comfortable truck deceleration
+                    # Enhanced deceleration based on turn type
+                    if turn_type in ['blind_spot', 'hairpin']:
+                        deceleration = 2.5  # More gradual for dangerous turns
+                    else:
+                        deceleration = 3.0
                     deceleration_distance = (speed_diff_ms ** 2) / (2 * deceleration)
                 else:
                     deceleration_distance = 0
                 
-                # Determine turn severity
-                if recommended_speed <= 20:
-                    severity = 'critical'
-                elif recommended_speed <= 30:
-                    severity = 'high'
-                elif recommended_speed <= 40:
-                    severity = 'moderate'
-                else:
-                    severity = 'low'
-                
-                # Generate warning message
-                if severity == 'critical':
-                    warning = f"CRITICAL TURN: Max {int(recommended_speed)} kmph - High rollover risk"
-                elif severity == 'high':
-                    warning = f"SHARP TURN: Reduce to {int(recommended_speed)} kmph - Liquid surge risk"
-                else:
-                    warning = f"Moderate turn: {int(recommended_speed)} kmph recommended"
-                
-                # Physics factors for detailed analysis
-                weight_penalty = (gross_weight_kg - 15000) / 30000  # Normalized weight penalty
-                slosh_factor = (liquid_capacity - 10000) / 25000 if liquid_capacity > 10000 else 0
-                
+                # Comprehensive turn data
                 turn_data = {
                     'location': center_point,
-                    'turn_angle': avg_turn_angle,
+                    'turn_angle': max_turn_angle,
+                    'avg_turn_angle': avg_turn_angle,
                     'radius': radius,
-                    'recommended_speed': int(recommended_speed),
+                    'turn_direction': turn_direction,
+                    'turn_type': turn_type,
+                    'recommended_speed': max(5, int(recommended_speed)),
                     'rollover_speed': int(rollover_speed_kmph),
                     'max_physics_speed': int(max_physics_speed_kmph),
                     'deceleration_distance': int(deceleration_distance),
                     'severity': severity,
                     'warning': warning,
+                    'visibility_factor': visibility_factor,
+                    'blind_spot_risk': turn_type == 'blind_spot' or visibility_factor < 0.3,
                     'physics_factors': {
                         'lateral_g_force': round(effective_max_g, 2),
-                        'weight_penalty': weight_penalty,
-                        'slosh_factor': slosh_factor,
+                        'weight_penalty': (gross_weight_kg - 15000) / 30000,
+                        'slosh_factor': round(1 - liquid_slosh_factor, 2),
                         'safety_margin': safety_margin,
-                        'cg_height': loaded_cg_height
-                    }
+                        'cg_height': loaded_cg_height,
+                        'friction_coeff': friction_coeff
+                    },
+                    'risk_factors': generate_turn_risk_factors(turn_type, max_turn_angle, radius, tt_specs)
                 }
                 
                 turns.append(turn_data)
@@ -679,15 +704,139 @@ def calculate_precise_turn_analysis(coords, tt_specs):
                 continue
     
     except Exception as e:
-        print(f"Error in precise turn analysis: {e}")
+        print(f"Error in enhanced turn analysis: {e}")
         import traceback
         traceback.print_exc()
     
-    # Sort by severity and return most critical turns
+    # Sort by danger level and return all significant turns
     severity_order = {'critical': 4, 'high': 3, 'moderate': 2, 'low': 1}
     turns.sort(key=lambda x: (severity_order.get(x['severity'], 0), -x['turn_angle']), reverse=True)
     
-    return turns[:20]  # Return top 20 most critical turns
+    return turns  # Return all turns, not just top 20
+
+def classify_turn_type(turn_angle, radius, direction):
+    """Classify turn into specific dangerous categories"""
+    if turn_angle >= 160:
+        return 'u_turn'
+    elif turn_angle >= 120:
+        return 'hairpin'
+    elif 80 <= turn_angle < 100:
+        return 'sharp_right_angle'
+    elif turn_angle >= 100:
+        return 'sharp_turn'
+    elif turn_angle >= 70 and radius < 25:
+        return 'blind_spot'  # Sharp turn with small radius = blind spot
+    elif turn_angle >= 45:
+        return 'moderate_turn'
+    elif turn_angle >= 25:
+        return 'gentle_curve'
+    elif turn_angle >= 10:
+        return 'slight_curve'
+    else:
+        return 'straight'
+
+def get_turn_type_max_speed(turn_type, tt_specs):
+    """Get maximum safe speed for specific turn types"""
+    base_max = tt_specs["max_speed"]
+    
+    speed_limits = {
+        'u_turn': 8,
+        'hairpin': 12,
+        'sharp_right_angle': 15,
+        'blind_spot': 18,
+        'sharp_turn': 25,
+        'moderate_turn': 35,
+        'gentle_curve': min(45, base_max),
+        'slight_curve': min(55, base_max),
+        'straight': base_max
+    }
+    
+    return speed_limits.get(turn_type, base_max)
+
+def calculate_visibility_factor(turn_angle, radius, direction):
+    """Calculate visibility factor for blind spot detection"""
+    # Lower values = more dangerous (less visibility)
+    if turn_angle >= 90 and radius < 30:
+        return 0.1  # Very poor visibility - blind spot
+    elif turn_angle >= 70 and radius < 40:
+        return 0.2  # Poor visibility
+    elif turn_angle >= 60 and radius < 60:
+        return 0.4  # Limited visibility
+    elif turn_angle >= 45:
+        return 0.6  # Moderate visibility
+    else:
+        return 1.0  # Good visibility
+
+def determine_enhanced_severity(speed, turn_type, angle, radius):
+    """Enhanced severity classification"""
+    if turn_type in ['blind_spot', 'u_turn', 'hairpin'] or speed <= 12:
+        return 'critical'
+    elif turn_type == 'sharp_right_angle' or speed <= 20:
+        return 'high'
+    elif turn_type == 'sharp_turn' or speed <= 30:
+        return 'moderate'
+    else:
+        return 'low'
+
+def generate_enhanced_warning(turn_type, speed, angle, visibility):
+    """Generate specific warning messages for different turn types"""
+    warnings = {
+        'u_turn': f"U-TURN AHEAD: Max {int(speed)} kmph - Complete stop may be required",
+        'hairpin': f"HAIRPIN TURN: {int(speed)} kmph MAX - Extreme rollover risk",
+        'sharp_right_angle': f"90° TURN: {int(speed)} kmph - Sharp angle ahead",
+        'blind_spot': f"BLIND SPOT TURN: {int(speed)} kmph - LIMITED VISIBILITY",
+        'sharp_turn': f"SHARP TURN: {int(speed)} kmph - Reduce speed gradually",
+        'moderate_turn': f"Moderate turn: {int(speed)} kmph recommended",
+        'gentle_curve': f"Gentle curve: {int(speed)} kmph",
+        'slight_curve': f"Slight curve ahead",
+        'straight': "Straight road"
+    }
+    
+    warning = warnings.get(turn_type, f"Turn ahead: {int(speed)} kmph")
+    
+    if visibility < 0.3:
+        warning += " - VISIBILITY WARNING"
+    
+    return warning
+
+def generate_turn_risk_factors(turn_type, angle, radius, tt_specs):
+    """Generate specific risk factors for each turn type"""
+    factors = []
+    
+    if turn_type == 'blind_spot':
+        factors.extend([
+            f"BLIND SPOT: Limited visibility around {angle:.1f}° turn",
+            f"Small radius ({radius:.1f}m) creates vision obstruction",
+            "Oncoming traffic may not be visible",
+            f"Heavy TT ({tt_specs['gross_weight']/1000:.1f}T) requires early braking"
+        ])
+    elif turn_type == 'u_turn':
+        factors.extend([
+            f"U-TURN: {angle:.1f}° requires multiple maneuvers",
+            "Complete traffic stoppage likely required",
+            f"TT length ({12}m) may need wide turning space"
+        ])
+    elif turn_type == 'hairpin':
+        factors.extend([
+            f"HAIRPIN: {angle:.1f}° extreme turn",
+            f"Very tight radius ({radius:.1f}m)",
+            "Maximum rollover risk zone"
+        ])
+    elif turn_type == 'sharp_right_angle':
+        factors.extend([
+            f"90° TURN: Standard right-angle intersection",
+            f"Turning radius: {radius:.1f}m",
+            "Check for cross traffic"
+        ])
+    
+    # Add truck-specific factors
+    if tt_specs['gross_weight'] > 35000:
+        factors.append(f"Heavy TT warning: {tt_specs['gross_weight']/1000:.1f}T increases turn difficulty")
+    
+    if tt_specs['avg_capacity_liters'] > 25000:
+        factors.append(f"Large capacity: {tt_specs['avg_capacity_liters']:,}L liquid surge risk")
+    
+    return factors
 
 def calculate_braking_distances(coords, tt_specs, elevations, gradients):
     """Calculate braking distances for truck at various points considering weight and gradient"""
@@ -2229,5 +2378,6 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
