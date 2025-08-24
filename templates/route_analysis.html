@@ -757,6 +757,341 @@
                 return message;
             }
         });
+       // JavaScript to inject into your analyzed HTML map file
+// This enables communication with the parent audio navigation window
+
+// Map-Audio Communication Bridge
+// Add this script to your analyzed HTML map file before closing </body> tag
+
+(function() {
+    'use strict';
+    
+    let mapData = {
+        hazards: [],
+        turns: [],
+        pois: [],
+        routePoints: 0,
+        initialized: false
+    };
+    
+    // Initialize communication bridge when map loads
+    function initializeMapCommunication() {
+        console.log('Map communication bridge initializing...');
+        
+        // Listen for messages from parent audio window
+        window.addEventListener('message', handleParentMessage, false);
+        
+        // Extract map data for audio system
+        extractMapElements();
+        
+        // Set up marker click handlers for audio alerts
+        setupAudioMarkers();
+        
+        // Notify parent that map is ready
+        notifyParentMapReady();
+        
+        console.log('Map communication bridge ready');
+    }
+    
+    // Handle messages from parent audio window
+    function handleParentMessage(event) {
+        const data = event.data;
+        
+        switch(data.type) {
+            case 'requestMapData':
+                sendMapDataToParent();
+                break;
+            case 'navigationStarted':
+                handleNavigationStart();
+                break;
+            case 'navigationStopped':
+                handleNavigationStop();
+                break;
+            default:
+                console.log('Unknown message from parent:', data);
+        }
+    }
+    
+    // Extract hazards, turns, POIs from the map
+    function extractMapElements() {
+        mapData.hazards = [];
+        mapData.turns = [];
+        mapData.pois = [];
+        
+        // Find all markers on the map
+        if (typeof map !== 'undefined' && map._layers) {
+            let layerCount = 0;
+            
+            map.eachLayer(function(layer) {
+                if (layer instanceof L.Marker) {
+                    layerCount++;
+                    const popup = layer.getPopup();
+                    
+                    if (popup) {
+                        const content = popup.getContent().toLowerCase();
+                        const latLng = layer.getLatLng();
+                        
+                        // Classify marker based on popup content
+                        if (content.includes('hazard') || content.includes('danger') || 
+                            content.includes('risk') || content.includes('caution')) {
+                            mapData.hazards.push({
+                                id: mapData.hazards.length,
+                                type: 'hazard',
+                                description: popup.getContent(),
+                                position: latLng,
+                                severity: determineSeverity(content)
+                            });
+                        } else if (content.includes('turn') || content.includes('curve') || 
+                                 content.includes('bend') || content.includes('sharp')) {
+                            mapData.turns.push({
+                                id: mapData.turns.length,
+                                type: 'turn',
+                                description: popup.getContent(),
+                                position: latLng,
+                                direction: extractDirection(content)
+                            });
+                        } else if (content.includes('hospital') || content.includes('school') || 
+                                 content.includes('station') || content.includes('fuel') ||
+                                 content.includes('bridge') || content.includes('construction')) {
+                            mapData.pois.push({
+                                id: mapData.pois.length,
+                                type: 'poi',
+                                description: popup.getContent(),
+                                position: latLng,
+                                category: extractPOICategory(content)
+                            });
+                        }
+                    }
+                }
+            });
+            
+            mapData.routePoints = layerCount;
+        }
+        
+        // Fallback: parse from script tags if map object not accessible
+        if (mapData.routePoints === 0) {
+            extractFromScripts();
+        }
+        
+        mapData.initialized = true;
+        console.log('Map data extracted:', mapData);
+    }
+    
+    // Extract data from script tags (fallback method)
+    function extractFromScripts() {
+        const scripts = document.querySelectorAll('script');
+        
+        scripts.forEach(script => {
+            if (script.textContent) {
+                const content = script.textContent;
+                
+                // Extract hazard markers
+                const hazardRegex = /\.bindPopup\(['"]([^'"]*(?:hazard|danger|risk|caution)[^'"]*)['"]\)/gi;
+                let match;
+                
+                while ((match = hazardRegex.exec(content)) !== null) {
+                    mapData.hazards.push({
+                        id: mapData.hazards.length,
+                        type: 'hazard',
+                        description: match[1],
+                        severity: determineSeverity(match[1].toLowerCase())
+                    });
+                }
+                
+                // Extract turn markers
+                const turnRegex = /\.bindPopup\(['"]([^'"]*(?:turn|curve|bend|sharp)[^'"]*)['"]\)/gi;
+                while ((match = turnRegex.exec(content)) !== null) {
+                    mapData.turns.push({
+                        id: mapData.turns.length,
+                        type: 'turn',
+                        description: match[1],
+                        direction: extractDirection(match[1].toLowerCase())
+                    });
+                }
+                
+                // Extract POI markers
+                const poiRegex = /\.bindPopup\(['"]([^'"]*(?:hospital|school|station|fuel|bridge|construction)[^'"]*)['"]\)/gi;
+                while ((match = poiRegex.exec(content)) !== null) {
+                    mapData.pois.push({
+                        id: mapData.pois.length,
+                        type: 'poi',
+                        description: match[1],
+                        category: extractPOICategory(match[1].toLowerCase())
+                    });
+                }
+            }
+        });
+        
+        mapData.routePoints = mapData.hazards.length + mapData.turns.length + mapData.pois.length;
+    }
+    
+    // Determine hazard severity
+    function determineSeverity(content) {
+        if (content.includes('critical') || content.includes('extreme') || content.includes('danger')) {
+            return 'critical';
+        } else if (content.includes('high') || content.includes('major')) {
+            return 'high';
+        } else if (content.includes('medium') || content.includes('moderate')) {
+            return 'medium';
+        } else {
+            return 'low';
+        }
+    }
+    
+    // Extract turn direction
+    function extractDirection(content) {
+        if (content.includes('left')) return 'left';
+        if (content.includes('right')) return 'right';
+        if (content.includes('u-turn')) return 'u-turn';
+        return 'unknown';
+    }
+    
+    // Extract POI category
+    function extractPOICategory(content) {
+        if (content.includes('hospital')) return 'medical';
+        if (content.includes('school')) return 'education';
+        if (content.includes('fuel') || content.includes('gas')) return 'fuel';
+        if (content.includes('police')) return 'emergency';
+        if (content.includes('bridge')) return 'infrastructure';
+        if (content.includes('construction')) return 'construction';
+        return 'general';
+    }
+    
+    // Set up click handlers on markers to trigger audio alerts
+    function setupAudioMarkers() {
+        if (typeof map !== 'undefined' && map._layers) {
+            map.eachLayer(function(layer) {
+                if (layer instanceof L.Marker) {
+                    layer.on('click', function(e) {
+                        const popup = layer.getPopup();
+                        if (popup) {
+                            const content = popup.getContent().toLowerCase();
+                            
+                            // Trigger appropriate audio alert
+                            if (content.includes('hazard') || content.includes('danger')) {
+                                triggerAudioAlert('hazard', {
+                                    description: popup.getContent(),
+                                    severity: determineSeverity(content),
+                                    position: e.latlng
+                                });
+                            } else if (content.includes('turn') || content.includes('curve')) {
+                                triggerAudioAlert('turn', {
+                                    description: popup.getContent(),
+                                    direction: extractDirection(content),
+                                    position: e.latlng
+                                });
+                            } else {
+                                triggerAudioAlert('poi', {
+                                    description: popup.getContent(),
+                                    category: extractPOICategory(content),
+                                    position: e.latlng
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+        }
+    }
+    
+    // Trigger audio alert in parent window
+    function triggerAudioAlert(type, data) {
+        try {
+            parent.postMessage({
+                type: type + 'Alert',
+                payload: data,
+                source: 'mapNavigation'
+            }, '*');
+        } catch (error) {
+            console.warn('Could not send audio alert to parent:', error);
+        }
+    }
+    
+    // Send map data to parent audio window
+    function sendMapDataToParent() {
+        try {
+            parent.postMessage({
+                type: 'mapDataReady',
+                payload: mapData,
+                source: 'mapNavigation'
+            }, '*');
+            console.log('Map data sent to parent:', mapData);
+        } catch (error) {
+            console.warn('Could not send map data to parent:', error);
+        }
+    }
+    
+    // Notify parent that map is ready
+    function notifyParentMapReady() {
+        setTimeout(() => {
+            sendMapDataToParent();
+        }, 1000);
+    }
+    
+    // Handle navigation start from parent
+    function handleNavigationStart() {
+        console.log('Navigation started - map will provide real-time alerts');
+        
+        // You can add visual indicators here
+        if (typeof map !== 'undefined') {
+            // Example: add a control to show navigation is active
+            const navigationControl = L.control({position: 'topright'});
+            navigationControl.onAdd = function(map) {
+                const div = L.DomUtil.create('div', 'navigation-active-control');
+                div.innerHTML = '<div style="background: #28a745; color: white; padding: 5px 10px; border-radius: 5px; font-size: 12px;">🎵 Audio Navigation Active</div>';
+                return div;
+            };
+            navigationControl.addTo(map);
+        }
+    }
+    
+    // Handle navigation stop from parent
+    function handleNavigationStop() {
+        console.log('Navigation stopped');
+        // Remove navigation indicators if any
+    }
+    
+    // Auto-trigger alerts based on map view changes (optional)
+    function setupViewChangeAlerts() {
+        if (typeof map !== 'undefined') {
+            map.on('moveend', function() {
+                const center = map.getCenter();
+                const zoom = map.getZoom();
+                
+                // Check if any hazards are now in view
+                mapData.hazards.forEach(hazard => {
+                    if (hazard.position && map.getBounds().contains(hazard.position)) {
+                        // Hazard is in view - could trigger alert
+                        if (Math.random() < 0.1) { // 10% chance to avoid spam
+                            triggerAudioAlert('hazard', hazard);
+                        }
+                    }
+                });
+            });
+        }
+    }
+    
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeMapCommunication);
+    } else {
+        // DOM already loaded
+        setTimeout(initializeMapCommunication, 500);
+    }
+    
+    // Also try to initialize after a delay to ensure map is fully loaded
+    setTimeout(initializeMapCommunication, 2000);
+    
+    // Expose functions globally for debugging
+    window.mapCommunicationBridge = {
+        mapData: mapData,
+        extractMapElements: extractMapElements,
+        sendMapDataToParent: sendMapDataToParent,
+        triggerAudioAlert: triggerAudioAlert
+    };
+    
+})();
     </script>
 </body>
 </html>
+
