@@ -1,432 +1,133 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Route Analysis - IndianOil Smart Marg</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+@app.route('/analyze_route', methods=['POST'])
+@login_required
+def analyze_route():
+    """Enhanced route analysis with realistic hazard detection and audio navigation"""
+    try:
+        directions = session.get('directions')
+        tt_specs = session.get('tt_specs')
+        username = session.get('username', 'User')
+        index = int(request.form['route_index'])
+
+        if not directions or index >= len(directions) or not tt_specs:
+            return "Invalid route selected or session data expired. Please start over."
+
+        selected = directions[index]
+        steps = selected['legs'][0]['steps']
+        coords = polyline.decode(selected['overview_polyline']['points'])
+        source = session['source']
+        destination = session['destination']
         
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
+        # Get route details
+        total_distance = selected['legs'][0]['distance']['text']
+        total_duration = selected['legs'][0]['duration']['text']
+
+        # Enhanced route interpolation based on truck weight
+        points_per_km = 25 if tt_specs["gross_weight"] > 35000 else 20 if tt_specs["gross_weight"] > 25000 else 15
+        detailed_coords = interpolate_route_points(coords, points_per_km=points_per_km)
         
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
+        print(f"Route analysis: {len(coords)} original points, {len(detailed_coords)} detailed points")
         
-        .header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
-            padding: 20px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .header h1 {
-            font-size: 2em;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-        
-        .user-info {
-            background: rgba(255,255,255,0.2);
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.9em;
-        }
-        
-        .analysis-summary {
-            padding: 30px;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            text-align: center;
-        }
-        
-        .complexity-rating {
-            font-size: 2.5em;
-            font-weight: bold;
-            margin: 20px 0;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-        
-        .critical {
-            color: #ff4757;
-        }
-        
-        .high {
-            color: #ff6b35;
-        }
-        
-        .moderate {
-            color: #ffa502;
-        }
-        
-        .low {
-            color: #2ed573;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            padding: 30px;
-            background: #f8f9fa;
-        }
-        
-        .stat-card {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            text-align: center;
-            transition: transform 0.3s ease;
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .stat-number {
-            font-size: 2.5em;
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
-        
-        .stat-label {
-            color: #7f8c8d;
-            font-weight: 500;
-        }
-        
-        .truck-specs {
-            padding: 30px;
-            background: #34495e;
-            color: white;
-        }
-        
-        .truck-specs h3 {
-            margin-bottom: 20px;
-            font-size: 1.5em;
-            text-align: center;
-        }
-        
-        .specs-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-        }
-        
-        .spec-item {
-            background: rgba(255,255,255,0.1);
-            padding: 15px;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .spec-label {
-            font-weight: 500;
-        }
-        
-        .spec-value {
-            font-weight: bold;
-            color: #3498db;
-        }
-        
-        .map-container {
-            padding: 30px;
-            background: #2c3e50;
-            text-align: center;
-        }
-        
-        .map-container h3 {
-            color: white;
-            margin-bottom: 20px;
-            font-size: 1.5em;
-        }
-        
-        .map-frame {
-            width: 100%;
-            height: 600px;
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-        }
-        
-        .action-buttons {
-            padding: 30px;
-            background: #ecf0f1;
-            text-align: center;
-        }
-        
-        .btn {
-            display: inline-block;
-            padding: 15px 30px;
-            margin: 0 10px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            border: none;
-            cursor: pointer;
-            font-size: 1em;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-        }
-        
-        .btn-secondary {
-            background: linear-gradient(135deg, #95e1d3 0%, #fce38a 100%);
-            color: #2c3e50;
-        }
-        
-        .btn-danger {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-        }
-        
-        .alert {
-            padding: 20px;
-            margin: 20px 30px;
-            border-radius: 8px;
-            font-weight: 500;
-        }
-        
-        .alert-warning {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-        
-        .alert-danger {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .safety-recommendations {
-            padding: 30px;
-            background: #fff3cd;
-        }
-        
-        .safety-recommendations h3 {
-            color: #856404;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        
-        .recommendation-list {
-            list-style: none;
-            padding: 0;
-        }
-        
-        .recommendation-list li {
-            background: white;
-            margin: 10px 0;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #ffc107;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .recommendation-list li:before {
-            content: "⚠️";
-            margin-right: 10px;
-        }
-        
-        @media (max-width: 768px) {
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
+        # Get elevation profile for realistic gradient analysis
+        elevations, gradients = [], []
+        try:
+            elevation_sample = detailed_coords[::max(1, len(detailed_coords)//50)]
+            elevation_result = gmaps.elevation(elevation_sample)
+            elevations = [point['elevation'] for point in elevation_result]
             
-            .specs-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .header {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .user-info {
-                margin-top: 15px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <h1>Route Analysis Complete</h1>
-            <div class="user-info">
-                Logged in as: {{ username }}
-            </div>
-        </div>
+            for i in range(1, len(elevations)):
+                if i < len(elevation_sample):
+                    distance_m = geodesic(elevation_sample[i-1], elevation_sample[i]).meters
+                    if distance_m > 0:
+                        elevation_diff = elevations[i] - elevations[i-1]
+                        gradient = (elevation_diff / distance_m) * 100
+                        gradients.append(gradient)
+                    else:
+                        gradients.append(0)
+        except Exception as e:
+            print(f"Elevation data unavailable: {e}")
+            elevations = [100] * len(detailed_coords)
+            gradients = [0] * (len(detailed_coords) - 1)
+        
+        # Enhanced POI collection
+        all_pois = get_enhanced_pois_for_audio(detailed_coords)
+        print(f"Collected {len(all_pois)} POIs")
+        
+        # Realistic traffic analysis
+        traffic_data = get_realistic_traffic_data(detailed_coords, gmaps)
+        print(f"Traffic analysis: {len(traffic_data)} data points")
+        
+        # Enhanced hazard zone identification
+        hazard_zones = identify_realistic_poi_hazards(detailed_coords, all_pois, tt_specs)
+        print(f"Identified {len(hazard_zones)} hazard zones")
+        
+        # Precise turn analysis with physics
+        turns = calculate_enhanced_turn_analysis(detailed_coords, tt_specs)
+        print(f"Analyzed {len(turns)} significant turns")
+        
+        # Braking distance calculations
+        braking_points = calculate_braking_distances(detailed_coords, tt_specs, elevations, gradients)
+        print(f"Calculated braking distances for {len(braking_points)} points")
+        
+        # Generate audio navigation data
+        audio_navigation_data = generate_audio_navigation_data(
+            detailed_coords, hazard_zones, turns, braking_points, all_pois, tt_specs
+        )
+        print(f"Generated {len(audio_navigation_data['instructions'])} audio instructions")
+        
+        # Generate comprehensive report
+        route_report = generate_enhanced_route_report(
+            detailed_coords, all_pois, hazard_zones, traffic_data, turns, 
+            braking_points, total_distance, total_duration, tt_specs, elevations, gradients
+        )
 
-        <!-- Analysis Summary -->
-        <div class="analysis-summary">
-            <h2>{{ mode }} Analysis</h2>
-            <div class="complexity-rating 
-                {% if complexity_rating == 'EXTREME RISK' %}critical
-                {% elif complexity_rating == 'HIGH COMPLEXITY' %}high
-                {% elif complexity_rating == 'MODERATE COMPLEXITY' %}moderate
-                {% else %}low{% endif %}">
-                {{ complexity_rating }}
-            </div>
-            <p>Comprehensive analysis completed with advanced truck tanker physics calculations</p>
-        </div>
+        # Create enhanced audio-enabled visualization map
+        m = create_audio_enabled_folium_map(
+            source, destination, detailed_coords, hazard_zones, turns, 
+            all_pois, traffic_data, braking_points, tt_specs, audio_navigation_data
+        )
 
-        <!-- Key Statistics -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-number">{{ critical_turns }}</div>
-                <div class="stat-label">Critical Turns</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">{{ critical_hazards }}</div>
-                <div class="stat-label">Critical Hazards</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">{{ poi_count }}</div>
-                <div class="stat-label">Points of Interest</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">{{ max_braking_distance }}m</div>
-                <div class="stat-label">Max Braking Distance</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">{{ turns }}</div>
-                <div class="stat-label">Total Significant Turns</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number">{{ risk_zones }}</div>
-                <div class="stat-label">Risk Zones Identified</div>
-            </div>
-        </div>
+        # Save enhanced map with audio features
+        unique_map_id = uuid4().hex
+        html_name = f"audio_route_map_{unique_map_id}.html"
+        m.save(f"templates/{html_name}")
 
-        <!-- Truck Specifications -->
-        <div class="truck-specs">
-            <h3>Truck Tanker Specifications</h3>
-            <div class="specs-grid">
-                <div class="spec-item">
-                    <span class="spec-label">Capacity Range:</span>
-                    <span class="spec-value">{{ tt_specs.capacity_range }}</span>
-                </div>
-                <div class="spec-item">
-                    <span class="spec-label">Average Capacity:</span>
-                    <span class="spec-value">{{ "{:,}".format(tt_specs.avg_capacity_liters) }} L</span>
-                </div>
-                <div class="spec-item">
-                    <span class="spec-label">Gross Weight:</span>
-                    <span class="spec-value">{{ "%.1f"|format(tt_specs.gross_weight/1000) }} T</span>
-                </div>
-                <div class="spec-item">
-                    <span class="spec-label">Tare Weight:</span>
-                    <span class="spec-value">{{ "%.1f"|format(tt_specs.tare_weight/1000) }} T</span>
-                </div>
-                <div class="spec-item">
-                    <span class="spec-label">Axle Load:</span>
-                    <span class="spec-value">{{ "%.1f"|format(tt_specs.axle_load) }} T per axle</span>
-                </div>
-                <div class="spec-item">
-                    <span class="spec-label">Max Speed:</span>
-                    <span class="spec-value">{{ tt_specs.max_speed }} kmph</span>
-                </div>
-                <div class="spec-item">
-                    <span class="spec-label">Risk Multiplier:</span>
-                    <span class="spec-value">{{ tt_specs.risk_multiplier }}x</span>
-                </div>
-                <div class="spec-item">
-                    <span class="spec-label">Turn Sensitivity:</span>
-                    <span class="spec-value">{{ tt_specs.turn_sensitivity }}x</span>
-                </div>
-            </div>
-        </div>
+        # Store comprehensive data in session
+        session['route_report'] = route_report
+        session['hazard_zones'] = hazard_zones
+        session['turns'] = turns
+        session['braking_points'] = braking_points
+        session['audio_navigation_data'] = audio_navigation_data
+        session['total_distance'] = total_distance
+        session['total_duration'] = total_duration
+        session.modified = True
 
-        <!-- Alerts -->
-        {% if critical_turns > 5 %}
-        <div class="alert alert-danger">
-            <strong>HIGH RISK ALERT:</strong> Route contains {{ critical_turns }} critical turns requiring extreme caution. Consider alternative routes if available.
-        </div>
-        {% endif %}
+        # Calculate template variables
+        critical_hazards = len([z for z in hazard_zones if z.get('risk_level') == 'Critical'])
+        critical_turns = len([t for t in turns if t.get('severity') == 'critical'])
+        max_braking_distance = max([b.get('total_distance', 45) for b in braking_points]) if braking_points else 45
+        
+        # Return enhanced analysis page with audio features
+        return render_template("audio_route_analysis.html",
+                               mode="Enhanced Audio TT Navigation",
+                               turns=len(turns),
+                               critical_turns=critical_turns,
+                               poi_count=len(all_pois),
+                               html_file=html_name,
+                               route_report=route_report,
+                               risk_zones=len(hazard_zones),
+                               high_risk_zones=len([z for z in hazard_zones if z['risk_level'] in ['Critical', 'High']]),
+                               critical_hazards=critical_hazards,
+                               max_braking_distance=max_braking_distance,
+                               tt_specs=tt_specs,
+                               username=username,
+                               audio_features_enabled=True,
+                               audio_instructions_count=len(audio_navigation_data['instructions']),
+                               complexity_rating=route_report['route_overview']['complexity_rating'],
+                               total_distance=total_distance,
+                               total_duration=total_duration)
 
-        {% if critical_hazards > 3 %}
-        <div class="alert alert-warning">
-            <strong>HAZARD WARNING:</strong> {{ critical_hazards }} critical hazard zones identified. Review detailed analysis before proceeding.
-        </div>
-        {% endif %}
-
-        {% if max_braking_distance > 80 %}
-        <div class="alert alert-warning">
-            <strong>EXTENDED BRAKING:</strong> Maximum braking distance of {{ max_braking_distance }}m requires increased following distances.
-        </div>
-        {% endif %}
-
-        <!-- Interactive Map -->
-        <div class="map-container">
-            <h3>Interactive Route Analysis Map</h3>
-            <iframe src="/view_map/{{ html_file }}" class="map-frame"></iframe>
-        </div>
-
-        <!-- Safety Recommendations -->
-        <div class="safety-recommendations">
-            <h3>Critical Safety Recommendations</h3>
-            <ul class="recommendation-list">
-                {% for recommendation in route_report.safety_recommendations[:8] %}
-                <li>{{ recommendation }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="action-buttons">
-            <a href="/detailed_report" class="btn">View Detailed Analysis Report</a>
-            <a href="/download/{{ html_file }}" class="btn btn-secondary">Download Map</a>
-            <a href="/" class="btn btn-secondary">Plan New Route</a>
-            <button onclick="window.print()" class="btn btn-secondary">Print Analysis</button>
-            <a href="/logout" class="btn btn-danger">Logout</a>
-        </div>
-    </div>
-
-    <script>
-        // Auto-refresh map after 2 seconds to ensure proper loading
-        setTimeout(function() {
-            const iframe = document.querySelector('.map-frame');
-            if (iframe) {
-                iframe.src = iframe.src;
-            }
-        }, 2000);
-
-        // Print function
-        function printAnalysis() {
-            window.print();
-        }
-
-        // Show loading indicator
-        document.addEventListener('DOMContentLoaded', function() {
-            const iframe = document.querySelector('.map-frame');
-            iframe.addEventListener('load', function() {
-                console.log('Map loaded successfully');
-            });
-        });
-    </script>
-</body>
-</html>
+    except Exception as e:
+        print(f"Error in enhanced analyze_route: {e}")
+        import traceback
+        traceback.print_exc()
+        return f"Error analyzing route: {str(e)}. Please try again or contact support."
