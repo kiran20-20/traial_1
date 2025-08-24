@@ -2786,6 +2786,33 @@ def fetch_routes():
         import traceback
         traceback.print_exc()
         return f"Error processing route request: {str(e)}"
+        
+# In your Flask route
+@app.route('/audio_navigation/<html_file>')
+def audio_navigation(html_file):
+    # Modify the map file to include communication bridge
+    map_file_path = f'static/maps/{html_file}'
+    
+    # Add communication script to map file
+    with open(map_file_path, 'r', encoding='utf-8') as f:
+        map_content = f.read()
+    
+    # Check if bridge script already added
+    if 'mapCommunicationBridge' not in map_content:
+        # Insert the communication script before </body>
+        bridge_script = '''<script>
+        // Insert map modification script here
+        </script>'''
+        
+        map_content = map_content.replace('</body>', bridge_script + '</body>')
+        
+        # Write back modified file
+        with open(map_file_path, 'w', encoding='utf-8') as f:
+            f.write(map_content)
+    
+    return render_template('iframe_communication_bridge.html', 
+                         html_file=html_file,
+                         route_report=route_report)
 
 
 # Replace your existing analyze_route function with this enhanced version
@@ -3136,6 +3163,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
