@@ -1,133 +1,762 @@
-@app.route('/analyze_route', methods=['POST'])
-@login_required
-def analyze_route():
-    """Enhanced route analysis with realistic hazard detection and audio navigation"""
-    try:
-        directions = session.get('directions')
-        tt_specs = session.get('tt_specs')
-        username = session.get('username', 'User')
-        index = int(request.form['route_index'])
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Marg Audio Navigation - Integrated Route Analysis</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-        if not directions or index >= len(directions) or not tt_specs:
-            return "Invalid route selected or session data expired. Please start over."
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
 
-        selected = directions[index]
-        steps = selected['legs'][0]['steps']
-        coords = polyline.decode(selected['overview_polyline']['points'])
-        source = session['source']
-        destination = session['destination']
-        
-        # Get route details
-        total_distance = selected['legs'][0]['distance']['text']
-        total_duration = selected['legs'][0]['duration']['text']
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
 
-        # Enhanced route interpolation based on truck weight
-        points_per_km = 25 if tt_specs["gross_weight"] > 35000 else 20 if tt_specs["gross_weight"] > 25000 else 15
-        detailed_coords = interpolate_route_points(coords, points_per_km=points_per_km)
-        
-        print(f"Route analysis: {len(coords)} original points, {len(detailed_coords)} detailed points")
-        
-        # Get elevation profile for realistic gradient analysis
-        elevations, gradients = [], []
-        try:
-            elevation_sample = detailed_coords[::max(1, len(detailed_coords)//50)]
-            elevation_result = gmaps.elevation(elevation_sample)
-            elevations = [point['elevation'] for point in elevation_result]
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            color: #00ff88;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 20px;
+            height: calc(100vh - 160px);
+        }
+
+        .map-section {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .map-container {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .map-overlay {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.95);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 180px;
+            z-index: 1000;
+            color: #333;
+        }
+
+        .speed-indicator {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .speed-gauge {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+
+        .controls-panel {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .audio-controls {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .audio-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            margin: 4px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .audio-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .audio-btn.primary {
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            font-size: 1.1rem;
+            padding: 12px 20px;
+            margin-bottom: 10px;
+        }
+
+        .audio-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .route-stats {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #00ff88;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+
+        .vehicle-tracker {
+            background: rgba(40, 167, 69, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #28a745;
+        }
+
+        .progress-bar {
+            background: rgba(255, 255, 255, 0.2);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #28a745, #20c997);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .alert-feed {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        .alert-item {
+            background: rgba(220, 53, 69, 0.2);
+            padding: 6px 10px;
+            border-radius: 4px;
+            margin-bottom: 6px;
+            border-left: 3px solid #dc3545;
+            font-size: 0.85rem;
+        }
+
+        .risk-assessment {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .risk-indicator {
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 5px 0;
+            display: inline-block;
+        }
+
+        .risk-high {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .risk-medium {
+            background: #ffa726;
+            color: white;
+        }
+
+        .risk-low {
+            background: #66bb6a;
+            color: white;
+        }
+
+        .audio-instructions {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .instruction-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px;
+            border-radius: 6px;
+            margin: 5px 0;
+            font-size: 0.85rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: 50vh auto;
+            }
             
-            for i in range(1, len(elevations)):
-                if i < len(elevation_sample):
-                    distance_m = geodesic(elevation_sample[i-1], elevation_sample[i]).meters
-                    if distance_m > 0:
-                        elevation_diff = elevations[i] - elevations[i-1]
-                        gradient = (elevation_diff / distance_m) * 100
-                        gradients.append(gradient)
-                    else:
-                        gradients.append(0)
-        except Exception as e:
-            print(f"Elevation data unavailable: {e}")
-            elevations = [100] * len(detailed_coords)
-            gradients = [0] * (len(detailed_coords) - 1)
-        
-        # Enhanced POI collection
-        all_pois = get_enhanced_pois_for_audio(detailed_coords)
-        print(f"Collected {len(all_pois)} POIs")
-        
-        # Realistic traffic analysis
-        traffic_data = get_realistic_traffic_data(detailed_coords, gmaps)
-        print(f"Traffic analysis: {len(traffic_data)} data points")
-        
-        # Enhanced hazard zone identification
-        hazard_zones = identify_realistic_poi_hazards(detailed_coords, all_pois, tt_specs)
-        print(f"Identified {len(hazard_zones)} hazard zones")
-        
-        # Precise turn analysis with physics
-        turns = calculate_enhanced_turn_analysis(detailed_coords, tt_specs)
-        print(f"Analyzed {len(turns)} significant turns")
-        
-        # Braking distance calculations
-        braking_points = calculate_braking_distances(detailed_coords, tt_specs, elevations, gradients)
-        print(f"Calculated braking distances for {len(braking_points)} points")
-        
-        # Generate audio navigation data
-        audio_navigation_data = generate_audio_navigation_data(
-            detailed_coords, hazard_zones, turns, braking_points, all_pois, tt_specs
-        )
-        print(f"Generated {len(audio_navigation_data['instructions'])} audio instructions")
-        
-        # Generate comprehensive report
-        route_report = generate_enhanced_route_report(
-            detailed_coords, all_pois, hazard_zones, traffic_data, turns, 
-            braking_points, total_distance, total_duration, tt_specs, elevations, gradients
-        )
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
 
-        # Create enhanced audio-enabled visualization map
-        m = create_audio_enabled_folium_map(
-            source, destination, detailed_coords, hazard_zones, turns, 
-            all_pois, traffic_data, braking_points, tt_specs, audio_navigation_data
-        )
+        .section-header {
+            color: #00ff88;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-truck"></i> Smart Marg Audio Navigation</h1>
+            <p>{{ route_report.truck_weight }}T Truck | Max Speed: {{ route_report.max_speed_limit }} km/h | {{ route_report.total_distance }} route</p>
+            <p>Welcome, Driver | Route Analysis Complete with Audio Guidance</p>
+        </div>
 
-        # Save enhanced map with audio features
-        unique_map_id = uuid4().hex
-        html_name = f"audio_route_map_{unique_map_id}.html"
-        m.save(f"templates/{html_name}")
+        <div class="main-grid">
+            <!-- Map Section -->
+            <div class="map-section">
+                <iframe id="routeMap" class="map-container" 
+                        src="{{ url_for('view_map', filename=html_file) }}" 
+                        onload="initializeMapAudio()">
+                </iframe>
+                
+                <div class="map-overlay">
+                    <div class="speed-indicator">
+                        <div class="speed-gauge pulse">≤{{ route_report.max_speed_limit }}</div>
+                        <div style="font-size: 0.8em; color: #666;">MAX SPEED (km/h)</div>
+                    </div>
+                    <div style="font-size: 0.75em; color: #666; text-align: center; margin-top: 8px;">
+                        {{ route_report.truck_weight }}T Loaded Vehicle
+                    </div>
+                </div>
+            </div>
 
-        # Store comprehensive data in session
-        session['route_report'] = route_report
-        session['hazard_zones'] = hazard_zones
-        session['turns'] = turns
-        session['braking_points'] = braking_points
-        session['audio_navigation_data'] = audio_navigation_data
-        session['total_distance'] = total_distance
-        session['total_duration'] = total_duration
-        session.modified = True
+            <!-- Audio Navigation Controls -->
+            <div class="controls-panel">
+                <!-- Audio Controls -->
+                <div class="audio-controls">
+                    <div class="section-header">
+                        <i class="fas fa-volume-up"></i> Audio Navigation
+                    </div>
+                    <button class="audio-btn primary" onclick="startAudioNavigation()" id="startBtn">
+                        <i class="fas fa-play"></i> Start Audio Navigation
+                    </button>
+                    <div>
+                        <button class="audio-btn" onclick="pauseAudio()" id="pauseBtn" disabled>
+                            <i class="fas fa-pause"></i> Pause
+                        </button>
+                        <button class="audio-btn" onclick="resumeAudio()" id="resumeBtn" disabled>
+                            <i class="fas fa-play"></i> Resume
+                        </button>
+                        <button class="audio-btn" onclick="stopAudio()" id="stopBtn" disabled>
+                            <i class="fas fa-stop"></i> Stop
+                        </button>
+                    </div>
+                </div>
 
-        # Calculate template variables
-        critical_hazards = len([z for z in hazard_zones if z.get('risk_level') == 'Critical'])
-        critical_turns = len([t for t in turns if t.get('severity') == 'critical'])
-        max_braking_distance = max([b.get('total_distance', 45) for b in braking_points]) if braking_points else 45
-        
-        # Return enhanced analysis page with audio features
-        return render_template("audio_route_analysis.html",
-                               mode="Enhanced Audio TT Navigation",
-                               turns=len(turns),
-                               critical_turns=critical_turns,
-                               poi_count=len(all_pois),
-                               html_file=html_name,
-                               route_report=route_report,
-                               risk_zones=len(hazard_zones),
-                               high_risk_zones=len([z for z in hazard_zones if z['risk_level'] in ['Critical', 'High']]),
-                               critical_hazards=critical_hazards,
-                               max_braking_distance=max_braking_distance,
-                               tt_specs=tt_specs,
-                               username=username,
-                               audio_features_enabled=True,
-                               audio_instructions_count=len(audio_navigation_data['instructions']),
-                               complexity_rating=route_report['route_overview']['complexity_rating'],
-                               total_distance=total_distance,
-                               total_duration=total_duration)
+                <!-- Route Statistics -->
+                <div class="route-stats">
+                    <div class="section-header">
+                        <i class="fas fa-route"></i> Route Overview
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number">{{ route_report.total_distance }}</div>
+                            <div class="stat-label">Distance</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">{{ route_report.total_duration }}</div>
+                            <div class="stat-label">Duration</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">{{ route_report.route_analysis.total_points }}</div>
+                            <div class="stat-label">Route Points</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">{{ poi_count or 0 }}</div>
+                            <div class="stat-label">POIs</div>
+                        </div>
+                    </div>
+                </div>
 
-    except Exception as e:
-        print(f"Error in enhanced analyze_route: {e}")
-        import traceback
-        traceback.print_exc()
-        return f"Error analyzing route: {str(e)}. Please try again or contact support."
+                <!-- Risk Assessment -->
+                <div class="risk-assessment">
+                    <div class="section-header">
+                        <i class="fas fa-exclamation-triangle"></i> Risk Assessment
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number" style="color: #ff6b6b;">{{ route_report.route_analysis.high_risk_zones }}</div>
+                            <div class="stat-label">High Risk</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" style="color: #ffa726;">{{ route_report.route_analysis.medium_risk_zones }}</div>
+                            <div class="stat-label">Medium Risk</div>
+                        </div>
+                    </div>
+                    {% if route_report.route_analysis.high_risk_zones > 0 %}
+                    <div class="risk-indicator risk-high">
+                        <i class="fas fa-exclamation-circle"></i> High Risk Route - Exercise Extreme Caution
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Vehicle Progress -->
+                <div class="vehicle-tracker">
+                    <div class="section-header" style="color: white;">
+                        <i class="fas fa-truck"></i> Vehicle Progress
+                    </div>
+                    <div id="currentInstruction">Click 'Start Navigation' to begin</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="routeProgress"></div>
+                    </div>
+                    <div id="progressText">0% Complete</div>
+                </div>
+
+                <!-- Audio Instructions -->
+                <div class="audio-instructions">
+                    <div class="section-header">
+                        <i class="fas fa-list"></i> Audio Instructions
+                    </div>
+                    {% if audio_instructions %}
+                        {% for instruction in audio_instructions[:3] %}
+                        <div class="instruction-item">
+                            <i class="fas fa-volume-up" style="color: #00ff88;"></i>
+                            {{ instruction.text[:80] }}...
+                        </div>
+                        {% endfor %}
+                        <div style="font-size: 0.8rem; text-align: center; margin-top: 8px; opacity: 0.8;">
+                            {{ audio_instructions|length }} total instructions available
+                        </div>
+                    {% else %}
+                        <div class="instruction-item">
+                            <i class="fas fa-info-circle"></i> Route-based instructions will be generated during navigation
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Live Alerts -->
+                <div class="alert-feed">
+                    <div class="section-header">
+                        <i class="fas fa-bell"></i> Live Alerts
+                    </div>
+                    <div id="alertFeed">
+                        <div class="alert-item">System ready for audio navigation</div>
+                        {% if route_report.route_analysis.high_risk_zones > 0 %}
+                        <div class="alert-item">{{ route_report.route_analysis.high_risk_zones }} high-risk zones detected on route</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <a href="{{ url_for('detailed_report') }}" class="btn">
+                        <i class="fas fa-chart-bar"></i> Report
+                    </a>
+                    <a href="{{ url_for('download_map', filename=html_file) }}" class="btn">
+                        <i class="fas fa-download"></i> Download
+                    </a>
+                    <a href="{{ url_for('home') }}" class="btn">
+                        <i class="fas fa-home"></i> Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Integrated Audio Navigation JavaScript -->
+    <script>
+        // Global variables
+        let isNavigating = false;
+        let vehiclePosition = 0;
+        let simulationInterval = null;
+        let routeData = {
+            totalPoints: {{ route_report.route_analysis.total_points }},
+            highRiskZones: {{ route_report.route_analysis.high_risk_zones }},
+            mediumRiskZones: {{ route_report.route_analysis.medium_risk_zones }},
+            truckWeight: {{ route_report.truck_weight }},
+            maxSpeed: {{ route_report.max_speed_limit }},
+            totalDistance: "{{ route_report.total_distance }}",
+            duration: "{{ route_report.total_duration }}"
+        };
+
+        // Initialize speech synthesis
+        function initSpeech() {
+            if ('speechSynthesis' in window) {
+                // Load voices
+                if (speechSynthesis.getVoices().length === 0) {
+                    speechSynthesis.addEventListener('voiceschanged', function() {
+                        console.log('Voices loaded:', speechSynthesis.getVoices().length);
+                    });
+                }
+                return true;
+            } else {
+                alert('Speech synthesis not supported in this browser');
+                return false;
+            }
+        }
+
+        // Initialize map and audio integration
+        function initializeMapAudio() {
+            console.log('Initializing integrated map audio system...');
+            
+            if (!initSpeech()) {
+                updateAlertFeed('Warning: Audio navigation not available in this browser');
+                return;
+            }
+
+            updateAlertFeed('Audio navigation system initialized');
+            updateAlertFeed(`Route loaded: ${routeData.totalDistance}, ${routeData.totalPoints} points`);
+            
+            if (routeData.highRiskZones > 0) {
+                updateAlertFeed(`⚠️ ${routeData.highRiskZones} high-risk zones require extra caution`);
+            }
+        }
+
+        // Start audio navigation
+        function startAudioNavigation() {
+            if (isNavigating) return;
+            
+            isNavigating = true;
+            vehiclePosition = 0;
+            
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('pauseBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = false;
+            
+            updateAlertFeed('🎵 Audio navigation started');
+            updateCurrentInstruction('Initializing navigation...');
+            
+            // Start with route introduction
+            const introMessage = `Audio navigation started for ${routeData.truckWeight} tonne heavy vehicle. Route distance ${routeData.totalDistance}. Maximum speed limit ${routeData.maxSpeed} kilometers per hour. ${routeData.highRiskZones > 0 ? `Alert: ${routeData.highRiskZones} high risk zones ahead. Exercise extreme caution.` : ''}`;
+            
+            speakInstruction(introMessage, 'high');
+            
+            // Start vehicle simulation
+            setTimeout(() => {
+                startVehicleSimulation();
+            }, 5000);
+        }
+
+        // Pause audio navigation
+        function pauseAudio() {
+            if (window.speechSynthesis) {
+                window.speechSynthesis.pause();
+            }
+            clearInterval(simulationInterval);
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('resumeBtn').disabled = false;
+            updateAlertFeed('⏸️ Navigation paused');
+        }
+
+        // Resume audio navigation
+        function resumeAudio() {
+            if (window.speechSynthesis) {
+                window.speechSynthesis.resume();
+            }
+            startVehicleSimulation();
+            document.getElementById('pauseBtn').disabled = false;
+            document.getElementById('resumeBtn').disabled = true;
+            updateAlertFeed('▶️ Navigation resumed');
+        }
+
+        // Stop audio navigation
+        function stopAudio() {
+            isNavigating = false;
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+            clearInterval(simulationInterval);
+            
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('resumeBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = true;
+            
+            vehiclePosition = 0;
+            updateProgress(0);
+            updateCurrentInstruction('Navigation stopped');
+            updateAlertFeed('⏹️ Navigation stopped');
+        }
+
+        // Speak instruction with priority handling
+        function speakInstruction(text, priority = 'normal') {
+            if (!text) return;
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            
+            // Adjust speech parameters based on priority
+            switch(priority) {
+                case 'critical':
+                    utterance.rate = 0.7;
+                    utterance.pitch = 1.3;
+                    utterance.volume = 1.0;
+                    break;
+                case 'high':
+                    utterance.rate = 0.8;
+                    utterance.pitch = 1.1;
+                    utterance.volume = 0.9;
+                    break;
+                default:
+                    utterance.rate = 0.9;
+                    utterance.pitch = 1.0;
+                    utterance.volume = 0.8;
+            }
+            
+            // Try to use a suitable voice
+            const voices = speechSynthesis.getVoices();
+            const englishVoice = voices.find(voice => voice.lang.startsWith('en'));
+            if (englishVoice) {
+                utterance.voice = englishVoice;
+            }
+            
+            updateAlertFeed(`🔊 ${text.substring(0, 50)}${text.length > 50 ? '...' : ''}`);
+            updateCurrentInstruction(text);
+            
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Start vehicle position simulation
+        function startVehicleSimulation() {
+            let stepCount = 0;
+            simulationInterval = setInterval(() => {
+                if (!isNavigating) return;
+                
+                vehiclePosition += 2;
+                stepCount++;
+                const progress = Math.min((vehiclePosition / 100) * 100, 100);
+                updateProgress(progress);
+                
+                // Trigger location-based instructions
+                if (stepCount % 8 === 0) { // Every 8 steps (about every 16 seconds)
+                    triggerRouteBasedInstructions();
+                }
+                
+                // Complete navigation at 100%
+                if (progress >= 100) {
+                    completeNavigation();
+                }
+            }, 2000);
+        }
+
+        // Generate route-based instructions using actual route data
+        function triggerRouteBasedInstructions() {
+            const progressPercent = vehiclePosition;
+            
+            // Simulate location-based alerts based on actual route data
+            const instructions = [];
+            
+            // Add risk-based instructions
+            if (routeData.highRiskZones > 0 && progressPercent % 25 === 0) {
+                instructions.push(`Approaching high risk zone. Reduce speed to ${Math.floor(routeData.maxSpeed * 0.7)} kilometers per hour and maintain increased following distance.`);
+            }
+            
+            // Add weight-specific instructions
+            if (routeData.truckWeight >= 25 && progressPercent % 20 === 0) {
+                instructions.push(`Heavy vehicle alert. Current load ${routeData.truckWeight} tonnes. Monitor braking distance and avoid sudden maneuvers.`);
+            }
+            
+            // Add general safety instructions
+            const generalInstructions = [
+                `Speed check: maintain maximum ${routeData.maxSpeed} kilometers per hour.`,
+                'Approaching populated area. Reduce speed and watch for pedestrians.',
+                'Bridge ahead. Check height clearance and reduce speed.',
+                'School zone detected. Reduce speed to 30 kilometers per hour.',
+                'Construction zone approaching. Follow traffic signals and reduced speed limits.',
+                'Rest area available in 2 kilometers. Consider driver break if needed.',
+                'Fuel station nearby. Plan refueling if required.',
+                'Traffic congestion ahead. Maintain safe following distance.'
+            ];
+            
+            if (instructions.length === 0) {
+                const randomInstruction = generalInstructions[Math.floor(Math.random() * generalInstructions.length)];
+                instructions.push(randomInstruction);
+            }
+            
+            const selectedInstruction = instructions[Math.floor(Math.random() * instructions.length)];
+            const priority = selectedInstruction.includes('high risk') || selectedInstruction.includes('Heavy vehicle') ? 'high' : 'normal';
+            
+            speakInstruction(selectedInstruction, priority);
+        }
+
+        // Complete navigation
+        function completeNavigation() {
+            clearInterval(simulationInterval);
+            const completionMessage = `Destination reached. Navigation complete for ${routeData.totalDistance} route. Thank you for using Smart Marg audio navigation system. Drive safely.`;
+            speakInstruction(completionMessage);
+            isNavigating = false;
+            updateCurrentInstruction('Navigation completed successfully');
+            updateAlertFeed('🏁 Destination reached - Route completed');
+        }
+
+        // Update progress bar
+        function updateProgress(percentage) {
+            document.getElementById('routeProgress').style.width = percentage + '%';
+            document.getElementById('progressText').textContent = Math.round(percentage) + '% Complete';
+        }
+
+        // Update current instruction display
+        function updateCurrentInstruction(text) {
+            document.getElementById('currentInstruction').textContent = text;
+        }
+
+        // Update alert feed
+        function updateAlertFeed(message) {
+            const alertFeed = document.getElementById('alertFeed');
+            const alertItem = document.createElement('div');
+            alertItem.className = 'alert-item';
+            alertItem.textContent = new Date().toLocaleTimeString() + ': ' + message;
+            
+            alertFeed.insertBefore(alertItem, alertFeed.firstChild);
+            
+            // Keep only last 8 alerts
+            while (alertFeed.children.length > 8) {
+                alertFeed.removeChild(alertFeed.lastChild);
+            }
+        }
+
+        // Map interaction handlers (called from embedded map)
+        window.handleMapHazard = function(hazardData) {
+            if (isNavigating) {
+                const message = `Critical hazard detected: ${hazardData.type}. Reduce speed immediately and exercise extreme caution.`;
+                speakInstruction(message, 'critical');
+            }
+        };
+
+        window.handleMapTurn = function(turnData) {
+            if (isNavigating) {
+                const message = `Sharp ${turnData.direction} turn ahead. Recommended speed ${turnData.recommendedSpeed} kilometers per hour.`;
+                speakInstruction(message, 'high');
+            }
+        };
+
+        window.handleMapPOI = function(poiData) {
+            if (isNavigating) {
+                const message = `${poiData.type} nearby: ${poiData.name}.`;
+                speakInstruction(message, 'normal');
+            }
+        };
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(initializeMapAudio, 1000);
+        });
+
+        // Handle page unload
+        window.addEventListener('beforeunload', function(event) {
+            if (isNavigating) {
+                const message = 'Audio navigation is active. Are you sure you want to leave?';
+                event.returnValue = message;
+                return message;
+            }
+        });
+    </script>
+</body>
+</html>
