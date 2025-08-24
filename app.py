@@ -1840,103 +1840,106 @@ def analyze_route():
             popup=f"TT Route: {tt_specs['capacity_range']} - {tt_specs['gross_weight']/1000:.1f}T"
         ).add_to(m)
 
-       for turn in turns[:30]:  # Show more turns now that we detect them properly
-    try:
-        # Enhanced color coding based on turn type and severity
-        if turn.get('turn_type') == 'blind_spot':
-            color = '#8B0000'  # Dark red for blind spots
-            icon_symbol = '👁️'
-        elif turn.get('turn_type') == 'u_turn':
-            color = '#8B0000'  # Dark red for U-turns
-            icon_symbol = '↩️'
-        elif turn.get('turn_type') == 'hairpin':
-            color = '#DC143C'  # Crimson for hairpins
-            icon_symbol = '🪝'
-        elif turn.get('turn_type') == 'sharp_right_angle':
-            color = '#FF4500'  # Orange red for 90-degree turns
-            icon_symbol = '📐'
-        elif turn.get('severity') == 'critical':
-            color = '#8B0000'  # Dark red for other critical turns
-            icon_symbol = '⚠️'
-        elif turn.get('severity') == 'high':
-            color = '#FF4500'  # Orange red for high risk
-            icon_symbol = '⚠️'
-        else:
-            color = '#FFD700'  # Gold for moderate turns
-            icon_symbol = '↻'
-        
-        # Enhanced popup with turn type information
-        turn_popup = f"""
-        <div style='font-family: Arial; max-width: 350px;'>
-            <h4 style='color: {color}; margin: 5px 0;'>{icon_symbol} {turn.get('turn_type', 'turn').replace('_', ' ').title()}</h4>
-            <div style='background: #f0f0f0; padding: 8px; border-radius: 4px; margin: 5px 0;'>
-                <table style='font-size: 11px; width: 100%;'>
-                    <tr><td><strong>Turn Angle:</strong></td><td>{turn['turn_angle']:.1f}°</td></tr>
-                    <tr><td><strong>Direction:</strong></td><td>{turn.get('turn_direction', 'Unknown')}</td></tr>
-                    <tr><td><strong>Turn Type:</strong></td><td style='color: {color}; font-weight: bold;'>{turn.get('turn_type', 'turn').replace('_', ' ').title()}</td></tr>
-                    <tr><td><strong>Radius:</strong></td><td>{turn['radius']:.1f}m</td></tr>
-                    <tr><td><strong>Safe Speed:</strong></td><td style='color: red; font-weight: bold;'>{turn['recommended_speed']} kmph</td></tr>
-                    <tr><td><strong>Visibility:</strong></td><td>{'Poor' if turn.get('visibility_factor', 1) < 0.3 else 'Fair' if turn.get('visibility_factor', 1) < 0.6 else 'Good'}</td></tr>
-                </table>
-            </div>
-            
-            <div style='background: #fff3cd; padding: 6px; border-radius: 3px; margin: 5px 0;'>
-                <strong>Warning:</strong><br>
-                <span style='color: red; font-weight: bold;'>{turn['warning']}</span>
-            </div>
-            
-            {f'<div style="background: #f8d7da; padding: 6px; border-radius: 3px; margin: 5px 0;"><strong>Risk Factors:</strong><br>{"<br>".join([f"• {risk}" for risk in turn.get("risk_factors", [])][:3])}</div>' if turn.get('risk_factors') else ''}
-            
-            <div style='background: #e2e3e5; padding: 5px; border-radius: 3px; font-size: 10px;'>
-                <strong>Physics:</strong> {turn['physics_factors']['lateral_g_force']}g lateral force, 
-                {turn['deceleration_distance']}m braking distance
-            </div>
-            
-            {f'<div style="background: #ffcccc; padding: 5px; border-radius: 3px; font-size: 10px; color: red; font-weight: bold;">⚠️ BLIND SPOT WARNING</div>' if turn.get('blind_spot_risk') else ''}
-        </div>
-        """
-        
-        # Enhanced icon with turn type and speed
-        if turn.get('turn_type') == 'blind_spot':
-            icon_html = f"""
-            <div style='text-align: center;'>
-                <div style='background: {color}; color: white; border-radius: 50%; width: 35px; height: 35px; 
-                            line-height: 35px; font-weight: bold; font-size: 10px; border: 2px solid white;'>
-                    BLIND
+      # The problematic section around line 1843 should be fixed like this:
+
+        # Add turn analysis with enhanced visualization  
+        for turn in turns[:30]:  # Show more turns now that we detect them properly
+            try:
+                # Enhanced color coding based on turn type and severity
+                if turn.get('turn_type') == 'blind_spot':
+                    color = '#8B0000'  # Dark red for blind spots
+                    icon_symbol = '👁️'
+                elif turn.get('turn_type') == 'u_turn':
+                    color = '#8B0000'  # Dark red for U-turns
+                    icon_symbol = '↩️'
+                elif turn.get('turn_type') == 'hairpin':
+                    color = '#DC143C'  # Crimson for hairpins
+                    icon_symbol = '🪝'
+                elif turn.get('turn_type') == 'sharp_right_angle':
+                    color = '#FF4500'  # Orange red for 90-degree turns
+                    icon_symbol = '📐'
+                elif turn.get('severity') == 'critical':
+                    color = '#8B0000'  # Dark red for other critical turns
+                    icon_symbol = '⚠️'
+                elif turn.get('severity') == 'high':
+                    color = '#FF4500'  # Orange red for high risk
+                    icon_symbol = '⚠️'
+                else:
+                    color = '#FFD700'  # Gold for moderate turns
+                    icon_symbol = '↻'
+                
+                # Enhanced popup with turn type information
+                turn_popup = f"""
+                <div style='font-family: Arial; max-width: 350px;'>
+                    <h4 style='color: {color}; margin: 5px 0;'>{icon_symbol} {turn.get('turn_type', 'turn').replace('_', ' ').title()}</h4>
+                    <div style='background: #f0f0f0; padding: 8px; border-radius: 4px; margin: 5px 0;'>
+                        <table style='font-size: 11px; width: 100%;'>
+                            <tr><td><strong>Turn Angle:</strong></td><td>{turn['turn_angle']:.1f}°</td></tr>
+                            <tr><td><strong>Direction:</strong></td><td>{turn.get('turn_direction', 'Unknown')}</td></tr>
+                            <tr><td><strong>Turn Type:</strong></td><td style='color: {color}; font-weight: bold;'>{turn.get('turn_type', 'turn').replace('_', ' ').title()}</td></tr>
+                            <tr><td><strong>Radius:</strong></td><td>{turn['radius']:.1f}m</td></tr>
+                            <tr><td><strong>Safe Speed:</strong></td><td style='color: red; font-weight: bold;'>{turn['recommended_speed']} kmph</td></tr>
+                            <tr><td><strong>Visibility:</strong></td><td>{'Poor' if turn.get('visibility_factor', 1) < 0.3 else 'Fair' if turn.get('visibility_factor', 1) < 0.6 else 'Good'}</td></tr>
+                        </table>
+                    </div>
+                    
+                    <div style='background: #fff3cd; padding: 6px; border-radius: 3px; margin: 5px 0;'>
+                        <strong>Warning:</strong><br>
+                        <span style='color: red; font-weight: bold;'>{turn['warning']}</span>
+                    </div>
+                    
+                    {f'<div style="background: #f8d7da; padding: 6px; border-radius: 3px; margin: 5px 0;"><strong>Risk Factors:</strong><br>{"<br>".join([f"• {risk}" for risk in turn.get("risk_factors", [])][:3])}</div>' if turn.get('risk_factors') else ''}
+                    
+                    <div style='background: #e2e3e5; padding: 5px; border-radius: 3px; font-size: 10px;'>
+                        <strong>Physics:</strong> {turn['physics_factors']['lateral_g_force']}g lateral force, 
+                        {turn['deceleration_distance']}m braking distance
+                    </div>
+                    
+                    {f'<div style="background: #ffcccc; padding: 5px; border-radius: 3px; font-size: 10px; color: red; font-weight: bold;">⚠️ BLIND SPOT WARNING</div>' if turn.get('blind_spot_risk') else ''}
                 </div>
-                <div style='font-size: 8px; margin-top: 2px; color: {color}; font-weight: bold;'>{turn['recommended_speed']}km/h</div>
-            </div>
-            """
-        elif turn.get('turn_type') == 'sharp_right_angle':
-            icon_html = f"""
-            <div style='text-align: center;'>
-                <div style='background: {color}; color: white; border-radius: 10%; width: 35px; height: 35px; 
-                            line-height: 35px; font-weight: bold; font-size: 12px; border: 2px solid white;'>
-                    90°
-                </div>
-                <div style='font-size: 8px; margin-top: 2px; color: {color}; font-weight: bold;'>{turn['recommended_speed']}km/h</div>
-            </div>
-            """
-        else:
-            icon_html = f"""
-            <div style='text-align: center;'>
-                <div style='background: {color}; color: white; border-radius: 50%; width: 32px; height: 32px; 
-                            line-height: 32px; font-weight: bold; font-size: 11px; border: 2px solid white;'>
-                    {turn['recommended_speed']}
-                </div>
-                <div style='font-size: 8px; margin-top: 2px; color: {color}; font-weight: bold;'>{turn.get('turn_type', 'turn')[:4].upper()}</div>
-            </div>
-            """
-        
-        folium.Marker(
-            location=turn['location'],
-            popup=turn_popup,
-            icon=folium.DivIcon(html=icon_html, icon_size=(40, 45), icon_anchor=(20, 40))
-        ).add_to(m)
-        
-    except Exception as e:
-        print(f"Error adding turn marker: {e}")
-        continue
+                """
+                
+                # Enhanced icon with turn type and speed
+                if turn.get('turn_type') == 'blind_spot':
+                    icon_html = f"""
+                    <div style='text-align: center;'>
+                        <div style='background: {color}; color: white; border-radius: 50%; width: 35px; height: 35px; 
+                                    line-height: 35px; font-weight: bold; font-size: 10px; border: 2px solid white;'>
+                            BLIND
+                        </div>
+                        <div style='font-size: 8px; margin-top: 2px; color: {color}; font-weight: bold;'>{turn['recommended_speed']}km/h</div>
+                    </div>
+                    """
+                elif turn.get('turn_type') == 'sharp_right_angle':
+                    icon_html = f"""
+                    <div style='text-align: center;'>
+                        <div style='background: {color}; color: white; border-radius: 10%; width: 35px; height: 35px; 
+                                    line-height: 35px; font-weight: bold; font-size: 12px; border: 2px solid white;'>
+                            90°
+                        </div>
+                        <div style='font-size: 8px; margin-top: 2px; color: {color}; font-weight: bold;'>{turn['recommended_speed']}km/h</div>
+                    </div>
+                    """
+                else:
+                    icon_html = f"""
+                    <div style='text-align: center;'>
+                        <div style='background: {color}; color: white; border-radius: 50%; width: 32px; height: 32px; 
+                                    line-height: 32px; font-weight: bold; font-size: 11px; border: 2px solid white;'>
+                            {turn['recommended_speed']}
+                        </div>
+                        <div style='font-size: 8px; margin-top: 2px; color: {color}; font-weight: bold;'>{turn.get('turn_type', 'turn')[:4].upper()}</div>
+                    </div>
+                    """
+                
+                folium.Marker(
+                    location=turn['location'],
+                    popup=turn_popup,
+                    icon=folium.DivIcon(html=icon_html, icon_size=(40, 45), icon_anchor=(20, 40))
+                ).add_to(m)
+                
+            except Exception as e:
+                print(f"Error adding turn marker: {e}")
+                continue
                 
                 # Turn severity icon
                 icon_html = f"""
@@ -2451,6 +2454,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
