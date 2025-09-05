@@ -16,7 +16,6 @@ from geopy.distance import geodesic
 import time
 from functools import wraps
 
-
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 app.config['SESSION_TYPE'] = 'filesystem'
@@ -232,1544 +231,6 @@ def calculate_turn_angle(prev_bearing, curr_bearing):
         return min(angle, 360 - angle)
     except:
         return 0
-
-def get_realistic_traffic_data(coords, gmaps_client):
-    """Get realistic traffic data for route coordinates using actual traffic patterns"""
-    traffic_data = []
-    
-    try:
-        # Sample every 8th point to avoid API limits while maintaining coverage
-        sample_coords = coords[::max(1, len(coords)//20)] if len(coords) > 20 else coords
-        
-        current_hour = datetime.now().hour
-        current_day = datetime.now().weekday()  # 0=Monday, 6=Sunday
-        
-        # Define rush hour periods
-        is_morning_rush = 7 <= current_hour <= 10
-        is_evening_rush = 17 <= current_hour <= 20
-        is_weekend = current_day >= 5
-        
-        for i, (lat, lng) in enumerate(sample_coords):
-            try:
-                # Try to get real traffic data (limited by API quota)
-                try:
-                    # This would use actual traffic API if available
-                    # directions_result = gmaps_client.directions(
-                    #     (lat, lng), 
-                    #     sample_coords[min(i+1, len(sample_coords)-1)],
-                    #     mode="driving",
-                    #     departure_time=datetime.now(),
-                    #     traffic_model="best_guess"
-                    # )
-                    # Real traffic data would be extracted here
-                    real_traffic_available = False
-                except:
-                    real_traffic_available = False
-                
-                # Fallback to realistic simulation based on time and location patterns
-                if not real_traffic_available:
-                    # Base traffic probability
-                    if is_weekend:
-                        traffic_probs = {'light': 0.6, 'moderate': 0.3, 'heavy': 0.1}
-                    elif is_morning_rush or is_evening_rush:
-                        traffic_probs = {'light': 0.2, 'moderate': 0.4, 'heavy': 0.4}
-                    elif 10 <= current_hour <= 16:  # Midday
-                        traffic_probs = {'light': 0.5, 'moderate': 0.4, 'heavy': 0.1}
-                    else:  # Night/early morning
-                        traffic_probs = {'light': 0.8, 'moderate': 0.15, 'heavy': 0.05}
-                    
-                    # Urban vs rural adjustment (simplified based on coordinate clustering)
-                    urban_factor = 1.0
-                    if i > 0:
-                        # Check if multiple POIs nearby (indicates urban area)
-                        try:
-                            places_nearby = gmaps_client.places_nearby(
-                                location=(lat, lng), 
-                                radius=1000, 
-                                type='establishment'
-                            )
-                            poi_count = len(places_nearby.get('results', []))
-                            if poi_count > 10:  # Urban area
-                                urban_factor = 1.5
-                                traffic_probs['heavy'] = min(0.6, traffic_probs['heavy'] * 1.8)
-                                traffic_probs['light'] = max(0.1, traffic_probs['light'] * 0.5)
-                                # Normalize probabilities
-                                total = sum(traffic_probs.values())
-                                traffic_probs = {k: v/total for k, v in traffic_probs.items()}
-                        except:
-                            pass
-                    
-                    traffic_level = np.random.choice(
-                        list(traffic_probs.keys()), 
-                        p=list(traffic_probs.values())
-                    )
-                
-                # Calculate delay factors with truck-specific adjustments
-                base_delays = {'light': 1.0, 'moderate': 1.4, 'heavy': 2.1}
-                delay_factor = base_delays[traffic_level]
-                
-                traffic_data.append({
-                    'location': (lat, lng),
-                    'traffic_level': traffic_level,
-                    'delay_factor': delay_factor,
-                    'realistic': real_traffic_available,
-                    'time_based': True,
-                    'urban_factor': urban_factor
-                })
-                
-                # Rate limiting for API calls
-                time.sleep(0.1)
-                
-            except Exception as e:
-                print(f"Error getting traffic for point {i}: {e}")
-                # Fallback to simple traffic assignment
-                traffic_data.append({
-                    'location': (lat, lng),
-                    'traffic_level': 'moderate',
-                    'delay_factor': 1.3,
-                    'realistic': False,
-                    'time_based': False,
-                    'urban_factor': 1.0
-                })
-                continue
-    
-    except Exception as e:
-        print(f"Error in realistic traffic analysis: {e}")
-    
-    return traffic_data
-
-def identify_realistic_poi_hazards(coords, pois, tt_specs):
-    """Identify realistic hazard zones based on actual POIs and truck characteristics"""
-    hazard_zones = []
-    risk_multiplier = tt_specs["risk_multiplier"]
-    current_hour = datetime.now().hour
-    
-    try:
-        # Group coordinates into zones for efficient processing
-        zone_size = max(1, len(coords) // 50)  # Create ~50 zones
-        coord_zones = [coords[i:i + zone_size] for i in range(0, len(coords), zone_size)]
-        
-        for zone_coords in coord_zones:
-            if not zone_coords:
-                continue
-                
-            # Use center point of zone for analysis
-            center_lat = sum(coord[0] for coord in zone_coords) / len(zone_coords)
-            center_lng = sum(coord[1] for coord in zone_coords) / len(zone_coords)
-            zone_center = (center_lat, center_lng)
-            
-            # Find POIs within hazard range of this zone
-            nearby_pois = []
-            hazard_range_km = 0.5  # 500m hazard detection range
-            
-            for poi in pois:
-                distance_km = geodesic(zone_center, poi['location']).kilometers
-                if distance_km <= hazard_range_km:
-                    nearby_pois.append({
-                        'name': poi['name'],
-                        'type': poi['type'],
-                        'distance': distance_km * 1000,  # Convert to meters
-                        'location': poi['location']
-                    })
-            
-            if not nearby_pois:
-                continue
-            
-            # Calculate risk based on actual POI types and truck specifications
-            risk_score = 0
-            risk_factors = []
-            primary_hazards = []
-            tt_specific_recommendations = []
-            
-            for poi in nearby_pois:
-                poi_type = poi['type']
-                distance_m = poi['distance']
-                poi_name = poi['name']
-                
-                # Distance-weighted risk calculation
-                distance_factor = max(0.1, 1.0 - (distance_m / 500.0))  # Risk decreases with distance
-                
-                # POI-specific risk calculations
-                if poi_type == 'fuel':
-                    # EXTREME HAZARD: Petroleum tanker near fuel station
-                    base_risk = 8.0
-                    adjusted_risk = base_risk * risk_multiplier * 1.5  # Extra multiplier for fuel
-                    risk_score += adjusted_risk * distance_factor
-                    risk_factors.append(f"EXTREME: Fuel station '{poi_name}' at {distance_m:.0f}m")
-                    primary_hazards.append(poi)
-                    tt_specific_recommendations.extend([
-                        "Reduce speed to 15-20 kmph when passing",
-                        "No smoking/ignition sources - Class 3 flammable cargo",
-                        "Emergency response team on standby"
-                    ])
-                
-                elif poi_type == 'health':
-                    # Hospital/medical facility - emergency vehicle traffic
-                    base_risk = 4.0
-                    # Higher risk during day hours
-                    time_multiplier = 1.3 if 8 <= current_hour <= 20 else 1.0
-                    adjusted_risk = base_risk * risk_multiplier * time_multiplier
-                    risk_score += adjusted_risk * distance_factor
-                    risk_factors.append(f"Hospital '{poi_name}' - emergency vehicles ({distance_m:.0f}m)")
-                    if distance_m < 200:
-                        primary_hazards.append(poi)
-                        tt_specific_recommendations.append(f"Watch for ambulances - {tt_specs['gross_weight']/1000:.1f}T stopping distance")
-                
-                elif poi_type == 'education':
-                    # School zone - extremely dangerous during school hours
-                    base_risk = 3.0
-                    # School hours: 7-9 AM, 1-5 PM on weekdays
-                    is_school_time = (7 <= current_hour <= 9 or 13 <= current_hour <= 17) and datetime.now().weekday() < 5
-                    time_multiplier = 2.5 if is_school_time else 0.8
-                    
-                    # Heavy trucks pose greater risk to children
-                    weight_multiplier = 1.0 + (tt_specs['gross_weight'] - 15000) / 30000  # Scale with weight
-                    
-                    adjusted_risk = base_risk * risk_multiplier * time_multiplier * weight_multiplier
-                    risk_score += adjusted_risk * distance_factor
-                    
-                    status = "ACTIVE SCHOOL HOURS" if is_school_time else "school hours inactive"
-                    risk_factors.append(f"School '{poi_name}' - {status} ({distance_m:.0f}m)")
-                    
-                    if distance_m < 300 and is_school_time:
-                        primary_hazards.append(poi)
-                        tt_specific_recommendations.extend([
-                            f"School zone speed limit: 25 kmph MAX",
-                            f"Extra vigilance - {tt_specs['capacity_range']} tanker visibility issues",
-                            "Children crossing - extended braking distance required"
-                        ])
-                
-                elif poi_type == 'safety':
-                    # Police station - usually positive but traffic checkpoints possible
-                    base_risk = 1.5
-                    adjusted_risk = base_risk * risk_multiplier * 0.8  # Slightly lower risk
-                    risk_score += adjusted_risk * distance_factor
-                    risk_factors.append(f"Police station '{poi_name}' - checkpoint possible ({distance_m:.0f}m)")
-                    
-                elif poi_type == 'commercial':
-                    # Shopping areas - heavy pedestrian and vehicle traffic
-                    base_risk = 3.5
-                    # Higher risk during evening shopping hours
-                    time_multiplier = 1.4 if 17 <= current_hour <= 21 else 1.0
-                    adjusted_risk = base_risk * risk_multiplier * time_multiplier
-                    risk_score += adjusted_risk * distance_factor
-                    risk_factors.append(f"Commercial zone '{poi_name}' - heavy traffic ({distance_m:.0f}m)")
-                    
-                    if distance_m < 250:
-                        tt_specific_recommendations.append("Congested area - maintain safe following distance")
-                
-                elif poi_type == 'religious':
-                    # Religious sites - crowd risk during prayer times/festivals
-                    base_risk = 2.5
-                    # Friday afternoons, weekend mornings typically busy
-                    is_busy_time = (current_hour == 12 and datetime.now().weekday() == 4) or \
-                                  (6 <= current_hour <= 10 and datetime.now().weekday() >= 5)
-                    time_multiplier = 1.8 if is_busy_time else 1.0
-                    
-                    adjusted_risk = base_risk * risk_multiplier * time_multiplier
-                    risk_score += adjusted_risk * distance_factor
-                    risk_factors.append(f"Religious site '{poi_name}' - crowd risk ({distance_m:.0f}m)")
-            
-            # Additional truck-specific risk factors
-            if risk_score > 0:
-                # Heavy truck specific risks
-                if tt_specs["gross_weight"] > 35000:
-                    risk_score += 1.0
-                    risk_factors.append(f"Heavy TT penalty - {tt_specs['gross_weight']/1000:.1f}T gross weight")
-                
-                # High-capacity tanker risks
-                if tt_specs["avg_capacity_liters"] > 25000:
-                    risk_score += 0.8
-                    risk_factors.append(f"Large capacity hazmat - {tt_specs['avg_capacity_liters']:,}L petroleum")
-            
-            # Only create hazard zone if significant risk exists
-            if risk_score >= 2.5:  # Minimum threshold for hazard zone
-                # Determine risk level
-                if risk_score >= 8:
-                    risk_level = 'Critical'
-                elif risk_score >= 5:
-                    risk_level = 'High'
-                else:
-                    risk_level = 'Medium'
-                
-                hazard_zones.append({
-                    'location': zone_center,
-                    'risk_score': min(risk_score, 10.0),  # Cap at 10
-                    'risk_level': risk_level,
-                    'risk_factors': risk_factors,
-                    'hazard_count': len(nearby_pois),
-                    'primary_hazards': primary_hazards[:3],  # Top 3 most dangerous
-                    'tt_specific_recommendations': list(set(tt_specific_recommendations))[:4],  # Remove duplicates, limit to 4
-                    'time_sensitive': any('ACTIVE' in factor or 'emergency' in factor for factor in risk_factors)
-                })
-    
-    except Exception as e:
-        print(f"Error in realistic hazard identification: {e}")
-        import traceback
-        traceback.print_exc()
-    
-    # Sort by risk score and return top hazards
-    hazard_zones.sort(key=lambda x: x['risk_score'], reverse=True)
-    return hazard_zones[:25]  # Return top 25 most dangerous zones
-
-def calculate_enhanced_turn_analysis(coords, tt_specs):
-    """
-    Enhanced turn analysis with comprehensive detection of critical turns including:
-    - Better 90-degree turn detection
-    - Improved blind spot identification
-    - More sensitive curve detection
-    - Multiple analysis methods for accuracy
-    """
-    turns = []
-    
-    try:
-        # Enhanced analysis parameters
-        min_analysis_points = 12  # Minimum points needed for analysis
-        
-        if len(coords) < min_analysis_points:
-            return turns
-        
-        # Multi-scale analysis for better turn detection
-        analysis_scales = [2, 4, 6]  # Different window sizes for analysis
-        
-        # Analyze every point with multiple scales
-        for i in range(6, len(coords) - 6, 1):  # Skip fewer points for better detection
-            try:
-                turn_detections = []
-                
-                # Multi-scale turn angle calculation
-                for scale in analysis_scales:
-                    if i >= scale and i + scale < len(coords):
-                        # Method 1: Direct bearing comparison
-                        bearing_before = calculate_bearing(
-                            coords[i-scale][0], coords[i-scale][1], 
-                            coords[i][0], coords[i][1]
-                        )
-                        bearing_after = calculate_bearing(
-                            coords[i][0], coords[i][1], 
-                            coords[i+scale][0], coords[i+scale][1]
-                        )
-                        turn_angle1 = calculate_turn_angle(bearing_before, bearing_after)
-                        
-                        # Method 2: Three-point angle calculation
-                        if i >= scale*2 and i + scale*2 < len(coords):
-                            bearing_far_before = calculate_bearing(
-                                coords[i-scale*2][0], coords[i-scale*2][1], 
-                                coords[i-scale][0], coords[i-scale][1]
-                            )
-                            bearing_far_after = calculate_bearing(
-                                coords[i+scale][0], coords[i+scale][1], 
-                                coords[i+scale*2][0], coords[i+scale*2][1]
-                            )
-                            turn_angle2 = calculate_turn_angle(bearing_far_before, bearing_far_after)
-                        else:
-                            turn_angle2 = turn_angle1
-                        
-                        # Method 3: Vector-based angle calculation
-                        try:
-                            # Convert to local coordinate system for better accuracy
-                            p1 = coords[i-scale]
-                            p2 = coords[i]  # Turn point
-                            p3 = coords[i+scale]
-                            
-                            # Convert to meters using approximate conversion
-                            x1 = p1[1] * 111320 * math.cos(math.radians(p1[0]))
-                            y1 = p1[0] * 110540
-                            x2 = p2[1] * 111320 * math.cos(math.radians(p2[0]))
-                            y2 = p2[0] * 110540
-                            x3 = p3[1] * 111320 * math.cos(math.radians(p3[0]))
-                            y3 = p3[0] * 110540
-                            
-                            # Calculate vectors
-                            v1 = (x2 - x1, y2 - y1)
-                            v2 = (x3 - x2, y3 - y2)
-                            
-                            # Calculate angle between vectors
-                            if (v1[0]**2 + v1[1]**2) > 0 and (v2[0]**2 + v2[1]**2) > 0:
-                                dot_product = v1[0]*v2[0] + v1[1]*v2[1]
-                                mag1 = math.sqrt(v1[0]**2 + v1[1]**2)
-                                mag2 = math.sqrt(v2[0]**2 + v2[1]**2)
-                                cos_angle = max(-1, min(1, dot_product / (mag1 * mag2)))
-                                turn_angle3 = math.degrees(math.acos(cos_angle))
-                            else:
-                                turn_angle3 = turn_angle1
-                        except:
-                            turn_angle3 = turn_angle1
-                        
-                        # Store all detection methods for this scale
-                        turn_detections.append({
-                            'scale': scale,
-                            'angle_method1': turn_angle1,
-                            'angle_method2': turn_angle2,
-                            'angle_method3': turn_angle3,
-                            'max_angle': max(turn_angle1, turn_angle2, turn_angle3),
-                            'avg_angle': (turn_angle1 + turn_angle2 + turn_angle3) / 3
-                        })
-                
-                if not turn_detections:
-                    continue
-                
-                # Find the most significant turn detection across all scales
-                max_detection = max(turn_detections, key=lambda x: x['max_angle'])
-                
-                # Enhanced threshold - lower for better detection
-                significant_angle_threshold = 8  # Reduced from previous value
-                max_turn_angle = max_detection['max_angle']
-                avg_turn_angle = max_detection['avg_angle']
-                
-                # Skip if angle is too small
-                if max_turn_angle < significant_angle_threshold:
-                    continue
-                
-                # Calculate turn direction with enhanced accuracy
-                scale = max_detection['scale']
-                bearing_before = calculate_bearing(
-                    coords[i-scale][0], coords[i-scale][1], 
-                    coords[i][0], coords[i][1]
-                )
-                bearing_after = calculate_bearing(
-                    coords[i][0], coords[i][1], 
-                    coords[i+scale][0], coords[i+scale][1]
-                )
-                
-                direction_bearing = bearing_after - bearing_before
-                if direction_bearing > 180:
-                    direction_bearing -= 360
-                elif direction_bearing < -180:
-                    direction_bearing += 360
-                
-                turn_direction = "Right" if direction_bearing > 0 else "Left"
-                
-                # Enhanced turn radius calculation
-                radius = calculate_enhanced_turn_radius(coords, i, scale, max_turn_angle)
-                
-                # Enhanced turn classification with better thresholds
-                turn_type = classify_enhanced_turn_type(max_turn_angle, avg_turn_angle, radius, turn_direction)
-                
-                # Special blind spot detection for 90-degree turns
-                is_blind_spot = detect_blind_spot_conditions(max_turn_angle, avg_turn_angle, radius, turn_direction)
-                
-                # Override turn type if blind spot conditions are met
-                if is_blind_spot and turn_type != 'u_turn':
-                    turn_type = 'blind_spot'
-                
-                # Enhanced speed calculations
-                recommended_speed, physics_data = calculate_enhanced_turn_speed(
-                    max_turn_angle, radius, turn_type, tt_specs
-                )
-                
-                # Enhanced severity classification
-                severity = determine_enhanced_turn_severity(
-                    recommended_speed, turn_type, max_turn_angle, radius, is_blind_spot
-                )
-                
-                # Visibility factor calculation
-                visibility_factor = calculate_enhanced_visibility_factor(
-                    max_turn_angle, radius, turn_direction, turn_type
-                )
-                
-                # Generate enhanced warnings
-                warning = generate_enhanced_turn_warning(
-                    turn_type, recommended_speed, max_turn_angle, visibility_factor, is_blind_spot
-                )
-                
-                # Risk factors
-                risk_factors = generate_enhanced_turn_risk_factors(
-                    turn_type, max_turn_angle, radius, tt_specs, is_blind_spot
-                )
-                
-                # Calculate deceleration distance
-                deceleration_distance = calculate_turn_deceleration_distance(
-                    recommended_speed, turn_type, tt_specs
-                )
-                
-                # Comprehensive turn data
-                turn_data = {
-                    'location': coords[i],
-                    'turn_angle': max_turn_angle,
-                    'avg_turn_angle': avg_turn_angle,
-                    'radius': radius,
-                    'turn_direction': turn_direction,
-                    'turn_type': turn_type,
-                    'is_blind_spot': is_blind_spot,
-                    'recommended_speed': max(5, int(recommended_speed)),
-                    'rollover_speed': physics_data['rollover_speed'],
-                    'max_physics_speed': physics_data['max_physics_speed'],
-                    'deceleration_distance': int(deceleration_distance),
-                    'severity': severity,
-                    'warning': warning,
-                    'visibility_factor': visibility_factor,
-                    'blind_spot_risk': is_blind_spot or visibility_factor < 0.3,
-                    'detection_confidence': len(turn_detections),
-                    'physics_factors': physics_data['physics_factors'],
-                    'risk_factors': risk_factors,
-                    'analysis_scale': max_detection['scale'],
-                    'detection_methods': {
-                        'method1_angle': max_detection['angle_method1'],
-                        'method2_angle': max_detection['angle_method2'],
-                        'method3_angle': max_detection['angle_method3']
-                    }
-                }
-                
-                turns.append(turn_data)
-                
-            except Exception as e:
-                print(f"Error analyzing turn at point {i}: {e}")
-                continue
-    
-    except Exception as e:
-        print(f"Error in enhanced turn analysis: {e}")
-        import traceback
-        traceback.print_exc()
-    
-    # Enhanced post-processing to catch missed critical turns
-    turns = post_process_turn_detection(turns, coords)
-    
-    # Sort by danger level
-    severity_order = {'critical': 4, 'high': 3, 'moderate': 2, 'low': 1}
-    turns.sort(key=lambda x: (severity_order.get(x['severity'], 0), -x['turn_angle']), reverse=True)
-    
-    return turns
-
-def generate_audio_navigation_data(coords, hazard_zones, turns, braking_points, pois, tt_specs):
-    """Generate comprehensive audio navigation instructions for truck tanker route"""
-    
-    instructions = []
-    waypoints = []
-    
-    try:
-        # Generate route introduction
-        intro_instruction = {
-            'type': 'introduction',
-            'location': coords[0] if coords else (0, 0),
-            'distance_from_start': 0,
-            'message': f"Audio navigation started for {tt_specs['capacity_range']} petroleum tanker. Gross weight {tt_specs['gross_weight']/1000:.1f} tonnes. Class 3 flammable cargo. Exercise extreme caution.",
-            'priority': 'high',
-            'duration_seconds': 8
-        }
-        instructions.append(intro_instruction)
-        
-        # Generate instructions for hazard zones (highest priority)
-        for i, hazard in enumerate(hazard_zones[:20]):  # Limit to top 20 most critical
-            try:
-                # Find closest route point to hazard
-                hazard_location = hazard['location']
-                closest_distance = float('inf')
-                closest_coord_index = 0
-                
-                for j, coord in enumerate(coords):
-                    from geopy.distance import geodesic
-                    distance = geodesic(coord, hazard_location).meters
-                    if distance < closest_distance:
-                        closest_distance = distance
-                        closest_coord_index = j
-                
-                # Only include if hazard is close to route
-                if closest_distance <= 300:  # Within 300 meters of route
-                    
-                    # Calculate distance from route start
-                    distance_from_start = 0
-                    for k in range(closest_coord_index):
-                        if k + 1 < len(coords):
-                            distance_from_start += geodesic(coords[k], coords[k+1]).meters
-                    
-                    # Generate appropriate audio message based on hazard type
-                    audio_message = generate_hazard_audio_message(hazard, tt_specs)
-                    
-                    hazard_instruction = {
-                        'type': 'hazard_alert',
-                        'location': coords[closest_coord_index],
-                        'distance_from_start': distance_from_start,
-                        'hazard_data': hazard,
-                        'message': audio_message,
-                        'priority': 'critical' if hazard.get('risk_level') == 'Critical' else 'high',
-                        'duration_seconds': 6 if 'fuel' in audio_message.lower() else 4,
-                        'repeat_count': 2 if 'fuel' in audio_message.lower() else 1
-                    }
-                    instructions.append(hazard_instruction)
-                    
-            except Exception as e:
-                print(f"Error processing hazard {i}: {e}")
-                continue
-        
-        # Generate instructions for critical turns
-        for i, turn in enumerate(turns[:30]):  # Top 30 most critical turns
-            try:
-                # Find turn location in route
-                turn_location = turn['location']
-                closest_distance = float('inf')
-                closest_coord_index = 0
-                
-                for j, coord in enumerate(coords):
-                    distance = geodesic(coord, turn_location).meters
-                    if distance < closest_distance:
-                        closest_distance = distance
-                        closest_coord_index = j
-                
-                if closest_distance <= 100:  # Within 100 meters of route
-                    
-                    # Calculate distance from start
-                    distance_from_start = 0
-                    for k in range(closest_coord_index):
-                        if k + 1 < len(coords):
-                            distance_from_start += geodesic(coords[k], coords[k+1]).meters
-                    
-                    # Generate turn audio message
-                    turn_audio_message = generate_turn_audio_message(turn, tt_specs)
-                    
-                    turn_instruction = {
-                        'type': 'turn_guidance',
-                        'location': coords[closest_coord_index],
-                        'distance_from_start': distance_from_start,
-                        'turn_data': turn,
-                        'message': turn_audio_message,
-                        'priority': 'critical' if turn.get('severity') == 'critical' else 'medium',
-                        'duration_seconds': 5,
-                        'advance_warning_distance': max(100, turn.get('deceleration_distance', 50))
-                    }
-                    instructions.append(turn_instruction)
-                    
-            except Exception as e:
-                print(f"Error processing turn {i}: {e}")
-                continue
-        
-        # Generate instructions for extreme braking zones
-        for i, braking_point in enumerate(braking_points[:10]):  # Top 10 braking zones
-            try:
-                if braking_point.get('total_distance', 0) > 60:  # Only extreme braking distances
-                    
-                    braking_location = braking_point['location']
-                    closest_distance = float('inf')
-                    closest_coord_index = 0
-                    
-                    for j, coord in enumerate(coords):
-                        distance = geodesic(coord, braking_location).meters
-                        if distance < closest_distance:
-                            closest_distance = distance
-                            closest_coord_index = j
-                    
-                    if closest_distance <= 150:
-                        
-                        # Calculate distance from start
-                        distance_from_start = 0
-                        for k in range(closest_coord_index):
-                            if k + 1 < len(coords):
-                                distance_from_start += geodesic(coords[k], coords[k+1]).meters
-                        
-                        braking_message = f"Extended braking zone ahead. {braking_point['total_distance']} meter stopping distance required at {braking_point['speed_kmph']} kilometers per hour. Weight factor {braking_point['weight_factor']:.1f}."
-                        
-                        if braking_point.get('gradient', 0) > 3:
-                            braking_message += f" Downhill gradient {braking_point['gradient']:.1f}% increases braking distance."
-                        elif braking_point.get('gradient', 0) < -3:
-                            braking_message += f" Uphill gradient assists braking."
-                        
-                        braking_instruction = {
-                            'type': 'braking_alert',
-                            'location': coords[closest_coord_index],
-                            'distance_from_start': distance_from_start,
-                            'braking_data': braking_point,
-                            'message': braking_message,
-                            'priority': 'medium',
-                            'duration_seconds': 4
-                        }
-                        instructions.append(braking_instruction)
-                        
-            except Exception as e:
-                print(f"Error processing braking point {i}: {e}")
-                continue
-        
-        # Generate instructions for critical POIs (fuel stations, schools)
-        critical_poi_types = ['fuel', 'education']
-        for poi in pois:
-            try:
-                if poi.get('type') in critical_poi_types:
-                    
-                    poi_location = poi['location']
-                    closest_distance = float('inf')
-                    closest_coord_index = 0
-                    
-                    for j, coord in enumerate(coords):
-                        distance = geodesic(coord, poi_location).meters
-                        if distance < closest_distance:
-                            closest_distance = distance
-                            closest_coord_index = j
-                    
-                    if closest_distance <= 400:  # Within 400 meters of route
-                        
-                        # Calculate distance from start
-                        distance_from_start = 0
-                        for k in range(closest_coord_index):
-                            if k + 1 < len(coords):
-                                distance_from_start += geodesic(coords[k], coords[k+1]).meters
-                        
-                        poi_message = generate_poi_audio_message(poi, tt_specs)
-                        
-                        if poi_message:  # Only add if there's a relevant message
-                            poi_instruction = {
-                                'type': 'poi_alert',
-                                'location': coords[closest_coord_index],
-                                'distance_from_start': distance_from_start,
-                                'poi_data': poi,
-                                'message': poi_message,
-                                'priority': 'critical' if poi.get('type') == 'fuel' else 'high',
-                                'duration_seconds': 5 if poi.get('type') == 'fuel' else 3
-                            }
-                            instructions.append(poi_instruction)
-                            
-            except Exception as e:
-                print(f"Error processing POI {poi.get('name', 'Unknown')}: {e}")
-                continue
-        
-        # Add periodic safety reminders every 10km
-        try:
-            route_distance_km = 0
-            reminder_interval_km = 10
-            next_reminder_km = reminder_interval_km
-            
-            for i in range(1, len(coords)):
-                segment_distance = geodesic(coords[i-1], coords[i]).kilometers
-                route_distance_km += segment_distance
-                
-                if route_distance_km >= next_reminder_km:
-                    safety_reminders = [
-                        f"Safety reminder: {tt_specs['capacity_range']} tanker carrying {tt_specs['avg_capacity_liters']:,} liters petroleum. Maintain safe following distance.",
-                        f"Checkpoint: {route_distance_km:.1f} kilometers completed. Gross weight {tt_specs['gross_weight']/1000:.1f} tonnes affects all maneuvers.",
-                        f"Safety update: Class 3 flammable cargo. Emergency contact ready. Speed limit {tt_specs['max_speed']} kilometers per hour maximum.",
-                        f"Progress update: {route_distance_km:.1f} kilometers traveled. Check mirrors and blind spots regularly for tanker vehicle."
-                    ]
-                    
-                    reminder_index = int(next_reminder_km / reminder_interval_km) % len(safety_reminders)
-                    
-                    distance_from_start = 0
-                    for k in range(i):
-                        if k + 1 < len(coords):
-                            distance_from_start += geodesic(coords[k], coords[k+1]).meters
-                    
-                    reminder_instruction = {
-                        'type': 'safety_reminder',
-                        'location': coords[i],
-                        'distance_from_start': distance_from_start,
-                        'message': safety_reminders[reminder_index],
-                        'priority': 'low',
-                        'duration_seconds': 4
-                    }
-                    instructions.append(reminder_instruction)
-                    
-                    next_reminder_km += reminder_interval_km
-                    
-        except Exception as e:
-            print(f"Error generating safety reminders: {e}")
-        
-        # Sort instructions by distance from start
-        instructions.sort(key=lambda x: x.get('distance_from_start', 0))
-        
-        # Generate waypoints for major navigation points
-        waypoint_intervals = max(1, len(coords) // 20)  # ~20 waypoints
-        for i in range(0, len(coords), waypoint_intervals):
-            try:
-                distance_from_start = 0
-                for k in range(i):
-                    if k + 1 < len(coords):
-                        distance_from_start += geodesic(coords[k], coords[k+1]).meters
-                
-                waypoint = {
-                    'location': coords[i],
-                    'distance_from_start': distance_from_start,
-                    'coordinate_index': i,
-                    'progress_percentage': (i / len(coords)) * 100
-                }
-                waypoints.append(waypoint)
-                
-            except Exception as e:
-                print(f"Error creating waypoint {i}: {e}")
-                continue
-        
-        # Add route completion instruction
-        if coords:
-            total_distance = 0
-            for i in range(1, len(coords)):
-                total_distance += geodesic(coords[i-1], coords[i]).meters
-                
-            completion_instruction = {
-                'type': 'route_completion',
-                'location': coords[-1],
-                'distance_from_start': total_distance,
-                'message': f"Destination reached. Total distance {total_distance/1000:.1f} kilometers completed. {tt_specs['capacity_range']} petroleum tanker navigation complete. Thank you for using Smart Marg audio navigation.",
-                'priority': 'high',
-                'duration_seconds': 6
-            }
-            instructions.append(completion_instruction)
-        
-        # Compile final audio navigation data
-        audio_data = {
-            'instructions': instructions,
-            'waypoints': waypoints,
-            'total_instructions': len(instructions),
-            'route_length_km': sum(geodesic(coords[i], coords[i+1]).kilometers for i in range(len(coords)-1)) if len(coords) > 1 else 0,
-            'estimated_audio_duration_minutes': sum(inst.get('duration_seconds', 3) for inst in instructions) / 60,
-            'tt_specifications': tt_specs,
-            'priority_breakdown': {
-                'critical': len([i for i in instructions if i.get('priority') == 'critical']),
-                'high': len([i for i in instructions if i.get('priority') == 'high']),
-                'medium': len([i for i in instructions if i.get('priority') == 'medium']),
-                'low': len([i for i in instructions if i.get('priority') == 'low'])
-            }
-        }
-        
-        return audio_data
-        
-    except Exception as e:
-        print(f"Error generating audio navigation data: {e}")
-        import traceback
-        traceback.print_exc()
-        
-        # Return minimal fallback data
-        return {
-            'instructions': [{
-                'type': 'introduction',
-                'location': coords[0] if coords else (0, 0),
-                'distance_from_start': 0,
-                'message': f"Basic audio navigation for {tt_specs.get('capacity_range', 'TT')} petroleum tanker.",
-                'priority': 'high',
-                'duration_seconds': 3
-            }],
-            'waypoints': [],
-            'total_instructions': 1,
-            'route_length_km': 0,
-            'estimated_audio_duration_minutes': 0.05,
-            'tt_specifications': tt_specs,
-            'priority_breakdown': {'critical': 0, 'high': 1, 'medium': 0, 'low': 0}
-        }
-
-def calculate_enhanced_turn_radius(coords, center_index, scale, turn_angle):
-    """Enhanced turn radius calculation using multiple methods"""
-    try:
-        # Method 1: Three-point circle radius
-        if center_index >= scale and center_index + scale < len(coords):
-            p1 = coords[center_index - scale]
-            p2 = coords[center_index]
-            p3 = coords[center_index + scale]
-            
-            # Convert to local coordinate system
-            x1 = p1[1] * 111320 * math.cos(math.radians(p1[0]))
-            y1 = p1[0] * 110540
-            x2 = p2[1] * 111320 * math.cos(math.radians(p2[0]))
-            y2 = p2[0] * 110540
-            x3 = p3[1] * 111320 * math.cos(math.radians(p3[0]))
-            y3 = p3[0] * 110540
-            
-            # Calculate circumradius
-            a = math.sqrt((x2-x1)**2 + (y2-y1)**2)
-            b = math.sqrt((x3-x2)**2 + (y3-y2)**2)
-            c = math.sqrt((x1-x3)**2 + (y1-y3)**2)
-            
-            if a > 0 and b > 0 and c > 0:
-                s = (a + b + c) / 2
-                area = math.sqrt(max(0, s * (s-a) * (s-b) * (s-c)))
-                if area > 0:
-                    radius = (a * b * c) / (4 * area)
-                else:
-                    radius = 1000
-            else:
-                radius = 1000
-        else:
-            radius = 1000
-        
-        # Method 2: Curvature-based radius (backup/validation)
-        if radius > 2000 or radius < 3:
-            # Use relationship: radius ≈ chord_length / (2 * sin(angle/2))
-            chord_distance = geodesic(coords[center_index - scale], coords[center_index + scale]).meters
-            if turn_angle > 0:
-                sin_half_angle = math.sin(math.radians(turn_angle / 2))
-                if sin_half_angle > 0:
-                    radius_method2 = chord_distance / (2 * sin_half_angle)
-                    # Use the more reasonable radius
-                    if 5 <= radius_method2 <= 1000:
-                        radius = radius_method2
-        
-        # Ensure reasonable bounds
-        radius = max(3, min(radius, 2000))
-        
-    except Exception as e:
-        # Fallback calculation
-        radius = max(10, 150 * (90 / max(turn_angle, 1)))
-    
-    return radius
-
-def classify_enhanced_turn_type(max_angle, avg_angle, radius, direction):
-    """Enhanced turn classification with better thresholds for critical detection"""
-    
-    # U-turn detection (most critical)
-    if max_angle >= 150:
-        return 'u_turn'
-    
-    # Hairpin detection (very critical)
-    if max_angle >= 120 or (max_angle >= 100 and radius < 20):
-        return 'hairpin'
-    
-    # 90-degree turn detection (critical - enhanced detection)
-    if (85 <= max_angle <= 105) or (80 <= avg_angle <= 100 and radius < 40):
-        return 'sharp_right_angle'
-    
-    # Blind spot conditions (critical)
-    if (max_angle >= 60 and radius < 25) or (max_angle >= 70 and radius < 35):
-        return 'blind_spot'
-    
-    # Sharp turn (high risk)
-    if max_angle >= 45 or (max_angle >= 35 and radius < 30):
-        return 'sharp_turn'
-    
-    # Moderate turn
-    if max_angle >= 25:
-        return 'moderate_turn'
-    
-    # Gentle curve
-    if max_angle >= 15:
-        return 'gentle_curve'
-    
-    # Slight curve
-    if max_angle >= 8:
-        return 'slight_curve'
-    
-    return 'straight'
-
-def detect_blind_spot_conditions(max_angle, avg_angle, radius, direction):
-    """Enhanced blind spot detection for critical turn identification"""
-    
-    # Multiple conditions that indicate blind spot risk
-    blind_spot_conditions = [
-        # Condition 1: Sharp turn with small radius
-        max_angle >= 60 and radius < 30,
-        
-        # Condition 2: 90-degree turn with limited visibility
-        85 <= max_angle <= 105 and radius < 50,
-        
-        # Condition 3: Moderate angle but very tight radius
-        max_angle >= 45 and radius < 20,
-        
-        # Condition 4: Consistent sharp turning (average vs max)
-        avg_angle >= 50 and max_angle >= 70,
-        
-        # Condition 5: Right turns tend to have more blind spots (driver position)
-        direction == "Right" and max_angle >= 55 and radius < 40
-    ]
-    
-    return any(blind_spot_conditions)
-
-def calculate_enhanced_turn_speed(max_angle, radius, turn_type, tt_specs):
-    """Enhanced speed calculation with physics-based analysis"""
-    
-    # Truck parameters
-    gross_weight_kg = tt_specs["gross_weight"]
-    liquid_capacity = tt_specs["avg_capacity_liters"]
-    
-    # Enhanced lateral g-force limits based on turn type
-    max_lateral_g_limits = {
-        'u_turn': 0.15,
-        'hairpin': 0.18,
-        'blind_spot': 0.20,
-        'sharp_right_angle': 0.22,
-        'sharp_turn': 0.25
-    }
-    
-    base_max_g = max_lateral_g_limits.get(turn_type, 0.30)
-    
-    # Weight penalties
-    if gross_weight_kg > 35000:
-        weight_factor = 0.85
-    elif gross_weight_kg > 25000:
-        weight_factor = 0.90
-    else:
-        weight_factor = 0.95
-    
-    # Liquid sloshing effect
-    slosh_factor = 0.75 if liquid_capacity > 25000 else 0.80 if liquid_capacity > 15000 else 0.85
-    
-    effective_max_g = base_max_g * weight_factor * slosh_factor
-    
-    # Physics calculations
-    friction_coeff = 0.65 if turn_type in ['blind_spot', 'u_turn', 'hairpin'] else 0.7
-    max_physics_speed_ms = math.sqrt(effective_max_g * 9.81 * radius)
-    max_physics_speed_kmph = max_physics_speed_ms * 3.6
-    
-    # Rollover calculation
-    cg_height = 2.8 + (liquid_capacity / 8000) * 0.4  # Height increases with capacity
-    track_width = 2.4
-    rollover_speed_ms = math.sqrt((track_width / 2) / cg_height * 9.81 * radius)
-    rollover_speed_kmph = rollover_speed_ms * 3.6
-    
-    # Safety margins based on turn type
-    safety_margins = {
-        'u_turn': 0.50,
-        'hairpin': 0.55,
-        'blind_spot': 0.60,
-        'sharp_right_angle': 0.65,
-        'sharp_turn': 0.70
-    }
-    
-    safety_margin = safety_margins.get(turn_type, 0.75)
-    
-    # Type-specific maximum speeds
-    type_max_speeds = {
-        'u_turn': 8,
-        'hairpin': 12,
-        'blind_spot': 15,
-        'sharp_right_angle': 18,
-        'sharp_turn': 25
-    }
-    
-    type_max = type_max_speeds.get(turn_type, tt_specs["max_speed"])
-    
-    # Final recommended speed
-    recommended_speed = min(
-        max_physics_speed_kmph * safety_margin,
-        rollover_speed_kmph * 0.6,
-        type_max,
-        tt_specs["max_speed"]
-    )
-    
-    physics_data = {
-        'max_physics_speed': int(max_physics_speed_kmph),
-        'rollover_speed': int(rollover_speed_kmph),
-        'physics_factors': {
-            'lateral_g_force': round(effective_max_g, 2),
-            'weight_penalty': round(1 - weight_factor, 2),
-            'slosh_factor': round(1 - slosh_factor, 2),
-            'safety_margin': safety_margin,
-            'cg_height': cg_height,
-            'friction_coeff': friction_coeff
-        }
-    }
-    
-    return recommended_speed, physics_data
-
-def determine_enhanced_turn_severity(speed, turn_type, angle, radius, is_blind_spot):
-    """Enhanced severity determination with better critical detection"""
-    
-    # Critical conditions
-    critical_conditions = [
-        turn_type in ['u_turn', 'hairpin'],
-        is_blind_spot and turn_type == 'sharp_right_angle',
-        speed <= 12,
-        angle >= 120,
-        radius < 15
-    ]
-    
-    if any(critical_conditions):
-        return 'critical'
-    
-    # High risk conditions
-    high_risk_conditions = [
-        turn_type in ['blind_spot', 'sharp_right_angle'],
-        speed <= 20,
-        angle >= 80,
-        radius < 25
-    ]
-    
-    if any(high_risk_conditions):
-        return 'high'
-    
-    # Moderate risk
-    if turn_type == 'sharp_turn' or speed <= 35:
-        return 'moderate'
-    
-    return 'low'
-
-def calculate_enhanced_visibility_factor(angle, radius, direction, turn_type):
-    """Enhanced visibility calculation"""
-    
-    # Base visibility factors
-    if turn_type in ['blind_spot', 'u_turn']:
-        base_visibility = 0.1
-    elif turn_type == 'hairpin':
-        base_visibility = 0.2
-    elif turn_type == 'sharp_right_angle':
-        base_visibility = 0.3 if radius < 30 else 0.4
-    elif angle >= 60:
-        base_visibility = 0.3
-    elif angle >= 45:
-        base_visibility = 0.5
-    else:
-        base_visibility = 0.8
-    
-    # Radius adjustment
-    if radius < 20:
-        base_visibility *= 0.7
-    elif radius < 35:
-        base_visibility *= 0.85
-    
-    # Direction adjustment (right turns typically have worse visibility)
-    if direction == "Right":
-        base_visibility *= 0.9
-    
-    return max(0.05, min(1.0, base_visibility))
-
-def generate_enhanced_turn_warning(turn_type, speed, angle, visibility, is_blind_spot):
-    """Generate specific warnings for enhanced turn types"""
-    
-    speed_int = int(speed)
-    
-    warnings = {
-        'u_turn': f"U-TURN AHEAD: {speed_int} kmph MAX - Complete stop likely required",
-        'hairpin': f"HAIRPIN CURVE: {speed_int} kmph MAX - EXTREME rollover risk",
-        'sharp_right_angle': f"90° INTERSECTION: {speed_int} kmph - Check cross traffic",
-        'blind_spot': f"BLIND SPOT TURN: {speed_int} kmph - LIMITED VISIBILITY",
-        'sharp_turn': f"SHARP TURN: {speed_int} kmph - Reduce speed gradually"
-    }
-    
-    base_warning = warnings.get(turn_type, f"Turn ahead: {speed_int} kmph")
-    
-    # Add blind spot warning if detected
-    if is_blind_spot and turn_type != 'blind_spot':
-        base_warning += " - BLIND SPOT RISK"
-    
-    # Add visibility warning
-    if visibility < 0.3:
-        base_warning += " - POOR VISIBILITY"
-    
-    return base_warning
-
-def generate_enhanced_turn_risk_factors(turn_type, angle, radius, tt_specs, is_blind_spot):
-    """Generate comprehensive risk factors"""
-    
-    factors = []
-    
-    # Turn-specific factors
-    if turn_type == 'blind_spot' or is_blind_spot:
-        factors.extend([
-            f"BLIND SPOT: Limited visibility around {angle:.1f}° turn",
-            f"Small radius ({radius:.1f}m) creates vision obstruction",
-            "Oncoming traffic may not be visible"
-        ])
-    
-    if turn_type == 'sharp_right_angle':
-        factors.extend([
-            f"90° TURN: Standard intersection turn ({angle:.1f}°)",
-            f"Turn radius: {radius:.1f}m",
-            "Check for cross traffic and pedestrians"
-        ])
-    
-    if turn_type == 'u_turn':
-        factors.extend([
-            f"U-TURN: {angle:.1f}° requires multiple maneuvers",
-            "Complete traffic stoppage likely required"
-        ])
-    
-    if turn_type == 'hairpin':
-        factors.extend([
-            f"HAIRPIN: {angle:.1f}° extreme curve",
-            f"Very tight radius ({radius:.1f}m)",
-            "Maximum rollover risk zone"
-        ])
-    
-    # Truck-specific factors
-    if tt_specs['gross_weight'] > 35000:
-        factors.append(f"Heavy TT: {tt_specs['gross_weight']/1000:.1f}T increases difficulty")
-    
-    if tt_specs['avg_capacity_liters'] > 25000:
-        factors.append(f"Large capacity: {tt_specs['avg_capacity_liters']:,}L liquid surge risk")
-    
-    return factors
-
-def calculate_turn_deceleration_distance(target_speed, turn_type, tt_specs):
-    """Calculate deceleration distance for turn approach"""
-    
-    current_speed = min(50, tt_specs["max_speed"] * 0.8)
-    
-    if target_speed >= current_speed:
-        return 0
-    
-    speed_diff_ms = (current_speed - target_speed) / 3.6
-    
-    # Deceleration rates based on turn type
-    deceleration_rates = {
-        'u_turn': 2.0,
-        'hairpin': 2.2,
-        'blind_spot': 2.5,
-        'sharp_right_angle': 2.8,
-        'sharp_turn': 3.0
-    }
-    
-    deceleration = deceleration_rates.get(turn_type, 3.5)
-    
-    # Weight adjustment
-    if tt_specs['gross_weight'] > 35000:
-        deceleration *= 0.85
-    elif tt_specs['gross_weight'] > 25000:
-        deceleration *= 0.90
-    
-    distance = (speed_diff_ms ** 2) / (2 * deceleration)
-    return max(10, distance)
-
-def post_process_turn_detection(turns, coords):
-    """Post-process to catch any missed critical turns"""
-    
-    # Look for potential missed 90-degree turns by checking spacing
-    processed_locations = set((round(t['location'][0], 4), round(t['location'][1], 4)) for t in turns)
-    
-    # Additional scan for missed right-angle turns
-    for i in range(10, len(coords) - 10, 5):  # Wider spacing scan
-        location_key = (round(coords[i][0], 4), round(coords[i][1], 4))
-        
-        if location_key in processed_locations:
-            continue
-        
-        try:
-            # Check for potential 90-degree pattern
-            bearing1 = calculate_bearing(coords[i-10][0], coords[i-10][1], coords[i][0], coords[i][1])
-            bearing2 = calculate_bearing(coords[i][0], coords[i][1], coords[i+10][0], coords[i+10][1])
-            angle = calculate_turn_angle(bearing1, bearing2)
-            
-            # Specifically look for missed 90-degree turns
-            if 75 <= angle <= 110:
-                # This might be a missed right-angle turn
-                radius = geodesic(coords[i-5], coords[i+5]).meters / 2  # Approximate radius
-                
-                if radius < 60:  # Tight enough to be significant
-                    direction_bearing = bearing2 - bearing1
-                    if direction_bearing > 180:
-                        direction_bearing -= 360
-                    elif direction_bearing < -180:
-                        direction_bearing += 360
-                    
-                    turn_direction = "Right" if direction_bearing > 0 else "Left"
-                    
-                    # Add as potential missed critical turn
-                    missed_turn = {
-                        'location': coords[i],
-                        'turn_angle': angle,
-                        'avg_turn_angle': angle,
-                        'radius': radius,
-                        'turn_direction': turn_direction,
-                        'turn_type': 'sharp_right_angle',
-                        'is_blind_spot': radius < 35,
-                        'recommended_speed': 18,
-                        'severity': 'high',
-                        'warning': f"90° TURN: 18 kmph - Potentially missed detection",
-                        'visibility_factor': 0.4 if radius < 35 else 0.6,
-                        'blind_spot_risk': radius < 35,
-                        'detection_confidence': 1,
-                        'risk_factors': [f"Potentially missed 90° turn - {angle:.1f}°", f"Radius: {radius:.1f}m"],
-                        'post_processed': True
-                    }
-                    
-                    turns.append(missed_turn)
-                    processed_locations.add(location_key)
-        
-        except Exception as e:
-            continue
-    
-    return turns
-
-def calculate_braking_distances(coords, tt_specs, elevations, gradients):
-    """Calculate braking distances for truck at various points considering weight and gradient"""
-    braking_points = []
-    
-    try:
-        # Truck braking parameters
-        gross_weight_kg = tt_specs["gross_weight"]
-        
-        # Braking system parameters
-        reaction_time = 1.5  # seconds - air brake system delay
-        friction_coeff = 0.7  # Dry asphalt
-        brake_efficiency = 0.85  # Air brake system efficiency
-        
-        # Sample every 10th point for braking analysis
-        sample_interval = max(1, len(coords) // 20)
-        sample_indices = range(0, len(coords), sample_interval)
-        
-        for i in sample_indices:
-            if i >= len(coords):
-                continue
-                
-            try:
-                coord = coords[i]
-                
-                # Get elevation and gradient data
-                if i < len(elevations):
-                    elevation = elevations[min(i, len(elevations)-1)]
-                else:
-                    elevation = 100  # Default elevation
-                
-                if i < len(gradients):
-                    gradient_percent = gradients[min(i, len(gradients)-1)]
-                else:
-                    gradient_percent = 0
-                
-                # Speed scenarios to analyze
-                speeds_kmph = [30, 40, 50, min(60, tt_specs["max_speed"])]
-                
-                for speed_kmph in speeds_kmph:
-                    speed_ms = speed_kmph / 3.6
-                    
-                    # Reaction distance (distance traveled during reaction time)
-                    reaction_distance = speed_ms * reaction_time
-                    
-                    # Physics-based braking distance
-                    # F = ma, where F is braking force limited by friction
-                    # ma = μmg ± mg*sin(θ), where θ is gradient angle
-                    gradient_rad = math.atan(gradient_percent / 100)
-                    
-                    # Effective deceleration considering gradient
-                    base_deceleration = friction_coeff * 9.81 * brake_efficiency
-                    gradient_effect = 9.81 * math.sin(gradient_rad)
-                    
-                    # Downhill reduces braking effectiveness, uphill helps
-                    effective_deceleration = base_deceleration - gradient_effect
-                    effective_deceleration = max(2.0, effective_deceleration)  # Minimum safe deceleration
-                    
-                    # Weight factor - heavier trucks need more distance
-                    if gross_weight_kg > 35000:
-                        weight_factor = 1.4
-                    elif gross_weight_kg > 25000:
-                        weight_factor = 1.2
-                    else:
-                        weight_factor = 1.0
-                    
-                    # Physics braking distance: v²/(2a)
-                    physics_distance = (speed_ms ** 2) / (2 * effective_deceleration)
-                    physics_distance *= weight_factor
-                    
-                    # Total braking distance
-                    total_distance = reaction_distance + physics_distance
-                    
-                    # Only store significant braking distances
-                    if total_distance > 45:  # More than 45m is noteworthy
-                        braking_points.append({
-                            'location': coord,
-                            'speed_kmph': speed_kmph,
-                            'total_distance': round(total_distance),
-                            'reaction_distance': round(reaction_distance),
-                            'physics_distance': round(physics_distance),
-                            'weight_factor': weight_factor,
-                            'gradient': gradient_percent,
-                            'elevation': elevation,
-                            'effective_deceleration': round(effective_deceleration, 1)
-                        })
-                        
-            except Exception as e:
-                print(f"Error calculating braking for point {i}: {e}")
-                continue
-    
-    except Exception as e:
-        print(f"Error in braking distance calculation: {e}")
-    
-    # Sort by total distance and return most critical braking scenarios
-    braking_points.sort(key=lambda x: x['total_distance'], reverse=True)
-    return braking_points[:15]  # Top 15 most critical braking distances
-
-def generate_enhanced_route_report(coords, pois, hazard_zones, traffic_data, turns, 
-                                 braking_points, total_distance, total_duration, 
-                                 tt_specs, elevations, gradients):
-    """Generate comprehensive route analysis report with realistic metrics"""
-    try:
-        # Extract distance value
-        distance_value = 1
-        try:
-            if total_distance:
-                distance_parts = total_distance.split()
-                if distance_parts:
-                    distance_value = float(distance_parts[0])
-        except:
-            distance_value = 1
-        
-        # Calculate route complexity based on actual hazards
-        complexity_factors = {
-            'critical_turns': len([t for t in turns if t.get('severity') == 'critical']),
-            'high_risk_turns': len([t for t in turns if t.get('severity') == 'high']),
-            'critical_hazards': len([h for h in hazard_zones if h.get('risk_level') == 'Critical']),
-            'high_hazards': len([h for h in hazard_zones if h.get('risk_level') == 'High']),
-            'fuel_station_hazards': len([h for h in hazard_zones if any('fuel' in str(f).lower() for f in h.get('risk_factors', []))]),
-            'school_hazards': len([h for h in hazard_zones if any('school' in str(f).lower() for f in h.get('risk_factors', []))]),
-            'extreme_braking_zones': len([b for b in braking_points if b.get('total_distance', 0) > 70])
-        }
-        
-        # Calculate complexity score
-        complexity_score = (
-            complexity_factors['critical_turns'] * 3 +
-            complexity_factors['high_risk_turns'] * 2 +
-            complexity_factors['critical_hazards'] * 4 +
-            complexity_factors['high_hazards'] * 2 +
-            complexity_factors['fuel_station_hazards'] * 5 +  # Extremely dangerous for petroleum tanker
-            complexity_factors['school_hazards'] * 3 +
-            complexity_factors['extreme_braking_zones'] * 1.5
-        )
-        
-        # Determine complexity rating
-        if complexity_score >= 25:
-            complexity_rating = "EXTREME RISK"
-        elif complexity_score >= 15:
-            complexity_rating = "HIGH COMPLEXITY"
-        elif complexity_score >= 8:
-            complexity_rating = "MODERATE COMPLEXITY"
-        else:
-            complexity_rating = "LOW COMPLEXITY"
-        
-        # Traffic analysis
-        heavy_traffic_segments = len([t for t in traffic_data if t.get('traffic_level') == 'heavy'])
-        avg_delay = np.mean([t.get('delay_factor', 1.0) for t in traffic_data]) if traffic_data else 1.0
-        
-        # Fuel consumption estimation (simplified)
-        base_consumption = distance_value * 0.35  # L/km for loaded tanker
-        traffic_penalty = avg_delay * 0.15  # Additional consumption due to traffic
-        gradient_penalty = sum(abs(g) for g in gradients[:10]) * 0.02 if gradients else 0  # Gradient effect
-        estimated_fuel = base_consumption + traffic_penalty + gradient_penalty
-        
-        # Generate detailed report
-        report = {
-            'route_overview': {
-                'total_distance': total_distance,
-                'total_duration': total_duration,
-                'complexity_rating': complexity_rating,
-                'complexity_score': round(complexity_score, 1),
-                'route_points': len(coords),
-                'analysis_density': f"{len(coords)/distance_value:.0f} points/km"
-            },
-            
-            'truck_tanker_specs': {
-                'capacity_range': tt_specs['capacity_range'],
-                'fuel_capacity': f"{tt_specs['avg_capacity_liters']:,} L",
-                'product_weight': f"{tt_specs['product_weight']/1000:.1f} tonnes",
-                'tare_weight': f"{tt_specs['tare_weight']/1000:.1f} tonnes",
-                'gross_weight': f"{tt_specs['gross_weight']/1000:.1f} tonnes",
-                'axle_load': f"{tt_specs['axle_load']:.1f} tonnes per axle",
-                'max_speed': f"{tt_specs['max_speed']} kmph",
-                'risk_multiplier': f"{tt_specs['risk_multiplier']}x",
-                'hazmat_class': 'Class 3 (Flammable Liquid)'
-            },
-            
-            'hazard_analysis': {
-                'total_hazard_zones': len(hazard_zones),
-                'critical_zones': complexity_factors['critical_hazards'],
-                'high_risk_zones': complexity_factors['high_hazards'],
-                'medium_risk_zones': len([h for h in hazard_zones if h.get('risk_level') == 'Medium']),
-                'fuel_station_conflicts': complexity_factors['fuel_station_hazards'],
-                'school_zone_risks': complexity_factors['school_hazards'],
-                'time_sensitive_hazards': len([h for h in hazard_zones if h.get('time_sensitive', False)]),
-                'highest_risk_score': max([h.get('risk_score', 0) for h in hazard_zones]) if hazard_zones else 0
-            },
-            
-            'turn_analysis': {
-                'total_significant_turns': len(turns),
-                'critical_turns': complexity_factors['critical_turns'],
-                'high_risk_turns': complexity_factors['high_risk_turns'],
-                'moderate_turns': len([t for t in turns if t.get('severity') == 'moderate']),
-                'sharpest_turn_angle': max([t.get('turn_angle', 0) for t in turns]) if turns else 0,
-                'minimum_safe_speed': min([t.get('recommended_speed', 60) for t in turns]) if turns else 60,
-                'rollover_risk_turns': len([t for t in turns if t.get('recommended_speed', 60) < 25])
-            },
-            
-            'braking_analysis': {
-                'extreme_braking_zones': complexity_factors['extreme_braking_zones'],
-                'extended_braking_zones': len([b for b in braking_points if b.get('total_distance', 0) > 60]),
-                'max_braking_distance': max([b.get('total_distance', 45) for b in braking_points]) if braking_points else 45,
-                'gradient_affected_zones': len([b for b in braking_points if abs(b.get('gradient', 0)) > 3]),
-                'weight_penalty_zones': len([b for b in braking_points if b.get('weight_factor', 1.0) > 1.2])
-            },
-            
-            'traffic_analysis': {
-                'total_analysis_points': len(traffic_data),
-                'heavy_traffic_segments': heavy_traffic_segments,
-                'moderate_traffic_segments': len([t for t in traffic_data if t.get('traffic_level') == 'moderate']),
-                'light_traffic_segments': len([t for t in traffic_data if t.get('traffic_level') == 'light']),
-                'average_delay_factor': round(avg_delay, 2),
-                'urban_zones': len([t for t in traffic_data if t.get('urban_factor', 1.0) > 1.0]),
-                'peak_hour_affected': len([t for t in traffic_data if t.get('time_based', False)])
-            },
-            
-            'route_efficiency': {
-                'estimated_fuel_consumption': f"{estimated_fuel:.1f} L",
-                'fuel_efficiency': f"{estimated_fuel/distance_value:.2f} L/km",
-                'time_penalties': f"{(avg_delay-1)*100:.0f}% delay due to traffic",
-                'gradient_impact': f"{len([g for g in gradients[:20] if abs(g) > 3]) if gradients else 0} steep grades",
-                'elevation_range': f"{max(elevations[:20]) - min(elevations[:20]):.0f}m" if elevations else "N/A"
-            },
-            
-            'poi_distribution': {
-                'total_pois': len(pois),
-                'fuel_stations': len([p for p in pois if p.get('type') == 'fuel']),
-                'hospitals': len([p for p in pois if p.get('type') == 'health']),
-                'schools': len([p for p in pois if p.get('type') == 'education']),
-                'police_stations': len([p for p in pois if p.get('type') == 'safety']),
-                'commercial_areas': len([p for p in pois if p.get('type') == 'commercial']),
-                'religious_sites': len([p for p in pois if p.get('type') == 'religious'])
-            },
-            
-            'safety_recommendations': [
-                f"CRITICAL: Maintain max {min([t.get('recommended_speed', 50) for t in turns[:3]]) if turns else 50} kmph at sharpest turns",
-                f"Fuel hazard protocol: {complexity_factors['fuel_station_hazards']} extreme risk zones identified",
-                f"School zone awareness: {complexity_factors['school_hazards']} education facilities along route",
-                f"Extended braking: Maintain {max([b.get('total_distance', 45) for b in braking_points[:3]]) if braking_points else 45}m+ following distance",
-                f"Weight considerations: {tt_specs['gross_weight']/1000:.1f}T affects all maneuvers",
-                f"Emergency response: Class 3 flammable - {tt_specs['avg_capacity_liters']:,}L petroleum cargo",
-                f"Traffic management: {heavy_traffic_segments} heavy traffic zones require extra caution",
-                "Hazmat placards visible and emergency contact cards accessible",
-                "Driver rest: Complex route requires maximum alertness",
-                f"Route complexity: {complexity_rating} - Consider alternate routes if available"
-            ],
-            
-            'emergency_protocols': {
-                'hazmat_class': 'UN Class 3 - Flammable Liquid',
-                'cargo_volume': f"{tt_specs['avg_capacity_liters']:,} L",
-                'emergency_response_guide': 'ERG 128',
-                'isolation_distance': '50m initial, 100m if fire/spill',
-                'evacuation_radius': '800m if tank involvement in fire',
-                'special_precautions': [
-                    'No smoking/ignition sources',
-                    'Approach from upwind',
-                    'Ground all equipment',
-                    'Foam suppression systems required'
-                ]
-            },
-            
-            'route_statistics': {
-                'analysis_timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                'total_analysis_points': len(coords),
-                'hazard_density': f"{len(hazard_zones)/distance_value:.1f} hazards/km",
-                'turn_density': f"{len(turns)/distance_value:.1f} critical turns/km",
-                'complexity_per_km': f"{complexity_score/distance_value:.1f} complexity points/km"
-            }
-        }
-        
-        return report
-        
-    except Exception as e:
-        print(f"Error generating enhanced report: {e}")
-        # Return basic fallback report
-        return {
-            'route_overview': {
-                'total_distance': total_distance or "N/A",
-                'total_duration': total_duration or "N/A",
-                'complexity_rating': "ANALYSIS ERROR",
-                'route_points': len(coords)
-            },
-            'truck_tanker_specs': tt_specs,
-            'hazard_analysis': {
-                'total_hazard_zones': len(hazard_zones),
-                'critical_zones': 0,
-                'high_risk_zones': 0
-            },
-            'safety_recommendations': [
-                f"Basic safety: Max speed {tt_specs['max_speed']} kmph",
-                f"Weight: {tt_specs['gross_weight']/1000:.1f}T - Extended braking required",
-                "Hazmat precautions: Class 3 flammable cargo"
-            ]
-        }
-
-# Additional utility function for template compatibility
-def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance, total_duration, tt_specs):
-    """Wrapper function for backward compatibility"""
-    # Create dummy data for missing parameters
-    turns = []
-    braking_points = []
-    elevations = [100] * min(20, len(coords))
-    gradients = [0] * min(20, len(coords))
-    
-    return generate_enhanced_route_report(
-        coords, pois, risk_zones, traffic_data, turns, 
-        braking_points, total_distance, total_duration, 
-        tt_specs, elevations, gradients
-    )
 
 def get_recommended_speed(turn_angle, tt_specs, road_type="urban"):
     """Calculate recommended speed based on turn angle, TT specs, and road type"""
@@ -2020,505 +481,6 @@ def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance
             ]
         }
 
-
-
-#------------------------------------------------------------------------------------
-def get_enhanced_pois_for_audio(detailed_coords):
-    """Get POIs specifically optimized for audio navigation"""
-    all_pois = []
-    poi_types = [
-        ('hospital', 'health'),
-        ('school', 'education'), 
-        ('gas_station', 'fuel'),
-        ('police', 'safety'),
-        ('shopping_mall', 'commercial'),
-        ('place_of_worship', 'religious')
-    ]
-    
-    # Use strategic sampling points for audio-relevant POIs
-    sample_coords = detailed_coords[::max(1, len(detailed_coords)//12)]  # 12 sample points
-    
-    for poi_type, category in poi_types:
-        for lat, lng in sample_coords:
-            try:
-                places_result = gmaps.places_nearby(
-                    location=(lat, lng), 
-                    radius=500,  # Larger radius for audio alerts
-                    type=poi_type
-                )
-                
-                for place in places_result.get('results', [])[:4]:  # Top 4 per location
-                    all_pois.append({
-                        'name': place['name'],
-                        'location': (
-                            place['geometry']['location']['lat'],
-                            place['geometry']['location']['lng']
-                        ),
-                        'type': category,
-                        'rating': place.get('rating', 3.0),
-                        'place_id': place.get('place_id', ''),
-                        'audio_priority': get_audio_priority(category)
-                    })
-                
-                time.sleep(0.08)  # Rate limiting
-                
-            except Exception as e:
-                print(f"Error getting {poi_type} POIs: {e}")
-                continue
-    
-    # Remove duplicates and sort by audio priority
-    unique_pois = []
-    for poi in all_pois:
-        is_duplicate = False
-        for existing in unique_pois:
-            if geodesic(poi['location'], existing['location']).meters < 150:
-                is_duplicate = True
-                break
-        if not is_duplicate:
-            unique_pois.append(poi)
-    
-    # Sort by audio priority (higher priority first)
-    unique_pois.sort(key=lambda x: x['audio_priority'], reverse=True)
-    
-    return unique_pois
-
-def get_audio_priority(poi_type):
-    """Get audio priority for POI types (higher = more important for audio alerts)"""
-    priorities = {
-        'fuel': 10,      # Extreme priority for petroleum tankers
-        'education': 9,  # High priority for school zones
-        'health': 7,     # High priority for hospitals
-        'safety': 6,     # Medium-high for police stations
-        'commercial': 4, # Medium for shopping areas
-        'religious': 3   # Lower for religious sites
-    }
-    return priorities.get(poi_type, 1)
-
-def create_audio_enabled_folium_map(source, destination, coords, hazard_zones, turns, pois, traffic_data, braking_points, tt_specs, audio_data):
-    """Create Folium map with embedded audio navigation features"""
-    try:
-        # Create map
-        m = folium.Map(location=source, zoom_start=13)
-        
-        # Add start marker with audio start button
-        start_popup = f"""
-        <div style='font-family: Arial; text-align: center; max-width: 300px;'>
-            <h4 style='color: #28a745; margin-bottom: 10px;'>🚩 AUDIO NAVIGATION START</h4>
-            <div style='background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 8px 0;'>
-                <strong>TT Specs:</strong> {tt_specs['capacity_range']}<br>
-                <strong>Gross Weight:</strong> {tt_specs['gross_weight']/1000:.1f}T<br>
-                <strong>Cargo:</strong> {tt_specs['avg_capacity_liters']:,}L Petroleum<br>
-                <strong>Audio Instructions:</strong> {len(audio_data['instructions'])}
-            </div>
-            <button onclick="window.parent.startAudioNavigation()" 
-                    style="background: linear-gradient(45deg, #28a745, #20c997); color: white; 
-                           border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; 
-                           font-weight: bold; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);">
-                🎵 Start Audio Navigation
-            </button>
-        </div>
-        """
-        folium.Marker(source, popup=start_popup, 
-                     icon=folium.Icon(color='green', icon='play', prefix='fa')).add_to(m)
-        
-        # Add destination marker
-        end_popup = f"""
-        <div style='font-family: Arial; text-align: center; max-width: 300px;'>
-            <h4 style='color: #dc3545; margin-bottom: 10px;'>🏁 DESTINATION</h4>
-            <div style='background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 8px 0;'>
-                <strong>Total Distance:</strong> {total_distance}<br>
-                <strong>Duration:</strong> {total_duration}<br>
-                <strong>Complexity:</strong> {route_report['route_overview']['complexity_rating']}
-            </div>
-        </div>
-        """
-        folium.Marker(destination, popup=end_popup,
-                     icon=folium.Icon(color='red', icon='stop', prefix='fa')).add_to(m)
-        
-        # Main route with weight-based styling
-        route_color = '#8B0000' if tt_specs["gross_weight"] > 35000 else '#FF4500' if tt_specs["gross_weight"] > 25000 else '#0066CC'
-        route_weight = 6 if tt_specs["gross_weight"] > 35000 else 5 if tt_specs["gross_weight"] > 25000 else 4
-            
-        folium.PolyLine(
-            coords, 
-            color=route_color, 
-            weight=route_weight, 
-            opacity=0.8,
-            popup=f"Audio-Enabled TT Route: {tt_specs['capacity_range']} - {tt_specs['gross_weight']/1000:.1f}T"
-        ).add_to(m)
-
-        # Add vehicle tracking marker placeholder
-        vehicle_icon_html = f"""
-        <div id="vehicleTracker" style="text-align: center; z-index: 1000;">
-            <div style="background: #28a745; color: white; width: 45px; height: 45px; border-radius: 50%; 
-                        display: flex; align-items: center; justify-content: center; font-size: 20px; 
-                        border: 3px solid white; box-shadow: 0 6px 20px rgba(0,0,0,0.4); 
-                        animation: vehiclePulse 2s infinite;">
-                🚛
-            </div>
-            <div style="font-size: 9px; margin-top: 3px; color: #28a745; font-weight: bold;">
-                {tt_specs['capacity_range']}
-            </div>
-        </div>
-        <style>
-        @keyframes vehiclePulse {{
-            0% {{ transform: scale(1); }}
-            50% {{ transform: scale(1.15); }}
-            100% {{ transform: scale(1); }}
-        }}
-        </style>
-        """
-        
-        # Vehicle marker will be added dynamically by JavaScript
-        
-        # Add enhanced hazard markers with audio integration
-        for i, hazard in enumerate(hazard_zones[:30]):
-            color = '#8B0000' if hazard['risk_level'] == 'Critical' else '#DC143C' if hazard['risk_level'] == 'High' else '#FF6347'
-            
-            # Generate audio message for hazard
-            audio_message = generate_hazard_audio_message(hazard, tt_specs)
-            
-            hazard_popup = f"""
-            <div style='font-family: Arial; max-width: 400px;' id="hazard_{i}">
-                <h4 style='color: {color}; margin: 8px 0;'>🚨 {hazard['risk_level']} Risk Zone</h4>
-                <div style='background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 8px 0;'>
-                    <strong>Risk Score:</strong> {hazard['risk_score']:.1f}/10<br>
-                    <strong>Hazard Count:</strong> {hazard['hazard_count']}<br>
-                    <strong>Primary Risks:</strong><br>
-                    {"<br>".join([f"• {h['name']}" for h in hazard.get('primary_hazards', [])][:2])}
-                </div>
-                
-                <div style='background: #fff3cd; padding: 8px; border-radius: 4px; margin: 8px 0; font-size: 12px;'>
-                    <strong>Audio Alert:</strong><br>
-                    "{audio_message[:80]}..."
-                </div>
-                
-                <div style='text-align: center; margin: 8px 0;'>
-                    <button onclick="window.parent.speakHazardAlert('{audio_message.replace("'", "\\'")}', true)" 
-                            style="background: linear-gradient(45deg, #dc3545, #c82333); color: white; 
-                                   border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; 
-                                   font-weight: bold; margin: 3px;">
-                        🔊 Play Audio Alert
-                    </button>
-                    <button onclick="window.parent.addToAudioQueue('{audio_message.replace("'", "\\'")}', 'hazard')" 
-                            style="background: linear-gradient(45deg, #007bff, #0056b3); color: white; 
-                                   border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; 
-                                   font-weight: bold; margin: 3px;">
-                        ➕ Add to Queue
-                    </button>
-                </div>
-                
-                <div style='background: #e2e3e5; padding: 6px; border-radius: 4px; font-size: 10px; margin-top: 5px;'>
-                    <strong>TT Impact:</strong> {tt_specs['capacity_range']} | 
-                    {tt_specs['gross_weight']/1000:.1f}T | Class 3 Flammable
-                </div>
-            </div>
-            """
-            
-            radius = min(50, max(15, hazard['risk_score'] * 5))
-            folium.CircleMarker(
-                location=hazard['location'],
-                radius=radius,
-                popup=hazard_popup,
-                color=color,
-                fillColor=color,
-                fillOpacity=0.4,
-                weight=3
-            ).add_to(m)
-
-        # Add enhanced turn markers with audio integration
-        for i, turn in enumerate(turns[:25]):
-            # Turn-specific colors and audio messages
-            if turn.get('turn_type') == 'blind_spot':
-                color = '#8B0000'
-                icon_text = 'BLIND'
-            elif turn.get('turn_type') == 'sharp_right_angle':
-                color = '#FF4500'
-                icon_text = '90°'
-            elif turn.get('turn_type') == 'u_turn':
-                color = '#8B0000'
-                icon_text = 'U'
-            elif turn.get('severity') == 'critical':
-                color = '#DC143C'
-                icon_text = str(turn['recommended_speed'])
-            else:
-                color = '#FFC107'
-                icon_text = str(turn['recommended_speed'])
-            
-            # Generate audio message for turn
-            turn_audio_message = generate_turn_audio_message(turn, tt_specs)
-            
-            turn_popup = f"""
-            <div style='font-family: Arial; max-width: 380px;'>
-                <h4 style='color: {color}; margin: 8px 0;'>🔄 {turn.get('turn_type', 'turn').replace('_', ' ').title()}</h4>
-                
-                <div style='background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 8px 0;'>
-                    <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;'>
-                        <div><strong>Angle:</strong> {turn['turn_angle']:.1f}°</div>
-                        <div><strong>Direction:</strong> {turn.get('turn_direction', 'Unknown')}</div>
-                        <div><strong>Safe Speed:</strong> {turn['recommended_speed']} kmph</div>
-                        <div><strong>Radius:</strong> {turn['radius']:.1f}m</div>
-                    </div>
-                </div>
-                
-                <div style='background: #fff3cd; padding: 8px; border-radius: 4px; margin: 8px 0; font-size: 12px;'>
-                    <strong>Audio Guidance:</strong><br>
-                    "{turn_audio_message[:75]}..."
-                </div>
-                
-                <div style='text-align: center; margin: 8px 0;'>
-                    <button onclick="window.parent.speakTurnAlert('{turn_audio_message.replace("'", "\\'")}', {str(turn.get('severity') == 'critical').lower()})" 
-                            style="background: linear-gradient(45deg, {color}, {color}dd); color: white; 
-                                   border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; 
-                                   font-weight: bold; margin: 3px;">
-                        🔊 Turn Guidance
-                    </button>
-                </div>
-                
-                {f'<div style="background: #f8d7da; padding: 6px; border-radius: 3px; font-size: 11px; color: #721c24; margin: 5px 0;"><strong>⚠️ BLIND SPOT WARNING</strong></div>' if turn.get('blind_spot_risk') else ''}
-            </div>
-            """
-            
-            # Enhanced turn icon
-            turn_icon_html = f"""
-            <div style='text-align: center;'>
-                <div style='background: {color}; color: white; border-radius: 12px; width: 38px; height: 38px; 
-                            line-height: 38px; font-weight: bold; font-size: 11px; border: 3px solid white;
-                            box-shadow: 0 4px 15px rgba(0,0,0,0.3);'>
-                    {icon_text}
-                </div>
-                <div style='font-size: 8px; margin-top: 2px; color: {color}; font-weight: bold;'>
-                    {turn['recommended_speed']}km/h
-                </div>
-            </div>
-            """
-            
-            folium.Marker(
-                location=turn['location'],
-                popup=turn_popup,
-                icon=folium.DivIcon(html=turn_icon_html, icon_size=(44, 50), icon_anchor=(22, 45))
-            ).add_to(m)
-
-        # Add POIs with audio relevance
-        for poi in pois[:40]:  # Limit to 40 most relevant POIs
-            poi_type = poi.get('type', 'other')
-            
-            # POI-specific styling and audio messages
-            poi_styles = {
-                'fuel': {'color': 'orange', 'icon': 'gas-pump', 'priority': 'EXTREME'},
-                'health': {'color': 'red', 'icon': 'plus-square', 'priority': 'HIGH'},
-                'safety': {'color': 'blue', 'icon': 'shield-alt', 'priority': 'MEDIUM'},
-                'education': {'color': 'purple', 'icon': 'graduation-cap', 'priority': 'CRITICAL'},
-                'commercial': {'color': 'green', 'icon': 'shopping-cart', 'priority': 'MEDIUM'},
-                'religious': {'color': 'darkpurple', 'icon': 'place-of-worship', 'priority': 'LOW'}
-            }
-            
-            style = poi_styles.get(poi_type, {'color': 'gray', 'icon': 'info', 'priority': 'LOW'})
-            
-            poi_audio_message = generate_poi_audio_message(poi, tt_specs)
-            
-            poi_popup = f"""
-            <div style='font-family: Arial; text-align: center; max-width: 250px;'>
-                <h4 style='color: {"red" if poi_type == "fuel" else "black"}; margin: 8px 0;'>
-                    {poi['name']}
-                </h4>
-                <div style='background: #f8f9fa; padding: 8px; border-radius: 4px; margin: 8px 0;'>
-                    <strong>Type:</strong> {poi_type.title()}<br>
-                    <strong>Priority:</strong> {style['priority']}<br>
-                    <strong>Rating:</strong> {poi.get('rating', 'N/A')}/5
-                </div>
-                
-                {f'<div style="background: #ffcccc; padding: 8px; border-radius: 4px; margin: 8px 0; font-size: 12px;"><strong>Audio Alert:</strong><br>"{poi_audio_message[:60]}..."</div>' if poi_audio_message else ''}
-                
-                {f'<button onclick="window.parent.speakPOIAlert(\'{poi_audio_message.replace("\'", "\\\'")}\')" style="background: {"#dc3545" if poi_type == "fuel" else "#007bff"}; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; margin: 5px;">🔊 Audio Alert</button>' if poi_audio_message else ''}
-            </div>
-            """
-            
-            folium.Marker(
-                location=poi['location'],
-                popup=poi_popup,
-                icon=folium.Icon(color=style['color'], icon=style['icon'], prefix='fa')
-            ).add_to(m)
-
-        # Add comprehensive legend with audio features
-        legend_html = f"""
-        <div style="position: fixed; bottom: 20px; left: 20px; width: 380px; background-color: rgba(0,0,0,0.9); 
-                    border: 2px solid #333; border-radius: 10px; z-index: 9999; padding: 15px; font-size: 11px; 
-                    box-shadow: 0 8px 25px rgba(0,0,0,0.4); max-height: 60vh; overflow-y: auto; color: white;">
-            <h3 style='margin-top: 0; color: #00ff88; text-align: center;'>🎵 Smart Marg Audio Navigation</h3>
-            
-            <div style='background: linear-gradient(90deg, #28a745, #20c997); padding: 12px; border-radius: 8px; margin: 10px 0;'>
-                <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 10px; text-align: center;'>
-                    <div><strong>Capacity:</strong> {tt_specs['capacity_range']}</div>
-                    <div><strong>Weight:</strong> {tt_specs['gross_weight']/1000:.1f}T</div>
-                    <div><strong>Max Speed:</strong> {tt_specs['max_speed']} kmph</div>
-                    <div><strong>Audio Alerts:</strong> {len(audio_data['instructions'])}</div>
-                </div>
-                <div style='text-align: center; margin-top: 8px; font-size: 9px; background: rgba(255,255,255,0.2); padding: 4px; border-radius: 4px;'>
-                    Click markers for individual audio alerts
-                </div>
-            </div>
-            
-            <div style='margin: 8px 0;'>
-                <div style='font-weight: bold; margin-bottom: 5px; color: #ffc107;'>🎯 Audio-Enabled Features:</div>
-                <div style='font-size: 10px; line-height: 1.4;'>
-                    • Click hazard zones for immediate audio alerts<br>
-                    • Turn markers provide guidance instructions<br>
-                    • POI markers announce relevant warnings<br>
-                    • Vehicle tracking with live audio narration<br>
-                    • Queue audio instructions for replay
-                </div>
-            </div>
-            
-            <div style='margin: 8px 0;'>
-                <div style='font-weight: bold; margin-bottom: 5px; color: #dc3545;'>🚨 Priority Audio Alerts:</div>
-                <div style='font-size: 10px;'>
-                    🟥 Fuel Stations (EXTREME) - Class 3 cargo risk<br>
-                    🟧 School Zones (CRITICAL) - Children crossing<br>
-                    🟨 Sharp Turns (HIGH) - Rollover prevention<br>
-                    🟦 Blind Spots (HIGH) - Limited visibility
-                </div>
-            </div>
-            
-            <hr style='margin: 8px 0; border: none; border-top: 1px solid #555;'>
-            <div style='text-align: center; font-size: 9px; color: #ccc;'>
-                Interactive Audio Navigation System<br>
-                {route_report['route_overview']['complexity_rating']} Route Complexity
-            </div>
-        </div>
-        """
-        
-        m.get_root().html.add_child(folium.Element(legend_html))
-        
-        # Add JavaScript for audio integration
-        audio_js_integration = f"""
-        <script>
-            // Audio navigation integration with parent window
-            window.audioEnabled = true;
-            window.ttSpecs = {json.dumps(tt_specs)};
-            window.audioInstructions = {json.dumps(audio_data['instructions'])};
-            
-            // Communication with parent window for audio features
-            function notifyParent(action, data) {{
-                if (window.parent && window.parent.handleMapAudio) {{
-                    window.parent.handleMapAudio(action, data);
-                }}
-            }}
-            
-            // Vehicle position tracking
-            let vehicleMarker = null;
-            let routeCoords = {json.dumps(coords)};
-            
-            function initVehicleTracking() {{
-                if (vehicleMarker) {{
-                    map.removeLayer(vehicleMarker);
-                }}
-                
-                vehicleMarker = L.marker(routeCoords[0], {{
-                    icon: L.divIcon({{
-                        html: '{vehicle_icon_html}',
-                        iconSize: [50, 55],
-                        iconAnchor: [25, 50],
-                        className: 'vehicle-tracking-marker'
-                    }}),
-                    zIndexOffset: 1000
-                }}).addTo(map);
-            }}
-            
-            function updateVehiclePosition(index) {{
-                if (vehicleMarker && index < routeCoords.length) {{
-                    vehicleMarker.setLatLng(routeCoords[index]);
-                    map.setView(routeCoords[index], map.getZoom());
-                }}
-            }}
-            
-            // Initialize when map loads
-            window.addEventListener('load', function() {{
-                setTimeout(initVehicleTracking, 1000);
-                notifyParent('mapLoaded', {{ 
-                    totalInstructions: window.audioInstructions.length,
-                    routeComplexity: '{route_report['route_overview']['complexity_rating']}'
-                }});
-            }});
-            
-            // Expose functions to parent window
-            window.initVehicleTracking = initVehicleTracking;
-            window.updateVehiclePosition = updateVehiclePosition;
-        </script>
-        """
-        
-        m.get_root().html.add_child(folium.Element(audio_js_integration))
-        
-        return m
-        
-    except Exception as e:
-        print(f"Error creating audio-enabled map: {e}")
-        return folium.Map(location=source, zoom_start=12)
-
-def generate_hazard_audio_message(hazard, tt_specs):
-    """Generate specific audio message for a hazard"""
-    risk_factors = hazard.get('risk_factors', [])
-    risk_level = hazard.get('risk_level', 'Medium')
-    
-    if any('fuel' in str(factor).lower() for factor in risk_factors):
-        return f"EXTREME HAZARD ALERT. Fuel station detected. Petroleum tanker warning. Your {tt_specs['avg_capacity_liters']} liter Class 3 flammable cargo requires immediate speed reduction to 15 kilometers per hour. No smoking or ignition sources permitted."
-    
-    elif any('school' in str(factor).lower() for factor in risk_factors):
-        return f"CRITICAL ALERT. School zone detected. Children crossing area. Heavy vehicle with {tt_specs['gross_weight']/1000:.1f} tonne gross weight requires immediate speed reduction to 20 kilometers per hour. Extended braking distance applies."
-    
-    elif any('hospital' in str(factor).lower() for factor in risk_factors):
-        return f"Hospital zone ahead. Emergency vehicle traffic expected. Reduce speed and maintain awareness. Your {tt_specs['gross_weight']/1000:.1f} tonne vehicle requires extended stopping distance."
-    
-    elif risk_level == 'Critical':
-        return f"Critical hazard zone ahead. Risk score {hazard.get('risk_score', 8):.1f} out of 10. Reduce speed immediately and proceed with extreme caution. Tanker vehicle safety protocols apply."
-    
-    else:
-        return f"{risk_level} risk zone detected. Maintain reduced speed and heightened awareness appropriate for {tt_specs['capacity_range']} petroleum tanker."
-
-def generate_turn_audio_message(turn, tt_specs):
-    """Generate specific audio message for a turn"""
-    turn_type = turn.get('turn_type', 'turn')
-    angle = turn.get('turn_angle', 0)
-    speed = turn.get('recommended_speed', 30)
-    direction = turn.get('turn_direction', 'ahead')
-    
-    messages = {
-        'u_turn': f"U-turn maneuver required ahead. Complete stop may be necessary. Maximum safe speed {speed} kilometers per hour. Extreme rollover risk with {tt_specs['avg_capacity_liters']} liters liquid cargo. Check all directions before proceeding.",
-        
-        'hairpin': f"Hairpin curve ahead. {angle:.0f} degree sharp turn. Immediate speed reduction to {speed} kilometers per hour required. Maximum rollover risk zone for tanker vehicle. Liquid surge danger with petroleum cargo.",
-        
-        'sharp_right_angle': f"90 degree intersection ahead. {direction} turn required. Reduce speed to {speed} kilometers per hour. Check for cross traffic. Wide turning radius needed for {tt_specs['capacity_range']} tanker vehicle.",
-        
-        'blind_spot': f"BLIND SPOT TURN ahead. Severely limited visibility conditions. Reduce speed to {speed} kilometers per hour immediately. Proceed with extreme caution. Sound horn if necessary to alert other vehicles.",
-        
-        'sharp_turn': f"Sharp {direction} turn ahead. {angle:.0f} degree curve. Reduce speed to {speed} kilometers per hour. Maintain vehicle stability with {tt_specs['gross_weight']/1000:.1f} tonne gross weight."
-    }
-    
-    return messages.get(turn_type, f"{direction} turn ahead requiring speed reduction to {speed} kilometers per hour for safe navigation.")
-
-def generate_poi_audio_message(poi, tt_specs):
-    """Generate audio message for POI if relevant for truck safety"""
-    poi_type = poi.get('type', '')
-    
-    if poi_type == 'fuel':
-        return f"EXTREME HAZARD. Fuel station {poi['name']}. Petroleum tanker with Class 3 flammable cargo. Reduce speed to 15 kilometers per hour. No smoking. Emergency protocols ready."
-    
-    elif poi_type == 'education':
-        return f"School zone. {poi['name']}. Children crossing area. Reduce speed to 20 kilometers per hour. Heavy vehicle awareness required."
-    
-    elif poi_type == 'health':
-        return f"Hospital zone. {poi['name']}. Emergency vehicle traffic possible. Maintain awareness for ambulances."
-    
-    # Return None for POIs that don't need audio alerts
-    return None
-
-# Save the audio_route_analysis.html template file
-def save_audio_template():
-    """Save the audio route analysis template"""
-    # This would save the HTML template we created earlier
-    # to templates/audio_route_analysis.html
-    pass
-#-------------------------------------------------------------------------------------
 # Session timeout check
 @app.before_request
 def check_session_timeout():
@@ -2786,40 +748,11 @@ def fetch_routes():
         import traceback
         traceback.print_exc()
         return f"Error processing route request: {str(e)}"
-        
-# In your Flask route
-@app.route('/audio_navigation/<html_file>')
-def audio_navigation(html_file):
-    # Modify the map file to include communication bridge
-    map_file_path = f'static/maps/{html_file}'
-    
-    # Add communication script to map file
-    with open(map_file_path, 'r', encoding='utf-8') as f:
-        map_content = f.read()
-    
-    # Check if bridge script already added
-    if 'mapCommunicationBridge' not in map_content:
-        # Insert the communication script before </body>
-        bridge_script = '''<script>
-        // Insert map modification script here
-        </script>'''
-        
-        map_content = map_content.replace('</body>', bridge_script + '</body>')
-        
-        # Write back modified file
-        with open(map_file_path, 'w', encoding='utf-8') as f:
-            f.write(map_content)
-    
-    return render_template('iframe_communication_bridge.html', 
-                         html_file=html_file,
-                         route_report=route_report)
 
-
-# Replace your existing analyze_route function with this enhanced version
 @app.route('/analyze_route', methods=['POST'])
 @login_required
 def analyze_route():
-    """Enhanced route analysis with realistic hazard detection and audio navigation"""
+    """Analyze the selected route with TT specifications"""
     try:
         directions = session.get('directions')
         tt_specs = session.get('tt_specs')
@@ -2839,139 +772,250 @@ def analyze_route():
         total_distance = selected['legs'][0]['distance']['text']
         total_duration = selected['legs'][0]['duration']['text']
 
-        # Enhanced route interpolation based on truck weight
-        points_per_km = 25 if tt_specs["gross_weight"] > 35000 else 20 if tt_specs["gross_weight"] > 25000 else 15
+        # Interpolate route for more precise mapping (adjusted for TT weight)
+        points_per_km = 15 if tt_specs["gross_weight"] > 30000 else 10  # More points for heavier TT
         detailed_coords = interpolate_route_points(coords, points_per_km=points_per_km)
         
-        print(f"Route analysis: {len(coords)} original points, {len(detailed_coords)} detailed points")
-        
-        # Get elevation profile for realistic gradient analysis
-        elevations, gradients = [], []
-        try:
-            elevation_sample = detailed_coords[::max(1, len(detailed_coords)//50)]
-            elevation_result = gmaps.elevation(elevation_sample)
-            elevations = [point['elevation'] for point in elevation_result]
-            
-            for i in range(1, len(elevations)):
-                if i < len(elevation_sample):
-                    distance_m = geodesic(elevation_sample[i-1], elevation_sample[i]).meters
-                    if distance_m > 0:
-                        elevation_diff = elevations[i] - elevations[i-1]
-                        gradient = (elevation_diff / distance_m) * 100
-                        gradients.append(gradient)
-                    else:
-                        gradients.append(0)
-        except Exception as e:
-            print(f"Elevation data unavailable: {e}")
-            elevations = [100] * len(detailed_coords)
-            gradients = [0] * (len(detailed_coords) - 1)
-        
-        # Enhanced POI collection
-        all_pois = get_enhanced_pois_for_audio(detailed_coords)
-        print(f"Collected {len(all_pois)} POIs")
-        
-        # Realistic traffic analysis
-        traffic_data = get_realistic_traffic_data(detailed_coords, gmaps)
-        print(f"Traffic analysis: {len(traffic_data)} data points")
-        
-        # Enhanced hazard zone identification
-        hazard_zones = identify_realistic_poi_hazards(detailed_coords, all_pois, tt_specs)
-        print(f"Identified {len(hazard_zones)} hazard zones")
-        
-        # Precise turn analysis with physics
-        turns = calculate_enhanced_turn_analysis(detailed_coords, tt_specs)
-        print(f"Analyzed {len(turns)} significant turns")
-        
-        # Braking distance calculations
-        braking_points = calculate_braking_distances(detailed_coords, tt_specs, elevations, gradients)
-        print(f"Calculated braking distances for {len(braking_points)} points")
-        
-        # Generate audio navigation data
-        audio_navigation_data = generate_audio_navigation_data(
-            detailed_coords, hazard_zones, turns, braking_points, all_pois, tt_specs
-        )
-        print(f"Generated {len(audio_navigation_data['instructions'])} audio instructions")
-        
-        # Generate comprehensive report
-        route_report = generate_enhanced_route_report(
-            detailed_coords, all_pois, hazard_zones, traffic_data, turns, 
-            braking_points, total_distance, total_duration, tt_specs, elevations, gradients
-        )
+        def get_pois(keyword):
+            pois = []
+            try:
+                # Use detailed coords for more precise POI detection
+                sample_coords = detailed_coords[::20] if len(detailed_coords) > 20 else detailed_coords
+                for lat, lng in sample_coords:
+                    try:
+                        places = gmaps.places_nearby(location=(lat, lng), radius=300, keyword=keyword)
+                        for place in places.get('results', []):
+                            pois.append({
+                                'name': place['name'],
+                                'location': (
+                                    place['geometry']['location']['lat'],
+                                    place['geometry']['location']['lng']
+                                ),
+                                'type': keyword
+                            })
+                    except Exception as e:
+                        print(f"Error getting places for {keyword}: {e}")
+                        continue
+            except Exception as e:
+                print(f"Error in get_pois for {keyword}: {e}")
+            return pois
 
-        # Create enhanced audio-enabled visualization map
-        m = create_audio_enabled_folium_map(
-            source, destination, detailed_coords, hazard_zones, turns, 
-            all_pois, traffic_data, braking_points, tt_specs, audio_navigation_data
-        )
+        all_pois = []
+        for keyword in ['hospital', 'police', 'fuel']:
+            all_pois.extend(get_pois(keyword))
 
-        # Save enhanced map with audio features
+        # Get traffic data
+        traffic_data = get_traffic_data(detailed_coords)
+        
+        # Identify high-risk zones with TT specifications
+        risk_zones = identify_high_risk_zones(detailed_coords, all_pois, tt_specs)
+        
+        # Generate detailed report with TT specs
+        route_report = generate_route_report(detailed_coords, all_pois, risk_zones, 
+                                           traffic_data, total_distance, total_duration, tt_specs)
+
+        # Create enhanced map with TT-specific visualization
+        m = folium.Map(location=source, zoom_start=13)
+        
+        # Add start and end markers
+        folium.Marker(source, popup='Start', 
+                     icon=folium.Icon(color='green', icon='flag', prefix='fa')).add_to(m)
+        folium.Marker(destination, popup='End', 
+                     icon=folium.Icon(color='black', icon='flag-checkered', prefix='fa')).add_to(m)
+        
+        # Add main route with TT-specific speed indicators
+        for i, (lat, lng) in enumerate(detailed_coords):
+            if i > 0 and i < len(detailed_coords) - 1 and i % 50 == 0:
+                try:
+                    # Calculate turn angle for speed recommendation
+                    prev_coord = detailed_coords[i-1]
+                    next_coord = detailed_coords[i+1]
+                    
+                    prev_bearing = calculate_bearing(prev_coord[0], prev_coord[1], lat, lng)
+                    next_bearing = calculate_bearing(lat, lng, next_coord[0], next_coord[1])
+                    turn_angle = calculate_turn_angle(prev_bearing, next_bearing)
+                    
+                    recommended_speed = get_recommended_speed(turn_angle, tt_specs)
+                    
+                    # Add truck tanker icon with speed popup
+                    truck_html = f"""
+                    <div style='text-align: center; font-family: Arial;'>
+                        <div style='font-size: 20px;'>🚛</div>
+                        <div style='background-color: {"red" if recommended_speed < 20 else "orange" if recommended_speed < 35 else "green"}; 
+                                    color: white; padding: 2px 5px; border-radius: 3px; font-weight: bold; font-size: 11px;'>
+                            {recommended_speed} km/h
+                        </div>
+                        <div style='font-size: 9px; margin-top: 2px;'>
+                            TT: {tt_specs['capacity_range']}<br>
+                            Weight: {tt_specs['gross_weight']/1000:.1f}T<br>
+                            Turn: {turn_angle:.1f}°
+                        </div>
+                    </div>
+                    """
+                    
+                    folium.Marker(
+                        location=(lat, lng),
+                        popup=truck_html,
+                        icon=folium.DivIcon(html=truck_html, icon_size=(70, 70), icon_anchor=(35, 35))
+                    ).add_to(m)
+                except Exception as e:
+                    print(f"Error adding truck marker: {e}")
+                    continue
+
+        # Add route polyline with TT-appropriate color
+        route_color = 'red' if tt_specs["gross_weight"] > 35000 else 'orange' if tt_specs["gross_weight"] > 25000 else 'blue'
+        folium.PolyLine(detailed_coords, color=route_color, weight=4, opacity=0.8).add_to(m)
+
+        # Add POIs with enhanced icons
+        marker_styles = {
+            'hospital': {'color': 'red', 'icon': 'plus'},
+            'police': {'color': 'blue', 'icon': 'shield'},
+            'fuel': {'color': 'orange', 'icon': 'gas-pump'}
+        }
+
+        for poi in all_pois:
+            try:
+                props = marker_styles.get(poi['type'], {'color': 'gray', 'icon': 'info-circle'})
+                icon = folium.Icon(color=props['color'], icon=props['icon'], prefix='fa')
+                folium.Marker(
+                    location=poi['location'],
+                    popup=f"{poi['type'].capitalize()}: {poi['name']}",
+                    icon=icon
+                ).add_to(m)
+            except Exception as e:
+                print(f"Error adding POI marker: {e}")
+                continue
+
+        # Add high-risk zones with TT-specific risk visualization
+        for zone in risk_zones:
+            try:
+                color = 'darkred' if zone['risk_level'] == 'Critical' else 'red' if zone['risk_level'] == 'High' else 'orange'
+                risk_popup = f"""
+                <div style='font-family: Arial; max-width: 250px;'>
+                    <h4 style='color: {color}; margin: 5px 0;'>⚠️ {zone['risk_level']} Risk Zone</h4>
+                    <p><strong>Risk Score:</strong> {zone['risk_score']:.1f}/10</p>
+                    <p><strong>TT Impact:</strong> {zone['tt_impact']}x multiplier</p>
+                    <p><strong>TT Type:</strong> {tt_specs['capacity_range']} ({tt_specs['gross_weight']/1000:.1f}T)</p>
+                    <p><strong>Risk Factors:</strong><br>{'<br>'.join(zone['risk_factors'])}</p>
+                    <p style='color: red; font-weight: bold;'>Recommended: Reduce speed by 50%</p>
+                </div>
+                """
+                
+                radius = 20 if zone['risk_level'] == 'Critical' else 15 if zone['risk_level'] == 'High' else 10
+                folium.CircleMarker(
+                    location=zone['location'],
+                    radius=radius,
+                    popup=risk_popup,
+                    color=color,
+                    fillColor=color,
+                    fillOpacity=0.4,
+                    weight=3
+                ).add_to(m)
+            except Exception as e:
+                print(f"Error adding risk zone: {e}")
+                continue
+
+        # Add traffic indicators with TT-specific impact
+        for traffic in traffic_data:
+            try:
+                color = {'light': 'green', 'moderate': 'yellow', 'heavy': 'red'}[traffic['traffic_level']]
+                tt_impact = "High impact" if tt_specs["gross_weight"] > 30000 and traffic['traffic_level'] == 'heavy' else "Moderate impact"
+                folium.CircleMarker(
+                    location=traffic['location'],
+                    radius=6,
+                    popup=f"Traffic: {traffic['traffic_level'].title()}<br>Delay Factor: {traffic['delay_factor']:.1f}x<br>TT Impact: {tt_impact}",
+                    color=color,
+                    fillColor=color,
+                    fillOpacity=0.6
+                ).add_to(m)
+            except Exception as e:
+                print(f"Error adding traffic indicator: {e}")
+                continue
+
+        # Enhanced legend HTML with TT specifications
+        legend_html = f"""
+        {{% macro html(this, kwargs) %}}
+        <div style="
+            position: fixed;
+            bottom: 50px;
+            left: 50px;
+            width: 320px;
+            background-color: white;
+            border: 2px solid grey;
+            border-radius: 8px;
+            z-index: 9999;
+            padding: 15px;
+            font-size: 11px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        ">
+            <h4 style='margin-top: 0; color: #333;'>🚛 Truck Tanker Navigation Legend</h4>
+            <div style='background: #f0f0f0; padding: 8px; border-radius: 4px; margin: 8px 0;'>
+                <strong>TT Specs: {tt_specs['capacity_range']}</strong><br>
+                Capacity: {tt_specs['avg_capacity_liters']:,}L | Weight: {tt_specs['gross_weight']/1000:.1f}T<br>
+                Max Speed: {tt_specs['max_speed']} km/h | Risk: {tt_specs['risk_multiplier']}x<br>
+                User: {username}
+            </div>
+            <div style='margin: 5px 0;'><i class="fa fa-plus fa-lg" style="color:red"></i> Hospital</div>
+            <div style='margin: 5px 0;'><i class="fa fa-shield fa-lg" style="color:blue"></i> Police</div>
+            <div style='margin: 5px 0;'><i class="fa fa-gas-pump fa-lg" style="color:orange"></i> Fuel Station</div>
+            <div style='margin: 5px 0;'>🚛 <span style='background: green; color: white; padding: 1px 3px;'>35+</span> Safe Speed</div>
+            <div style='margin: 5px 0;'>🚛 <span style='background: orange; color: white; padding: 1px 3px;'>20-35</span> Caution Speed</div>
+            <div style='margin: 5px 0;'>🚛 <span style='background: red; color: white; padding: 1px 3px;'>&lt;20</span> Slow Speed</div>
+            <div style='margin: 5px 0;'>⚫ Critical Risk Zone (TT Sensitive)</div>
+            <div style='margin: 5px 0;'>🔴 High Risk Zone</div>
+            <div style='margin: 5px 0;'>🟡 Medium Risk Zone</div>
+            <div style='margin: 5px 0;'>● Traffic: <span style='color: green;'>Light</span> <span style='color: orange;'>Moderate</span> <span style='color: red;'>Heavy</span></div>
+            <hr style='margin: 8px 0;'>
+            <div style='font-size: 9px; color: #666;'>
+                Axle Load: {tt_specs['axle_load']:.1f}T | Turn Sensitivity: {tt_specs['turn_sensitivity']}x<br>
+                Product: Petroleum ({tt_specs['product_weight']/1000:.1f}T) | Density: 0.9 kg/L
+            </div>
+        </div>
+        {{% endmacro %}}
+        """
+        
+        legend = MacroElement()
+        legend._template = Template(legend_html)
+        m.get_root().add_child(legend)
+
+        # Save map
         unique_map_id = uuid4().hex
-        html_name = f"audio_route_map_{unique_map_id}.html"
+        html_name = f"route_map_{unique_map_id}.html"
         m.save(f"templates/{html_name}")
 
-        # Store comprehensive data in session
+        # Store report in session for detailed view
         session['route_report'] = route_report
-        session['hazard_zones'] = hazard_zones
-        session['turns'] = turns
-        session['braking_points'] = braking_points
-        session['audio_navigation_data'] = audio_navigation_data
         session.modified = True
 
-        # Return enhanced analysis page with audio features
-        return render_template("audio_route_analysis.html",
-                               mode="Enhanced Audio TT Navigation",
-                               turns=len(turns),
-                               critical_turns=len([t for t in turns if t.get('severity') == 'critical']),
+        return render_template("route_analysis.html",
+                               mode="TT Navigation",
+                               turns=sum("turn" in s['html_instructions'].lower() for s in steps),
                                poi_count=len(all_pois),
                                html_file=html_name,
                                route_report=route_report,
-                               risk_zones=len(hazard_zones),
-                               high_risk_zones=len([z for z in hazard_zones if z['risk_level'] in ['Critical', 'High']]),
-                               critical_hazards=len([z for z in hazard_zones if z['risk_level'] == 'Critical']),
-                               max_braking_distance=max([b.get('total_distance', 45) for b in braking_points]) if braking_points else 45,
+                               risk_zones=len(risk_zones),
+                               high_risk_zones=len([z for z in risk_zones if z['risk_level'] in ['Critical', 'High']]),
                                tt_specs=tt_specs,
-                               username=username,
-                               audio_features_enabled=True,
-                               audio_instructions_count=len(audio_navigation_data['instructions']),
-                               complexity_rating=route_report['route_overview']['complexity_rating'])
+                               username=username)
 
     except Exception as e:
-        print(f"Error in enhanced analyze_route: {e}")
+        print(f"Error in analyze_route: {e}")
         import traceback
         traceback.print_exc()
-        return f"Error analyzing route: {str(e)}. Please try again or contact support."
+        return f"Error analyzing route: {str(e)}. Please try again."
 
-
-# Updated detailed report function
 @app.route('/detailed_report')
 @login_required
 def detailed_report():
-    """Show comprehensive route analysis report"""
+    """Show detailed route analysis report with TT specifications"""
     try:
         report = session.get('route_report')
         tt_specs = session.get('tt_specs')
-        hazard_zones = session.get('hazard_zones', [])
-        turns = session.get('turns', [])
-        braking_points = session.get('braking_points', [])
         username = session.get('username', 'User')
-        
         if not report or not tt_specs:
             return "No route analysis data found. Please analyze a route first."
         
-        # Prepare additional analysis data
-        analysis_data = {
-            'critical_hazards': [h for h in hazard_zones if h.get('risk_level') == 'Critical'],
-            'critical_turns': [t for t in turns if t.get('severity') == 'critical'],
-            'extreme_braking_zones': [b for b in braking_points if b.get('total_distance', 0) > 70],
-            'fuel_station_hazards': [h for h in hazard_zones if any('fuel' in str(f).lower() for f in h.get('risk_factors', []))],
-            'school_zone_hazards': [h for h in hazard_zones if any('school' in str(f).lower() for f in h.get('risk_factors', []))]
-        }
-        
-        return render_template("enhanced_detailed_report.html", 
-                             report=report, 
-                             tt_specs=tt_specs,
-                             analysis_data=analysis_data,
-                             username=username)
+        return render_template("detailed_report.html", report=report, tt_specs=tt_specs, username=username)
         
     except Exception as e:
         print(f"Error in detailed_report: {e}")
@@ -3163,15 +1207,3 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
-
-
-
-
-
-
-
-
-
-
-
-
