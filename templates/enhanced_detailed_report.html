@@ -3,934 +3,654 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detailed Route Analysis Report - IndianOil Smart Marg</title>
+    <title>🚛 Enhanced Route Analysis - Heavy Vehicle Navigation</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f8f9fa;
-            line-height: 1.6;
-            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        
-        .report-container {
-            max-width: 1200px;
-            margin: 20px auto;
+
+        .container {
+            max-width: 1400px;
+            width: 100%;
             background: white;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            border-radius: 12px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             overflow: hidden;
+            margin: 0 auto;
         }
-        
-        .report-header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
             color: white;
-            padding: 30px;
+            padding: 25px 30px;
             text-align: center;
         }
-        
-        .report-header h1 {
-            font-size: 2.5em;
+
+        .header h1 {
+            font-size: 2.2em;
             margin-bottom: 10px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-        
-        .report-meta {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(255,255,255,0.2);
+            justify-content: center;
+            gap: 15px;
         }
-        
-        .report-timestamp {
-            background: rgba(255,255,255,0.2);
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.9em;
-        }
-        
-        .user-badge {
-            background: rgba(255,255,255,0.2);
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.9em;
-        }
-        
-        .section {
-            padding: 30px;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .section:last-child {
-            border-bottom: none;
-        }
-        
-        .section-title {
-            font-size: 1.8em;
-            margin-bottom: 25px;
-            color: #2c3e50;
-            border-bottom: 3px solid #3498db;
-            padding-bottom: 10px;
-        }
-        
-        .overview-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .overview-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        
-        .overview-card h4 {
-            font-size: 0.9em;
-            margin-bottom: 10px;
+
+        .header p {
+            font-size: 1.1em;
             opacity: 0.9;
+            margin: 0;
         }
-        
-        .overview-card .value {
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .map-section {
+            position: relative;
+            background: #f8f9fa;
+            width: 100%;
+            height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .map-container {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 0;
+        }
+
+        .map-overlay {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.95);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 200px;
+            z-index: 1000;
+        }
+
+        .speed-indicator {
+            text-align: center;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .speed-gauge {
             font-size: 2em;
             font-weight: bold;
-            margin-bottom: 5px;
+            color: #e74c3c;
         }
-        
-        .specs-table {
-            width: 100%;
-            border-collapse: collapse;
+
+        .sidebar {
+            background: #f8f9fa;
+            padding: 30px;
+            border-top: 3px solid #e9ecef;
+            overflow-y: visible;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            align-items: start;
+        }
+
+        .info-card {
             background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .specs-table th {
-            background: #34495e;
-            color: white;
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-        }
-        
-        .specs-table td {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .specs-table tr:nth-child(even) td {
-            background: #f8f9fa;
-        }
-        
-        .specs-table tr:hover td {
-            background: #e8f4f8;
-        }
-        
-        .hazard-list {
-            max-height: 400px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-        }
-        
-        .hazard-item {
+            border-radius: 10px;
             padding: 20px;
-            border-bottom: 1px solid #eee;
-            transition: background-color 0.3s ease;
-        }
-        
-        .hazard-item:hover {
-            background: #f8f9fa;
-        }
-        
-        .hazard-item:last-child {
-            border-bottom: none;
-        }
-        
-        .hazard-header {
+            margin-bottom: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid #3498db;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
+            flex-direction: column;
+            height: fit-content;
         }
-        
-        .hazard-level {
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.8em;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-        
-        .hazard-critical {
-            background: #ff4757;
-            color: white;
-        }
-        
-        .hazard-high {
-            background: #ff6348;
-            color: white;
-        }
-        
-        .hazard-medium {
-            background: #ffa502;
-            color: white;
-        }
-        
-        .risk-score {
+
+        .info-card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
             font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 10px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+            align-items: stretch;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-value {
+            font-size: 1.4em;
             font-weight: bold;
             color: #2c3e50;
+            display: block;
+            text-align: center;
         }
-        
-        .risk-factors {
-            margin: 10px 0;
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 4px;
+            text-align: center;
         }
-        
-        .risk-factors ul {
-            list-style: none;
-            padding: 0;
-        }
-        
-        .risk-factors li {
-            background: #fff3cd;
-            margin: 5px 0;
+
+        .risk-indicator {
             padding: 8px 12px;
-            border-left: 4px solid #ffc107;
-            border-radius: 4px;
-        }
-        
-        .recommendations {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 15px;
-        }
-        
-        .recommendations h5 {
-            color: #155724;
-            margin-bottom: 10px;
-        }
-        
-        .recommendations ul {
-            list-style: none;
-            padding: 0;
-        }
-        
-        .recommendations li {
-            background: white;
-            margin: 5px 0;
-            padding: 8px 12px;
-            border-left: 4px solid #28a745;
-            border-radius: 4px;
-        }
-        
-        .turn-analysis {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-        }
-        
-        .turn-card {
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .turn-severity {
-            display: inline-block;
-            padding: 5px 15px;
             border-radius: 20px;
-            font-size: 0.8em;
+            font-size: 0.9em;
             font-weight: bold;
-            text-transform: uppercase;
-            margin-bottom: 15px;
+            text-align: center;
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        
-        .turn-critical {
-            background: #ff4757;
+
+        .risk-high {
+            background: #ff6b6b;
             color: white;
         }
-        
-        .turn-high {
-            background: #ff6348;
+
+        .risk-medium {
+            background: #ffa726;
             color: white;
         }
-        
-        .turn-moderate {
-            background: #ffa502;
+
+        .risk-low {
+            background: #66bb6a;
             color: white;
         }
-        
-        .physics-data {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
+
+        .safety-recommendations {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
         }
-        
-        .physics-data h6 {
+
+        .safety-recommendations li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
             color: #495057;
-            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
         }
-        
-        .physics-grid {
+
+        .safety-recommendations li:before {
+            content: "⚠️";
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            align-items: center;
+            justify-content: center;
+            grid-column: 1 / -1;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .traffic-status {
+            display: flex;
+            justify-content: space-between;
+            align-items: stretch;
+            margin: 10px 0;
+            gap: 10px;
+        }
+
+        .traffic-item {
+            text-align: center;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        .traffic-circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin: 0 auto 5px;
+        }
+
+        .traffic-light { background: #27ae60; }
+        .traffic-moderate { background: #f39c12; }
+        .traffic-heavy { background: #e74c3c; }
+
+        .truck-info {
+            background: linear-gradient(135deg, #34495e, #2c3e50);
+            color: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 0;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: fit-content;
+        }
+
+        .truck-specs {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .spec-item {
+            background: rgba(255,255,255,0.1);
+            padding: 8px;
+            border-radius: 5px;
             font-size: 0.9em;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
-        
-        .safety-section {
-            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-            border: 1px solid #ffd32a;
-            border-radius: 12px;
-            padding: 25px;
+
+        .progress-bar {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 8px;
+            overflow: hidden;
+            margin: 5px 0;
+            width: 100%;
         }
-        
-        .safety-recommendations {
-            list-style: none;
-            padding: 0;
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
         }
-        
-        .safety-recommendations li {
-            background: white;
-            margin: 10px 0;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #ffc107;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        
-        .safety-recommendations li:before {
-            content: "⚠️";
-            margin-right: 10px;
-        }
-        
-        .emergency-protocols {
-            background: linear-gradient(135deg, #ff7675 0%, #fd79a8 100%);
-            color: white;
-            border-radius: 12px;
-            padding: 25px;
-            margin-top: 20px;
-        }
-        
-        .emergency-protocols h4 {
-            margin-bottom: 15px;
-            font-size: 1.3em;
-        }
-        
-        .protocol-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }
-        
-        .protocol-item {
-            background: rgba(255,255,255,0.2);
-            padding: 15px;
-            border-radius: 8px;
-        }
-        
-        .protocol-item h6 {
-            margin-bottom: 8px;
-            font-size: 0.9em;
-        }
-        
-        .print-button {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 15px;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            z-index: 1000;
-        }
-        
-        .print-button:hover {
-            background: #2980b9;
-            transform: scale(1.1);
-        }
-        
-        .back-button {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            background: #95a5a6;
-            color: white;
-            text-decoration: none;
-            padding: 10px 20px;
-            border-radius: 25px;
-            font-weight: 600;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            z-index: 1000;
-        }
-        
-        .back-button:hover {
-            background: #7f8c8d;
-            transform: translateY(-2px);
-        }
-        
-        @media print {
-            .print-button,
-            .back-button {
-                display: none;
-            }
-            
-            .report-container {
-                box-shadow: none;
-                margin: 0;
-            }
-            
-            .section {
-                page-break-inside: avoid;
-            }
-        }
-        
+
+        .progress-success { background: #27ae60; }
+        .progress-warning { background: #f39c12; }
+        .progress-danger { background: #e74c3c; }
+
         @media (max-width: 768px) {
-            .overview-grid {
+            .sidebar {
                 grid-template-columns: 1fr;
+                padding: 20px;
             }
             
-            .turn-analysis {
-                grid-template-columns: 1fr;
+            .map-section {
+                height: 50vh;
             }
             
-            .protocol-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .report-meta {
+            .action-buttons {
                 flex-direction: column;
-                gap: 10px;
+                align-items: stretch;
             }
             
-            .physics-grid {
+            .stat-grid {
                 grid-template-columns: 1fr;
             }
+            
+            .truck-specs {
+                grid-template-columns: 1fr;
+            }
+            
+            .traffic-status {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border-color: #dc3545;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border-color: #ffc107;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-color: #17a2b8;
+        }
+
+        .route-timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 8px;
+            border-left: 3px solid #3498db;
+        }
+
+        .timeline-icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
-    <button class="print-button" onclick="window.print()">🖨️</button>
-    <a href="/analyze_route" class="back-button">← Back to Analysis</a>
-    
-    <div class="report-container">
-        <!-- Report Header -->
-        <div class="report-header">
-            <h1>Comprehensive Route Analysis Report</h1>
-            <p>Enhanced Truck Tanker Navigation System</p>
-            <div class="report-meta">
-                <div class="report-timestamp">
-                    Generated: {{ report.route_statistics.analysis_timestamp if report.route_statistics else 'N/A' }}
-                </div>
-                <div class="user-badge">
-                    Analyst: {{ username }}
-                </div>
-            </div>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-truck"></i> Enhanced Route Analysis</h1>
+            <p>Heavy Vehicle Navigation System - {{ route_report.truck_weight }}T Truck Route</p>
         </div>
 
-        <!-- Route Overview Section -->
-        <div class="section">
-            <h2 class="section-title">Route Overview</h2>
-            <div class="overview-grid">
-                <div class="overview-card">
-                    <h4>Total Distance</h4>
-                    <div class="value">{{ report.route_overview.total_distance }}</div>
-                </div>
-                <div class="overview-card">
-                    <h4>Total Duration</h4>
-                    <div class="value">{{ report.route_overview.total_duration }}</div>
-                </div>
-                <div class="overview-card">
-                    <h4>Complexity Rating</h4>
-                    <div class="value">{{ report.route_overview.complexity_rating }}</div>
-                </div>
-                <div class="overview-card">
-                    <h4>Complexity Score</h4>
-                    <div class="value">{{ report.route_overview.complexity_score }}</div>
-                </div>
-                <div class="overview-card">
-                    <h4>Analysis Points</h4>
-                    <div class="value">{{ report.route_overview.route_points }}</div>
-                </div>
-                <div class="overview-card">
-                    <h4>Analysis Density</h4>
-                    <div class="value">{{ report.route_overview.analysis_density }}</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Truck Tanker Specifications -->
-        <div class="section">
-            <h2 class="section-title">Truck Tanker Specifications</h2>
-            <table class="specs-table">
-                <thead>
-                    <tr>
-                        <th>Specification</th>
-                        <th>Value</th>
-                        <th>Impact</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>Capacity Range</strong></td>
-                        <td>{{ report.truck_tanker_specs.capacity_range }}</td>
-                        <td>Determines liquid surge characteristics</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Fuel Capacity</strong></td>
-                        <td>{{ report.truck_tanker_specs.fuel_capacity }}</td>
-                        <td>Class 3 flammable liquid - extreme fire risk</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Product Weight</strong></td>
-                        <td>{{ report.truck_tanker_specs.product_weight }}</td>
-                        <td>Affects braking distance and turn stability</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Tare Weight</strong></td>
-                        <td>{{ report.truck_tanker_specs.tare_weight }}</td>
-                        <td>Empty vehicle weight</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Gross Weight</strong></td>
-                        <td>{{ report.truck_tanker_specs.gross_weight }}</td>
-                        <td>Maximum loaded weight - bridge restrictions</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Axle Load</strong></td>
-                        <td>{{ report.truck_tanker_specs.axle_load }}</td>
-                        <td>Road surface loading - pavement damage risk</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Maximum Speed</strong></td>
-                        <td>{{ report.truck_tanker_specs.max_speed }}</td>
-                        <td>Speed limit for this TT configuration</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Risk Multiplier</strong></td>
-                        <td>{{ report.truck_tanker_specs.risk_multiplier }}</td>
-                        <td>Hazard assessment multiplication factor</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Hazmat Class</strong></td>
-                        <td>{{ report.truck_tanker_specs.hazmat_class }}</td>
-                        <td>UN dangerous goods classification</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Hazard Analysis Section -->
-        <div class="section">
-            <h2 class="section-title">Hazard Zone Analysis</h2>
-            <div class="overview-grid">
-                <div class="overview-card">
-                    <h4>Total Hazard Zones</h4>
-                    <div class="value">{{ report.hazard_analysis.total_hazard_zones }}</div>
-                </div>
-                <div class="overview-card">
-                    <h4>Critical Zones</h4>
-                    <div class="value">{{ report.hazard_analysis.critical_zones }}</div>
-                </div>
-                <div class="overview-card">
-                    <h4>Fuel Station Conflicts</h4>
-                    <div class="value">{{ report.hazard_analysis.fuel_station_conflicts }}</div>
-                </div>
-                <div class="overview-card">
-                    <h4>School Zone Risks</h4>
-                    <div class="value">{{ report.hazard_analysis.school_zone_risks }}</div>
+        <div class="main-content">
+            <div class="map-section">
+                <iframe src="{{ url_for('view_map', filename=html_file) }}" 
+                        class="map-container" 
+                        frameborder="0">
+                </iframe>
+                
+                <div class="map-overlay">
+                    <div class="speed-indicator">
+                        <div class="speed-gauge pulse">≤{{ route_report.max_speed_limit }}</div>
+                        <div style="font-size: 0.9em; color: #666;">MAX SPEED (km/h)</div>
+                    </div>
+                    <div style="font-size: 0.8em; color: #666; text-align: center; margin-top: 10px;">
+                        🚛 {{ route_report.truck_weight }}T Loaded Vehicle
+                    </div>
                 </div>
             </div>
 
-            <!-- Critical Hazards Detail -->
-            {% if analysis_data.critical_hazards %}
-            <h3 style="margin: 30px 0 20px 0; color: #e74c3c;">Critical Hazard Zones</h3>
-            <div class="hazard-list">
-                {% for hazard in analysis_data.critical_hazards[:10] %}
-                <div class="hazard-item">
-                    <div class="hazard-header">
-                        <span class="hazard-level hazard-critical">{{ hazard.risk_level }}</span>
-                        <span class="risk-score">Risk Score: {{ hazard.risk_score }}/10</span>
+            <div class="sidebar">
+                <div class="info-card">
+                    <h3><i class="fas fa-route"></i> Route Overview</h3>
+                    <div class="stat-grid">
+                        <div class="stat-item">
+                            <span class="stat-value">{{ route_report.total_distance }}</span>
+                            <div class="stat-label">Total Distance</div>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">{{ route_report.total_duration }}</span>
+                            <div class="stat-label">Est. Duration</div>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">{{ route_report.route_analysis.total_points }}</span>
+                            <div class="stat-label">Route Points</div>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">{{ "%.1f"|format(route_report.route_analysis.points_per_km) }}</span>
+                            <div class="stat-label">Points/km</div>
+                        </div>
                     </div>
-                    <div class="risk-factors">
-                        <strong>Risk Factors:</strong>
-                        <ul>
-                            {% for factor in hazard.risk_factors[:5] %}
-                            <li>{{ factor }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    {% if hazard.tt_specific_recommendations %}
-                    <div class="recommendations">
-                        <h5>Tanker-Specific Recommendations:</h5>
-                        <ul>
-                            {% for rec in hazard.tt_specific_recommendations[:3] %}
-                            <li>{{ rec }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    {% endif %}
                 </div>
-                {% endfor %}
-            </div>
-            {% endif %}
 
-            <!-- Fuel Station Hazards -->
-            {% if analysis_data.fuel_station_hazards %}
-            <h3 style="margin: 30px 0 20px 0; color: #d63031;">EXTREME HAZARD: Fuel Station Conflicts</h3>
-            <div class="hazard-list">
-                {% for hazard in analysis_data.fuel_station_hazards %}
-                <div class="hazard-item" style="border-left: 5px solid #d63031;">
-                    <div class="hazard-header">
-                        <span class="hazard-level hazard-critical">PETROLEUM CONFLICT</span>
-                        <span class="risk-score">Risk Score: {{ hazard.risk_score }}/10</span>
-                    </div>
-                    <div style="background: #ffe6e6; padding: 15px; border-radius: 8px; margin: 10px 0;">
-                        <strong style="color: #d63031;">CRITICAL WARNING:</strong> Petroleum tanker passing fuel station creates extreme fire/explosion risk.
-                        Emergency protocols must be activated.
-                    </div>
-                    <div class="recommendations">
-                        <h5>Mandatory Safety Protocols:</h5>
-                        <ul>
-                            <li>Reduce speed to 15-20 kmph maximum</li>
-                            <li>No smoking or ignition sources within 100m</li>
-                            <li>Emergency response team on standby</li>
-                            <li>Ground all static electricity</li>
-                            <li>Consider alternate route if possible</li>
-                        </ul>
+                <div class="truck-info">
+                    <h4><i class="fas fa-truck"></i> Vehicle Specifications</h4>
+                    <div class="truck-specs">
+                        <div class="spec-item">
+                            <strong>{{ route_report.truck_weight }}T</strong><br>
+                            <small>Max Weight</small>
+                        </div>
+                        <div class="spec-item">
+                            <strong>{{ route_report.max_speed_limit }} km/h</strong><br>
+                            <small>Speed Limit</small>
+                        </div>
                     </div>
                 </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-        </div>
 
-        <!-- Turn Analysis Section -->
-        <div class="section">
-            <h2 class="section-title">Turn Analysis & Physics</h2>
-            <div class="overview-grid">
-                <div class="overview-card">
-                    <h4>Total Significant Turns</h4>
-                    <div class="value">{{ report.turn_analysis.total_significant_turns }}</div>
-                </div>
-                <div class="overview-card">
-                    <h4>Critical Turns</h4>
-                    <div class="value">{{ report.turn_analysis.critical_turns }}</div>
-                </div>
-                <div class="overview-card">
-                    <h4>Minimum Safe Speed</h4>
-                    <div class="value">{{ report.turn_analysis.minimum_safe_speed }} kmph</div>
-                </div>
-                <div class="overview-card">
-                    <h4>Rollover Risk Turns</h4>
-                    <div class="value">{{ report.turn_analysis.rollover_risk_turns }}</div>
-                </div>
-            </div>
-
-            <!-- Critical Turns Detail -->
-            {% if analysis_data.critical_turns %}
-            <h3 style="margin: 30px 0 20px 0; color: #e74c3c;">Critical Turn Analysis</h3>
-            <div class="turn-analysis">
-                {% for turn in analysis_data.critical_turns[:6] %}
-                <div class="turn-card">
-                    <span class="turn-severity turn-{{ turn.severity }}">{{ turn.severity }} Turn</span>
-                    <h4>Turn Angle: {{ turn.turn_angle }}°</h4>
-                    <p><strong>Radius:</strong> {{ turn.radius }}m</p>
-                    <p><strong>Recommended Speed:</strong> <span style="color: #e74c3c; font-weight: bold;">{{ turn.recommended_speed }} kmph</span></p>
-                    <p><strong>Rollover Speed:</strong> {{ turn.rollover_speed }} kmph</p>
-                    <p><strong>Deceleration Distance:</strong> {{ turn.deceleration_distance }}m</p>
-                    
-                    <div class="physics-data">
-                        <h6>Physics Analysis</h6>
-                        <div class="physics-grid">
-                            <div><strong>Lateral G-Force:</strong> {{ turn.physics_factors.lateral_g_force }}g</div>
-                            <div><strong>Weight Penalty:</strong> {{ "%.1f"|format(turn.physics_factors.weight_penalty * 100) }}%</div>
-                            <div><strong>Slosh Factor:</strong> {{ "%.1f"|format(turn.physics_factors.slosh_factor * 100) }}%</div>
-                            <div><strong>Safety Margin:</strong> {{ "%.1f"|format(turn.physics_factors.safety_margin * 100) }}%</div>
-                            <div><strong>CG Height:</strong> {{ turn.physics_factors.cg_height }}m</div>
+                <div class="info-card">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Risk Assessment</h3>
+                    <div class="stat-grid">
+                        <div class="stat-item">
+                            <span class="stat-value" style="color: #e74c3c;">{{ route_report.route_analysis.high_risk_zones }}</span>
+                            <div class="stat-label">High Risk Zones</div>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" style="color: #f39c12;">{{ route_report.route_analysis.medium_risk_zones }}</span>
+                            <div class="stat-label">Medium Risk Zones</div>
                         </div>
                     </div>
                     
-                    <div style="background: #fff3cd; padding: 10px; border-radius: 5px; margin-top: 10px;">
-                        <strong>Warning:</strong> {{ turn.warning }}
+                    {% if route_report.route_analysis.high_risk_zones > 0 %}
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <strong>High Risk Alert:</strong> {{ route_report.route_analysis.high_risk_zones }} zones require extreme caution!
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="info-card">
+                    <h3><i class="fas fa-volume-up"></i> Audio Instructions</h3>
+                    {% if audio_instructions %}
+                        <ul class="list-group" style="list-style: none; padding: 0;">
+                            {% for instruction in audio_instructions %}
+                                <li class="list-group-item" style="display: flex; flex-direction: column; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid #eee;">
+                                    <p class="mb-2" style="font-size: 0.9em; margin: 0 0 5px 0;">{{ instruction.text }}</p>
+                                    <audio controls src="{{ instruction.audio_url }}" style="width: 100%;"></audio>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-center" style="font-size: 0.9em; color: #6c757d;">No high-risk audio instructions generated for this route.</p>
+                    {% endif %}
+                </div>
+                <div class="info-card">
+                    <h3><i class="fas fa-traffic-light"></i> Traffic Analysis</h3>
+                    <div class="traffic-status">
+                        <div class="traffic-item">
+                            <div class="traffic-circle traffic-light"></div>
+                            <div style="font-size: 0.8em;">Light</div>
+                            <div style="font-weight: bold;">{{ route_report.traffic_analysis.light_traffic_segments }}</div>
+                        </div>
+                        <div class="traffic-item">
+                            <div class="traffic-circle traffic-moderate"></div>
+                            <div style="font-size: 0.8em;">Moderate</div>
+                            <div style="font-weight: bold;">{{ route_report.traffic_analysis.moderate_traffic_segments }}</div>
+                        </div>
+                        <div class="traffic-item">
+                            <div class="traffic-circle traffic-heavy"></div>
+                            <div style="font-size: 0.8em;">Heavy</div>
+                            <div style="font-weight: bold;">{{ route_report.traffic_analysis.heavy_traffic_segments }}</div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <span style="font-size: 0.9em;">Avg Delay Factor:</span>
+                            <span style="font-weight: bold;">{{ "%.1f"|format(route_report.traffic_analysis.average_delay_factor) }}x</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill {% if route_report.traffic_analysis.average_delay_factor < 1.2 %}progress-success{% elif route_report.traffic_analysis.average_delay_factor < 1.5 %}progress-warning{% else %}progress-danger{% endif %}" 
+                                 style="width: {{ ((route_report.traffic_analysis.average_delay_factor - 1) * 50)|int }}%;"></div>
+                        </div>
                     </div>
                 </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-        </div>
 
-        <!-- Braking Analysis Section -->
-        <div class="section">
-            <h2 class="section-title">Braking Distance Analysis</h2>
-            <div class="overview-grid">
-                <div class="overview-card">
-                    <h4>Extreme Braking Zones</h4>
-                    <div class="value">{{ report.braking_analysis.extreme_braking_zones }}</div>
-                </div>
-                <div class="overview-card">
-                    <h4>Max Braking Distance</h4>
-                    <div class="value">{{ report.braking_analysis.max_braking_distance }}m</div>
-                </div>
-                <div class="overview-card">
-                    <h4>Gradient Affected Zones</h4>
-                    <div class="value">{{ report.braking_analysis.gradient_affected_zones }}</div>
-                </div>
-                <div class="overview-card">
-                    <h4>Weight Penalty Zones</h4>
-                    <div class="value">{{ report.braking_analysis.weight_penalty_zones }}</div>
-                </div>
-            </div>
-
-            <!-- Extreme Braking Zones -->
-            {% if analysis_data.extreme_braking_zones %}
-            <h3 style="margin: 30px 0 20px 0; color: #f39c12;">Extended Braking Distance Zones</h3>
-            <table class="specs-table">
-                <thead>
-                    <tr>
-                        <th>Speed (kmph)</th>
-                        <th>Total Distance (m)</th>
-                        <th>Reaction Distance (m)</th>
-                        <th>Physics Distance (m)</th>
-                        <th>Weight Factor</th>
-                        <th>Gradient (%)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for braking in analysis_data.extreme_braking_zones[:10] %}
-                    <tr>
-                        <td>{{ braking.speed_kmph }}</td>
-                        <td style="color: #e74c3c; font-weight: bold;">{{ braking.total_distance }}</td>
-                        <td>{{ braking.reaction_distance }}</td>
-                        <td>{{ braking.physics_distance }}</td>
-                        <td>{{ braking.weight_factor }}x</td>
-                        <td>{{ braking.gradient }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% endif %}
-        </div>
-
-        <!-- Traffic Analysis Section -->
-        <div class="section">
-            <h2 class="section-title">Traffic Impact Analysis</h2>
-            <div class="overview-grid">
-                <div class="overview-card">
-                    <h4>Heavy Traffic Segments</h4>
-                    <div class="value">{{ report.traffic_analysis.heavy_traffic_segments }}</div>
-                </div>
-                <div class="overview-card">
-                    <h4>Average Delay Factor</h4>
-                    <div class="value">{{ report.traffic_analysis.average_delay_factor }}x</div>
-                </div>
-                <div class="overview-card">
-                    <h4>Urban Zones</h4>
-                    <div class="value">{{ report.traffic_analysis.urban_zones }}</div>
-                </div>
-                <div class="overview-card">
-                    <h4>Peak Hour Affected</h4>
-                    <div class="value">{{ report.traffic_analysis.peak_hour_affected }}</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Route Efficiency Section -->
-        <div class="section">
-            <h2 class="section-title">Route Efficiency Metrics</h2>
-            <table class="specs-table">
-                <tbody>
-                    <tr>
-                        <td><strong>Estimated Fuel Consumption</strong></td>
-                        <td>{{ report.route_efficiency.estimated_fuel_consumption }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Fuel Efficiency</strong></td>
-                        <td>{{ report.route_efficiency.fuel_efficiency }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Time Penalties</strong></td>
-                        <td>{{ report.route_efficiency.time_penalties }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Gradient Impact</strong></td>
-                        <td>{{ report.route_efficiency.gradient_impact }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Elevation Range</strong></td>
-                        <td>{{ report.route_efficiency.elevation_range }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Safety Recommendations Section -->
-        <div class="section">
-            <div class="safety-section">
-                <h2 class="section-title" style="border-color: #ffc107; color: #856404;">Critical Safety Recommendations</h2>
-                <ul class="safety-recommendations">
-                    {% for recommendation in report.safety_recommendations %}
-                    <li>{{ recommendation }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
-
-        <!-- Emergency Protocols Section -->
-        <div class="section">
-            <div class="emergency-protocols">
-                <h4>Emergency Response Protocols</h4>
-                <div class="protocol-grid">
-                    <div class="protocol-item">
-                        <h6>Hazmat Classification</h6>
-                        <p>{{ report.emergency_protocols.hazmat_class }}</p>
-                    </div>
-                    <div class="protocol-item">
-                        <h6>Cargo Volume</h6>
-                        <p>{{ report.emergency_protocols.cargo_volume }}</p>
-                    </div>
-                    <div class="protocol-item">
-                        <h6>Emergency Response Guide</h6>
-                        <p>{{ report.emergency_protocols.emergency_response_guide }}</p>
-                    </div>
-                    <div class="protocol-item">
-                        <h6>Isolation Distance</h6>
-                        <p>{{ report.emergency_protocols.isolation_distance }}</p>
-                    </div>
-                    <div class="protocol-item">
-                        <h6>Evacuation Radius</h6>
-                        <p>{{ report.emergency_protocols.evacuation_radius }}</p>
+                <div class="info-card">
+                    <h3><i class="fas fa-map-marked-alt"></i> Infrastructure</h3>
+                    <div class="stat-grid">
+                        <div class="stat-item">
+                            <span class="stat-value" style="color: #e74c3c;">{{ route_report.route_analysis.hospitals_along_route }}</span>
+                            <div class="stat-label">Hospitals</div>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" style="color: #3498db;">{{ route_report.route_analysis.police_stations }}</span>
+                            <div class="stat-label">Police</div>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" style="color: #f39c12;">{{ route_report.route_analysis.fuel_stations }}</span>
+                            <div class="stat-label">Fuel Stations</div>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">{{ poi_count }}</span>
+                            <div class="stat-label">Total POIs</div>
+                        </div>
                     </div>
                 </div>
-                
-                <h5 style="margin-top: 20px; margin-bottom: 15px;">Special Precautions:</h5>
-                <ul style="list-style: none; padding: 0;">
-                    {% for precaution in report.emergency_protocols.special_precautions %}
-                    <li style="background: rgba(255,255,255,0.2); margin: 5px 0; padding: 8px 12px; border-radius: 4px;">{{ precaution }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
 
-        <!-- POI Distribution Section -->
-        <div class="section">
-            <h2 class="section-title">Points of Interest Distribution</h2>
-            <div class="overview-grid">
-                <div class="overview-card">
-                    <h4>Total POIs</h4>
-                    <div class="value">{{ report.poi_distribution.total_pois }}</div>
+                <div class="info-card">
+                    <h3><i class="fas fa-shield-alt"></i> Safety Recommendations</h3>
+                    <ul class="safety-recommendations">
+                        {% for recommendation in route_report.safety_recommendations %}
+                        <li>{{ recommendation }}</li>
+                        {% endfor %}
+                    </ul>
                 </div>
-                <div class="overview-card">
-                    <h4>Fuel Stations</h4>
-                    <div class="value">{{ report.poi_distribution.fuel_stations }}</div>
-                </div>
-                <div class="overview-card">
-                    <h4>Hospitals</h4>
-                    <div class="value">{{ report.poi_distribution.hospitals }}</div>
-                </div>
-                <div class="overview-card">
-                    <h4>Schools</h4>
-                    <div class="value">{{ report.poi_distribution.schools }}</div>
-                </div>
-                <div class="overview-card">
-                    <h4>Police Stations</h4>
-                    <div class="value">{{ report.poi_distribution.police_stations }}</div>
-                </div>
-                <div class="overview-card">
-                    <h4>Commercial Areas</h4>
-                    <div class="value">{{ report.poi_distribution.commercial_areas }}</div>
+
+                <div class="action-buttons">
+                    <a href="{{ url_for('detailed_report') }}" class="btn btn-primary">
+                        <i class="fas fa-chart-bar"></i> Detailed Report
+                    </a>
+                    <a href="{{ url_for('download_map', filename=html_file) }}" class="btn btn-success">
+                        <i class="fas fa-download"></i> Download Map
+                    </a>
+                    <a href="{{ url_for('home') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> New Route
+                    </a>
                 </div>
             </div>
-        </div>
-
-        <!-- Route Statistics Section -->
-        <div class="section">
-            <h2 class="section-title">Analysis Statistics</h2>
-            <table class="specs-table">
-                <tbody>
-                    <tr>
-                        <td><strong>Analysis Timestamp</strong></td>
-                        <td>{{ report.route_statistics.analysis_timestamp if report.route_statistics else 'N/A' }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Total Analysis Points</strong></td>
-                        <td>{{ report.route_statistics.total_analysis_points if report.route_statistics else 'N/A' }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Hazard Density</strong></td>
-                        <td>{{ report.route_statistics.hazard_density if report.route_statistics else 'N/A' }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Turn Density</strong></td>
-                        <td>{{ report.route_statistics.turn_density if report.route_statistics else 'N/A' }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Complexity per KM</strong></td>
-                        <td>{{ report.route_statistics.complexity_per_km if report.route_statistics else 'N/A' }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Footer -->
-        <div class="section" style="background: #2c3e50; color: white; text-align: center;">
-            <p>IndianOil Smart Marg - Truck Tanker Navigation System</p>
-            <p>Comprehensive Route Analysis Report | Generated by: {{ username }}</p>
-            <p style="font-size: 0.9em; opacity: 0.8;">This analysis is based on real-time data and advanced physics calculations for petroleum transport safety.</p>
         </div>
     </div>
 
     <script>
-        // Smooth scrolling for any internal links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                document.querySelector(this.getAttribute('href')).scrollIntoView({
-                    behavior: 'smooth'
-                });
-            });
-        });
+        // Auto-refresh traffic data every 5 minutes
+        setInterval(function() {
+            console.log('Traffic data would be refreshed here in production');
+        }, 300000);
 
-        // Auto-expand critical sections
+        // Add loading animation for map
         document.addEventListener('DOMContentLoaded', function() {
-            const criticalSections = document.querySelectorAll('.hazard-critical, .turn-critical');
-            criticalSections.forEach(section => {
-                section.style.animation = 'pulse 2s infinite';
+            const mapFrame = document.querySelector('.map-container');
+            mapFrame.addEventListener('load', function() {
+                console.log('Map loaded successfully');
             });
         });
 
-        // Add pulse animation for critical items
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes pulse {
-                0% { opacity: 1; }
-                50% { opacity: 0.7; }
-                100% { opacity: 1; }
-            }
-        `;
-        document.head.appendChild(style);
+        // Pulse animation for high risk alerts
+        if ({{ route_report.route_analysis.high_risk_zones }} > 0) {
+            setInterval(function() {
+                const alerts = document.querySelectorAll('.alert-danger');
+                alerts.forEach(alert => {
+                    alert.style.backgroundColor = alert.style.backgroundColor === 'rgb(248, 215, 218)' ? '#ffebee' : '#f8d7da';
+                });
+            }, 1000);
+        }
     </script>
 </body>
 </html>
