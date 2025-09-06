@@ -242,30 +242,25 @@ def analyze_route_with_ai(coords, sharp_turns, curves, tt_specs, pois):
         critical_turns = len([t for t in sharp_turns if t.get('severity') == 'critical'])
         high_turns = len([t for t in sharp_turns if t.get('severity') == 'high'])
         
-        prompt = f"""As an expert in heavy vehicle navigation and safety, analyze this truck tanker route:
+        prompt = f"""I am providing you with COMPLETED route analysis data for a truck tanker that has already been analyzed. Do not ask for additional information - analyze what is provided.
 
-VEHICLE SPECIFICATIONS:
-- Type: {tt_specs['capacity_range']} Truck Tanker
-- Gross Weight: {tt_specs['gross_weight']/1000:.1f} tonnes
-- Cargo: Petroleum products ({tt_specs['avg_capacity_liters']:,} liters)
-- Maximum Safe Speed: {tt_specs['max_speed']} km/h
-
-ROUTE HAZARD ANALYSIS:
-- Total route points analyzed: {len(coords)}
-- Sharp turns detected (90°+): {len(sharp_turns)}
+COMPLETED ROUTE ANALYSIS DATA:
+- Vehicle: {tt_specs['capacity_range']} petroleum tanker
+- Gross weight: {tt_specs['gross_weight']/1000:.1f} tonnes  
+- Cargo: {tt_specs['avg_capacity_liters']:,} liters petroleum products
+- Route points analyzed: {len(coords)} GPS coordinates
+- Sharp turns identified: {len(sharp_turns)} turns of 90+ degrees
 - Critical severity turns: {critical_turns}
-- High severity turns: {high_turns}
-- Moderate curves (45-90°): {len(curves)}
-- Emergency facilities nearby: {len(pois)}
+- Moderate curves: {len(curves)} turns of 45-90 degrees
+- Emergency facilities found: {len(pois)} (hospitals, police, fuel stations)
 
-SAFETY ASSESSMENT REQUIRED:
-1. Overall route safety rating (1-10 scale where 10=extremely dangerous)
-2. Top 3 specific safety recommendations for this heavy tanker
-3. Speed management strategy for hazardous sections
-4. Emergency preparedness advice specific to petroleum transport
-5. Driver fatigue considerations for this route complexity
+PROVIDE IMMEDIATE ANALYSIS:
+1. Safety rating (1-10 scale, 10=most dangerous)
+2. Three specific driving recommendations 
+3. Speed limits for hazardous sections
+4. Emergency preparedness notes
 
-Keep response concise, practical, and focused on truck driver safety."""
+Base your analysis ONLY on the data provided above. Do not request additional information."""
 
         response = model.generate_content(prompt)
         return response.text
@@ -273,6 +268,7 @@ Keep response concise, practical, and focused on truck driver safety."""
     except Exception as e:
         print(f"Gemini API error: {e}")
         return generate_fallback_analysis(sharp_turns, curves, tt_specs, pois)
+        
 
 def generate_safety_briefing(tt_specs, weather_condition="clear"):
     """Generate AI-powered safety briefing using Gemini"""
@@ -282,23 +278,22 @@ def generate_safety_briefing(tt_specs, weather_condition="clear"):
     try:
         model = genai.GenerativeModel('gemini-1.5-flash')
         
-        prompt = f"""Generate a comprehensive pre-trip safety briefing for a truck tanker driver:
+        prompt = f"""Generate a pre-trip safety checklist for this specific vehicle. Do not ask for more information.
 
-VEHICLE DETAILS:
-- Tanker Type: {tt_specs['capacity_range']}
-- Cargo: Petroleum products ({tt_specs['avg_capacity_liters']:,} liters)
-- Gross Weight: {tt_specs['gross_weight']/1000:.1f} tonnes
-- Axle Load: {tt_specs['axle_load']:.1f}T per axle
-- Weather Conditions: {weather_condition}
+VEHICLE SPECIFICATIONS PROVIDED:
+- Tanker type: {tt_specs['capacity_range']}
+- Cargo: {tt_specs['avg_capacity_liters']:,} liters petroleum products
+- Gross weight: {tt_specs['gross_weight']/1000:.1f} tonnes
+- Axle load: {tt_specs['axle_load']:.1f}T per axle
+- Max speed: {tt_specs['max_speed']} km/h
 
-BRIEFING REQUIREMENTS:
-1. Critical pre-departure vehicle checks specific to tankers
-2. Speed limits and turning precautions for this weight class
-3. Emergency procedures for petroleum product transport
-4. Communication protocols and regulatory compliance
-5. Load-specific safety considerations
+CREATE CHECKLIST WITH:
+1. 5 critical pre-departure checks
+2. 3 speed/driving rules
+3. 2 emergency procedures
+4. Regulatory requirements
 
-Format as a numbered checklist. Keep under 250 words. Focus on actionable safety items."""
+Format as numbered list. Keep concise and actionable."""
 
         response = model.generate_content(prompt)
         return response.text
@@ -306,6 +301,7 @@ Format as a numbered checklist. Keep under 250 words. Focus on actionable safety
     except Exception as e:
         print(f"Gemini briefing error: {e}")
         return generate_fallback_briefing(tt_specs, weather_condition)
+
 
 # Add fallback functions for when AI is unavailable
 def generate_fallback_analysis(sharp_turns, curves, tt_specs, pois):
@@ -389,26 +385,23 @@ def ai_chat_gemini(user_question, tt_specs):
     try:
         model = genai.GenerativeModel('gemini-1.5-flash')
         
-        context = f"""You are assisting a truck tanker driver operating a {tt_specs.get('capacity_range', 'Unknown')} vehicle weighing {tt_specs.get('gross_weight', 0)/1000:.1f}T carrying petroleum products.
+        context = f"""You are an expert assistant for truck tanker safety. The driver is operating:
+- Vehicle: {tt_specs.get('capacity_range', 'Unknown')} tanker
+- Weight: {tt_specs.get('gross_weight', 0)/1000:.1f}T
+- Cargo: Petroleum products
 
-Provide practical, safety-focused answers about:
-- Route safety and navigation
-- Vehicle operation procedures  
-- Emergency protocols
-- Regulatory compliance
-- Best practices for tanker operations
+Answer their specific question directly. Do not ask for more details unless absolutely necessary for safety.
 
-Keep answers concise and actionable."""
+Driver question: {user_question}
 
-        full_prompt = f"{context}\n\nDriver question: {user_question}"
-        
-        response = model.generate_content(full_prompt)
+Provide a direct, practical answer focused on safety and compliance."""
+
+        response = model.generate_content(context)
         return response.text
         
     except Exception as e:
         print(f"Gemini chat error: {e}")
-        return "AI assistant temporarily unavailable. For immediate safety concerns, contact your dispatcher or emergency services."
-
+        return "AI assistant temporarily unavailable. For immediate safety concerns, contact your dispatcher."
 
 
 
@@ -1924,6 +1917,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
