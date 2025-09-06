@@ -394,14 +394,14 @@
             <div class="user-info">
                 <i class="fas fa-user"></i> {{ username }} | 
                 <i class="fas fa-truck"></i> {{ tt_specs.capacity_range }} TT |
-                <i class="fas fa-clock"></i> Generated: {{ moment().format('YYYY-MM-DD HH:mm:ss') }}
+                <i class="fas fa-clock"></i> Generated: <span id="current-timestamp"></span>
             </div>
         </div>
 
         <div class="content">
             <div class="print-header">
                 <h2>IndianOil Corporation Limited - Route Analysis Report</h2>
-                <p>Generated for: {{ username }} | Date: {{ moment().format('YYYY-MM-DD') }}</p>
+                <p>Generated for: {{ username }} | Date: <span id="print-date"></span></p>
             </div>
 
             <!-- Executive Summary -->
@@ -417,7 +417,7 @@
                         <div>Estimated Duration</div>
                     </div>
                     <div>
-                        <div style="font-size: 1.8em; font-weight: bold;">{{ report.route_analysis.high_risk_zones + report.route_analysis.critical_risk_zones }}</div>
+                        <div style="font-size: 1.8em; font-weight: bold;">{{ (report.route_analysis.high_risk_zones|default(0)) + (report.route_analysis.critical_risk_zones|default(0)) }}</div>
                         <div>High Risk Zones</div>
                     </div>
                 </div>
@@ -431,35 +431,54 @@
                 <div class="tt-specs-grid">
                     <div class="spec-item">
                         <div class="spec-label">Tank Capacity</div>
-                        <div class="spec-value">{{ report.tt_specifications.fuel_capacity }}</div>
+                        <div class="spec-value">{{ report.tt_specifications.fuel_capacity|default('N/A') }}</div>
                     </div>
                     <div class="spec-item">
                         <div class="spec-label">Product Weight</div>
-                        <div class="spec-value">{{ report.tt_specifications.product_weight }}</div>
+                        <div class="spec-value">{{ report.tt_specifications.product_weight|default('N/A') }}</div>
                     </div>
                     <div class="spec-item">
                         <div class="spec-label">Tare Weight</div>
-                        <div class="spec-value">{{ report.tt_specifications.tare_weight }}</div>
+                        <div class="spec-value">{{ report.tt_specifications.tare_weight|default('N/A') }}</div>
                     </div>
                     <div class="spec-item">
                         <div class="spec-label">Gross Weight</div>
-                        <div class="spec-value">{{ report.tt_specifications.gross_weight }}</div>
+                        <div class="spec-value">{{ report.tt_specifications.gross_weight|default('N/A') }}</div>
                     </div>
                     <div class="spec-item">
                         <div class="spec-label">Axle Load</div>
-                        <div class="spec-value">{{ report.tt_specifications.axle_load }}</div>
+                        <div class="spec-value">{{ report.tt_specifications.axle_load|default('N/A') }}</div>
                     </div>
                     <div class="spec-item">
                         <div class="spec-label">Maximum Speed</div>
-                        <div class="spec-value">{{ report.tt_specifications.max_speed }}</div>
+                        <div class="spec-value">{{ report.tt_specifications.max_speed|default('N/A') }}</div>
                     </div>
                     <div class="spec-item">
                         <div class="spec-label">Risk Multiplier</div>
-                        <div class="spec-value">{{ report.tt_specifications.risk_multiplier }}</div>
+                        <div class="spec-value">{{ report.tt_specifications.risk_multiplier|default('N/A') }}</div>
                     </div>
                     <div class="spec-item">
                         <div class="spec-label">Capacity Range</div>
-                        <div class="spec-value">{{ report.tt_specifications.capacity_range }}</div>
+                        <div class="spec-value">{{ report.tt_specifications.capacity_range|default('N/A') }}</div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="tt-specs-grid">
+                    <div class="spec-item">
+                        <div class="spec-label">Tank Capacity</div>
+                        <div class="spec-value">{{ tt_specs.avg_capacity_liters|default(0)|round|int }}L</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">Gross Weight</div>
+                        <div class="spec-value">{{ (tt_specs.gross_weight|default(0)/1000)|round(1) }}T</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">Maximum Speed</div>
+                        <div class="spec-value">{{ tt_specs.max_speed|default(0) }} km/h</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">Capacity Range</div>
+                        <div class="spec-value">{{ tt_specs.capacity_range|default('N/A') }}</div>
                     </div>
                 </div>
                 {% endif %}
@@ -467,7 +486,7 @@
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle"></i>
                     <div>
-                        <strong>Vehicle Classification:</strong> This analysis is specifically designed for {{ tt_specs.capacity_range }} petroleum tanker trucks carrying hazardous materials under Indian regulations.
+                        <strong>Vehicle Classification:</strong> This analysis is specifically designed for {{ tt_specs.capacity_range|default('standard') }} petroleum tanker trucks carrying hazardous materials under Indian regulations.
                     </div>
                 </div>
             </div>
@@ -478,19 +497,19 @@
                 
                 <div class="grid-4">
                     <div class="stat-card">
-                        <span class="stat-value">{{ report.route_analysis.total_points }}</span>
+                        <span class="stat-value">{{ report.route_analysis.total_points|default(0) }}</span>
                         <div class="stat-label">Total Route Points</div>
                     </div>
                     <div class="stat-card">
-                        <span class="stat-value">{{ "%.1f"|format(report.route_analysis.points_per_km) }}</span>
+                        <span class="stat-value">{{ "%.1f"|format(report.route_analysis.points_per_km|default(0)) }}</span>
                         <div class="stat-label">Points per Kilometer</div>
                     </div>
                     <div class="stat-card success">
-                        <span class="stat-value">{{ report.route_analysis.fuel_stations }}</span>
+                        <span class="stat-value">{{ report.route_analysis.fuel_stations|default(0) }}</span>
                         <div class="stat-label">Fuel Stations</div>
                     </div>
                     <div class="stat-card">
-                        <span class="stat-value">{{ report.route_analysis.hospitals_along_route + report.route_analysis.police_stations }}</span>
+                        <span class="stat-value">{{ (report.route_analysis.hospitals_along_route|default(0)) + (report.route_analysis.police_stations|default(0)) }}</span>
                         <div class="stat-label">Emergency Services</div>
                     </div>
                 </div>
@@ -499,11 +518,12 @@
                 <div class="progress-container">
                     <div class="progress-label">
                         <span>Route Point Density</span>
-                        <span>{{ "%.1f"|format(report.route_analysis.points_per_km) }} pts/km</span>
+                        <span>{{ "%.1f"|format(report.route_analysis.points_per_km|default(0)) }} pts/km</span>
                     </div>
                     <div class="progress-bar">
-                        <div class="progress-fill {% if report.route_analysis.points_per_km > 15 %}progress-success{% elif report.route_analysis.points_per_km > 10 %}progress-warning{% else %}progress-danger{% endif %}" 
-                             style="width: {{ (report.route_analysis.points_per_km * 4)|int }}%;"></div>
+                        {% set points_per_km = report.route_analysis.points_per_km|default(0) %}
+                        <div class="progress-fill {% if points_per_km > 15 %}progress-success{% elif points_per_km > 10 %}progress-warning{% else %}progress-danger{% endif %}" 
+                             style="width: {{ (points_per_km * 4)|int }}%;"></div>
                     </div>
                 </div>
             </div>
@@ -514,26 +534,26 @@
                 
                 <div class="grid-3">
                     <div class="stat-card critical">
-                        <span class="stat-value">{{ report.route_analysis.critical_risk_zones if 'critical_risk_zones' in report.route_analysis else 0 }}</span>
+                        <span class="stat-value">{{ report.route_analysis.critical_risk_zones|default(0) }}</span>
                         <div class="stat-label">Critical Risk Zones</div>
                     </div>
                     <div class="stat-card warning">
-                        <span class="stat-value">{{ report.route_analysis.high_risk_zones }}</span>
+                        <span class="stat-value">{{ report.route_analysis.high_risk_zones|default(0) }}</span>
                         <div class="stat-label">High Risk Zones</div>
                     </div>
                     <div class="stat-card">
-                        <span class="stat-value">{{ report.route_analysis.medium_risk_zones }}</span>
+                        <span class="stat-value">{{ report.route_analysis.medium_risk_zones|default(0) }}</span>
                         <div class="stat-label">Medium Risk Zones</div>
                     </div>
                 </div>
 
-                {% set total_risk_zones = (report.route_analysis.critical_risk_zones if 'critical_risk_zones' in report.route_analysis else 0) + report.route_analysis.high_risk_zones + report.route_analysis.medium_risk_zones %}
+                {% set total_risk_zones = (report.route_analysis.critical_risk_zones|default(0)) + (report.route_analysis.high_risk_zones|default(0)) + (report.route_analysis.medium_risk_zones|default(0)) %}
                 
                 {% if total_risk_zones > 10 %}
                 <div class="alert alert-danger">
                     <i class="fas fa-exclamation-circle"></i>
                     <div>
-                        <strong>High Risk Route:</strong> This route contains {{ total_risk_zones }} risk zones. Consider alternative routing or additional safety measures for {{ tt_specs.capacity_range }} tanker operations.
+                        <strong>High Risk Route:</strong> This route contains {{ total_risk_zones }} risk zones. Consider alternative routing or additional safety measures for {{ tt_specs.capacity_range|default('tanker') }} operations.
                     </div>
                 </div>
                 {% elif total_risk_zones > 5 %}
@@ -552,14 +572,14 @@
                 </div>
                 {% endif %}
 
-                <h3>Risk Factors for {{ tt_specs.capacity_range }} Tanker</h3>
+                <h3>Risk Factors for {{ tt_specs.capacity_range|default('TT') }} Tanker</h3>
                 <div class="progress-container">
                     <div class="progress-label">
                         <span>Overall Risk Level</span>
-                        <span>{{ "%.1f"|format((total_risk_zones / report.route_analysis.total_points * 1000) if report.route_analysis.total_points > 0 else 0) }}%</span>
+                        {% set risk_percentage = (total_risk_zones / (report.route_analysis.total_points|default(1)) * 100) %}
+                        <span>{{ "%.1f"|format(risk_percentage) }}%</span>
                     </div>
                     <div class="progress-bar">
-                        {% set risk_percentage = (total_risk_zones / report.route_analysis.total_points * 100) if report.route_analysis.total_points > 0 else 0 %}
                         <div class="progress-fill {% if risk_percentage > 5 %}progress-danger{% elif risk_percentage > 2 %}progress-warning{% else %}progress-success{% endif %}" 
                              style="width: {{ (risk_percentage * 10)|int }}%;"></div>
                     </div>
@@ -572,15 +592,15 @@
                 
                 <div class="grid-3">
                     <div class="stat-card success">
-                        <span class="stat-value">{{ report.traffic_analysis.light_traffic_segments }}</span>
+                        <span class="stat-value">{{ report.traffic_analysis.light_traffic_segments|default(0) }}</span>
                         <div class="stat-label">Light Traffic Areas</div>
                     </div>
                     <div class="stat-card warning">
-                        <span class="stat-value">{{ report.traffic_analysis.moderate_traffic_segments }}</span>
+                        <span class="stat-value">{{ report.traffic_analysis.moderate_traffic_segments|default(0) }}</span>
                         <div class="stat-label">Moderate Traffic Areas</div>
                     </div>
                     <div class="stat-card critical">
-                        <span class="stat-value">{{ report.traffic_analysis.heavy_traffic_segments }}</span>
+                        <span class="stat-value">{{ report.traffic_analysis.heavy_traffic_segments|default(0) }}</span>
                         <div class="stat-label">Heavy Traffic Areas</div>
                     </div>
                 </div>
@@ -589,15 +609,16 @@
                 <div class="progress-container">
                     <div class="progress-label">
                         <span>Average Delay Factor</span>
-                        <span>{{ "%.1f"|format(report.traffic_analysis.average_delay_factor) }}x normal time</span>
+                        <span>{{ "%.1f"|format(report.traffic_analysis.average_delay_factor|default(1.0)) }}x normal time</span>
                     </div>
                     <div class="progress-bar">
-                        <div class="progress-fill {% if report.traffic_analysis.average_delay_factor < 1.2 %}progress-success{% elif report.traffic_analysis.average_delay_factor < 1.5 %}progress-warning{% else %}progress-danger{% endif %}" 
-                             style="width: {{ ((report.traffic_analysis.average_delay_factor - 1) * 100)|int }}%;"></div>
+                        {% set delay_factor = report.traffic_analysis.average_delay_factor|default(1.0) %}
+                        <div class="progress-fill {% if delay_factor < 1.2 %}progress-success{% elif delay_factor < 1.5 %}progress-warning{% else %}progress-danger{% endif %}" 
+                             style="width: {{ ((delay_factor - 1) * 100)|int }}%;"></div>
                     </div>
                 </div>
 
-                {% if report.traffic_analysis.average_delay_factor > 1.5 %}
+                {% if report.traffic_analysis.average_delay_factor|default(1.0) > 1.5 %}
                 <div class="alert alert-warning">
                     <i class="fas fa-clock"></i>
                     <div>
@@ -613,25 +634,25 @@
                 
                 <div class="grid-4">
                     <div class="stat-card critical">
-                        <span class="stat-value">{{ report.route_analysis.hospitals_along_route }}</span>
+                        <span class="stat-value">{{ report.route_analysis.hospitals_along_route|default(0) }}</span>
                         <div class="stat-label">Hospitals</div>
                     </div>
                     <div class="stat-card">
-                        <span class="stat-value">{{ report.route_analysis.police_stations }}</span>
+                        <span class="stat-value">{{ report.route_analysis.police_stations|default(0) }}</span>
                         <div class="stat-label">Police Stations</div>
                     </div>
                     <div class="stat-card warning">
-                        <span class="stat-value">{{ report.route_analysis.fuel_stations }}</span>
+                        <span class="stat-value">{{ report.route_analysis.fuel_stations|default(0) }}</span>
                         <div class="stat-label">Fuel Stations</div>
                     </div>
                     <div class="stat-card success">
-                        <span class="stat-value">{{ report.route_analysis.hospitals_along_route + report.route_analysis.police_stations + report.route_analysis.fuel_stations }}</span>
+                        <span class="stat-value">{{ (report.route_analysis.hospitals_along_route|default(0)) + (report.route_analysis.police_stations|default(0)) + (report.route_analysis.fuel_stations|default(0)) }}</span>
                         <div class="stat-label">Total POIs</div>
                     </div>
                 </div>
 
                 <h3>Emergency Response Readiness</h3>
-                {% set emergency_coverage = (report.route_analysis.hospitals_along_route + report.route_analysis.police_stations) %}
+                {% set emergency_coverage = (report.route_analysis.hospitals_along_route|default(0)) + (report.route_analysis.police_stations|default(0)) %}
                 {% if emergency_coverage >= 5 %}
                 <div class="alert alert-info">
                     <i class="fas fa-shield-alt"></i>
@@ -676,13 +697,10 @@
                 <a href="{{ url_for('home') }}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Back to Route Planning
                 </a>
-                <a href="{{ url_for('analyze_route') }}" class="btn btn-success">
-                    <i class="fas fa-map"></i> View Interactive Map
-                </a>
             </div>
 
             <div class="timestamp">
-                Report generated on {{ moment().format('MMMM Do YYYY, h:mm:ss a') }} by IndianOil Smart Marg System
+                Report generated on <span id="full-timestamp"></span> by IndianOil Smart Marg System
             </div>
         </div>
     </div>
