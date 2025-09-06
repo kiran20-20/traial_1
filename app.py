@@ -977,29 +977,46 @@ def fetch_routes():
 
 
 
-@app.route('/ai_analysis/<route_id>')
+# Replace your existing AI routes with these corrected versions:
+
+@app.route('/ai_analysis/current')
 @login_required
-def ai_route_analysis(route_id):
+def ai_current_analysis():  # Changed function name
     """Get AI-powered route analysis"""
     try:
         # Get route data from session
-        route_report = session.get('route_report')
-        if not route_report:
-            return {"error": "No route data found"}
-        
-        # Mock data for demonstration - replace with actual stored route data
         coords = session.get('coords', [])
-        sharp_turns = [{'turn_angle': 95, 'direction': 'left', 'severity': 'high'}]
-        curves = [{'turn_angle': 65, 'direction': 'right'}]
+        sharp_turns = session.get('sharp_turns', [])
+        curves = session.get('curves', [])
         tt_specs = session.get('tt_specs', {})
-        pois = [{'type': 'hospital', 'name': 'Emergency Hospital'}]
+        all_pois = session.get('all_pois', [])
         
-        ai_analysis = analyze_route_with_ai(coords, sharp_turns, curves, tt_specs, pois)
-        safety_briefing = generate_safety_briefing(tt_specs)
+        if not coords or not tt_specs:
+            return {"error": "No route data found. Please analyze a route first.", "status": "failed"}
+        
+        ai_analysis = analyze_route_with_ai(coords, sharp_turns, curves, tt_specs, all_pois)
         
         return {
             "ai_analysis": ai_analysis,
-            "safety_briefing": safety_briefing,
+            "status": "success"
+        }
+        
+    except Exception as e:
+        return {"error": str(e), "status": "failed"}
+
+@app.route('/safety_briefing')
+@login_required
+def safety_briefing():
+    """Get AI-powered safety briefing"""
+    try:
+        tt_specs = session.get('tt_specs', {})
+        if not tt_specs:
+            return {"error": "No truck specifications found", "status": "failed"}
+        
+        briefing = generate_safety_briefing(tt_specs)
+        
+        return {
+            "briefing": briefing,
             "status": "success"
         }
         
@@ -1011,7 +1028,7 @@ def ai_route_analysis(route_id):
 def ai_chat():
     """Chat with AI about route safety"""
     if not client:
-        return {"error": "OpenAI not configured"}
+        return {"error": "OpenAI not configured", "status": "failed"}
     
     try:
         user_question = request.json.get('question', '')
@@ -1044,51 +1061,6 @@ def ai_chat():
         
     except Exception as e:
         return {"error": str(e), "status": "failed"}
-
-@app.route('/safety_briefing')
-@login_required
-def safety_briefing():
-    """Get AI-powered safety briefing"""
-    try:
-        tt_specs = session.get('tt_specs', {})
-        if not tt_specs:
-            return {"error": "No truck specifications found", "status": "failed"}
-        
-        briefing = generate_safety_briefing(tt_specs)
-        
-        return {
-            "briefing": briefing,
-            "status": "success"
-        }
-        
-    except Exception as e:
-        return {"error": str(e), "status": "failed"}
-
-@app.route('/ai_analysis/current')
-@login_required
-def ai_route_analysis():
-    """Get AI-powered route analysis"""
-    try:
-        # Get route data from session
-        coords = session.get('coords', [])
-        sharp_turns = session.get('sharp_turns', [])
-        curves = session.get('curves', [])
-        tt_specs = session.get('tt_specs', {})
-        all_pois = session.get('all_pois', [])
-        
-        if not coords or not tt_specs:
-            return {"error": "No route data found. Please analyze a route first.", "status": "failed"}
-        
-        ai_analysis = analyze_route_with_ai(coords, sharp_turns, curves, tt_specs, all_pois)
-        
-        return {
-            "ai_analysis": ai_analysis,
-            "status": "success"
-        }
-        
-    except Exception as e:
-        return {"error": str(e), "status": "failed"}
-
 
 
 @app.route('/analyze_route', methods=['POST'])
@@ -1888,6 +1860,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
