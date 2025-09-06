@@ -11,7 +11,7 @@ geopy==2.4.0
 openpyxl==3.1.2
 branca==0.7.0
 gunicorn==21.2.0
-openai>=1.0.0,<2.0.0
+google-generativeai==0.3.2
 
 
 
