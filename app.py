@@ -231,43 +231,158 @@ def get_tt_specs(tt_type):
 
 
 def analyze_route_with_ai(coords, sharp_turns, curves, tt_specs, pois):
-    """Use Google Gemini to provide intelligent route analysis"""
+    """Give AI complete access to all route analysis data"""
     if not ai_client:
         return generate_fallback_analysis(sharp_turns, curves, tt_specs, pois)
     
     try:
         model = genai.GenerativeModel('gemini-1.5-flash')
         
-        # Prepare route data summary
-        critical_turns = len([t for t in sharp_turns if t.get('severity') == 'critical'])
-        high_turns = len([t for t in sharp_turns if t.get('severity') == 'high'])
+        # Prepare comprehensive data summary
+        route_report = session.get('route_report', {})
+        total_distance = route_report.get('total_distance', 'Unknown')
+        total_duration = route_report.get('total_duration', 'Unknown')
         
-        prompt = f"""I am providing you with COMPLETED route analysis data for a truck tanker that has already been analyzed. Do not ask for additional information - analyze what is provided.
+        # Detailed turn analysis
+        critical_turns = [t for t in sharp_turns if t.get('severity') == 'critical']
+        high_turns = [t for t in sharp_turns if t.get('severity') == 'high']
+        
+        # POI breakdown
+        hospitals = [p for p in pois if p['type'] == 'hospital']
+        police = [p for p in pois if p['type'] == 'police']
+        fuel_stations = [p for p in pois if p['type'] == 'fuel']
+        
+        # Turn details with specific angles
+        turn_analysis = []
+        for i, turn in enumerate(sharp_turns):
+            turn_analysis.append(f"Turn {i+1}: {turn['turn_angle']:.1f}° {turn['direction']} ({turn['severity']} severity)")
+        
+        curve_analysis = []
+        for i, curve in enumerate(curves):
+            curve_analysis.append(f"Curve {i+1}: {curve['turn_angle']:.1f}° {curve['direction']}")
+        
+        prompt = f"""COMPREHENSIVE TRUCK TANKER ROUTE ANALYSIS
+Analyze ALL provided data and give detailed safety recommendations.
 
-COMPLETED ROUTE ANALYSIS DATA:
-- Vehicle: {tt_specs['capacity_range']} petroleum tanker
-- Gross weight: {tt_specs['gross_weight']/1000:.1f} tonnes  
-- Cargo: {tt_specs['avg_capacity_liters']:,} liters petroleum products
-- Route points analyzed: {len(coords)} GPS coordinates
-- Sharp turns identified: {len(sharp_turns)} turns of 90+ degrees
-- Critical severity turns: {critical_turns}
-- Moderate curves: {len(curves)} turns of 45-90 degrees
-- Emergency facilities found: {len(pois)} (hospitals, police, fuel stations)
+=== VEHICLE SPECIFICATIONS ===
+- Type: {tt_specs['capacity_range']} Petroleum Tanker
+- Fuel Capacity: {tt_specs['avg_capacity_liters']:,} liters
+- Tare Weight: {tt_specs['tare_weight']/1000:.1f}T (empty vehicle)
+- Product Weight: {tt_specs['product_weight']/1000:.1f}T (petroleum cargo)
+- Gross Weight: {tt_specs['gross_weight']/1000:.1f}T (fully loaded)
+- Axle Load: {tt_specs['axle_load']:.1f}T per axle
+- Maximum Legal Speed: {tt_specs['max_speed']} km/h
+- Turn Sensitivity: {tt_specs['turn_sensitivity']}x (rollover factor)
+- Risk Multiplier: {tt_specs['risk_multiplier']}x (hazard amplification)
 
-PROVIDE IMMEDIATE ANALYSIS:
-1. Safety rating (1-10 scale, 10=most dangerous)
-2. Three specific driving recommendations 
-3. Speed limits for hazardous sections
-4. Emergency preparedness notes
+=== COMPLETE ROUTE DATA ===
+- Total Distance: {total_distance}
+- Estimated Duration: {total_duration}
+- Route Points Analyzed: {len(coords)} GPS coordinates
+- Points per Kilometer: {len(coords)/(float(total_distance.split()[0]) if total_distance != 'Unknown' else 1):.1f}
 
-Base your analysis ONLY on the data provided above. Do not request additional information."""
+=== DETAILED HAZARD ANALYSIS ===
+Sharp Turns (90+ degrees): {len(sharp_turns)} total
+{chr(10).join(turn_analysis[:10])}  
+
+Critical Severity Turns: {len(critical_turns)}
+High Severity Turns: {len(high_turns)}
+
+Moderate Curves (45-90 degrees): {len(curves)} total
+{chr(10).join(curve_analysis[:5])}
+
+=== INFRASTRUCTURE ALONG ROUTE ===
+Emergency Facilities:
+- Hospitals: {len(hospitals)} ({', '.join([h['name'] for h in hospitals[:3]])})
+- Police Stations: {len(police)} ({', '.join([p['name'] for p in police[:3]])})
+- Fuel Stations: {len(fuel_stations)} ({', '.join([f['name'] for f in fuel_stations[:3]])})
+
+=== ANALYSIS REQUIRED ===
+Based on ALL the above data, provide:
+
+1. OVERALL SAFETY ASSESSMENT (1-10 scale, 10=extremely dangerous)
+2. SPECIFIC SPEED RECOMMENDATIONS:
+   - Highway speed for {tt_specs['gross_weight']/1000:.1f}T tanker
+   - Speed for each severity level of turns
+   - Minimum speeds for safety
+3. ROUTE-SPECIFIC WARNINGS for the {len(critical_turns)} critical turns
+4. EMERGENCY PREPAREDNESS based on available facilities
+5. LOAD-SPECIFIC ADVICE for {tt_specs['avg_capacity_liters']:,}L petroleum cargo
+6. TIME MANAGEMENT for {total_duration} journey
+7. CRITICAL CHECKPOINTS where extra caution is needed
+
+Consider the liquid cargo dynamics, high center of gravity, and rollover risks specific to this vehicle configuration."""
 
         response = model.generate_content(prompt)
         return response.text
         
     except Exception as e:
         print(f"Gemini API error: {e}")
-        return generate_fallback_analysis(sharp_turns, curves, tt_specs, pois)
+        return generate_comprehensive_fallback(sharp_turns, curves, tt_specs, pois, route_report)
+
+def generate_comprehensive_fallback(sharp_turns, curves, tt_specs, pois, route_report):
+    """Comprehensive fallback using all available data"""
+    
+    critical_turns = len([t for t in sharp_turns if t.get('severity') == 'critical'])
+    high_turns = len([t for t in sharp_turns if t.get('severity') == 'high'])
+    hospitals = len([p for p in pois if p['type'] == 'hospital'])
+    
+    # Risk calculation based on all factors
+    base_risk = 3
+    if critical_turns > 3: base_risk += 3
+    if len(sharp_turns) > 8: base_risk += 2
+    if tt_specs['gross_weight'] > 30000: base_risk += 1
+    if hospitals < 2: base_risk += 1
+    
+    risk_score = min(10, base_risk)
+    
+    return f"""COMPREHENSIVE ROUTE SAFETY ANALYSIS
+{tt_specs['capacity_range']} PETROLEUM TANKER
+
+=== OVERALL ASSESSMENT ===
+Safety Rating: {risk_score}/10 {'(EXTREME CAUTION)' if risk_score > 7 else '(HIGH ALERT)' if risk_score > 5 else '(MODERATE RISK)'}
+Route Distance: {route_report.get('total_distance', 'Analyzing...')}
+Estimated Duration: {route_report.get('total_duration', 'Calculating...')}
+
+=== VEHICLE LOAD ANALYSIS ===
+Current Configuration: {tt_specs['gross_weight']/1000:.1f}T Total Weight
+- Empty Vehicle: {tt_specs['tare_weight']/1000:.1f}T
+- Petroleum Cargo: {tt_specs['product_weight']/1000:.1f}T ({tt_specs['avg_capacity_liters']:,}L)
+- Axle Loading: {tt_specs['axle_load']:.1f}T per axle
+- Center of Gravity: ELEVATED due to liquid cargo
+
+=== DETAILED SPEED MATRIX ===
+Highway Driving: {min(tt_specs['max_speed'], 50)} km/h maximum
+Moderate Curves: {max(15, int(30/tt_specs['turn_sensitivity']))} km/h
+Sharp Turns: {max(8, int(12/tt_specs['turn_sensitivity']))} km/h  
+Critical Turns: {max(5, int(8/tt_specs['turn_sensitivity']))} km/h
+Emergency Zones: 10 km/h maximum
+
+=== HAZARD BREAKDOWN ===
+Critical Risk Points: {critical_turns} locations requiring extreme caution
+High Risk Points: {high_turns} sharp turns needing significant speed reduction
+Moderate Risk Points: {len(curves)} curves requiring careful navigation
+Total Hazard Points: {len(sharp_turns) + len(curves)}
+
+=== EMERGENCY INFRASTRUCTURE ===
+Medical Facilities: {hospitals} hospitals along route
+Law Enforcement: {len([p for p in pois if p['type'] == 'police'])} police stations
+Fuel/Service: {len([p for p in pois if p['type'] == 'fuel'])} fuel stations
+Emergency Response: {'ADEQUATE' if hospitals >= 2 else 'LIMITED'} coverage
+
+=== LIQUID CARGO DYNAMICS ===
+Petroleum Product Behavior:
+- Surge Effect: High risk during acceleration/braking
+- Rollover Risk: Amplified by {tt_specs['turn_sensitivity']}x on turns
+- Stability: Compromised at speeds >35 km/h on curves
+- Braking: Requires {int(tt_specs['gross_weight']/500)}m additional distance
+
+=== CRITICAL ACTION POINTS ===
+1. Pre-departure: Verify {tt_specs['avg_capacity_liters']:,}L load securement
+2. Navigation: Reduce speed {(tt_specs['turn_sensitivity']-1)*100:.0f}% below normal on turns
+3. Emergency: {hospitals} medical facilities available for response
+4. Compliance: ADR requirements for {tt_specs['product_weight']/1000:.1f}T petroleum transport
+5. Communication: Maintain contact every 30 minutes during transit"""
         
 
 def generate_safety_briefing(tt_specs, weather_condition="clear"):
@@ -1917,6 +2032,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
