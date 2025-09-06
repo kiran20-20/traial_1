@@ -15,8 +15,7 @@ import numpy as np
 from geopy.distance import geodesic
 import time
 from functools import wraps
-import openai
-from openai import OpenAI
+import google.generativeai as genai
 
 
 app = Flask(__name__)
@@ -1925,6 +1924,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
