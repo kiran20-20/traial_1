@@ -24,15 +24,20 @@ app.secret_key = 'your_secret_key_here'
 app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
 
-# Initialize OpenAI client
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-
-# With this safer version:
+# Replace OpenAI imports with:
 try:
-    client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
+    import google.generativeai as genai
+    GEMINI_API_KEY = os.environ.get("OPENAI_API_KEY")
+    if GEMINI_API_KEY:
+        genai.configure(api_key=GEMINI_API_KEY)
+        ai_client = True
+    else:
+        ai_client = False
+        print("GEMINI_API_KEY not found")
 except Exception as e:
-    print(f"OpenAI initialization error: {e}")
-    client = None
+    print(f"Gemini initialization error: {e}")
+    ai_client = False
+    
 
 API_KEY = os.environ.get("API_KEY")  # Secure access
 gmaps = googlemaps.Client(key=API_KEY)
@@ -227,106 +232,184 @@ def get_tt_specs(tt_type):
 
 
 def analyze_route_with_ai(coords, sharp_turns, curves, tt_specs, pois):
-    """Use OpenAI to provide intelligent route analysis"""
-    if not client:
-        return "OpenAI not configured"
+    """Use Google Gemini to provide intelligent route analysis"""
+    if not ai_client:
+        return generate_fallback_analysis(sharp_turns, curves, tt_specs, pois)
     
     try:
-        # Prepare route data for AI analysis
-        route_summary = {
-            "total_points": len(coords),
-            "sharp_turns": len(sharp_turns),
-            "curves": len(curves),
-            "truck_type": tt_specs['capacity_range'],
-            "truck_weight": f"{tt_specs['gross_weight']/1000:.1f}T",
-            "max_speed": tt_specs['max_speed'],
-            "pois": len(pois)
-        }
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
-        # Create detailed turn analysis
-        turn_details = []
-        for turn in sharp_turns[:5]:  # Limit to first 5 turns
-            turn_details.append({
-                "angle": turn['turn_angle'],
-                "direction": turn['direction'],
-                "severity": turn['severity']
-            })
+        # Prepare route data summary
+        critical_turns = len([t for t in sharp_turns if t.get('severity') == 'critical'])
+        high_turns = len([t for t in sharp_turns if t.get('severity') == 'high'])
         
-        prompt = f"""
-        As an expert in heavy vehicle navigation and safety, analyze this truck tanker route:
+        prompt = f"""As an expert in heavy vehicle navigation and safety, analyze this truck tanker route:
 
-        VEHICLE SPECIFICATIONS:
-        - Type: {tt_specs['capacity_range']} Truck Tanker
-        - Gross Weight: {tt_specs['gross_weight']/1000:.1f} tonnes
-        - Cargo: Petroleum products ({tt_specs['avg_capacity_liters']:,} liters)
-        - Maximum Safe Speed: {tt_specs['max_speed']} km/h
+VEHICLE SPECIFICATIONS:
+- Type: {tt_specs['capacity_range']} Truck Tanker
+- Gross Weight: {tt_specs['gross_weight']/1000:.1f} tonnes
+- Cargo: Petroleum products ({tt_specs['avg_capacity_liters']:,} liters)
+- Maximum Safe Speed: {tt_specs['max_speed']} km/h
 
-        ROUTE ANALYSIS:
-        - Total route points: {len(coords)}
-        - Sharp turns detected (90°+): {len(sharp_turns)}
-        - Moderate curves (45-90°): {len(curves)}
-        - Emergency facilities nearby: {len(pois)}
+ROUTE HAZARD ANALYSIS:
+- Total route points analyzed: {len(coords)}
+- Sharp turns detected (90°+): {len(sharp_turns)}
+- Critical severity turns: {critical_turns}
+- High severity turns: {high_turns}
+- Moderate curves (45-90°): {len(curves)}
+- Emergency facilities nearby: {len(pois)}
 
-        CRITICAL TURNS DETECTED:
-        {turn_details}
+SAFETY ASSESSMENT REQUIRED:
+1. Overall route safety rating (1-10 scale where 10=extremely dangerous)
+2. Top 3 specific safety recommendations for this heavy tanker
+3. Speed management strategy for hazardous sections
+4. Emergency preparedness advice specific to petroleum transport
+5. Driver fatigue considerations for this route complexity
 
-        Please provide:
-        1. Overall route safety assessment (1-10 scale)
-        2. Top 3 specific safety recommendations for this heavy tanker
-        3. Speed management strategy for hazardous sections
-        4. Emergency preparedness advice
-        5. Driver fatigue considerations for this route complexity
+Keep response concise, practical, and focused on truck driver safety."""
 
-        Keep response concise and practical for truck drivers.
-        """
-
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=500,
-            temperature=0.3
-        )
-        
-        return response.choices[0].message.content
+        response = model.generate_content(prompt)
+        return response.text
         
     except Exception as e:
-        print(f"OpenAI API error: {e}")
-        return f"AI analysis unavailable: {str(e)}"
+        print(f"Gemini API error: {e}")
+        return generate_fallback_analysis(sharp_turns, curves, tt_specs, pois)
 
 def generate_safety_briefing(tt_specs, weather_condition="clear"):
-    """Generate AI-powered safety briefing"""
-    if not client:
-        return "AI briefing not available"
+    """Generate AI-powered safety briefing using Gemini"""
+    if not ai_client:
+        return generate_fallback_briefing(tt_specs, weather_condition)
     
     try:
-        prompt = f"""
-        Generate a pre-trip safety briefing for a truck tanker driver:
-
-        VEHICLE: {tt_specs['capacity_range']} Tanker
-        CARGO: Petroleum products ({tt_specs['avg_capacity_liters']:,}L)
-        WEIGHT: {tt_specs['gross_weight']/1000:.1f}T loaded
-        WEATHER: {weather_condition}
-
-        Include:
-        1. Pre-departure vehicle checks specific to tankers
-        2. Speed limits and turning precautions
-        3. Emergency procedures
-        4. Communication protocols
-
-        Format as a numbered checklist. Keep under 200 words.
-        """
-
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=300,
-            temperature=0.2
-        )
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
-        return response.choices[0].message.content
+        prompt = f"""Generate a comprehensive pre-trip safety briefing for a truck tanker driver:
+
+VEHICLE DETAILS:
+- Tanker Type: {tt_specs['capacity_range']}
+- Cargo: Petroleum products ({tt_specs['avg_capacity_liters']:,} liters)
+- Gross Weight: {tt_specs['gross_weight']/1000:.1f} tonnes
+- Axle Load: {tt_specs['axle_load']:.1f}T per axle
+- Weather Conditions: {weather_condition}
+
+BRIEFING REQUIREMENTS:
+1. Critical pre-departure vehicle checks specific to tankers
+2. Speed limits and turning precautions for this weight class
+3. Emergency procedures for petroleum product transport
+4. Communication protocols and regulatory compliance
+5. Load-specific safety considerations
+
+Format as a numbered checklist. Keep under 250 words. Focus on actionable safety items."""
+
+        response = model.generate_content(prompt)
+        return response.text
         
     except Exception as e:
-        return f"AI briefing error: {str(e)}"
+        print(f"Gemini briefing error: {e}")
+        return generate_fallback_briefing(tt_specs, weather_condition)
+
+# Add fallback functions for when AI is unavailable
+def generate_fallback_analysis(sharp_turns, curves, tt_specs, pois):
+    """Fallback analysis when AI is unavailable"""
+    total_hazards = len(sharp_turns) + len(curves)
+    critical_turns = len([t for t in sharp_turns if t.get('severity') == 'critical'])
+    
+    if critical_turns > 5:
+        risk_rating = "9/10 - EXTREMELY HIGH RISK"
+    elif total_hazards > 10:
+        risk_rating = "7/10 - HIGH RISK" 
+    elif total_hazards > 5:
+        risk_rating = "5/10 - MODERATE RISK"
+    else:
+        risk_rating = "3/10 - LOW RISK"
+    
+    return f"""ROUTE SAFETY ASSESSMENT - {tt_specs['capacity_range']} TANKER
+
+OVERALL SAFETY RATING: {risk_rating}
+
+HAZARD SUMMARY:
+- Sharp turns (90°+): {len(sharp_turns)}
+- Critical severity: {critical_turns}
+- Moderate curves: {len(curves)}
+- Emergency facilities: {len(pois)}
+
+TOP 3 SAFETY RECOMMENDATIONS:
+1. SPEED CONTROL: Max {tt_specs['max_speed']} km/h, reduce to 10-15 km/h at sharp turns
+2. BRAKE INSPECTION: Essential for {tt_specs['gross_weight']/1000:.1f}T vehicle - check before departure
+3. LOAD MONITORING: Liquid surge increases rollover risk - avoid sudden maneuvers
+
+SPEED STRATEGY:
+- Normal sections: {tt_specs['max_speed']} km/h maximum
+- Curves (45-90°): 25-35 km/h
+- Sharp turns (90°+): 10-15 km/h
+- Emergency stops: Plan 6-second following distance
+
+EMERGENCY PREPAREDNESS:
+- ADR certification and documentation current
+- Emergency contact numbers accessible
+- Spill response equipment checked
+- Route permits verified for hazardous materials"""
+
+def generate_fallback_briefing(tt_specs, weather_condition):
+    """Fallback briefing when AI is unavailable"""
+    return f"""PRE-TRIP SAFETY BRIEFING - {tt_specs['capacity_range']} TANKER
+
+CRITICAL VEHICLE CHECKS:
+1. Brake system inspection - priority for {tt_specs['gross_weight']/1000:.1f}T vehicle
+2. Tire pressure verification (load-appropriate pressure)
+3. Tank integrity and valve operation check
+4. Emergency equipment inventory (fire extinguisher, spill kit)
+5. ADR placards and documentation verification
+
+OPERATIONAL PARAMETERS:
+- Speed limit: {tt_specs['max_speed']} km/h maximum
+- Turn speed: 15 km/h maximum on curves
+- Following distance: 6-second minimum rule
+- Axle load: {tt_specs['axle_load']:.1f}T - verify bridge restrictions
+
+EMERGENCY PROTOCOLS:
+1. Spill response: Isolate area, contact emergency services immediately
+2. Fire safety: 300m evacuation radius, foam-based suppression only
+3. Rollover prevention: Reduce speed significantly on curves
+4. Communication: Emergency hotline accessible throughout journey
+
+REGULATORY COMPLIANCE:
+- Driver ADR certification current and accessible
+- Vehicle inspection documentation valid
+- Hazardous material transport permits verified
+- Insurance coverage confirmed for petroleum products
+
+Weather: {weather_condition} - Adjust driving accordingly"""
+
+
+def ai_chat_gemini(user_question, tt_specs):
+    """Chat function using Gemini"""
+    if not ai_client:
+        return "AI assistant unavailable. Please contact your safety supervisor for guidance."
+    
+    try:
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        context = f"""You are assisting a truck tanker driver operating a {tt_specs.get('capacity_range', 'Unknown')} vehicle weighing {tt_specs.get('gross_weight', 0)/1000:.1f}T carrying petroleum products.
+
+Provide practical, safety-focused answers about:
+- Route safety and navigation
+- Vehicle operation procedures  
+- Emergency protocols
+- Regulatory compliance
+- Best practices for tanker operations
+
+Keep answers concise and actionable."""
+
+        full_prompt = f"{context}\n\nDriver question: {user_question}"
+        
+        response = model.generate_content(full_prompt)
+        return response.text
+        
+    except Exception as e:
+        print(f"Gemini chat error: {e}")
+        return "AI assistant temporarily unavailable. For immediate safety concerns, contact your dispatcher or emergency services."
+
 
 
 
@@ -1026,36 +1109,18 @@ def safety_briefing():
 @app.route('/ai_chat', methods=['POST'])
 @login_required
 def ai_chat():
-    """Chat with AI about route safety"""
-    if not client:
-        return {"error": "OpenAI not configured", "status": "failed"}
-    
+    """Chat with AI about route safety using Gemini"""
     try:
         user_question = request.json.get('question', '')
         tt_specs = session.get('tt_specs', {})
         
-        context = f"""
-        You are assisting a truck tanker driver. Current vehicle:
-        - Type: {tt_specs.get('capacity_range', 'Unknown')}
-        - Weight: {tt_specs.get('gross_weight', 0)/1000:.1f}T
-        - Cargo: Petroleum products
+        if not user_question.strip():
+            return {"error": "Please provide a question", "status": "failed"}
         
-        Answer their question about route safety, vehicle operation, or regulations.
-        Keep answers practical and safety-focused.
-        """
-        
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": context},
-                {"role": "user", "content": user_question}
-            ],
-            max_tokens=300,
-            temperature=0.4
-        )
+        answer = ai_chat_gemini(user_question, tt_specs)
         
         return {
-            "answer": response.choices[0].message.content,
+            "answer": answer,
             "status": "success"
         }
         
@@ -1860,6 +1925,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
