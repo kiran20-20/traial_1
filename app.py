@@ -870,6 +870,7 @@ def analyze_route():
             return "Invalid route selected or session data expired. Please start over."
 
         selected = directions[index]
+        steps = selected['legs'][0]['steps']
         coords = polyline.decode(selected['overview_polyline']['points'])
         source = session['source']
         destination = session['destination']
@@ -877,12 +878,18 @@ def analyze_route():
         total_distance = selected['legs'][0]['distance']['text']
         total_duration = selected['legs'][0]['duration']['text']
 
+        # Safe distance extraction
+        try:
+            distance_value = float(total_distance.split()[0]) if total_distance else 1
+        except:
+            distance_value = 1
+
         # Detect sharp turns and curves with proper algorithm
         sharp_turns, curves = detect_sharp_turns_and_curves(coords, min_turn_angle=45, sample_distance=8)
         
         print(f"Detected {len(sharp_turns)} sharp turns (90°+) and {len(curves)} curves")
         
-        # Get POIs (simplified version)
+        # Get POIs
         def get_pois(keyword):
             pois = []
             try:
@@ -900,6 +907,7 @@ def analyze_route():
                                 'type': keyword
                             })
                     except Exception as e:
+                        print(f"Error getting places for {keyword}: {e}")
                         continue
             except Exception as e:
                 print(f"Error in get_pois for {keyword}: {e}")
@@ -915,7 +923,7 @@ def analyze_route():
         
         m = folium.Map(location=(center_lat, center_lng), zoom_start=12)
         
-        # Add route with color coding
+        # Add route with color coding based on hazards
         for i in range(len(coords) - 1):
             segment = [coords[i], coords[i + 1]]
             segment_color = 'green'  # Default safe
@@ -933,26 +941,50 @@ def analyze_route():
                         segment_color = 'yellow'
                         break
             
-            folium.PolyLine(segment, color=segment_color, weight=6, opacity=0.8).add_to(m)
+            folium.PolyLine(
+                segment, 
+                color=segment_color, 
+                weight=6, 
+                opacity=0.8,
+                popup=f"Segment {i}: {segment_color} zone"
+            ).add_to(m)
         
-        # Add start/end markers
-        folium.Marker(source, popup='START', icon=folium.Icon(color='green', icon='play', prefix='fa')).add_to(m)
-        folium.Marker(destination, popup='DESTINATION', icon=folium.Icon(color='red', icon='stop', prefix='fa')).add_to(m)
+        # Add start and end markers
+        folium.Marker(
+            source, 
+            popup='START - Truck Departure',
+            icon=folium.Icon(color='green', icon='play', prefix='fa')
+        ).add_to(m)
         
-        # Add sharp turn markers with blind spots
+        folium.Marker(
+            destination, 
+            popup='DESTINATION - Truck Arrival',
+            icon=folium.Icon(color='red', icon='stop', prefix='fa')
+        ).add_to(m)
+        
+        # Add sharp turn markers with detailed information and blind spots
         for turn in sharp_turns:
             lat, lng = turn['location']
             
             turn_popup = f"""
             <div style='font-family: Arial; width: 300px;'>
-                <h4 style='color: red;'>⚠️ SHARP TURN</h4>
-                <p><strong>Angle:</strong> {turn['turn_angle']:.1f}°</p>
+                <h4 style='color: red; margin: 5px 0;'>⚠️ SHARP TURN DETECTED</h4>
+                <p><strong>Turn Angle:</strong> {turn['turn_angle']:.1f}°</p>
                 <p><strong>Direction:</strong> {turn['direction'].upper()}</p>
-                <p><strong>Speed:</strong> 10-15 km/h recommended</p>
-                <p style='color: red; font-weight: bold;'>HIGH ROLLOVER RISK!</p>
+                <p><strong>Severity:</strong> {turn['severity'].upper()}</p>
+                <p><strong>Recommended Speed:</strong> 10-15 km/h</p>
+                <p><strong>TT Type:</strong> {tt_specs['capacity_range']}</p>
+                <hr>
+                <p style='color: red; font-weight: bold;'>
+                    HAZARD: High rollover risk for loaded tanker!
+                </p>
+                <p style='font-size: 12px; color: #666;'>
+                    Use engine braking and avoid sudden steering
+                </p>
             </div>
             """
             
+            # Use different icons based on severity
             icon_color = 'darkred' if turn['severity'] == 'critical' else 'red'
             folium.Marker(
                 location=(lat, lng),
@@ -960,7 +992,7 @@ def analyze_route():
                 icon=folium.Icon(color=icon_color, icon='exclamation-triangle', prefix='fa')
             ).add_to(m)
             
-            # Add blind spots
+            # Add blind spot visualization for sharp turns
             bearing = turn['bearing_out']
             blind_spots = calculate_blind_spots(lat, lng, bearing, tt_specs)
             
@@ -973,23 +1005,76 @@ def analyze_route():
                         fillColor='purple',
                         fillOpacity=0.3,
                         weight=2,
-                        popup=f"{spot_name.title()} blind spot"
+                        popup=f"{spot_name.title()} blind spot at sharp turn ({turn['turn_angle']:.1f}°)"
                     ).add_to(m)
         
-        # Add truck animation
+        # Add curve markers (less critical)
+        for curve in curves:
+            lat, lng = curve['location']
+            
+            curve_popup = f"""
+            <div style='font-family: Arial; width: 250px;'>
+                <h4 style='color: orange; margin: 5px 0;'>🔄 CURVE AHEAD</h4>
+                <p><strong>Curve Angle:</strong> {curve['turn_angle']:.1f}°</p>
+                <p><strong>Direction:</strong> {curve['direction'].upper()}</p>
+                <p><strong>Recommended Speed:</strong> 25-35 km/h</p>
+                <p><strong>TT:</strong> {tt_specs['capacity_range']}</p>
+            </div>
+            """
+            
+            folium.CircleMarker(
+                location=(lat, lng),
+                radius=8,
+                popup=curve_popup,
+                color='orange',
+                fillColor='orange',
+                fillOpacity=0.6
+            ).add_to(m)
+        
+        # Add POIs with enhanced visualization
+        marker_styles = {
+            'hospital': {'color': 'red', 'icon': 'plus'},
+            'police': {'color': 'blue', 'icon': 'shield'},
+            'fuel': {'color': 'orange', 'icon': 'gas-pump'}
+        }
+
+        for poi in all_pois:
+            try:
+                poi_popup = f"""
+                <div style='font-family: Arial;'>
+                    <h4>{poi['type'].upper()}</h4>
+                    <p><strong>Name:</strong> {poi['name']}</p>
+                    <p><strong>Relevance:</strong> Emergency facility for TT operations</p>
+                </div>
+                """
+                
+                props = marker_styles.get(poi['type'], {'color': 'gray', 'icon': 'info-circle'})
+                folium.Marker(
+                    location=poi['location'],
+                    popup=poi_popup,
+                    icon=folium.Icon(color=props['color'], icon=props['icon'], prefix='fa')
+                ).add_to(m)
+            except Exception as e:
+                print(f"Error adding POI marker: {e}")
+                continue
+        
+        # Add truck animation with hazard alerts
         truck_animation = f"""
         <script>
             var routeCoords = {json.dumps(coords)};
             var sharpTurns = {json.dumps(sharp_turns)};
+            var curves = {json.dumps(curves)};
             var currentIndex = 0;
             var truckMarker = null;
             var animationSpeed = 200;
+            var isAnimating = false;
             
             function createTruckIcon(bearing) {{
                 return L.divIcon({{
-                    html: '<div style="transform: rotate(' + bearing + 'deg); font-size: 24px;">🚛</div>',
+                    html: '<div style="transform: rotate(' + bearing + 'deg); font-size: 24px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">🚛</div>',
                     iconSize: [30, 30],
-                    iconAnchor: [15, 15]
+                    iconAnchor: [15, 15],
+                    className: 'truck-icon'
                 }});
             }}
             
@@ -1003,29 +1088,42 @@ def analyze_route():
                 return (bearing + 360) % 360;
             }}
             
-            function checkNearbyHazards(currentPos) {{
+            function checkNearbyHazards(currentPos, index) {{
+                var hazards = [];
+                
+                // Check for sharp turns
                 for (var i = 0; i < sharpTurns.length; i++) {{
                     var turn = sharpTurns[i];
-                    var distance = Math.sqrt(
-                        Math.pow(currentPos[0] - turn.location[0], 2) + 
-                        Math.pow(currentPos[1] - turn.location[1], 2)
-                    ) * 111111; // Convert to meters
-                    
-                    if (distance < 100) {{
-                        return {{
+                    if (Math.abs(turn.index - index) <= 5) {{
+                        hazards.push({{
                             type: 'sharp_turn',
                             angle: turn.turn_angle,
                             direction: turn.direction,
-                            severity: turn.severity
-                        }};
+                            severity: turn.severity,
+                            distance: Math.abs(turn.index - index)
+                        }});
                     }}
                 }}
-                return null;
+                
+                // Check for curves
+                for (var i = 0; i < curves.length; i++) {{
+                    var curve = curves[i];
+                    if (Math.abs(curve.index - index) <= 3) {{
+                        hazards.push({{
+                            type: 'curve',
+                            angle: curve.turn_angle,
+                            direction: curve.direction,
+                            distance: Math.abs(curve.index - index)
+                        }});
+                    }}
+                }}
+                
+                return hazards;
             }}
             
             function moveTruck() {{
                 if (currentIndex >= routeCoords.length - 1) {{
-                    currentIndex = 0;
+                    currentIndex = 0; // Reset animation
                 }}
                 
                 var currentPos = routeCoords[currentIndex];
@@ -1036,62 +1134,188 @@ def analyze_route():
                 }}
                 
                 var bearing = calculateBearing(currentPos[0], currentPos[1], nextPos[0], nextPos[1]);
-                var hazard = checkNearbyHazards(currentPos);
+                var hazards = checkNearbyHazards(currentPos, currentIndex);
                 
                 truckMarker = L.marker([currentPos[0], currentPos[1]], {{
                     icon: createTruckIcon(bearing)
                 }}).addTo(map);
                 
+                var speed = 40; // Default speed
                 var popupContent = `
-                    <div style='text-align: center; font-family: Arial;'>
-                        <h4>🚛 Live Position</h4>
+                    <div style='text-align: center; font-family: Arial; min-width: 200px;'>
+                        <h4 style='margin: 5px 0; color: #333;'>🚛 Live Truck Position</h4>
                         <p><strong>Progress:</strong> ${{Math.round((currentIndex/routeCoords.length)*100)}}%</p>
                         <p><strong>TT:</strong> {tt_specs['capacity_range']}</p>
+                        <p><strong>Weight:</strong> {tt_specs['gross_weight']/1000:.1f}T</p>
                 `;
                 
-                if (hazard) {{
+                if (hazards.length > 0) {{
+                    var criticalHazard = hazards.find(h => h.type === 'sharp_turn') || hazards[0];
+                    speed = criticalHazard.type === 'sharp_turn' ? 15 : 30;
+                    
                     popupContent += `
-                        <div style='background: red; color: white; padding: 5px; border-radius: 3px; margin: 5px 0;'>
+                        <div style='background: ${{criticalHazard.type === 'sharp_turn' ? 'red' : 'orange'}}; 
+                                    color: white; padding: 8px; border-radius: 4px; margin: 8px 0;'>
                             <strong>⚠️ HAZARD ALERT!</strong><br>
-                            Sharp ${{hazard.direction}} turn: ${{hazard.angle.toFixed(1)}}°<br>
-                            REDUCE SPEED TO 10-15 KM/H!
+                            ${{criticalHazard.type === 'sharp_turn' ? 'Sharp' : 'Moderate'}} ${{criticalHazard.direction}} ${{criticalHazard.type === 'sharp_turn' ? 'turn' : 'curve'}}<br>
+                            Angle: ${{criticalHazard.angle.toFixed(1)}}°<br>
+                            <strong>REDUCE SPEED TO ${{speed}} KM/H!</strong>
                         </div>
                     `;
+                }} else {{
+                    popupContent += `<p><strong>Status:</strong> Safe driving zone</p>`;
                 }}
                 
-                popupContent += '</div>';
+                popupContent += `<p><strong>Current Speed:</strong> ${{speed}} km/h</p></div>`;
+                
                 truckMarker.bindPopup(popupContent);
                 
-                if (hazard) {{
+                // Auto-open popup for hazards
+                if (hazards.length > 0) {{
                     truckMarker.openPopup();
                 }}
                 
                 currentIndex++;
             }}
             
-            setInterval(moveTruck, animationSpeed);
+            function startAnimation() {{
+                if (!isAnimating) {{
+                    isAnimating = true;
+                    setInterval(moveTruck, animationSpeed);
+                }}
+            }}
+            
+            function resetTruck() {{
+                currentIndex = 0;
+                if (truckMarker) {{
+                    map.removeLayer(truckMarker);
+                }}
+                moveTruck();
+            }}
+            
+            // Start animation after 2 seconds
+            setTimeout(startAnimation, 2000);
         </script>
+        
+        <div style="position: fixed; top: 10px; right: 10px; z-index: 1000; background: white; 
+                    padding: 15px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); 
+                    font-family: Arial; min-width: 200px;">
+            <h4 style='margin: 5px 0; color: #333;'>🚛 Live Truck Tracking</h4>
+            <p style='margin: 5px 0;'><strong>TT:</strong> {tt_specs['capacity_range']}</p>
+            <p style='margin: 5px 0;'><strong>Weight:</strong> {tt_specs['gross_weight']/1000:.1f}T</p>
+            <p style='margin: 5px 0;'><strong>Hazards:</strong> {len(sharp_turns)} sharp turns</p>
+            <button onclick="resetTruck();" style="padding: 8px 12px; background: #007cba; 
+                    color: white; border: none; border-radius: 4px; cursor: pointer; width: 100%;">
+                Reset Animation
+            </button>
+        </div>
         """
         
+        # Add comprehensive legend
+        legend_html = f"""
+        <div style="
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 350px;
+            background-color: white;
+            border: 2px solid #333;
+            border-radius: 8px;
+            z-index: 9999;
+            padding: 15px;
+            font-size: 11px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        ">
+            <h4 style='margin-top: 0; color: #333; text-align: center;'>🚛 Enhanced TT Navigation</h4>
+            
+            <div style='background: #f0f0f0; padding: 8px; border-radius: 4px; margin: 8px 0;'>
+                <strong>Vehicle: {tt_specs['capacity_range']} Tanker</strong><br>
+                Capacity: {tt_specs['avg_capacity_liters']:,}L | Weight: {tt_specs['gross_weight']/1000:.1f}T<br>
+                Max Speed: {tt_specs['max_speed']} km/h | User: {username}
+            </div>
+            
+            <div style='margin: 8px 0;'>
+                <strong>Route Segments:</strong><br>
+                <span style='color: green; font-size: 16px;'>━</span> Safe sections<br>
+                <span style='color: yellow; font-size: 16px;'>━</span> Moderate curves (45-90°)<br>
+                <span style='color: orange; font-size: 16px;'>━</span> Sharp curves<br>
+                <span style='color: red; font-size: 16px;'>━</span> Critical turns (90°+)
+            </div>
+            
+            <div style='margin: 8px 0;'>
+                <strong>Hazard Markers:</strong><br>
+                🔺 Critical sharp turns (90°+)<br>
+                🟡 Moderate curves (45-90°)<br>
+                <span style='color: purple;'>▓</span> Blind spot zones at turns<br>
+                🚛 Animated truck (real-time alerts)
+            </div>
+            
+            <div style='margin: 8px 0;'>
+                <strong>Emergency Facilities:</strong><br>
+                ➕ Hospitals | 🛡️ Police | ⛽ Fuel
+            </div>
+            
+            <hr style='margin: 8px 0;'>
+            <div style='font-size: 9px; color: #666; text-align: center;'>
+                Sharp turns: {len(sharp_turns)} | Curves: {len(curves)}<br>
+                Blind spots shown only at hazardous turns<br>
+                Truck animation shows real-time hazard alerts
+            </div>
+        </div>
+        """
+        
+        # Inject the truck animation and legend
         m.get_root().html.add_child(folium.Element(truck_animation))
+        m.get_root().html.add_child(folium.Element(legend_html))
         
         # Save map
         unique_map_id = uuid4().hex
         html_name = f"route_map_{unique_map_id}.html"
         m.save(f"templates/{html_name}")
 
-        # Generate report
+        # Generate comprehensive report that matches template expectations
         route_report = {
             'total_distance': total_distance,
             'total_duration': total_duration,
+            'tt_specifications': {
+                'capacity_range': tt_specs['capacity_range'],
+                'fuel_capacity': f"{tt_specs['avg_capacity_liters']:,} L",
+                'product_weight': f"{tt_specs['product_weight']/1000:.1f} T",
+                'tare_weight': f"{tt_specs['tare_weight']/1000:.1f} T",
+                'gross_weight': f"{tt_specs['gross_weight']/1000:.1f} T",
+                'axle_load': f"{tt_specs['axle_load']:.1f} T per axle",
+                'max_speed': f"{tt_specs['max_speed']} kmph",
+                'risk_multiplier': f"{tt_specs['risk_multiplier']}x"
+            },
+            'route_analysis': {
+                'total_points': len(coords),
+                'points_per_km': len(coords) / distance_value,
+                'critical_risk_zones': len([t for t in sharp_turns if t['severity'] == 'critical']),
+                'high_risk_zones': len([t for t in sharp_turns if t['severity'] == 'high']),
+                'medium_risk_zones': len(curves),
+                'hospitals_along_route': len([p for p in all_pois if p['type'] == 'hospital']),
+                'fuel_stations': len([p for p in all_pois if p['type'] == 'fuel']),
+                'police_stations': len([p for p in all_pois if p['type'] == 'police'])
+            },
+            'traffic_analysis': {
+                'light_traffic_segments': len(coords) - len(sharp_turns) - len(curves),
+                'moderate_traffic_segments': len(curves),
+                'heavy_traffic_segments': len(sharp_turns),
+                'average_delay_factor': 1.2 if len(sharp_turns) > 5 else 1.0
+            },
             'sharp_turns_detected': len(sharp_turns),
             'curves_detected': len(curves),
             'critical_turns': len([t for t in sharp_turns if t['severity'] == 'critical']),
             'safety_recommendations': [
-                f"CRITICAL: {len(sharp_turns)} sharp turns detected (90°+)",
-                f"Reduce speed to 10-15 km/h at sharp turns",
-                f"Watch for blind spots at turns",
-                f"Total curves requiring caution: {len(curves)}"
+                f"CRITICAL: {len(sharp_turns)} sharp turns detected (90°+) requiring extreme caution",
+                f"Reduce speed to 10-15 km/h at sharp turns to prevent rollover",
+                f"Watch for blind spots at turns - {tt_specs['capacity_range']} TT has large blind zones",
+                f"Total curves requiring reduced speed: {len(curves)}",
+                "Use lower gears for engine braking on turns and steep grades",
+                f"Maximum safe speed: {tt_specs['max_speed']} kmph for {tt_specs['capacity_range']} TT",
+                f"Gross weight {tt_specs['gross_weight']/1000:.1f}T - Check bridge weight limits",
+                "Plan fuel stops considering tanker capacity and weight distribution",
+                "Emergency contacts ready - carrying hazardous petroleum products"
             ]
         }
 
@@ -1100,10 +1324,15 @@ def analyze_route():
 
         return render_template("route_analysis.html",
                                mode="Enhanced TT Navigation",
+                               turns=len(sharp_turns) + len(curves),
+                               poi_count=len(all_pois),
                                html_file=html_name,
                                route_report=route_report,
+                               risk_zones=len(sharp_turns) + len(curves),
+                               high_risk_zones=len([t for t in sharp_turns if t['severity'] in ['critical', 'high']]),
                                sharp_turns=len(sharp_turns),
                                curves=len(curves),
+                               critical_turns=len([t for t in sharp_turns if t['severity'] == 'critical']),
                                tt_specs=tt_specs,
                                username=username)
 
@@ -1111,7 +1340,8 @@ def analyze_route():
         print(f"Error in analyze_route: {e}")
         import traceback
         traceback.print_exc()
-        return f"Error analyzing route: {str(e)}"
+        return f"Error analyzing route: {str(e)}. Please try again."
+
 
 @app.route('/detailed_report')
 @login_required
@@ -1316,4 +1546,5 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
