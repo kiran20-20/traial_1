@@ -1,501 +1,721 @@
-<!-- enhanced_detailed_report.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comprehensive Route Analysis Report - IndianOil Smart Marg</title>
+    <title>Detailed Route Analysis Report - IndianOil Smart Marg</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
+        * {
             margin: 0;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            padding: 0;
+            box-sizing: border-box;
         }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
             background: white;
             border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             overflow: hidden;
         }
+
         .header {
-            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
             color: white;
-            padding: 25px;
+            padding: 30px;
             text-align: center;
         }
+
         .header h1 {
-            margin: 0;
-            font-size: 28px;
-            font-weight: 600;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
         }
-        .header p {
-            margin: 10px 0 0 0;
+
+        .header .subtitle {
+            font-size: 1.2em;
             opacity: 0.9;
+            margin-bottom: 15px;
         }
+
+        .user-info {
+            background: rgba(255,255,255,0.1);
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
         .content {
             padding: 30px;
         }
-        .stats-grid {
+
+        .section {
+            margin-bottom: 40px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            border-left: 5px solid #3498db;
+        }
+
+        .section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.6em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section h3 {
+            color: #34495e;
+            margin: 20px 0 15px 0;
+            font-size: 1.3em;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 8px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .grid-3 {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
-            margin: 20px 0;
         }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
         .stat-card {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            border-left: 5px solid #FF6B35;
-        }
-        .stat-card h3 {
-            margin: 0 0 10px 0;
-            color: #333;
-            font-size: 16px;
-        }
-        .stat-card .value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #FF6B35;
-        }
-        .section {
-            margin: 30px 0;
-            padding: 25px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border: 1px solid #e9ecef;
-        }
-        .section h2 {
-            margin: 0 0 20px 0;
-            color: #333;
-            border-bottom: 2px solid #FF6B35;
-            padding-bottom: 10px;
-        }
-        .risk-item {
             background: white;
-            margin: 15px 0;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-top: 3px solid #3498db;
+        }
+
+        .stat-card.critical {
+            border-top-color: #e74c3c;
+        }
+
+        .stat-card.warning {
+            border-top-color: #f39c12;
+        }
+
+        .stat-card.success {
+            border-top-color: #27ae60;
+        }
+
+        .stat-value {
+            font-size: 2.2em;
+            font-weight: bold;
+            color: #2c3e50;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .tt-specs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .spec-item {
+            background: white;
             padding: 15px;
             border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-left: 4px solid #3498db;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
-        .risk-critical {
-            border-left: 5px solid #dc3545;
+
+        .spec-label {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-        .risk-high {
-            border-left: 5px solid #fd7e14;
+
+        .spec-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2c3e50;
         }
-        .risk-medium {
-            border-left: 5px solid #ffc107;
-        }
-        .spec-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 15px 0;
-        }
-        .spec-table th, .spec-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-        .spec-table th {
-            background: #FF6B35;
-            color: white;
-            font-weight: 600;
-        }
-        .spec-table tr:hover {
-            background: #f5f5f5;
-        }
+
         .recommendations {
-            background: #e7f3ff;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #b6d7ff;
+            list-style: none;
+            counter-reset: recommendation-counter;
         }
-        .recommendations h3 {
-            margin: 0 0 15px 0;
-            color: #0056b3;
-        }
-        .recommendations ul {
-            margin: 0;
-            padding-left: 20px;
-        }
+
         .recommendations li {
-            margin: 8px 0;
-            line-height: 1.5;
-        }
-        .emergency-box {
-            background: #ffebee;
-            border: 2px solid #f44336;
+            counter-increment: recommendation-counter;
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
             border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border-left: 4px solid #f39c12;
+            position: relative;
+            padding-left: 50px;
         }
-        .emergency-box h3 {
-            color: #c62828;
-            margin: 0 0 15px 0;
-        }
-        .btn-group {
-            text-align: center;
-            margin: 30px 0;
-        }
-        .btn {
-            display: inline-block;
-            padding: 12px 24px;
-            margin: 0 10px;
-            background: #FF6B35;
+
+        .recommendations li::before {
+            content: counter(recommendation-counter);
+            position: absolute;
+            left: 15px;
+            top: 15px;
+            background: #f39c12;
             color: white;
-            text-decoration: none;
-            border-radius: 6px;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .risk-analysis {
+            background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+            border-left-color: #e53e3e;
+        }
+
+        .traffic-analysis {
+            background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+            border-left-color: #38a169;
+        }
+
+        .infrastructure-analysis {
+            background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
+            border-left-color: #3182ce;
+        }
+
+        .progress-container {
+            margin: 10px 0;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        .progress-bar {
+            background: #e2e8f0;
+            border-radius: 10px;
+            height: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-success { background: linear-gradient(90deg, #48bb78, #38a169); }
+        .progress-warning { background: linear-gradient(90deg, #ed8936, #dd6b20); }
+        .progress-danger { background: linear-gradient(90deg, #f56565, #e53e3e); }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-info {
+            background: #ebf8ff;
+            color: #2b6cb0;
+            border: 1px solid #bee3f8;
+        }
+
+        .alert-warning {
+            background: #fffbeb;
+            color: #c05621;
+            border: 1px solid #fbd38d;
+        }
+
+        .alert-danger {
+            background: #fed7d7;
+            color: #c53030;
+            border: 1px solid #feb2b2;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
             font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
             transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
-        .btn:hover {
-            background: #e55a2b;
-            transform: translateY(-2px);
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4299e1, #3182ce);
+            color: white;
         }
+
         .btn-secondary {
-            background: #6c757d;
+            background: linear-gradient(135deg, #a0aec0, #718096);
+            color: white;
         }
-        .btn-secondary:hover {
-            background: #5a6268;
+
+        .btn-success {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
         }
-        @media (max-width: 768px) {
-            .container {
-                margin: 10px;
-                border-radius: 10px;
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .summary-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .summary-box h3 {
+            margin-bottom: 15px;
+            border: none;
+            color: white;
+        }
+
+        .print-header {
+            display: none;
+        }
+
+        @media print {
+            .print-header {
+                display: block;
+                margin-bottom: 20px;
             }
+            
+            .action-buttons {
+                display: none;
+            }
+            
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .container {
+                box-shadow: none;
+                border-radius: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .grid-2, .grid-3, .grid-4 {
+                grid-template-columns: 1fr;
+            }
+            
             .content {
                 padding: 20px;
             }
-            .stats-grid {
-                grid-template-columns: 1fr;
+            
+            .section {
+                padding: 20px;
             }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+
+        .timestamp {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 0.9em;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ecf0f1;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Comprehensive Route Analysis Report</h1>
-            <p>IndianOil Smart Marg - Truck Tanker Navigation System</p>
-            <p>User: {{ username }} | Analysis Date: {{ moment().format('YYYY-MM-DD HH:mm:ss') }}</p>
+            <h1><i class="fas fa-file-alt"></i> Detailed Route Analysis Report</h1>
+            <div class="subtitle">IndianOil Smart Marg - Truck Tanker Navigation System</div>
+            <div class="user-info">
+                <i class="fas fa-user"></i> {{ username }} | 
+                <i class="fas fa-truck"></i> {{ tt_specs.capacity_range }} TT |
+                <i class="fas fa-clock"></i> Generated: {{ moment().format('YYYY-MM-DD HH:mm:ss') }}
+            </div>
         </div>
 
         <div class="content">
-            <!-- Route Overview Stats -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <h3>Total Distance</h3>
-                    <div class="value">{{ report.route_overview.total_distance }}</div>
-                </div>
-                <div class="stat-card">
-                    <h3>Estimated Duration</h3>
-                    <div class="value">{{ report.route_overview.total_duration }}</div>
-                </div>
-                <div class="stat-card">
-                    <h3>Route Complexity</h3>
-                    <div class="value">{{ report.route_overview.complexity_rating }}</div>
-                </div>
-                <div class="stat-card">
-                    <h3>Fuel Estimate</h3>
-                    <div class="value">{{ report.route_overview.estimated_fuel_consumption }}</div>
+            <div class="print-header">
+                <h2>IndianOil Corporation Limited - Route Analysis Report</h2>
+                <p>Generated for: {{ username }} | Date: {{ moment().format('YYYY-MM-DD') }}</p>
+            </div>
+
+            <!-- Executive Summary -->
+            <div class="summary-box">
+                <h3><i class="fas fa-clipboard-check"></i> Executive Summary</h3>
+                <div class="grid-3">
+                    <div>
+                        <div style="font-size: 1.8em; font-weight: bold;">{{ report.total_distance }}</div>
+                        <div>Total Distance</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 1.8em; font-weight: bold;">{{ report.total_duration }}</div>
+                        <div>Estimated Duration</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 1.8em; font-weight: bold;">{{ report.route_analysis.high_risk_zones + report.route_analysis.critical_risk_zones }}</div>
+                        <div>High Risk Zones</div>
+                    </div>
                 </div>
             </div>
 
             <!-- Truck Tanker Specifications -->
             <div class="section">
-                <h2>Truck Tanker Specifications</h2>
-                <table class="spec-table">
-                    <tr>
-                        <th>Parameter</th>
-                        <th>Value</th>
-                        <th>Safety Impact</th>
-                    </tr>
-                    <tr>
-                        <td>Capacity Range</td>
-                        <td>{{ report.truck_tanker_specs.capacity_range }}</td>
-                        <td>Liquid surge considerations</td>
-                    </tr>
-                    <tr>
-                        <td>Fuel Capacity</td>
-                        <td>{{ report.truck_tanker_specs.fuel_capacity }}</td>
-                        <td>Fire hazard classification</td>
-                    </tr>
-                    <tr>
-                        <td>Gross Weight</td>
-                        <td>{{ report.truck_tanker_specs.gross_weight }}</td>
-                        <td>Extended braking distance</td>
-                    </tr>
-                    <tr>
-                        <td>Axle Load</td>
-                        <td>{{ report.truck_tanker_specs.axle_load }}</td>
-                        <td>Bridge weight restrictions</td>
-                    </tr>
-                    <tr>
-                        <td>Maximum Safe Speed</td>
-                        <td>{{ report.truck_tanker_specs.max_safe_speed }}</td>
-                        <td>Rollover prevention</td>
-                    </tr>
-                    <tr>
-                        <td>Risk Category</td>
-                        <td>{{ report.truck_tanker_specs.risk_category }}</td>
-                        <td>Regulatory compliance</td>
-                    </tr>
-                </table>
-            </div>
-
-            <!-- Critical Hazards Analysis -->
-            {% if analysis_data.critical_hazards %}
-            <div class="section">
-                <h2>Critical Hazard Zones ({{ analysis_data.critical_hazards|length }})</h2>
-                {% for hazard in analysis_data.critical_hazards %}
-                <div class="risk-item risk-critical">
-                    <h4>Risk Score: {{ "%.1f"|format(hazard.risk_score) }}/10 - {{ hazard.risk_level }}</h4>
-                    <p><strong>Location:</strong> {{ "%.4f"|format(hazard.location[0]) }}, {{ "%.4f"|format(hazard.location[1]) }}</p>
-                    <p><strong>Primary Hazards:</strong></p>
-                    <ul>
-                        {% for primary in hazard.primary_hazards[:3] %}
-                        <li>{{ primary.name }} ({{ "%.0f"|format(primary.distance) }}m) - {{ primary.category|title }}</li>
-                        {% endfor %}
-                    </ul>
-                    {% if hazard.tt_specific_recommendations %}
-                    <p><strong>TT Specific Actions:</strong></p>
-                    <ul>
-                        {% for rec in hazard.tt_specific_recommendations %}
-                        <li style="color: #dc3545; font-weight: bold;">{{ rec }}</li>
-                        {% endfor %}
-                    </ul>
-                    {% endif %}
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <!-- Critical Turns Analysis -->
-            {% if analysis_data.critical_turns %}
-            <div class="section">
-                <h2>Critical Turn Analysis ({{ analysis_data.critical_turns|length }})</h2>
-                {% for turn in analysis_data.critical_turns %}
-                <div class="risk-item risk-critical">
-                    <h4>Turn Angle: {{ "%.1f"|format(turn.turn_angle) }}° - {{ turn.severity|title }} Severity</h4>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 10px 0;">
-                        <div>
-                            <strong>Safe Speed:</strong> {{ turn.recommended_speed }} kmph<br>
-                            <strong>Turn Radius:</strong> {{ "%.1f"|format(turn.radius) }}m
-                        </div>
-                        <div>
-                            <strong>Rollover Speed:</strong> {{ turn.rollover_speed }} kmph<br>
-                            <strong>Lateral G-Force:</strong> {{ turn.physics_factors.lateral_g_force }}g
-                        </div>
-                        <div>
-                            <strong>Braking Distance:</strong> {{ turn.deceleration_distance }}m<br>
-                            <strong>Weight Penalty:</strong> {{ "%.1%"|format(turn.physics_factors.weight_penalty) }}
-                        </div>
-                    </div>
-                    <p style="color: #dc3545; font-weight: bold;">{{ turn.warning }}</p>
-                    <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin: 10px 0;">
-                        <strong>Truck Considerations:</strong>
-                        <ul style="margin: 5px 0; padding-left: 20px;">
-                            {% for consideration in turn.truck_considerations %}
-                            <li>{{ consideration }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <!-- Braking Analysis -->
-            {% if analysis_data.extreme_braking_zones %}
-            <div class="section">
-                <h2>Extended Braking Zones ({{ analysis_data.extreme_braking_zones|length }})</h2>
-                {% for braking in analysis_data.extreme_braking_zones %}
-                <div class="risk-item risk-high">
-                    <h4>Braking Distance: {{ braking.total_distance }}m at {{ braking.speed_kmph }} kmph</h4>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 10px 0;">
-                        <div><strong>Physics Distance:</strong> {{ braking.physics_distance }}m</div>
-                        <div><strong>Reaction Distance:</strong> {{ braking.reaction_distance }}m</div>
-                        <div><strong>Weight Factor:</strong> {{ braking.weight_factor }}x</div>
-                        <div><strong>Gradient:</strong> {{ "%.1f"|format(braking.gradient) }}%</div>
-                    </div>
-                    <p><strong>Gradient Effect:</strong> {{ braking.gradient_effect }}</p>
-                    <div style="background: #fff3cd; padding: 8px; border-radius: 4px; border: 1px solid #ffeaa7;">
-                        <strong>Safety Recommendations:</strong>
-                        <ul style="margin: 5px 0; padding-left: 20px;">
-                            {% for rec in braking.safety_recommendations %}
-                            {% if rec %}
-                            <li>{{ rec }}</li>
-                            {% endif %}
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <!-- Route Complexity Analysis -->
-            <div class="section">
-                <h2>Detailed Route Analysis</h2>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
-                    <div>
-                        <h3>Hazard Distribution</h3>
-                        <table class="spec-table">
-                            <tr><td>Critical Hazards</td><td>{{ report.hazard_analysis.critical_hazards }}</td></tr>
-                            <tr><td>High Risk Zones</td><td>{{ report.hazard_analysis.high_hazards }}</td></tr>
-                            <tr><td>Fuel Station Hazards</td><td>{{ report.hazard_analysis.fuel_station_hazards }}</td></tr>
-                            <tr><td>School Zone Hazards</td><td>{{ report.hazard_analysis.school_zone_hazards }}</td></tr>
-                        </table>
-                    </div>
-                    <div>
-                        <h3>Turn Analysis</h3>
-                        <table class="spec-table">
-                            <tr><td>Total Significant Turns</td><td>{{ report.turn_analysis.total_significant_turns }}</td></tr>
-                            <tr><td>Critical Turns</td><td>{{ report.turn_analysis.critical_turns }}</td></tr>
-                            <tr><td>High Risk Turns</td><td>{{ report.turn_analysis.high_risk_turns }}</td></tr>
-                            <tr><td>Minimum Turn Speed</td><td>{{ report.turn_analysis.minimum_turn_speed }} kmph</td></tr>
-                        </table>
-                    </div>
-                    <div>
-                        <h3>Traffic Assessment</h3>
-                        <table class="spec-table">
-                            <tr><td>Heavy Traffic Segments</td><td>{{ report.traffic_assessment.heavy_traffic_segments }}</td></tr>
-                            <tr><td>Average Delay Factor</td><td>{{ report.traffic_assessment.average_delay_factor }}x</td></tr>
-                            <tr><td>Real-time Data</td><td>{{ "Yes" if report.traffic_assessment.real_time_data_available else "No" }}</td></tr>
-                        </table>
-                    </div>
-                    <div>
-                        <h3>Elevation Profile</h3>
-                        <table class="spec-table">
-                            <tr><td>Max Elevation</td><td>{{ report.elevation_profile.max_elevation }}m</td></tr>
-                            <tr><td>Min Elevation</td><td>{{ report.elevation_profile.min_elevation }}m</td></tr>
-                            <tr><td>Steepest Grade</td><td>{{ report.elevation_profile.steepest_grade }}</td></tr>
-                            <tr><td>Grade Changes</td><td>{{ report.elevation_profile.total_elevation_changes }}</td></tr>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Fuel Station Specific Hazards -->
-            {% if analysis_data.fuel_station_hazards %}
-            <div class="emergency-box">
-                <h3>EXTREME FIRE HAZARD - FUEL STATIONS DETECTED</h3>
-                <p><strong>{{ analysis_data.fuel_station_hazards|length }} fuel station(s) along route pose extreme risk to petroleum tanker transport.</strong></p>
+                <h2><i class="fas fa-truck"></i> Truck Tanker Specifications</h2>
                 
-                {% for hazard in analysis_data.fuel_station_hazards %}
-                <div style="background: white; margin: 10px 0; padding: 15px; border-radius: 5px;">
-                    <h4>Risk Score: {{ "%.1f"|format(hazard.risk_score) }}/10</h4>
-                    <p><strong>Fuel Stations in Area:</strong></p>
-                    <ul>
-                        {% for primary in hazard.primary_hazards %}
-                        {% if 'fuel' in primary.category.lower() %}
-                        <li style="color: #c62828; font-weight: bold;">{{ primary.name }} ({{ "%.0f"|format(primary.distance) }}m away)</li>
-                        {% endif %}
-                        {% endfor %}
-                    </ul>
-                    <div style="background: #ffebee; padding: 10px; border-radius: 4px; margin: 10px 0;">
-                        <strong>MANDATORY SAFETY PROTOCOLS:</strong>
-                        <ul style="margin: 5px 0; color: #c62828;">
-                            <li>Reduce speed to maximum 20 kmph when within 200m</li>
-                            <li>No smoking, mobile phones, or ignition sources</li>
-                            <li>Emergency response team on standby</li>
-                            <li>Fire extinguisher and spill containment ready</li>
-                            <li>Consider alternative route if possible</li>
-                        </ul>
+                {% if report.tt_specifications %}
+                <div class="tt-specs-grid">
+                    <div class="spec-item">
+                        <div class="spec-label">Tank Capacity</div>
+                        <div class="spec-value">{{ report.tt_specifications.fuel_capacity }}</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">Product Weight</div>
+                        <div class="spec-value">{{ report.tt_specifications.product_weight }}</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">Tare Weight</div>
+                        <div class="spec-value">{{ report.tt_specifications.tare_weight }}</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">Gross Weight</div>
+                        <div class="spec-value">{{ report.tt_specifications.gross_weight }}</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">Axle Load</div>
+                        <div class="spec-value">{{ report.tt_specifications.axle_load }}</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">Maximum Speed</div>
+                        <div class="spec-value">{{ report.tt_specifications.max_speed }}</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">Risk Multiplier</div>
+                        <div class="spec-value">{{ report.tt_specifications.risk_multiplier }}</div>
+                    </div>
+                    <div class="spec-item">
+                        <div class="spec-label">Capacity Range</div>
+                        <div class="spec-value">{{ report.tt_specifications.capacity_range }}</div>
                     </div>
                 </div>
-                {% endfor %}
+                {% endif %}
+
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        <strong>Vehicle Classification:</strong> This analysis is specifically designed for {{ tt_specs.capacity_range }} petroleum tanker trucks carrying hazardous materials under Indian regulations.
+                    </div>
+                </div>
             </div>
-            {% endif %}
+
+            <!-- Route Analysis -->
+            <div class="section">
+                <h2><i class="fas fa-route"></i> Route Analysis</h2>
+                
+                <div class="grid-4">
+                    <div class="stat-card">
+                        <span class="stat-value">{{ report.route_analysis.total_points }}</span>
+                        <div class="stat-label">Total Route Points</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value">{{ "%.1f"|format(report.route_analysis.points_per_km) }}</span>
+                        <div class="stat-label">Points per Kilometer</div>
+                    </div>
+                    <div class="stat-card success">
+                        <span class="stat-value">{{ report.route_analysis.fuel_stations }}</span>
+                        <div class="stat-label">Fuel Stations</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value">{{ report.route_analysis.hospitals_along_route + report.route_analysis.police_stations }}</span>
+                        <div class="stat-label">Emergency Services</div>
+                    </div>
+                </div>
+
+                <h3>Route Density Analysis</h3>
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Route Point Density</span>
+                        <span>{{ "%.1f"|format(report.route_analysis.points_per_km) }} pts/km</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill {% if report.route_analysis.points_per_km > 15 %}progress-success{% elif report.route_analysis.points_per_km > 10 %}progress-warning{% else %}progress-danger{% endif %}" 
+                             style="width: {{ (report.route_analysis.points_per_km * 4)|int }}%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Risk Assessment -->
+            <div class="section risk-analysis">
+                <h2><i class="fas fa-exclamation-triangle"></i> Risk Assessment</h2>
+                
+                <div class="grid-3">
+                    <div class="stat-card critical">
+                        <span class="stat-value">{{ report.route_analysis.critical_risk_zones if 'critical_risk_zones' in report.route_analysis else 0 }}</span>
+                        <div class="stat-label">Critical Risk Zones</div>
+                    </div>
+                    <div class="stat-card warning">
+                        <span class="stat-value">{{ report.route_analysis.high_risk_zones }}</span>
+                        <div class="stat-label">High Risk Zones</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value">{{ report.route_analysis.medium_risk_zones }}</span>
+                        <div class="stat-label">Medium Risk Zones</div>
+                    </div>
+                </div>
+
+                {% set total_risk_zones = (report.route_analysis.critical_risk_zones if 'critical_risk_zones' in report.route_analysis else 0) + report.route_analysis.high_risk_zones + report.route_analysis.medium_risk_zones %}
+                
+                {% if total_risk_zones > 10 %}
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <div>
+                        <strong>High Risk Route:</strong> This route contains {{ total_risk_zones }} risk zones. Consider alternative routing or additional safety measures for {{ tt_specs.capacity_range }} tanker operations.
+                    </div>
+                </div>
+                {% elif total_risk_zones > 5 %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div>
+                        <strong>Moderate Risk Route:</strong> {{ total_risk_zones }} risk zones identified. Enhanced caution recommended for petroleum transport.
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-check-circle"></i>
+                    <div>
+                        <strong>Low Risk Route:</strong> Minimal risk zones detected. Standard safety protocols apply.
+                    </div>
+                </div>
+                {% endif %}
+
+                <h3>Risk Factors for {{ tt_specs.capacity_range }} Tanker</h3>
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Overall Risk Level</span>
+                        <span>{{ "%.1f"|format((total_risk_zones / report.route_analysis.total_points * 1000) if report.route_analysis.total_points > 0 else 0) }}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        {% set risk_percentage = (total_risk_zones / report.route_analysis.total_points * 100) if report.route_analysis.total_points > 0 else 0 %}
+                        <div class="progress-fill {% if risk_percentage > 5 %}progress-danger{% elif risk_percentage > 2 %}progress-warning{% else %}progress-success{% endif %}" 
+                             style="width: {{ (risk_percentage * 10)|int }}%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Traffic Analysis -->
+            <div class="section traffic-analysis">
+                <h2><i class="fas fa-traffic-light"></i> Traffic Analysis</h2>
+                
+                <div class="grid-3">
+                    <div class="stat-card success">
+                        <span class="stat-value">{{ report.traffic_analysis.light_traffic_segments }}</span>
+                        <div class="stat-label">Light Traffic Areas</div>
+                    </div>
+                    <div class="stat-card warning">
+                        <span class="stat-value">{{ report.traffic_analysis.moderate_traffic_segments }}</span>
+                        <div class="stat-label">Moderate Traffic Areas</div>
+                    </div>
+                    <div class="stat-card critical">
+                        <span class="stat-value">{{ report.traffic_analysis.heavy_traffic_segments }}</span>
+                        <div class="stat-label">Heavy Traffic Areas</div>
+                    </div>
+                </div>
+
+                <h3>Traffic Impact Assessment</h3>
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Average Delay Factor</span>
+                        <span>{{ "%.1f"|format(report.traffic_analysis.average_delay_factor) }}x normal time</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill {% if report.traffic_analysis.average_delay_factor < 1.2 %}progress-success{% elif report.traffic_analysis.average_delay_factor < 1.5 %}progress-warning{% else %}progress-danger{% endif %}" 
+                             style="width: {{ ((report.traffic_analysis.average_delay_factor - 1) * 100)|int }}%;"></div>
+                    </div>
+                </div>
+
+                {% if report.traffic_analysis.average_delay_factor > 1.5 %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-clock"></i>
+                    <div>
+                        <strong>High Traffic Impact:</strong> Expect significant delays. Consider scheduling during off-peak hours for petroleum transport operations.
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Infrastructure Analysis -->
+            <div class="section infrastructure-analysis">
+                <h2><i class="fas fa-map-marked-alt"></i> Infrastructure Analysis</h2>
+                
+                <div class="grid-4">
+                    <div class="stat-card critical">
+                        <span class="stat-value">{{ report.route_analysis.hospitals_along_route }}</span>
+                        <div class="stat-label">Hospitals</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value">{{ report.route_analysis.police_stations }}</span>
+                        <div class="stat-label">Police Stations</div>
+                    </div>
+                    <div class="stat-card warning">
+                        <span class="stat-value">{{ report.route_analysis.fuel_stations }}</span>
+                        <div class="stat-label">Fuel Stations</div>
+                    </div>
+                    <div class="stat-card success">
+                        <span class="stat-value">{{ report.route_analysis.hospitals_along_route + report.route_analysis.police_stations + report.route_analysis.fuel_stations }}</span>
+                        <div class="stat-label">Total POIs</div>
+                    </div>
+                </div>
+
+                <h3>Emergency Response Readiness</h3>
+                {% set emergency_coverage = (report.route_analysis.hospitals_along_route + report.route_analysis.police_stations) %}
+                {% if emergency_coverage >= 5 %}
+                <div class="alert alert-info">
+                    <i class="fas fa-shield-alt"></i>
+                    <div>
+                        <strong>Good Emergency Coverage:</strong> {{ emergency_coverage }} emergency facilities identified along the route.
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div>
+                        <strong>Limited Emergency Coverage:</strong> Only {{ emergency_coverage }} emergency facilities available. Ensure emergency contact information is readily available.
+                    </div>
+                </div>
+                {% endif %}
+            </div>
 
             <!-- Safety Recommendations -->
-            <div class="recommendations">
-                <h3>Comprehensive Safety Recommendations</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-                    <div>
-                        <h4>Operational Guidelines</h4>
-                        <ul>
-                            {% for rec in report.safety_recommendations %}
-                            <li>{{ rec }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    <div>
-                        <h4>Emergency Preparedness</h4>
-                        <ul>
-                            {% for emergency in report.emergency_considerations %}
-                            <li>{{ emergency }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Performance Summary -->
             <div class="section">
-                <h2>Route Performance Summary</h2>
-                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin: 20px 0;">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; text-align: center;">
-                        <div>
-                            <div style="font-size: 24px; font-weight: bold;">{{ report.route_overview.complexity_rating }}</div>
-                            <div>Route Complexity</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 24px; font-weight: bold;">{{ report.hazard_analysis.total_hazard_zones }}</div>
-                            <div>Total Hazard Zones</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 24px; font-weight: bold;">{{ report.turn_analysis.total_significant_turns }}</div>
-                            <div>Significant Turns</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 24px; font-weight: bold;">{{ report.braking_analysis.maximum_braking_distance }}m</div>
-                            <div>Max Braking Distance</div>
-                        </div>
+                <h2><i class="fas fa-shield-alt"></i> Safety Recommendations</h2>
+                
+                <ul class="recommendations">
+                    {% for recommendation in report.safety_recommendations %}
+                    <li>{{ recommendation }}</li>
+                    {% endfor %}
+                </ul>
+
+                <h3>Additional TT-Specific Guidelines</h3>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        <strong>Regulatory Compliance:</strong> Ensure compliance with Central Motor Vehicle Rules for transport of petroleum products. Carry all required safety equipment and documentation.
                     </div>
                 </div>
             </div>
 
             <!-- Action Buttons -->
-            <div class="btn-group">
-                <a href="/" class="btn">Analyze New Route</a>
-                <a href="/dashboard" class="btn btn-secondary">Dashboard</a>
-                <a href="javascript:window.print()" class="btn btn-secondary">Print Report</a>
-                <a href="/logout" class="btn btn-secondary">Logout</a>
+            <div class="action-buttons">
+                <button onclick="window.print()" class="btn btn-primary">
+                    <i class="fas fa-print"></i> Print Report
+                </button>
+                <a href="{{ url_for('home') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Route Planning
+                </a>
+                <a href="{{ url_for('analyze_route') }}" class="btn btn-success">
+                    <i class="fas fa-map"></i> View Interactive Map
+                </a>
             </div>
 
-            <div style="text-align: center; color: #6c757d; font-size: 12px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef;">
-                <p>IndianOil Smart Marg - Truck Tanker Navigation System<br>
-                Report generated on {{ moment().format('YYYY-MM-DD HH:mm:ss') }} for user {{ username }}<br>
-                This report contains safety-critical information for petroleum product transport</p>
+            <div class="timestamp">
+                Report generated on {{ moment().format('MMMM Do YYYY, h:mm:ss a') }} by IndianOil Smart Marg System
             </div>
         </div>
     </div>
 
     <script>
-        // Auto-expand critical sections on load
+        // Auto-generate timestamp
         document.addEventListener('DOMContentLoaded', function() {
-            // Highlight critical items
-            const criticalItems = document.querySelectorAll('.risk-critical');
-            criticalItems.forEach(item => {
-                item.style.animation = 'pulse 2s infinite';
+            const now = new Date();
+            const timestamp = now.toLocaleString('en-IN', {
+                timeZone: 'Asia/Kolkata',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            
+            // Update all timestamp elements
+            const timestampElements = document.querySelectorAll('.timestamp');
+            timestampElements.forEach(element => {
+                element.innerHTML = element.innerHTML.replace(/moment\(\)\.format\('[^']*'\)/g, `"${timestamp}"`);
             });
         });
 
-        // CSS animation for critical items
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes pulse {
-                0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
-                70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
-                100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
-            }
-        `;
-        document.head.appendChild(style);
+        // Enhanced print styles
+        window.addEventListener('beforeprint', function() {
+            document.body.style.background = 'white';
+        });
+
+        window.addEventListener('afterprint', function() {
+            document.body.style.background = '';
+        });
     </script>
 </body>
 </html>
