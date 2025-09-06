@@ -859,7 +859,7 @@ def fetch_routes():
 @app.route('/analyze_route', methods=['POST'])
 @login_required
 def analyze_route():
-    """Enhanced route analysis with proper turn detection and animation"""
+    """Enhanced route analysis with proper turn detection, animation, and audio alerts"""
     try:
         directions = session.get('directions')
         tt_specs = session.get('tt_specs')
@@ -1058,156 +1058,400 @@ def analyze_route():
                 print(f"Error adding POI marker: {e}")
                 continue
         
-        # Add truck animation with hazard alerts
-        truck_animation = f"""
+        # Add truck animation with audio alerts and enhanced visuals
+        truck_animation_with_audio = f"""
         <script>
-            var routeCoords = {json.dumps(coords)};
-            var sharpTurns = {json.dumps(sharp_turns)};
-            var curves = {json.dumps(curves)};
-            var currentIndex = 0;
-            var truckMarker = null;
-            var animationSpeed = 200;
-            var isAnimating = false;
-            
-            function createTruckIcon(bearing) {{
-                return L.divIcon({{
-                    html: '<div style="transform: rotate(' + bearing + 'deg); font-size: 24px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">🚛</div>',
-                    iconSize: [30, 30],
-                    iconAnchor: [15, 15],
-                    className: 'truck-icon'
-                }});
-            }}
-            
-            function calculateBearing(lat1, lng1, lat2, lng2) {{
-                var dLng = (lng2 - lng1) * Math.PI / 180;
-                var lat1Rad = lat1 * Math.PI / 180;
-                var lat2Rad = lat2 * Math.PI / 180;
-                var y = Math.sin(dLng) * Math.cos(lat2Rad);
-                var x = Math.cos(lat1Rad) * Math.sin(lat2Rad) - Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLng);
-                var bearing = Math.atan2(y, x) * 180 / Math.PI;
-                return (bearing + 360) % 360;
-            }}
-            
-            function checkNearbyHazards(currentPos, index) {{
-                var hazards = [];
-                
-                // Check for sharp turns
-                for (var i = 0; i < sharpTurns.length; i++) {{
-                    var turn = sharpTurns[i];
-                    if (Math.abs(turn.index - index) <= 5) {{
-                        hazards.push({{
-                            type: 'sharp_turn',
-                            angle: turn.turn_angle,
-                            direction: turn.direction,
-                            severity: turn.severity,
-                            distance: Math.abs(turn.index - index)
-                        }});
-                    }}
-                }}
-                
-                // Check for curves
-                for (var i = 0; i < curves.length; i++) {{
-                    var curve = curves[i];
-                    if (Math.abs(curve.index - index) <= 3) {{
-                        hazards.push({{
-                            type: 'curve',
-                            angle: curve.turn_angle,
-                            direction: curve.direction,
-                            distance: Math.abs(curve.index - index)
-                        }});
-                    }}
-                }}
-                
-                return hazards;
-            }}
-            
-            function moveTruck() {{
-                if (currentIndex >= routeCoords.length - 1) {{
-                    currentIndex = 0; // Reset animation
-                }}
-                
-                var currentPos = routeCoords[currentIndex];
-                var nextPos = routeCoords[Math.min(currentIndex + 1, routeCoords.length - 1)];
-                
-                if (truckMarker) {{
-                    map.removeLayer(truckMarker);
-                }}
-                
-                var bearing = calculateBearing(currentPos[0], currentPos[1], nextPos[0], nextPos[1]);
-                var hazards = checkNearbyHazards(currentPos, currentIndex);
-                
-                truckMarker = L.marker([currentPos[0], currentPos[1]], {{
-                    icon: createTruckIcon(bearing)
-                }}).addTo(map);
-                
-                var speed = 40; // Default speed
-                var popupContent = `
-                    <div style='text-align: center; font-family: Arial; min-width: 200px;'>
-                        <h4 style='margin: 5px 0; color: #333;'>🚛 Live Truck Position</h4>
-                        <p><strong>Progress:</strong> ${{Math.round((currentIndex/routeCoords.length)*100)}}%</p>
-                        <p><strong>TT:</strong> {tt_specs['capacity_range']}</p>
-                        <p><strong>Weight:</strong> {tt_specs['gross_weight']/1000:.1f}T</p>
-                `;
-                
-                if (hazards.length > 0) {{
-                    var criticalHazard = hazards.find(h => h.type === 'sharp_turn') || hazards[0];
-                    speed = criticalHazard.type === 'sharp_turn' ? 15 : 30;
+            // Wait for map to be fully loaded
+            document.addEventListener('DOMContentLoaded', function() {{
+                setTimeout(function() {{
+                    var routeCoords = {json.dumps(coords)};
+                    var sharpTurns = {json.dumps(sharp_turns)};
+                    var curves = {json.dumps(curves)};
+                    var currentIndex = 0;
+                    var truckMarker = null;
+                    var animationSpeed = 400;
+                    var isAnimating = false;
+                    var audioEnabled = true;
+                    var lastAlertIndex = -1;
                     
-                    popupContent += `
-                        <div style='background: ${{criticalHazard.type === 'sharp_turn' ? 'red' : 'orange'}}; 
-                                    color: white; padding: 8px; border-radius: 4px; margin: 8px 0;'>
-                            <strong>⚠️ HAZARD ALERT!</strong><br>
-                            ${{criticalHazard.type === 'sharp_turn' ? 'Sharp' : 'Moderate'}} ${{criticalHazard.direction}} ${{criticalHazard.type === 'sharp_turn' ? 'turn' : 'curve'}}<br>
-                            Angle: ${{criticalHazard.angle.toFixed(1)}}°<br>
-                            <strong>REDUCE SPEED TO ${{speed}} KM/H!</strong>
-                        </div>
-                    `;
-                }} else {{
-                    popupContent += `<p><strong>Status:</strong> Safe driving zone</p>`;
-                }}
-                
-                popupContent += `<p><strong>Current Speed:</strong> ${{speed}} km/h</p></div>`;
-                
-                truckMarker.bindPopup(popupContent);
-                
-                // Auto-open popup for hazards
-                if (hazards.length > 0) {{
-                    truckMarker.openPopup();
-                }}
-                
-                currentIndex++;
-            }}
-            
-            function startAnimation() {{
-                if (!isAnimating) {{
-                    isAnimating = true;
-                    setInterval(moveTruck, animationSpeed);
-                }}
-            }}
-            
-            function resetTruck() {{
-                currentIndex = 0;
-                if (truckMarker) {{
-                    map.removeLayer(truckMarker);
-                }}
-                moveTruck();
-            }}
-            
-            // Start animation after 2 seconds
-            setTimeout(startAnimation, 2000);
+                    // Audio context and sound generation
+                    var audioContext = null;
+                    var masterVolume = 0.3;
+                    
+                    function initAudio() {{
+                        try {{
+                            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                            console.log("Audio initialized");
+                        }} catch (e) {{
+                            console.log("Audio not supported:", e);
+                            audioEnabled = false;
+                        }}
+                    }}
+                    
+                    function playTone(frequency, duration, type = 'sine') {{
+                        if (!audioEnabled || !audioContext) return;
+                        
+                        try {{
+                            var oscillator = audioContext.createOscillator();
+                            var gainNode = audioContext.createGain();
+                            
+                            oscillator.connect(gainNode);
+                            gainNode.connect(audioContext.destination);
+                            
+                            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+                            oscillator.type = type;
+                            
+                            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                            gainNode.gain.linearRampToValueAtTime(masterVolume, audioContext.currentTime + 0.01);
+                            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+                            
+                            oscillator.start(audioContext.currentTime);
+                            oscillator.stop(audioContext.currentTime + duration);
+                        }} catch (e) {{
+                            console.log("Audio playback error:", e);
+                        }}
+                    }}
+                    
+                    function playAlert(alertType) {{
+                        if (!audioEnabled) return;
+                        
+                        switch(alertType) {{
+                            case 'sharp_turn':
+                                playTone(800, 0.2);
+                                setTimeout(() => playTone(1000, 0.2), 250);
+                                setTimeout(() => playTone(800, 0.3), 500);
+                                break;
+                            case 'curve':
+                                playTone(600, 0.4);
+                                break;
+                            case 'safe':
+                                playTone(400, 0.2);
+                                break;
+                            case 'start':
+                                playTone(300, 0.3);
+                                setTimeout(() => playTone(400, 0.3), 200);
+                                setTimeout(() => playTone(500, 0.3), 400);
+                                break;
+                        }}
+                    }}
+                    
+                    function createTruckIcon(bearing, speed, hazardLevel) {{
+                        var truckColor = hazardLevel === 'critical' ? '#FF0000' : 
+                                       hazardLevel === 'warning' ? '#FFA500' : '#00FF00';
+                        var truckSize = hazardLevel === 'critical' ? '32px' : '28px';
+                        
+                        return L.divIcon({{
+                            html: \`
+                                <div style="
+                                    transform: rotate(\${{bearing}}deg); 
+                                    font-size: \${{truckSize}}; 
+                                    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+                                    filter: drop-shadow(0 0 3px \${{truckColor}});
+                                    transition: all 0.3s ease;
+                                ">🚛</div>
+                                <div style="
+                                    position: absolute; 
+                                    top: -40px; 
+                                    left: -25px; 
+                                    background: \${{truckColor}}; 
+                                    color: white; 
+                                    padding: 2px 6px; 
+                                    border-radius: 3px; 
+                                    font-size: 10px; 
+                                    font-weight: bold;
+                                    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                                ">\${{speed}} km/h</div>
+                            \`,
+                            iconSize: [50, 50],
+                            iconAnchor: [25, 25],
+                            className: 'truck-animated-enhanced'
+                        }});
+                    }}
+                    
+                    function calculateBearing(lat1, lng1, lat2, lng2) {{
+                        if (lat1 === lat2 && lng1 === lng2) return 0;
+                        var dLng = (lng2 - lng1) * Math.PI / 180;
+                        var lat1Rad = lat1 * Math.PI / 180;
+                        var lat2Rad = lat2 * Math.PI / 180;
+                        var y = Math.sin(dLng) * Math.cos(lat2Rad);
+                        var x = Math.cos(lat1Rad) * Math.sin(lat2Rad) - Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLng);
+                        var bearing = Math.atan2(y, x) * 180 / Math.PI;
+                        return (bearing + 360) % 360;
+                    }}
+                    
+                    function checkNearbyHazards(currentPos, index) {{
+                        var hazards = [];
+                        
+                        for (var i = 0; i < sharpTurns.length; i++) {{
+                            var turn = sharpTurns[i];
+                            var distance = Math.abs(turn.index - index);
+                            if (distance <= 10) {{
+                                hazards.push({{
+                                    type: 'sharp_turn',
+                                    angle: turn.turn_angle,
+                                    direction: turn.direction,
+                                    severity: turn.severity,
+                                    distance: distance,
+                                    alertThreshold: 5
+                                }});
+                            }}
+                        }}
+                        
+                        for (var i = 0; i < curves.length; i++) {{
+                            var curve = curves[i];
+                            var distance = Math.abs(curve.index - index);
+                            if (distance <= 8) {{
+                                hazards.push({{
+                                    type: 'curve',
+                                    angle: curve.turn_angle,
+                                    direction: curve.direction,
+                                    distance: distance,
+                                    alertThreshold: 3
+                                }});
+                            }}
+                        }}
+                        
+                        return hazards.sort((a, b) => a.distance - b.distance);
+                    }}
+                    
+                    function updateProgressDisplay(progress, speed, status, hazards) {{
+                        var progressDiv = document.getElementById('progress-display');
+                        if (progressDiv) {{
+                            var hazardInfo = '';
+                            if (hazards.length > 0) {{
+                                var h = hazards[0];
+                                hazardInfo = \`
+                                    <div style='background: rgba(255,0,0,0.1); padding: 5px; border-radius: 3px; margin-top: 5px;'>
+                                        <strong>Next Hazard:</strong> \${{h.type === 'sharp_turn' ? 'Sharp Turn' : 'Curve'}} 
+                                        (\${{h.angle.toFixed(1)}}°) in \${{h.distance}} steps
+                                    </div>
+                                \`;
+                            }}
+                            
+                            progressDiv.innerHTML = \`
+                                <div style='text-align: center;'>
+                                    <div style='font-size: 14px; font-weight: bold;'>Progress: \${{progress}}%</div>
+                                    <div style='margin: 5px 0;'>Speed: \${{speed}} km/h</div>
+                                    <div style='font-size: 12px; color: #666;'>\${{status}}</div>
+                                    \${{hazardInfo}}
+                                </div>
+                            \`;
+                        }}
+                    }}
+                    
+                    function moveTruck() {{
+                        if (currentIndex >= routeCoords.length - 1) {{
+                            currentIndex = 0;
+                            if (truckMarker) {{
+                                window.map_{m._id}.removeLayer(truckMarker);
+                                truckMarker = null;
+                            }}
+                            playAlert('start');
+                            return;
+                        }}
+                        
+                        var currentPos = routeCoords[currentIndex];
+                        var nextPos = routeCoords[Math.min(currentIndex + 3, routeCoords.length - 1)];
+                        
+                        if (truckMarker) {{
+                            window.map_{m._id}.removeLayer(truckMarker);
+                        }}
+                        
+                        var bearing = calculateBearing(currentPos[0], currentPos[1], nextPos[0], nextPos[1]);
+                        var hazards = checkNearbyHazards(currentPos, currentIndex);
+                        
+                        var speed = 45;
+                        var status = "Normal driving - Safe zone";
+                        var hazardLevel = 'safe';
+                        var shouldAlert = false;
+                        
+                        if (hazards.length > 0) {{
+                            var criticalHazard = hazards[0];
+                            
+                            if (criticalHazard.type === 'sharp_turn') {{
+                                if (criticalHazard.distance <= 2) {{
+                                    speed = 12;
+                                    status = "🚨 SHARP TURN - EMERGENCY SLOW DOWN!";
+                                    hazardLevel = 'critical';
+                                    shouldAlert = true;
+                                }} else if (criticalHazard.distance <= 5) {{
+                                    speed = 25;
+                                    status = "⚠️ Sharp turn ahead - Reduce speed";
+                                    hazardLevel = 'warning';
+                                    shouldAlert = (currentIndex - lastAlertIndex) > 10;
+                                }}
+                            }} else if (criticalHazard.type === 'curve') {{
+                                if (criticalHazard.distance <= 1) {{
+                                    speed = 30;
+                                    status = "🔄 Curve - Moderate speed";
+                                    hazardLevel = 'warning';
+                                    shouldAlert = (currentIndex - lastAlertIndex) > 15;
+                                }} else {{
+                                    speed = 40;
+                                    status = "Curve ahead - Prepare to slow";
+                                }}
+                            }}
+                        }}
+                        
+                        if (shouldAlert) {{
+                            if (hazardLevel === 'critical') {{
+                                playAlert('sharp_turn');
+                            }} else if (hazardLevel === 'warning') {{
+                                playAlert('curve');
+                            }}
+                            lastAlertIndex = currentIndex;
+                        }}
+                        
+                        truckMarker = L.marker([currentPos[0], currentPos[1]], {{
+                            icon: createTruckIcon(bearing, speed, hazardLevel),
+                            zIndexOffset: 1000
+                        }}).addTo(window.map_{m._id});
+                        
+                        var progress = Math.round((currentIndex / routeCoords.length) * 100);
+                        
+                        var popupContent = \`
+                            <div style='text-align: center; font-family: Arial; min-width: 250px; padding: 12px;'>
+                                <h4 style='margin: 5px 0; color: #333;'>🚛 Live Position & Audio Alerts</h4>
+                                <div style='background: \${{hazardLevel === 'critical' ? '#FF4444' : 
+                                                           hazardLevel === 'warning' ? '#FFA500' : '#4CAF50'}}; 
+                                            color: white; padding: 10px; border-radius: 6px; margin: 8px 0; 
+                                            font-weight: bold; font-size: 13px;'>
+                                    \${{status}}
+                                </div>
+                                <div style='display: flex; justify-content: space-between; margin: 8px 0;'>
+                                    <span><strong>Progress:</strong> \${{progress}}%</span>
+                                    <span><strong>Speed:</strong> \${{speed}} km/h</span>
+                                </div>
+                                <div style='font-size: 12px; color: #666; margin: 5px 0;'>
+                                    <strong>Vehicle:</strong> {tt_specs['capacity_range']} | 
+                                    <strong>Weight:</strong> {tt_specs['gross_weight']/1000:.1f}T
+                                </div>
+                            </div>
+                        \`;
+                        
+                        if (hazards.length > 0) {{
+                            var h = hazards[0];
+                            popupContent += \`
+                                <hr style='margin: 8px 0;'>
+                                <div style='background: rgba(255,0,0,0.1); padding: 8px; border-radius: 4px; font-size: 12px;'>
+                                    <strong>🚨 Next Hazard:</strong><br>
+                                    \${{h.type === 'sharp_turn' ? 'Sharp' : 'Moderate'}} \${{h.direction}} 
+                                    \${{h.type === 'sharp_turn' ? 'turn' : 'curve'}}<br>
+                                    <strong>Angle:</strong> \${{h.angle.toFixed(1)}}° | 
+                                    <strong>Distance:</strong> \${{h.distance}} points<br>
+                                    \${{h.type === 'sharp_turn' ? '🔊 Audio alert activated!' : ''}}
+                                </div>
+                            \`;
+                        }}
+                        
+                        truckMarker.bindPopup(popupContent);
+                        
+                        if (hazardLevel === 'critical') {{
+                            setTimeout(() => truckMarker.openPopup(), 100);
+                        }}
+                        
+                        updateProgressDisplay(progress, speed, status, hazards);
+                        
+                        currentIndex += 1;
+                    }}
+                    
+                    function startAnimation() {{
+                        if (!isAnimating) {{
+                            isAnimating = true;
+                            initAudio();
+                            console.log("Starting enhanced truck animation with audio...");
+                            playAlert('start');
+                            setInterval(moveTruck, animationSpeed);
+                        }}
+                    }}
+                    
+                    window.resetTruckAnimation = function() {{
+                        currentIndex = 0;
+                        lastAlertIndex = -1;
+                        if (truckMarker) {{
+                            window.map_{m._id}.removeLayer(truckMarker);
+                            truckMarker = null;
+                        }}
+                        playAlert('start');
+                        moveTruck();
+                    }}
+                    
+                    window.toggleAudio = function() {{
+                        audioEnabled = !audioEnabled;
+                        var button = document.getElementById('audio-toggle');
+                        if (button) {{
+                            button.innerHTML = audioEnabled ? '🔊 Audio ON' : '🔇 Audio OFF';
+                            button.style.background = audioEnabled ? '#4CAF50' : '#F44336';
+                        }}
+                        console.log("Audio", audioEnabled ? "enabled" : "disabled");
+                    }}
+                    
+                    startAnimation();
+                    
+                }}, 2000);
+            }});
         </script>
-        
-        <div style="position: fixed; top: 10px; right: 10px; z-index: 1000; background: white; 
-                    padding: 15px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); 
-                    font-family: Arial; min-width: 200px;">
-            <h4 style='margin: 5px 0; color: #333;'>🚛 Live Truck Tracking</h4>
-            <p style='margin: 5px 0;'><strong>TT:</strong> {tt_specs['capacity_range']}</p>
-            <p style='margin: 5px 0;'><strong>Weight:</strong> {tt_specs['gross_weight']/1000:.1f}T</p>
-            <p style='margin: 5px 0;'><strong>Hazards:</strong> {len(sharp_turns)} sharp turns</p>
-            <button onclick="resetTruck();" style="padding: 8px 12px; background: #007cba; 
-                    color: white; border: none; border-radius: 4px; cursor: pointer; width: 100%;">
-                Reset Animation
-            </button>
+
+        <style>
+        .truck-animated-enhanced {{
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            filter: drop-shadow(0 0 8px rgba(0,0,0,0.3));
+        }}
+        .truck-animated-enhanced:hover {{
+            transform: scale(1.15) !important;
+            filter: drop-shadow(0 0 12px rgba(0,150,255,0.6));
+        }}
+        </style>
+        """
+
+        # Enhanced control panel with audio controls
+        enhanced_control_panel = f"""
+        <div id="truck-control" style="position: fixed; top: 10px; right: 10px; z-index: 1000; 
+             background: rgba(255,255,255,0.98); padding: 18px; border-radius: 10px; 
+             box-shadow: 0 6px 20px rgba(0,0,0,0.3); font-family: Arial; min-width: 250px; 
+             border: 3px solid #007cba;">
+            <h4 style='margin: 5px 0; color: #007cba; text-align: center; font-size: 16px;'>
+                🚛 Live Tracking & Audio Alerts
+            </h4>
+            
+            <div style='background: linear-gradient(135deg, #f0f8ff, #e6f3ff); padding: 10px; 
+                        border-radius: 6px; margin: 10px 0; font-size: 12px; border: 1px solid #007cba;'>
+                <strong>Vehicle:</strong> {tt_specs['capacity_range']}<br>
+                <strong>Weight:</strong> {tt_specs['gross_weight']/1000:.1f}T<br>
+                <strong>Hazards:</strong> {len(sharp_turns)} sharp turns detected<br>
+                <strong>Max Speed:</strong> {tt_specs['max_speed']} km/h
+            </div>
+            
+            <div id="progress-display" style='background: #f9f9f9; padding: 8px; border-radius: 4px; 
+                                             margin: 8px 0; font-size: 11px; min-height: 40px; 
+                                             border: 1px solid #ddd;'>
+                Animation starting...
+            </div>
+            
+            <div style='display: flex; gap: 5px; margin: 10px 0;'>
+                <button onclick="resetTruckAnimation();" style="flex: 1; padding: 8px; background: #007cba; 
+                        color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px;">
+                    🔄 Reset
+                </button>
+                <button id="audio-toggle" onclick="toggleAudio();" style="flex: 1; padding: 8px; background: #4CAF50; 
+                        color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px;">
+                    🔊 Audio ON
+                </button>
+            </div>
+            
+            <div style='background: #fff3cd; padding: 8px; border-radius: 4px; margin: 8px 0; 
+                        font-size: 10px; color: #856404; border: 1px solid #ffeaa7;'>
+                <strong>🔊 Audio Features:</strong><br>
+                • Sharp turn alerts: Urgent beeps<br>
+                • Curve warnings: Single beep<br>
+                • Real-time speed announcements<br>
+                • Emergency slow-down alerts
+            </div>
+            
+            <div style='margin-top: 8px; font-size: 9px; color: #666; text-align: center;'>
+                Enhanced animation with real-time audio alerts<br>
+                Click truck for detailed hazard information
+            </div>
         </div>
         """
         
@@ -1264,8 +1508,9 @@ def analyze_route():
         </div>
         """
         
-        # Inject the truck animation and legend
-        m.get_root().html.add_child(folium.Element(truck_animation))
+        # Inject the truck animation, control panel, and legend
+        m.get_root().html.add_child(folium.Element(truck_animation_with_audio))
+        m.get_root().html.add_child(folium.Element(enhanced_control_panel))
         m.get_root().html.add_child(folium.Element(legend_html))
         
         # Save map
@@ -1315,7 +1560,8 @@ def analyze_route():
                 f"Maximum safe speed: {tt_specs['max_speed']} kmph for {tt_specs['capacity_range']} TT",
                 f"Gross weight {tt_specs['gross_weight']/1000:.1f}T - Check bridge weight limits",
                 "Plan fuel stops considering tanker capacity and weight distribution",
-                "Emergency contacts ready - carrying hazardous petroleum products"
+                "Emergency contacts ready - carrying hazardous petroleum products",
+                "Audio alerts enabled - Listen for turn warnings and speed advisories"
             ]
         }
 
@@ -1323,7 +1569,7 @@ def analyze_route():
         session.modified = True
 
         return render_template("route_analysis.html",
-                               mode="Enhanced TT Navigation",
+                               mode="Enhanced TT Navigation with Audio Alerts",
                                turns=len(sharp_turns) + len(curves),
                                poi_count=len(all_pois),
                                html_file=html_name,
@@ -1546,5 +1792,6 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
