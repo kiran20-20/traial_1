@@ -267,6 +267,12 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
 
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .traffic-status {
             display: flex;
             justify-content: space-between;
@@ -349,45 +355,6 @@
         .progress-warning { background: #f39c12; }
         .progress-danger { background: #e74c3c; }
 
-        @media (max-width: 768px) {
-            .sidebar {
-                grid-template-columns: 1fr;
-                padding: 20px;
-            }
-            
-            .map-section {
-                height: 50vh;
-            }
-            
-            .action-buttons {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .stat-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .truck-specs {
-                grid-template-columns: 1fr;
-            }
-            
-            .traffic-status {
-                flex-direction: column;
-                gap: 5px;
-            }
-        }
-
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-
         .alert {
             padding: 12px;
             border-radius: 8px;
@@ -416,26 +383,6 @@
             border-color: #17a2b8;
         }
 
-        .route-timeline {
-            position: relative;
-            padding: 20px 0;
-        }
-
-        .timeline-item {
-            display: flex;
-            align-items: center;
-            margin: 10px 0;
-            padding: 10px;
-            background: rgba(52, 152, 219, 0.1);
-            border-radius: 8px;
-            border-left: 3px solid #3498db;
-        }
-
-        .timeline-icon {
-            margin-right: 10px;
-            font-size: 1.2em;
-        }
-
         .loading {
             display: inline-block;
             width: 20px;
@@ -449,6 +396,83 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* AI Section Specific Styles */
+        .ai-section {
+            border-left-color: #28a745 !important;
+            grid-column: 1 / -1;
+        }
+
+        .ai-input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .ai-input:focus {
+            border-color: #28a745;
+        }
+
+        .ai-response {
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .ai-response strong {
+            color: #2c3e50;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                grid-template-columns: 1fr;
+                padding: 20px;
+            }
+            
+            .map-section {
+                height: 50vh;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .stat-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .truck-specs {
+                grid-template-columns: 1fr;
+            }
+            
+            .traffic-status {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .ai-input {
+                margin-bottom: 10px;
+            }
+
+            .ai-section .btn {
+                width: 100%;
+                margin-bottom: 10px;
+            }
         }
     </style>
 </head>
@@ -606,6 +630,50 @@
                     </ul>
                 </div>
 
+                <!-- AI Analysis Section -->
+                <div class="info-card ai-section">
+                    <h3><i class="fas fa-robot"></i> AI-Powered Route Analysis</h3>
+                    
+                    <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                        <button id="ai-analysis-btn" onclick="getAIAnalysis()" class="btn btn-primary">
+                            <i class="fas fa-brain"></i> Get AI Safety Analysis
+                        </button>
+                        <button id="safety-briefing-btn" onclick="getSafetyBriefing()" class="btn btn-success">
+                            <i class="fas fa-clipboard-check"></i> Get Safety Briefing
+                        </button>
+                    </div>
+                    
+                    <div id="ai-results" style="display: none;">
+                        <div id="ai-analysis" style="background: #f8f9ff; padding: 20px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #007cba;">
+                            <h4 style="color: #007cba; margin-bottom: 15px;"><i class="fas fa-chart-line"></i> AI Route Analysis</h4>
+                            <div id="ai-analysis-content" class="ai-response"></div>
+                        </div>
+                        
+                        <div id="safety-briefing" style="background: #fff8dc; padding: 20px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #ffc107;">
+                            <h4 style="color: #856404; margin-bottom: 15px;"><i class="fas fa-shield-alt"></i> Pre-Trip Safety Briefing</h4>
+                            <div id="safety-briefing-content" class="ai-response"></div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 25px; padding: 20px; background: rgba(40, 167, 69, 0.05); border-radius: 8px; border: 1px solid #28a745;">
+                        <h4 style="color: #28a745; margin-bottom: 15px;"><i class="fas fa-comments"></i> Ask AI Assistant</h4>
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                            <input type="text" id="ai-question" class="ai-input" placeholder="Ask about route safety, regulations, vehicle operation, emergency procedures...">
+                            <button id="ask-ai-btn" onclick="askAI()" class="btn btn-success" style="white-space: nowrap;">
+                                <i class="fas fa-paper-plane"></i> Ask AI
+                            </button>
+                        </div>
+                        
+                        <div id="ai-chat-response" style="margin-top: 15px; padding: 15px; background: #e7f3ff; border-radius: 6px; display: none; border-left: 4px solid #17a2b8;">
+                            <div id="ai-chat-content" class="ai-response"></div>
+                        </div>
+                        
+                        <div style="margin-top: 10px; font-size: 0.9em; color: #666; text-align: center;">
+                            💡 Try asking: "What should I do if I encounter a sharp turn?" or "Emergency procedures for tanker trucks"
+                        </div>
+                    </div>
+                </div>
+
                 <div class="action-buttons">
                     <a href="{{ url_for('detailed_report') }}" class="btn btn-primary">
                         <i class="fas fa-chart-bar"></i> Detailed Report
@@ -622,6 +690,164 @@
     </div>
 
     <script>
+        // AI Analysis Functions
+        function getAIAnalysis() {
+            const button = document.getElementById('ai-analysis-btn');
+            const originalText = button.innerHTML;
+            
+            button.disabled = true;
+            button.innerHTML = '<div class="loading"></div> Analyzing Route...';
+            
+            fetch('/ai_analysis/current')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        document.getElementById('ai-analysis-content').innerHTML = formatAIResponse(data.ai_analysis);
+                        document.getElementById('ai-results').style.display = 'block';
+                        document.getElementById('ai-analysis').style.display = 'block';
+                        button.innerHTML = '<i class="fas fa-check-circle"></i> Analysis Complete';
+                        button.style.background = '#27ae60';
+                    } else {
+                        showError('AI analysis failed: ' + (data.error || 'Unknown error'));
+                        button.innerHTML = originalText;
+                    }
+                })
+                .catch(error => {
+                    showError('Network error: ' + error.message);
+                    button.innerHTML = originalText;
+                })
+                .finally(() => {
+                    button.disabled = false;
+                });
+        }
+
+        function getSafetyBriefing() {
+            const button = document.getElementById('safety-briefing-btn');
+            const originalText = button.innerHTML;
+            
+            button.disabled = true;
+            button.innerHTML = '<div class="loading"></div> Generating Briefing...';
+            
+            fetch('/safety_briefing')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        document.getElementById('safety-briefing-content').innerHTML = formatAIResponse(data.briefing);
+                        document.getElementById('ai-results').style.display = 'block';
+                        document.getElementById('safety-briefing').style.display = 'block';
+                        button.innerHTML = '<i class="fas fa-check-circle"></i> Briefing Ready';
+                        button.style.background = '#27ae60';
+                    } else {
+                        showError('Safety briefing failed: ' + (data.error || 'Unknown error'));
+                        button.innerHTML = originalText;
+                    }
+                })
+                .catch(error => {
+                    showError('Network error: ' + error.message);
+                    button.innerHTML = originalText;
+                })
+                .finally(() => {
+                    button.disabled = false;
+                });
+        }
+
+        function askAI() {
+            const question = document.getElementById('ai-question').value.trim();
+            const button = document.getElementById('ask-ai-btn');
+            const originalText = button.innerHTML;
+            
+            if (!question) {
+                showError('Please enter a question first.');
+                return;
+            }
+            
+            button.disabled = true;
+            button.innerHTML = '<div class="loading"></div> Thinking...';
+            
+            fetch('/ai_chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({question: question})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const responseHtml = `
+                        <div style="margin-bottom: 15px; padding: 10px; background: rgba(23, 162, 184, 0.1); border-radius: 4px;">
+                            <strong><i class="fas fa-user"></i> Your Question:</strong><br>
+                            ${escapeHtml(question)}
+                        </div>
+                        <div>
+                            <strong><i class="fas fa-robot"></i> AI Response:</strong><br>
+                            ${formatAIResponse(data.answer)}
+                        </div>
+                    `;
+                    document.getElementById('ai-chat-content').innerHTML = responseHtml;
+                    document.getElementById('ai-chat-response').style.display = 'block';
+                    document.getElementById('ai-question').value = '';
+                    button.innerHTML = originalText;
+                } else {
+                    showError('AI chat failed: ' + (data.error || 'Unknown error'));
+                    button.innerHTML = originalText;
+                }
+            })
+            .catch(error => {
+                showError('Network error: ' + error.message);
+                button.innerHTML = originalText;
+            })
+            .finally(() => {
+                button.disabled = false;
+            });
+        }
+
+        function formatAIResponse(text) {
+            if (!text) return '';
+            
+            // Convert line breaks to HTML
+            let formatted = text.replace(/\n/g, '<br>');
+            
+            // Format numbered lists
+            formatted = formatted.replace(/(\d+\.\s)/g, '<br><strong>$1</strong>');
+            
+            // Format bullet points
+            formatted = formatted.replace(/([•\-]\s)/g, '<br>$1');
+            
+            // Clean up extra line breaks at the start
+            formatted = formatted.replace(/^(<br>)+/, '');
+            
+            return formatted;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'alert alert-danger';
+            errorDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+            errorDiv.style.position = 'fixed';
+            errorDiv.style.top = '20px';
+            errorDiv.style.right = '20px';
+            errorDiv.style.zIndex = '10000';
+            errorDiv.style.maxWidth = '400px';
+            
+            document.body.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        }
+
+        // Allow Enter key to submit question
+        document.getElementById('ai-question').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                askAI();
+            }
+        });
+
         // Auto-refresh traffic data every 5 minutes
         setInterval(function() {
             console.log('Traffic data would be refreshed here in production');
