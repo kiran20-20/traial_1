@@ -69,8 +69,6 @@
         .floating-text-bubble:nth-child(13) { bottom: 25%; left: 55%; animation-duration: 24s; animation-delay: 13s; transform: scale(0.85) rotate(5deg); }
         .floating-text-bubble:nth-child(14) { top: 60%; left: 5%; animation-duration: 26s; animation-delay: 14s; transform: scale(1.1) rotate(10deg); }
         .floating-text-bubble:nth-child(15) { top: 35%; left: 80%; animation-duration: 23s; animation-delay: 15s; transform: scale(1.3) rotate(-20deg); }
-        .floating-text-bubble:nth-child(16) { top: 80%; right: 25%; animation-duration: 30s; animation-delay: 16s; transform: scale(1.1) rotate(12deg); }
-        .floating-text-bubble:nth-child(17) { top: 5%; left: 60%; animation-duration: 28s; animation-delay: 17s; transform: scale(0.9) rotate(25deg); }
 
         @keyframes float-and-rotate {
             0%  { transform: translate(0, 0) rotate(0deg); }
@@ -86,7 +84,7 @@
             align-items: flex-start;
             min-height: calc(100vh - 30px);
             position: relative;
-            z-index: 1; /* Ensure container is above the floating background */
+            z-index: 1;
         }
 
         .form-box {
@@ -191,9 +189,7 @@
             text-align: center;
             color: var(--iocl-mid-gray);
         }
-        .values-section {
-            display: none;
-        }
+        
         datalist option {
             padding: 8px;
         }
@@ -202,6 +198,144 @@
             color: var(--iocl-mid-gray);
             margin-top: 3px;
             font-style: italic;
+        }
+
+        /* RO Location Selection Styles */
+        .ro-selection-method {
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
+            border: 2px solid var(--iocl-blue);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 12px 0;
+        }
+
+        .method-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: 2px solid var(--iocl-blue);
+            background: white;
+            color: var(--iocl-blue);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn.active {
+            background: var(--iocl-blue);
+            color: white;
+        }
+
+        .toggle-btn:hover {
+            background: var(--iocl-orange);
+            border-color: var(--iocl-orange);
+            color: white;
+        }
+
+        .selection-panel {
+            display: none;
+        }
+
+        .selection-panel.active {
+            display: block;
+        }
+
+        .sap-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .sap-details {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .sap-details.active {
+            display: block;
+            animation: slideDown 0.4s ease;
+        }
+
+        .sap-info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .sap-info-item {
+            background: #f8f9fa;
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+            border: 1px solid #e0e0e0;
+        }
+
+        .sap-info-item .label {
+            font-size: 0.7em;
+            color: var(--iocl-mid-gray);
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .sap-info-item .value {
+            font-size: 0.85em;
+            font-weight: bold;
+            color: var(--iocl-blue);
+        }
+
+        /* SAP Code Autocomplete Styles */
+        .autocomplete-container {
+            position: relative;
+        }
+
+        .autocomplete-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .autocomplete-suggestion {
+            padding: 10px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.9em;
+        }
+
+        .autocomplete-suggestion:hover {
+            background: var(--iocl-light-gray);
+        }
+
+        .autocomplete-suggestion.highlighted {
+            background: var(--iocl-blue);
+            color: white;
+        }
+
+        .sap-code-highlight {
+            font-weight: bold;
+            color: var(--iocl-orange);
         }
 
         /* Compact TT Specifications Display */
@@ -302,6 +436,12 @@
             .specs-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
+            .sap-grid {
+                grid-template-columns: 1fr;
+            }
+            .sap-info-grid {
+                grid-template-columns: 1fr;
+            }
             .floating-text-bubble {
                 font-size: 0.85rem;
                 padding: 8px 14px;
@@ -378,9 +518,70 @@
             <span>RO Location</span>
         </div>
 
-        <label for="destination">RO Coordinates</label>
-        <input type="text" name="destination" id="destination" placeholder="Enter coordinates manually (lat, lng)" required>
-        <div class="coord-helper">Example: 19.0760, 72.8777</div>
+        <div class="ro-selection-method">
+            <div class="method-toggle">
+                <div class="toggle-btn active" onclick="switchMethod('sap')">
+                    <i class="fas fa-search"></i> Select by SAP Code
+                </div>
+                <div class="toggle-btn" onclick="switchMethod('manual')">
+                    <i class="fas fa-map-pin"></i> Manual Coordinates
+                </div>
+            </div>
+
+            <!-- SAP Code Selection Panel -->
+            <div id="sapPanel" class="selection-panel active">
+                <div class="sap-grid">
+                    <div>
+                        <label for="stateCode">State Code</label>
+                        <select id="stateCode" onchange="loadSAPCodes()">
+                            <option value="">Select State</option>
+                            <!-- Options will be populated by JavaScript -->
+                        </select>
+                    </div>
+                    <div>
+                        <label for="sapCode">SAP Code</label>
+                        <div class="autocomplete-container">
+                            <input type="text" id="sapCode" placeholder="Type SAP code..." onkeyup="filterSAPCodes()" onkeydown="handleKeyNavigation(event)">
+                            <div id="sapSuggestions" class="autocomplete-suggestions"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="sapDetails" class="sap-details">
+                    <div class="sap-info-grid">
+                        <div class="sap-info-item">
+                            <div class="label">RO Name</div>
+                            <div class="value" id="roName">-</div>
+                        </div>
+                        <div class="sap-info-item">
+                            <div class="label">District</div>
+                            <div class="value" id="roDistrict">-</div>
+                        </div>
+                        <div class="sap-info-item">
+                            <div class="label">State</div>
+                            <div class="value" id="roState">-</div>
+                        </div>
+                        <div class="sap-info-item">
+                            <div class="label">Region</div>
+                            <div class="value" id="roRegion">-</div>
+                        </div>
+                    </div>
+                    <div style="background: #e8f5e8; padding: 8px; border-radius: 4px; font-size: 0.8em;">
+                        <strong>Coordinates:</strong> <span id="roCoordinates">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual Coordinates Panel -->
+            <div id="manualPanel" class="selection-panel">
+                <label for="destination_manual">RO Coordinates</label>
+                <input type="text" id="destination_manual" placeholder="Enter coordinates manually (lat, lng)">
+                <div class="coord-helper">Example: 19.0760, 72.8777</div>
+            </div>
+        </div>
+
+        <!-- Hidden field for the actual destination value -->
+        <input type="hidden" name="destination" id="destination">
 
         <div class="section-title">
             <i class="fa-solid fa-truck-fast"></i>
@@ -457,21 +658,33 @@
 </div>
 
 <script>
-    // This part of the JS is no longer needed since Flask populates the datalist
-    // const landmarkData = [...]
-    // function filterTerminals(query) {...}
-    // landmarkInput.addEventListener('input', ...)
+    // RO Data - Load from Flask backend
+    {% if ro_data %}
+    const roData = {{ ro_data | tojson }};
+    {% else %}
+    const roData = {};
+    console.warn("RO data not available - SAP code selection disabled");
+    {% endif %}
+    
+    let currentSuggestionIndex = -1;
+    let filteredSAPCodes = [];
+    let currentMethod = 'sap';
 
+    // Initialize the form
+    document.addEventListener('DOMContentLoaded', function() {
+        populateStates();
+        updateDestinationField();
+    });
+
+    // Terminal landmark selection (existing functionality)
     const landmarkInput = document.getElementById('landmark_name');
     const sourceInput = document.getElementById('source');
     
-    // Updated event listener to get coordinates from the dynamically populated datalist
     landmarkInput.addEventListener('change', function () {
         const name = this.value;
         const options = document.getElementById('landmarkList').options;
         let match = null;
 
-        // Find the option with the matching value
         for (let i = 0; i < options.length; i++) {
             if (options[i].value === name) {
                 match = options[i];
@@ -488,10 +701,239 @@
         }
     });
 
-    document.getElementById('source').addEventListener('focus', function() {
-        this.placeholder = "Enter coordinates manually (lat, lng)";
+    // RO Location Method Switching
+    function switchMethod(method) {
+        currentMethod = method;
+        
+        // Update toggle buttons
+        document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+        if (method === 'sap') {
+            document.querySelector('.toggle-btn').classList.add('active');
+            document.getElementById('sapPanel').classList.add('active');
+            document.getElementById('manualPanel').classList.remove('active');
+        } else {
+            document.querySelectorAll('.toggle-btn')[1].classList.add('active');
+            document.getElementById('sapPanel').classList.remove('active');
+            document.getElementById('manualPanel').classList.add('active');
+        }
+        
+        updateDestinationField();
+    }
+
+    // Populate state dropdown
+    function populateStates() {
+        const stateSelect = document.getElementById('stateCode');
+        
+        if (Object.keys(roData).length === 0) {
+            stateSelect.innerHTML = '<option value="">No RO data available</option>';
+            stateSelect.disabled = true;
+            return;
+        }
+        
+        const states = Object.keys(roData).sort();
+        stateSelect.innerHTML = '<option value="">Select State</option>';
+        
+        states.forEach(stateCode => {
+            const option = document.createElement('option');
+            option.value = stateCode;
+            option.textContent = `${stateCode} - ${getStateName(stateCode)}`;
+            stateSelect.appendChild(option);
+        });
+    }
+
+    // Get full state name from code
+    function getStateName(code) {
+        const stateNames = {
+            'AN': 'Andaman and Nicobar', 'AP': 'Andhra Pradesh', 'AR': 'Arunachal Pradesh',
+            'AS': 'Assam', 'BR': 'Bihar', 'CH': 'Chandigarh', 'CT': 'Chhattisgarh',
+            'DL': 'Delhi', 'GA': 'Goa', 'GJ': 'Gujarat', 'HR': 'Haryana',
+            'HP': 'Himachal Pradesh', 'JK': 'Jammu and Kashmir', 'JH': 'Jharkhand',
+            'KA': 'Karnataka', 'KL': 'Kerala', 'MP': 'Madhya Pradesh', 'MH': 'Maharashtra',
+            'MN': 'Manipur', 'ML': 'Meghalaya', 'MZ': 'Mizoram', 'NL': 'Nagaland',
+            'OR': 'Odisha', 'PB': 'Punjab', 'RJ': 'Rajasthan', 'SK': 'Sikkim',
+            'TN': 'Tamil Nadu', 'TG': 'Telangana', 'TR': 'Tripura', 'UP': 'Uttar Pradesh',
+            'UK': 'Uttarakhand', 'WB': 'West Bengal', 'LD': 'Lakshadweep', 'PY': 'Puducherry'
+        };
+        return stateNames[code] || code;
+    }
+
+    // Load SAP codes when state is selected
+    function loadSAPCodes() {
+        const selectedState = document.getElementById('stateCode').value;
+        const sapCodeInput = document.getElementById('sapCode');
+        
+        if (selectedState && roData[selectedState]) {
+            sapCodeInput.disabled = false;
+            sapCodeInput.placeholder = `Type SAP code for ${getStateName(selectedState)}...`;
+            filteredSAPCodes = Object.keys(roData[selectedState]);
+        } else {
+            sapCodeInput.disabled = true;
+            sapCodeInput.placeholder = 'Select state first';
+            sapCodeInput.value = '';
+            filteredSAPCodes = [];
+            hideSuggestions();
+            hideSAPDetails();
+        }
+    }
+
+    // Filter and show SAP code suggestions
+    function filterSAPCodes() {
+        const selectedState = document.getElementById('stateCode').value;
+        const input = document.getElementById('sapCode').value.toLowerCase();
+        const suggestionsDiv = document.getElementById('sapSuggestions');
+        
+        if (!selectedState || !roData[selectedState]) {
+            hideSuggestions();
+            return;
+        }
+
+        if (input.length === 0) {
+            hideSuggestions();
+            hideSAPDetails();
+            return;
+        }
+
+        // Filter SAP codes based on input
+        filteredSAPCodes = Object.keys(roData[selectedState]).filter(sapCode => {
+            const roInfo = roData[selectedState][sapCode];
+            return sapCode.toLowerCase().includes(input) || 
+                   roInfo.name.toLowerCase().includes(input) ||
+                   roInfo.district.toLowerCase().includes(input);
+        });
+
+        if (filteredSAPCodes.length > 0) {
+            showSuggestions(selectedState, input);
+        } else {
+            hideSuggestions();
+            hideSAPDetails();
+        }
+
+        currentSuggestionIndex = -1;
+    }
+
+    // Show autocomplete suggestions
+    function showSuggestions(stateCode, input) {
+        const suggestionsDiv = document.getElementById('sapSuggestions');
+        suggestionsDiv.innerHTML = '';
+
+        filteredSAPCodes.slice(0, 8).forEach((sapCode, index) => {
+            const roInfo = roData[stateCode][sapCode];
+            const suggestionDiv = document.createElement('div');
+            suggestionDiv.className = 'autocomplete-suggestion';
+            suggestionDiv.onclick = () => selectSAPCode(sapCode);
+            
+            // Highlight matching text
+            const highlightedSAP = sapCode.replace(new RegExp(`(${input})`, 'gi'), '<span class="sap-code-highlight">$1</span>');
+            const highlightedName = roInfo.name.replace(new RegExp(`(${input})`, 'gi'), '<span class="sap-code-highlight">$1</span>');
+            
+            suggestionDiv.innerHTML = `
+                <strong>${highlightedSAP}</strong> - ${highlightedName}<br>
+                <small style="color: #666;">${roInfo.district}, ${getStateName(stateCode)}</small>
+            `;
+            
+            suggestionsDiv.appendChild(suggestionDiv);
+        });
+
+        suggestionsDiv.style.display = 'block';
+    }
+
+    // Hide suggestions
+    function hideSuggestions() {
+        document.getElementById('sapSuggestions').style.display = 'none';
+        currentSuggestionIndex = -1;
+    }
+
+    // Handle keyboard navigation in suggestions
+    function handleKeyNavigation(event) {
+        const suggestions = document.querySelectorAll('.autocomplete-suggestion');
+        
+        if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            currentSuggestionIndex = Math.min(currentSuggestionIndex + 1, suggestions.length - 1);
+            updateSuggestionHighlight(suggestions);
+        } else if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            currentSuggestionIndex = Math.max(currentSuggestionIndex - 1, -1);
+            updateSuggestionHighlight(suggestions);
+        } else if (event.key === 'Enter') {
+            event.preventDefault();
+            if (currentSuggestionIndex >= 0 && suggestions[currentSuggestionIndex]) {
+                const sapCode = filteredSAPCodes[currentSuggestionIndex];
+                selectSAPCode(sapCode);
+            }
+        } else if (event.key === 'Escape') {
+            hideSuggestions();
+        }
+    }
+
+    // Update visual highlight for keyboard navigation
+    function updateSuggestionHighlight(suggestions) {
+        suggestions.forEach((suggestion, index) => {
+            suggestion.classList.toggle('highlighted', index === currentSuggestionIndex);
+        });
+    }
+
+    // Select a SAP code and show details
+    function selectSAPCode(sapCode) {
+        const selectedState = document.getElementById('stateCode').value;
+        const roInfo = roData[selectedState][sapCode];
+        
+        // Update input field
+        document.getElementById('sapCode').value = sapCode;
+        
+        // Show RO details
+        document.getElementById('roName').textContent = roInfo.name;
+        document.getElementById('roDistrict').textContent = roInfo.district;
+        document.getElementById('roState').textContent = getStateName(selectedState);
+        document.getElementById('roRegion').textContent = roInfo.region;
+        document.getElementById('roCoordinates').textContent = `${roInfo.lat}, ${roInfo.lng}`;
+        
+        document.getElementById('sapDetails').classList.add('active');
+        
+        // Hide suggestions
+        hideSuggestions();
+        
+        // Update destination field
+        updateDestinationField();
+    }
+
+    // Hide SAP details
+    function hideSAPDetails() {
+        document.getElementById('sapDetails').classList.remove('active');
+        updateDestinationField();
+    }
+
+    // Update the hidden destination field based on current method
+    function updateDestinationField() {
+        const destinationField = document.getElementById('destination');
+        
+        if (currentMethod === 'sap') {
+            const selectedState = document.getElementById('stateCode').value;
+            const sapCode = document.getElementById('sapCode').value;
+            
+            if (selectedState && sapCode && roData[selectedState] && roData[selectedState][sapCode]) {
+                const roInfo = roData[selectedState][sapCode];
+                destinationField.value = `${roInfo.lat},${roInfo.lng}`;
+            } else {
+                destinationField.value = '';
+            }
+        } else {
+            const manualCoords = document.getElementById('destination_manual').value;
+            destinationField.value = manualCoords;
+        }
+    }
+
+    // Update destination when manual coordinates change
+    document.getElementById('destination_manual').addEventListener('input', updateDestinationField);
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('.autocomplete-container')) {
+            hideSuggestions();
+        }
     });
 
+    // TT Specifications functionality
     function showTTSpecs() {
         const select = document.getElementById('tt_type');
         const display = document.getElementById('ttSpecsDisplay');
@@ -539,27 +981,11 @@
         
         if (!source || !destination || !ttType) {
             e.preventDefault();
-            // Using a custom modal instead of alert
-            const modal = document.createElement('div');
-            modal.style.position = 'fixed';
-            modal.style.top = '50%';
-            modal.style.left = '50%';
-            modal.style.transform = 'translate(-50%, -50%)';
-            modal.style.backgroundColor = 'white';
-            modal.style.padding = '20px';
-            modal.style.borderRadius = '10px';
-            modal.style.boxShadow = '0 5px 15px rgba(0,0,0,0.3)';
-            modal.style.zIndex = '1000';
-            modal.innerHTML = `
-                <p>Please fill in all required fields:</p>
-                <ul>
-                    <li>Terminal coordinates</li>
-                    <li>RO coordinates</li>
-                    <li>TT Capacity type</li>
-                </ul>
-                <button onclick="this.parentElement.remove()" style="margin-top:10px; padding:8px 16px; width: auto;">OK</button>
-            `;
-            document.body.appendChild(modal);
+            showModal('Please fill in all required fields:', [
+                'Terminal coordinates',
+                'RO coordinates (via SAP code or manual entry)',
+                'TT Capacity type'
+            ]);
             return;
         }
         
@@ -567,22 +993,7 @@
         const coordPattern = /^-?\d+\.?\d*\s*,\s*-?\d+\.?\d*$/;
         if (!coordPattern.test(source) || !coordPattern.test(destination)) {
             e.preventDefault();
-            // Using a custom modal instead of alert
-            const modal = document.createElement('div');
-            modal.style.position = 'fixed';
-            modal.style.top = '50%';
-            modal.style.left = '50%';
-            modal.style.transform = 'translate(-50%, -50%)';
-            modal.style.backgroundColor = 'white';
-            modal.style.padding = '20px';
-            modal.style.borderRadius = '10px';
-            modal.style.boxShadow = '0 5px 15px rgba(0,0,0,0.3)';
-            modal.style.zIndex = '1000';
-            modal.innerHTML = `
-                <p>Please enter coordinates in the format:<br>latitude,longitude<br>Example: 28.6139,77.2090</p>
-                <button onclick="this.parentElement.remove()" style="margin-top:10px; padding:8px 16px; width: auto;">OK</button>
-            `;
-            document.body.appendChild(modal);
+            showModal('Please enter coordinates in the format:', ['latitude,longitude', 'Example: 28.6139,77.2090']);
             return;
         }
         
@@ -591,6 +1002,35 @@
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing TT Route...';
         submitBtn.disabled = true;
     });
+
+    // Custom modal function
+    function showModal(title, items) {
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: white; padding: 20px; border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index: 1000;
+            max-width: 400px; width: 90%;
+        `;
+        
+        const itemsList = items.map(item => `<li>${item}</li>`).join('');
+        modal.innerHTML = `
+            <p style="margin-bottom: 15px; font-weight: bold; color: var(--iocl-blue);">${title}</p>
+            <ul style="margin: 15px 0; padding-left: 20px;">${itemsList}</ul>
+            <button onclick="this.parentElement.remove()" 
+                    style="margin-top:15px; padding:8px 16px; width: 100%; 
+                           background: var(--iocl-blue); color: white; border: none; 
+                           border-radius: 5px; cursor: pointer;">OK</button>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    // Make functions available globally
+    window.switchMethod = switchMethod;
+    window.loadSAPCodes = loadSAPCodes;
+    window.filterSAPCodes = filterSAPCodes;
+    window.handleKeyNavigation = handleKeyNavigation;
+    window.showTTSpecs = showTTSpecs;
 </script>
 </body>
 </html>
