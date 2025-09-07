@@ -1001,49 +1001,49 @@ def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance
 
 
 def load_ro_data():
-    """Load RO data from Excel file with error handling"""
+    """Load RO data from Excel file with actual column names"""
     try:
         df_ro = pd.read_excel("IOCL_Plant_data.xlsx")
         ro_data = {}
         
         for _, row in df_ro.iterrows():
             try:
-                # Extract and validate data from each row
-                state_code = str(row['State_Code']).strip().upper() if pd.notna(row['State_Code']) else None
-                sap_code = str(row['SAP_Code']).strip() if pd.notna(row['SAP_Code']) else None
-                ro_name = str(row['RO_Name']).strip() if pd.notna(row['RO_Name']) else None
-                district = str(row['District']).strip() if pd.notna(row['District']) else None
-                region = str(row['Region']).strip() if pd.notna(row['Region']) else None
+                # Extract data using your actual column names
+                state_code = str(row['State code']).strip().upper() if pd.notna(row['State code']) else None
+                sap_code = str(row['SAP Code']).strip() if pd.notna(row['SAP Code']) else None
+                consignee = str(row['Consignee']).strip() if pd.notna(row['Consignee']) else None
                 lat = float(row['Latitude']) if pd.notna(row['Latitude']) else None
                 lng = float(row['Longitude']) if pd.notna(row['Longitude']) else None
+                sales_group_desc = str(row['Sales Group Desc']).strip() if pd.notna(row['Sales Group Desc']) else None
+                customer_type = str(row['Customer Type']).strip() if pd.notna(row['Customer Type']) else None
                 
-                # Only add if all required fields are present
-                if all([state_code, sap_code, ro_name, district, lat, lng]):
+                # Only add if required fields are present
+                if all([state_code, sap_code, consignee, lat, lng]):
                     if state_code not in ro_data:
                         ro_data[state_code] = {}
                         
                     ro_data[state_code][sap_code] = {
-                        'name': ro_name,
-                        'district': district,
-                        'region': region or 'Unknown',
+                        'name': consignee,  # Using Consignee as the name
+                        'district': sales_group_desc or 'Unknown',  # Using Sales Group Desc as district
+                        'region': customer_type or 'Unknown',  # Using Customer Type as region
                         'lat': lat,
                         'lng': lng
                     }
                 else:
-                    print(f"Skipping incomplete RO row: {sap_code}")
+                    print(f"Skipping incomplete row: SAP Code {sap_code}")
                     
             except (ValueError, TypeError) as e:
-                print(f"Error processing RO row: {e}")
+                print(f"Error processing row: {e}")
                 continue
                 
-        print(f"Loaded {sum(len(state_ros) for state_ros in ro_data.values())} RO locations across {len(ro_data)} states")
+        print(f"Loaded {sum(len(state_ros) for state_ros in ro_data.values())} consignee locations across {len(ro_data)} states")
         return ro_data
         
     except FileNotFoundError:
-        print("IOCL_Plant_data.xlsx not found, RO selection will be disabled")
+        print("IOCL_Plant_data.xlsx not found, consignee selection will be disabled")
         return {}
     except Exception as e:
-        print(f"Error loading RO data: {e}")
+        print(f"Error loading consignee data: {e}")
         return {}
         
 
@@ -2415,6 +2415,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
