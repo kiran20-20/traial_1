@@ -408,33 +408,84 @@
             100% { opacity: 1; }
         }
 
-        /* AI Section Specific Styles */
+        /* Enhanced AI Section Styles */
         .ai-section {
             border-left-color: #28a745 !important;
             grid-column: 1 / -1;
         }
 
+        .question-suggestions-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            max-height: 400px;
+            overflow-y: auto;
+            background: white;
+            border: 2px solid #007cba;
+            border-radius: 8px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+            font-family: Arial, sans-serif;
+        }
+
+        .suggestion-item {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            font-size: 13px;
+            line-height: 1.4;
+            transition: all 0.2s ease;
+        }
+
+        .suggestion-item:hover {
+            background: #f0f8ff !important;
+            border-left: 4px solid #007cba;
+        }
+
+        .suggestion-item.selected {
+            background: #007cba !important;
+            color: white !important;
+        }
+
+        .category-header {
+            background: var(--category-color, #666);
+            color: white;
+            padding: 8px;
+            font-weight: bold;
+            font-size: 11px;
+            border-bottom: 1px solid #eee;
+        }
+
         .ai-input {
             flex: 1;
-            padding: 12px;
+            padding: 12px 45px 12px 15px;
             border: 2px solid #ddd;
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 14px;
             outline: none;
             transition: border-color 0.3s ease;
+            width: 100%;
         }
 
         .ai-input:focus {
-            border-color: #28a745;
+            border-color: #007cba;
         }
 
         .ai-response {
             line-height: 1.6;
             font-size: 14px;
+            animation: fadeIn 0.3s ease-in;
         }
 
         .ai-response strong {
             color: #2c3e50;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         @media (max-width: 768px) {
@@ -630,13 +681,14 @@
                     </ul>
                 </div>
 
-                <!-- AI Analysis Section -->
+                <!-- Enhanced AI Analysis Section -->
                 <div class="info-card ai-section">
-                    <h3><i class="fas fa-robot"></i> AI-Powered Route Analysis</h3>
+                    <h3><i class="fas fa-robot"></i> Smart AI Safety Assistant</h3>
+                    <p style="margin-bottom: 20px; font-size: 12px; color: #666;">AI has complete access to your route analysis, vehicle specs, and hazard data</p>
                     
                     <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
                         <button id="ai-analysis-btn" onclick="getAIAnalysis()" class="btn btn-primary">
-                            <i class="fas fa-brain"></i> Get AI Safety Analysis
+                            <i class="fas fa-brain"></i> Get AI Route Analysis
                         </button>
                         <button id="safety-briefing-btn" onclick="getSafetyBriefing()" class="btn btn-success">
                             <i class="fas fa-clipboard-check"></i> Get Safety Briefing
@@ -655,21 +707,63 @@
                         </div>
                     </div>
                     
+                    <!-- Smart Question Input with Suggestions -->
                     <div style="margin-top: 25px; padding: 20px; background: rgba(40, 167, 69, 0.05); border-radius: 8px; border: 1px solid #28a745;">
                         <h4 style="color: #28a745; margin-bottom: 15px;"><i class="fas fa-comments"></i> Ask AI Assistant</h4>
-                        <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
-                            <input type="text" id="ai-question" class="ai-input" placeholder="Ask about route safety, regulations, vehicle operation, emergency procedures...">
-                            <button id="ask-ai-btn" onclick="askAI()" class="btn btn-success" style="white-space: nowrap;">
-                                <i class="fas fa-paper-plane"></i> Ask AI
-                            </button>
+                        
+                        <!-- Question Input with Smart Suggestions -->
+                        <div style="position: relative; margin-bottom: 15px;">
+                            <div style="position: relative;">
+                                <input type="text" 
+                                       id="chat-input" 
+                                       class="ai-input"
+                                       placeholder="Start typing your question... (suggestions will appear)"
+                                       style="padding-right: 50px;">
+                                
+                                <!-- Voice Input Icon -->
+                                <div style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #666; cursor: pointer; font-size: 18px;" 
+                                     onclick="startVoiceInput()" title="Voice Input">
+                                    🎤
+                                </div>
+                                
+                                <!-- Smart Suggestions Dropdown -->
+                                <div id="question-suggestions" class="question-suggestions-dropdown"></div>
+                            </div>
+                            
+                            <!-- Quick Action Buttons -->
+                            <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px;">
+                                <button onclick="askQuickQuestion('What are the most dangerous turns on this route?')" 
+                                        style="background: #ff4444; color: white; border: none; padding: 6px 12px; border-radius: 15px; font-size: 11px; cursor: pointer;">
+                                    🚨 Route Hazards
+                                </button>
+                                <button onclick="askQuickQuestion('What speed should I use for sharp turns?')" 
+                                        style="background: #ff6600; color: white; border: none; padding: 6px 12px; border-radius: 15px; font-size: 11px; cursor: pointer;">
+                                    🚛 Speed Advice
+                                </button>
+                                <button onclick="askQuickQuestion('Where are emergency facilities along my route?')" 
+                                        style="background: #007cba; color: white; border: none; padding: 6px 12px; border-radius: 15px; font-size: 11px; cursor: pointer;">
+                                    🏥 Emergency Info
+                                </button>
+                            </div>
                         </div>
                         
-                        <div id="ai-chat-response" style="margin-top: 15px; padding: 15px; background: #e7f3ff; border-radius: 6px; display: none; border-left: 4px solid #17a2b8;">
-                            <div id="ai-chat-content" class="ai-response"></div>
+                        <button id="send-btn" onclick="sendChatMessage()" class="btn btn-success" style="width: 100%; margin-bottom: 15px;">
+                            <i class="fas fa-paper-plane"></i> Send Question
+                        </button>
+                        
+                        <!-- Response Area -->
+                        <div id="chat-response" style="margin-top: 15px; min-height: 100px; border: 1px solid #eee; border-radius: 8px; padding: 15px; background: #fafafa; display: none;">
+                            <div id="chat-loading" style="text-align: center; color: #666; display: none;">
+                                <div class="loading"></div>
+                                <span style="margin-left: 10px;">AI is analyzing your route data...</span>
+                            </div>
+                            <div id="chat-answer" style="line-height: 1.6; color: #333;"></div>
                         </div>
                         
-                        <div style="margin-top: 10px; font-size: 0.9em; color: #666; text-align: center;">
-                            💡 Try asking: "What should I do if I encounter a sharp turn?" or "Emergency procedures for tanker trucks"
+                        <!-- Analysis Context Info -->
+                        <div id="analysis-context" style="margin-top: 15px; padding: 12px; background: #f0f8ff; border-radius: 6px; font-size: 12px; color: #666; border-left: 4px solid #007cba;">
+                            <strong>Available Analysis Data:</strong>
+                            <div id="context-details">Loading analysis context...</div>
                         </div>
                     </div>
                 </div>
@@ -690,7 +784,420 @@
     </div>
 
     <script>
-        // AI Analysis Functions
+        // Complete Smart AI Assistant System
+        class SmartAIAssistant {
+            constructor() {
+                this.suggestions = {};
+                this.context = {};
+                this.currentFilter = '';
+                this.isVisible = false;
+                this.selectedIndex = -1;
+                this.init();
+            }
+            
+            async init() {
+                await this.loadSuggestions();
+                await this.loadAnalysisContext();
+                this.setupEventListeners();
+                this.updateContextDisplay();
+            }
+            
+            async loadSuggestions() {
+                try {
+                    const response = await fetch('/get_suggested_questions');
+                    const data = await response.json();
+                    this.suggestions = data.suggestions || {};
+                    this.context = data.context || {};
+                    console.log(`Loaded ${data.context?.total_suggestions || 0} contextual suggestions`);
+                } catch (error) {
+                    console.error('Error loading suggestions:', error);
+                    this.suggestions = {
+                        general: [
+                            "What's the maximum safe speed for my tanker?",
+                            "How should I handle sharp turns?",
+                            "What are the braking requirements?",
+                            "What pre-trip checks should I perform?",
+                            "How do I calculate safe following distance?"
+                        ]
+                    };
+                }
+            }
+            
+            async loadAnalysisContext() {
+                try {
+                    const response = await fetch('/ai_analysis/current');
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.analysisAvailable = data.status === 'success';
+                    }
+                } catch (error) {
+                    console.error('Error checking analysis:', error);
+                    this.analysisAvailable = false;
+                }
+            }
+            
+            updateContextDisplay() {
+                const contextDiv = document.getElementById('context-details');
+                if (!contextDiv) return;
+                
+                if (this.context.has_route_data) {
+                    contextDiv.innerHTML = `
+                        ✅ Route analyzed with ${this.context.sharp_turns || 0} sharp turns, ${this.context.curves || 0} curves<br>
+                        ✅ Vehicle: ${this.context.tt_type || 'Unknown'}<br>
+                        ✅ Emergency facilities: ${this.context.pois || 0} locations<br>
+                        ✅ AI has full access to route hazards and safety data
+                    `;
+                } else {
+                    contextDiv.innerHTML = `
+                        ⚠️ No route analysis data available<br>
+                        💡 Analyze a route first to get specific safety advice
+                    `;
+                }
+            }
+            
+            setupEventListeners() {
+                const questionInput = document.getElementById('chat-input');
+                if (!questionInput) return;
+                
+                // Show suggestions on focus
+                questionInput.addEventListener('focus', () => {
+                    this.showSuggestions();
+                });
+                
+                // Filter suggestions as user types
+                questionInput.addEventListener('input', (e) => {
+                    this.currentFilter = e.target.value.toLowerCase();
+                    if (this.currentFilter.length > 0) {
+                        this.showFilteredSuggestions();
+                    } else {
+                        this.showSuggestions();
+                    }
+                });
+                
+                // Handle keyboard navigation
+                questionInput.addEventListener('keydown', (e) => {
+                    if (!this.isVisible) {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            this.sendMessage();
+                        }
+                        return;
+                    }
+                    
+                    const suggestionItems = document.querySelectorAll('.suggestion-item');
+                    
+                    switch (e.key) {
+                        case 'ArrowDown':
+                            e.preventDefault();
+                            this.selectedIndex = Math.min(this.selectedIndex + 1, suggestionItems.length - 1);
+                            this.updateSelection();
+                            break;
+                        case 'ArrowUp':
+                            e.preventDefault();
+                            this.selectedIndex = Math.max(this.selectedIndex - 1, -1);
+                            this.updateSelection();
+                            break;
+                        case 'Enter':
+                            e.preventDefault();
+                            if (this.selectedIndex >= 0) {
+                                suggestionItems[this.selectedIndex].click();
+                            } else {
+                                this.hideSuggestions();
+                                this.sendMessage();
+                            }
+                            break;
+                        case 'Escape':
+                            this.hideSuggestions();
+                            break;
+                    }
+                });
+                
+                // Hide suggestions when clicking outside
+                document.addEventListener('click', (e) => {
+                    const suggestionsDiv = document.getElementById('question-suggestions');
+                    if (!questionInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+                        this.hideSuggestions();
+                    }
+                });
+            }
+            
+            showSuggestions() {
+                const suggestionsDiv = document.getElementById('question-suggestions');
+                if (!suggestionsDiv) return;
+                
+                let html = '';
+                
+                // Add context header if route data is available
+                if (this.context && this.context.has_route_data) {
+                    html += `
+                        <div style="background: linear-gradient(135deg, #007cba, #005a87); color: white; padding: 10px; font-weight: bold; font-size: 12px;">
+                            📍 Route Analysis Available: ${this.context.sharp_turns} sharp turns, ${this.context.curves} curves, ${this.context.pois} facilities
+                            <br>🚛 Vehicle: ${this.context.tt_type}
+                        </div>
+                    `;
+                }
+                
+                // Add categorized suggestions
+                const categories = [
+                    { key: 'hazard_specific', title: '⚠️ Route Hazards', color: '#ff4444' },
+                    { key: 'emergency', title: '🚨 Emergency', color: '#ff6600' },
+                    { key: 'operational', title: '🚛 Operations', color: '#007cba' },
+                    { key: 'general', title: '💡 General Safety', color: '#666666' }
+                ];
+                
+                categories.forEach(category => {
+                    const items = this.suggestions[category.key] || [];
+                    if (items.length > 0) {
+                        html += `
+                            <div class="category-header" style="--category-color: ${category.color};">
+                                ${category.title}
+                            </div>
+                        `;
+                        
+                        items.forEach(suggestion => {
+                            html += `
+                                <div class="suggestion-item" data-question="${suggestion}">
+                                    ${suggestion}
+                                </div>
+                            `;
+                        });
+                    }
+                });
+                
+                if (html === '') {
+                    html = '<div style="padding: 20px; text-align: center; color: #666;">No suggestions available</div>';
+                }
+                
+                suggestionsDiv.innerHTML = html;
+                suggestionsDiv.style.display = 'block';
+                this.isVisible = true;
+                this.selectedIndex = -1;
+                
+                // Add click listeners to suggestions
+                document.querySelectorAll('.suggestion-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const question = item.getAttribute('data-question');
+                        document.getElementById('chat-input').value = question;
+                        this.hideSuggestions();
+                        this.sendMessage();
+                    });
+                });
+            }
+            
+            showFilteredSuggestions() {
+                if (!this.currentFilter) {
+                    this.showSuggestions();
+                    return;
+                }
+                
+                const suggestionsDiv = document.getElementById('question-suggestions');
+                if (!suggestionsDiv) return;
+                
+                let html = '';
+                let matchCount = 0;
+                
+                // Search through all categories
+                Object.keys(this.suggestions).forEach(categoryKey => {
+                    const items = this.suggestions[categoryKey] || [];
+                    const matchedItems = items.filter(item => 
+                        item.toLowerCase().includes(this.currentFilter)
+                    );
+                    
+                    matchedItems.forEach(suggestion => {
+                        // Highlight matching text
+                        const highlighted = suggestion.replace(
+                            new RegExp(this.currentFilter, 'gi'),
+                            match => `<strong style="background: yellow; padding: 1px 2px; border-radius: 2px;">${match}</strong>`
+                        );
+                        
+                        html += `
+                            <div class="suggestion-item" data-question="${suggestion}">
+                                ${highlighted}
+                            </div>
+                        `;
+                        matchCount++;
+                    });
+                });
+                
+                if (html === '') {
+                    html = `<div style="padding: 20px; text-align: center; color: #666;">
+                        No suggestions match "${this.currentFilter}"<br>
+                        <small>Press Enter to ask your custom question</small>
+                    </div>`;
+                } else {
+                    html = `<div style="background: #f0f8ff; padding: 8px; font-size: 11px; color: #666; border-bottom: 1px solid #ddd;">
+                        📝 ${matchCount} suggestion(s) found for "${this.currentFilter}"
+                    </div>` + html;
+                }
+                
+                suggestionsDiv.innerHTML = html;
+                this.selectedIndex = -1;
+                
+                // Add click listeners
+                document.querySelectorAll('.suggestion-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const question = item.getAttribute('data-question');
+                        document.getElementById('chat-input').value = question;
+                        this.hideSuggestions();
+                        this.sendMessage();
+                    });
+                });
+            }
+            
+            updateSelection() {
+                const items = document.querySelectorAll('.suggestion-item');
+                items.forEach((item, index) => {
+                    item.classList.remove('selected');
+                    if (index === this.selectedIndex) {
+                        item.classList.add('selected');
+                        item.scrollIntoView({ block: 'nearest' });
+                    }
+                });
+            }
+            
+            hideSuggestions() {
+                const suggestionsDiv = document.getElementById('question-suggestions');
+                if (suggestionsDiv) {
+                    suggestionsDiv.style.display = 'none';
+                }
+                this.isVisible = false;
+                this.selectedIndex = -1;
+            }
+            
+            async sendMessage() {
+                const question = document.getElementById('chat-input').value.trim();
+                if (!question) return;
+                
+                const responseDiv = document.getElementById('chat-response');
+                const loadingDiv = document.getElementById('chat-loading');
+                const answerDiv = document.getElementById('chat-answer');
+                const sendBtn = document.getElementById('send-btn');
+                
+                // Show loading
+                responseDiv.style.display = 'block';
+                loadingDiv.style.display = 'block';
+                answerDiv.style.display = 'none';
+                sendBtn.disabled = true;
+                sendBtn.textContent = 'AI is thinking...';
+                
+                try {
+                    const response = await fetch('/ai_chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ question: question })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        answerDiv.innerHTML = this.formatAnswer(data.answer, data.context_info);
+                        
+                        // Clear input
+                        document.getElementById('chat-input').value = '';
+                    } else {
+                        answerDiv.innerHTML = `
+                            <div style="color: #ff4444; padding: 10px; background: #fff5f5; border-radius: 4px; border-left: 4px solid #ff4444;">
+                                <strong>Error:</strong> ${data.error}
+                            </div>
+                        `;
+                    }
+                } catch (error) {
+                    answerDiv.innerHTML = `
+                        <div style="color: #ff4444; padding: 10px; background: #fff5f5; border-radius: 4px; border-left: 4px solid #ff4444;">
+                            <strong>Connection Error:</strong> Unable to reach AI assistant. Please try again.
+                        </div>
+                    `;
+                } finally {
+                    // Hide loading
+                    loadingDiv.style.display = 'none';
+                    answerDiv.style.display = 'block';
+                    sendBtn.disabled = false;
+                    sendBtn.textContent = 'Send Question';
+                }
+            }
+            
+            formatAnswer(answer, contextInfo) {
+                let formattedAnswer = answer.replace(/\n/g, '<br>');
+                
+                // Add context info if available
+                let contextDisplay = '';
+                if (contextInfo) {
+                    contextDisplay = `
+                        <div style="background: #f0f8ff; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-size: 12px; border-left: 4px solid #007cba;">
+                            <strong>Analysis Context:</strong>
+                            Route: ${contextInfo.route_analyzed ? '✅ Analyzed' : '❌ Not analyzed'} | 
+                            Sharp Turns: ${contextInfo.sharp_turns || 0} | 
+                            Curves: ${contextInfo.curves || 0} | 
+                            Facilities: ${contextInfo.pois || 0} | 
+                            Vehicle: ${contextInfo.tt_type || 'Unknown'}
+                        </div>
+                    `;
+                }
+                
+                return `
+                    ${contextDisplay}
+                    <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #eee; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <div style="background: #007cba; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px; font-weight: bold;">
+                                AI
+                            </div>
+                            <strong style="color: #007cba;">Safety Assistant Response</strong>
+                        </div>
+                        <div style="line-height: 1.6; color: #333;">
+                            ${formattedAnswer}
+                        </div>
+                        <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #eee; font-size: 12px; color: #666;">
+                            💡 Ask follow-up questions for more specific guidance
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Global functions for quick access
+        function askQuickQuestion(question) {
+            document.getElementById('chat-input').value = question;
+            aiAssistant.sendMessage();
+        }
+
+        function sendChatMessage() {
+            aiAssistant.sendMessage();
+        }
+
+        function startVoiceInput() {
+            if ('webkitSpeechRecognition' in window) {
+                const recognition = new webkitSpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US';
+                
+                recognition.onstart = function() {
+                    document.getElementById('chat-input').placeholder = 'Listening... Speak your question';
+                };
+                
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    document.getElementById('chat-input').value = transcript;
+                    aiAssistant.sendMessage();
+                };
+                
+                recognition.onerror = function() {
+                    document.getElementById('chat-input').placeholder = 'Voice input failed. Type your question...';
+                };
+                
+                recognition.onend = function() {
+                    document.getElementById('chat-input').placeholder = 'Start typing your question... (suggestions will appear)';
+                };
+                
+                recognition.start();
+            } else {
+                alert('Voice input not supported in this browser');
+            }
+        }
+
+        // Original AI Analysis Functions (Enhanced)
         function getAIAnalysis() {
             const button = document.getElementById('ai-analysis-btn');
             const originalText = button.innerHTML;
@@ -751,55 +1258,6 @@
                 });
         }
 
-        function askAI() {
-            const question = document.getElementById('ai-question').value.trim();
-            const button = document.getElementById('ask-ai-btn');
-            const originalText = button.innerHTML;
-            
-            if (!question) {
-                showError('Please enter a question first.');
-                return;
-            }
-            
-            button.disabled = true;
-            button.innerHTML = '<div class="loading"></div> Thinking...';
-            
-            fetch('/ai_chat', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({question: question})
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    const responseHtml = `
-                        <div style="margin-bottom: 15px; padding: 10px; background: rgba(23, 162, 184, 0.1); border-radius: 4px;">
-                            <strong><i class="fas fa-user"></i> Your Question:</strong><br>
-                            ${escapeHtml(question)}
-                        </div>
-                        <div>
-                            <strong><i class="fas fa-robot"></i> AI Response:</strong><br>
-                            ${formatAIResponse(data.answer)}
-                        </div>
-                    `;
-                    document.getElementById('ai-chat-content').innerHTML = responseHtml;
-                    document.getElementById('ai-chat-response').style.display = 'block';
-                    document.getElementById('ai-question').value = '';
-                    button.innerHTML = originalText;
-                } else {
-                    showError('AI chat failed: ' + (data.error || 'Unknown error'));
-                    button.innerHTML = originalText;
-                }
-            })
-            .catch(error => {
-                showError('Network error: ' + error.message);
-                button.innerHTML = originalText;
-            })
-            .finally(() => {
-                button.disabled = false;
-            });
-        }
-
         function formatAIResponse(text) {
             if (!text) return '';
             
@@ -816,12 +1274,6 @@
             formatted = formatted.replace(/^(<br>)+/, '');
             
             return formatted;
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
         }
 
         function showError(message) {
@@ -841,11 +1293,12 @@
             }, 5000);
         }
 
-        // Allow Enter key to submit question
-        document.getElementById('ai-question').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                askAI();
-            }
+        // Initialize when page loads
+        let aiAssistant;
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                aiAssistant = new SmartAIAssistant();
+            }, 1000);
         });
 
         // Auto-refresh traffic data every 5 minutes
