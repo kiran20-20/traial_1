@@ -700,7 +700,7 @@
         <!-- AI Chatbot Section -->
         <div class="ai-chatbot-section">
             <div class="ai-header">
-                <h2><i class="fas fa-robot"></i> Smart AI Route Assistant</h2>
+                <h2><i class="fas fa-robot"></i> Smart AI Safety Assistant</h2>
                 <p style="opacity: 0.9; font-size: 1.1em;">AI has complete access to your route analysis, vehicle specs, and hazard data</p>
             </div>
 
@@ -936,7 +936,7 @@
                     </div>
                     <div style="font-size: 1.1em; opacity: 0.9; line-height: 1.4;">
                         Smart Marg - Intelligent Route Navigation<br>
-                        for POL Products 
+                        for Petroleum Transportation
                     </div>
                 </div>
 
@@ -962,6 +962,25 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Contact & Support -->
+                <div style="background: rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; backdrop-filter: blur(10px);">
+                    <h4 style="margin-bottom: 15px; text-align: center;"><i class="fas fa-phone-alt"></i> Emergency Support</h4>
+                    <div style="text-align: center; line-height: 1.6;">
+                        <div style="margin-bottom: 10px;">
+                            <strong>Emergency Hotline:</strong><br>
+                            <span style="font-size: 1.2em; font-weight: bold;">1800-233-3555</span>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <strong>Technical Support:</strong><br>
+                            <span>support@iocl.com</span>
+                        </div>
+                        <div>
+                            <strong>Route Planning:</strong><br>
+                            <span>Available 24x7</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- IndianOil Services -->
@@ -969,14 +988,34 @@
                 <h4 style="text-align: center; margin-bottom: 20px;"><i class="fas fa-cogs"></i> IndianOil Smart Transportation Services</h4>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; text-align: center;">
                     <div>
+                        <div style="font-size: 1.5em; margin-bottom: 8px;">🚛</div>
+                        <strong>Fleet Management</strong><br>
+                        <small style="opacity: 0.8;">Real-time tracking & optimization</small>
+                    </div>
+                    <div>
                         <div style="font-size: 1.5em; margin-bottom: 8px;">🛣️</div>
                         <strong>Route Intelligence</strong><br>
-                        <small style="opacity: 0.8;">AI-powered</small>
+                        <small style="opacity: 0.8;">AI-powered navigation</small>
                     </div>
                     <div>
                         <div style="font-size: 1.5em; margin-bottom: 8px;">⚡</div>
-                        <strong>Journey Risk Management</strong><br>
-                        <small style="opacity: 0.8;">Mathematical Model</small>
+                        <strong>Fuel Efficiency</strong><br>
+                        <small style="opacity: 0.8;">Optimized consumption</small>
+                    </div>
+                    <div>
+                        <div style="font-size: 1.5em; margin-bottom: 8px;">🔒</div>
+                        <strong>Safety Compliance</strong><br>
+                        <small style="opacity: 0.8;">ADR & regulatory standards</small>
+                    </div>
+                    <div>
+                        <div style="font-size: 1.5em; margin-bottom: 8px;">📊</div>
+                        <strong>Analytics</strong><br>
+                        <small style="opacity: 0.8;">Performance insights</small>
+                    </div>
+                    <div>
+                        <div style="font-size: 1.5em; margin-bottom: 8px;">🏥</div>
+                        <strong>Emergency Response</strong><br>
+                        <small style="opacity: 0.8;">Rapid incident management</small>
                     </div>
                 </div>
             </div>
@@ -984,10 +1023,10 @@
             <!-- Footer -->
             <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2); text-align: center; font-size: 0.9em; opacity: 0.8;">
                 <div style="margin-bottom: 10px;">
-                    © 2025 Indian Oil Corporation Limited. All rights reserved.
+                    © 2024 Indian Oil Corporation Limited. All rights reserved.
                 </div>
                 <div>
-                    Smart Marg v2.0 | Powered by Gemini 2.1|
+                    Smart Marg v2.0 | Powered by AI & Machine Learning | ISO 9001:2015 Certified
                 </div>
             </div>
         </div>
@@ -1539,5 +1578,15 @@
             }, 1000);
         });
     </script>
-
-                  
+</body>
+</html>
+                        <div class="traffic-circle traffic-light"></div>
+                        <div style="font-size: 0.9em; font-weight: 500;">Light</div>
+                        <div style="font-weight: bold; font-size: 1.2em;">{{ route_report.traffic_analysis.light_traffic_segments }}</div>
+                    </div>
+                    <div class="traffic-item">
+                        <div class="traffic-circle traffic-moderate"></div>
+                        <div style="font-size: 0.9em; font-weight: 500;">Moderate</div>
+                        <div style="font-weight: bold; font-size: 1.2em;">{{ route_report.traffic_analysis.moderate_traffic_segments }}</div>
+                    </div>
+                    <div class="traffic-item">
