@@ -1001,7 +1001,7 @@ def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance
 
 
 def load_ro_data():
-    """Load RO data from Excel file with actual column names"""
+    """Load consignee data from Excel file with actual column names"""
     try:
         df_ro = pd.read_excel("IOCL_Plant_data.xlsx")
         ro_data = {}
@@ -1023,9 +1023,9 @@ def load_ro_data():
                         ro_data[state_code] = {}
                         
                     ro_data[state_code][sap_code] = {
-                        'name': consignee,  # Using Consignee as the name
-                        'district': sales_group_desc or 'Unknown',  # Using Sales Group Desc as district
-                        'region': customer_type or 'Unknown',  # Using Customer Type as region
+                        'name': consignee,
+                        'district': sales_group_desc or 'Unknown',
+                        'region': customer_type or 'Unknown',
                         'lat': lat,
                         'lng': lng
                     }
@@ -1033,7 +1033,7 @@ def load_ro_data():
                     print(f"Skipping incomplete row: SAP Code {sap_code}")
                     
             except (ValueError, TypeError) as e:
-                print(f"Error processing row: {e}")
+                print(f"Error processing consignee row: {e}")
                 continue
                 
         print(f"Loaded {sum(len(state_ros) for state_ros in ro_data.values())} consignee locations across {len(ro_data)} states")
@@ -1045,7 +1045,6 @@ def load_ro_data():
     except Exception as e:
         print(f"Error loading consignee data: {e}")
         return {}
-        
 
 # Session timeout check
 @app.before_request
@@ -1130,7 +1129,7 @@ def home():
     try:
         username = session.get('username', 'User')
         
-        # Load IOCL Landmarks with data validation
+        # Load IOCL Landmarks with data validation (existing code)
         landmarks = []
         
         try:
@@ -1138,7 +1137,6 @@ def home():
             
             for _, row in df_iocl.iterrows():
                 try:
-                    # Validate and convert coordinates
                     lat = float(row['Latitude']) if pd.notna(row['Latitude']) else None
                     lng = float(row['Longitude']) if pd.notna(row['Longitude']) else None
                     name = str(row['Landmark Name']).strip() if pd.notna(row['Landmark Name']) else None
@@ -1168,14 +1166,14 @@ def home():
             print(f"Error loading landmarks Excel file: {e}")
             landmarks = []
 
-        # Load RO data (new functionality)
+        # Load consignee data (NEW)
         ro_data = load_ro_data()
 
-        # Pass landmarks, RO data, TT specifications, and username to template
+        # Pass all data to template (UPDATED)
         return render_template(
             "route_form.html",
             landmarks=landmarks,
-            ro_data=ro_data,  # Add RO data to template context
+            ro_data=ro_data,  # ADD THIS LINE
             tt_specifications=TT_SPECIFICATIONS,
             username=username
         )
@@ -1185,7 +1183,7 @@ def home():
         import traceback
         traceback.print_exc()
         
-        # Return a simple fallback page if everything fails
+        # Fallback page (existing code - no changes needed)
         username = session.get('username', 'User')
         tt_options = ""
         for tt_key, tt_data in TT_SPECIFICATIONS.items():
@@ -2415,6 +2413,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
