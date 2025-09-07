@@ -999,6 +999,54 @@ def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance
             ]
         }
 
+
+def load_ro_data():
+    """Load RO data from Excel file with error handling"""
+    try:
+        df_ro = pd.read_excel("IOCL_Plant_data.xlsx")
+        ro_data = {}
+        
+        for _, row in df_ro.iterrows():
+            try:
+                # Extract and validate data from each row
+                state_code = str(row['State_Code']).strip().upper() if pd.notna(row['State_Code']) else None
+                sap_code = str(row['SAP_Code']).strip() if pd.notna(row['SAP_Code']) else None
+                ro_name = str(row['RO_Name']).strip() if pd.notna(row['RO_Name']) else None
+                district = str(row['District']).strip() if pd.notna(row['District']) else None
+                region = str(row['Region']).strip() if pd.notna(row['Region']) else None
+                lat = float(row['Latitude']) if pd.notna(row['Latitude']) else None
+                lng = float(row['Longitude']) if pd.notna(row['Longitude']) else None
+                
+                # Only add if all required fields are present
+                if all([state_code, sap_code, ro_name, district, lat, lng]):
+                    if state_code not in ro_data:
+                        ro_data[state_code] = {}
+                        
+                    ro_data[state_code][sap_code] = {
+                        'name': ro_name,
+                        'district': district,
+                        'region': region or 'Unknown',
+                        'lat': lat,
+                        'lng': lng
+                    }
+                else:
+                    print(f"Skipping incomplete RO row: {sap_code}")
+                    
+            except (ValueError, TypeError) as e:
+                print(f"Error processing RO row: {e}")
+                continue
+                
+        print(f"Loaded {sum(len(state_ros) for state_ros in ro_data.values())} RO locations across {len(ro_data)} states")
+        return ro_data
+        
+    except FileNotFoundError:
+        print("IOCL_Plant_data.xlsx not found, RO selection will be disabled")
+        return {}
+    except Exception as e:
+        print(f"Error loading RO data: {e}")
+        return {}
+        
+
 # Session timeout check
 @app.before_request
 def check_session_timeout():
@@ -1080,13 +1128,11 @@ def test():
 def home():
     """Main route form page - requires login"""
     try:
-        # Add username to template context
         username = session.get('username', 'User')
         
         # Load IOCL Landmarks with data validation
         landmarks = []
         
-        # Try to load from Excel file, but handle gracefully if it doesn't exist
         try:
             df_iocl = pd.read_excel("IOCL_Landmark_Details.xlsx")
             
@@ -1111,7 +1157,6 @@ def home():
             
         except FileNotFoundError:
             print("IOCL_Landmark_Details.xlsx not found, using sample landmarks")
-            # Provide some sample landmarks if file doesn't exist
             landmarks = [
                 {'name': 'Delhi Terminal', 'lat': 28.6139, 'lng': 77.2090},
                 {'name': 'Mumbai Terminal', 'lat': 19.0760, 'lng': 72.8777},
@@ -1120,13 +1165,17 @@ def home():
                 {'name': 'Kolkata Terminal', 'lat': 22.5726, 'lng': 88.3639}
             ]
         except Exception as e:
-            print(f"Error loading Excel file: {e}")
+            print(f"Error loading landmarks Excel file: {e}")
             landmarks = []
 
-        # Pass landmarks, TT specifications, and username to template
+        # Load RO data (new functionality)
+        ro_data = load_ro_data()
+
+        # Pass landmarks, RO data, TT specifications, and username to template
         return render_template(
             "route_form.html",
             landmarks=landmarks,
+            ro_data=ro_data,  # Add RO data to template context
             tt_specifications=TT_SPECIFICATIONS,
             username=username
         )
@@ -1135,6 +1184,7 @@ def home():
         print(f"Error loading data: {e}")
         import traceback
         traceback.print_exc()
+        
         # Return a simple fallback page if everything fails
         username = session.get('username', 'User')
         tt_options = ""
@@ -1145,7 +1195,7 @@ def home():
         <html><body>
         <h2>IndianOil Smart Marg - Truck Tanker Navigation</h2>
         <p>Welcome, {username}! <a href="/logout">Logout</a></p>
-        <p>Basic form (landmarks unavailable)</p>
+        <p>Basic form (data loading failed)</p>
         <form method="POST" action="/fetch_routes">
             <p>Source: <input type="text" name="source" placeholder="lat,lng" required></p>
             <p>Destination: <input type="text" name="destination" placeholder="lat,lng" required></p>
@@ -2365,6 +2415,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
