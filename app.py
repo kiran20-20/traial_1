@@ -1485,33 +1485,6 @@ def get_suggested_questions():
 
 
 
-# Replace your existing AI routes with these corrected versions:
-
-@app.route('/ai_analysis/current')
-@login_required
-def ai_current_analysis():  # Changed function name
-    """Get AI-powered route analysis"""
-    try:
-        # Get route data from session
-        coords = session.get('coords', [])
-        sharp_turns = session.get('sharp_turns', [])
-        curves = session.get('curves', [])
-        tt_specs = session.get('tt_specs', {})
-        all_pois = session.get('all_pois', [])
-        
-        if not coords or not tt_specs:
-            return {"error": "No route data found. Please analyze a route first.", "status": "failed"}
-        
-        ai_analysis = analyze_route_with_ai(coords, sharp_turns, curves, tt_specs, all_pois)
-        
-        return {
-            "ai_analysis": ai_analysis,
-            "status": "success"
-        }
-        
-    except Exception as e:
-        return {"error": str(e), "status": "failed"}
-
 @app.route('/safety_briefing')
 @login_required
 def safety_briefing():
@@ -2392,6 +2365,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
