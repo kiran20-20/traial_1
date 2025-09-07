@@ -153,7 +153,7 @@
             border: 1px solid #ddd;
             border-radius: 8px;
             box-sizing: border-box;
-            transition: border-color 0.3s, box-shadow 0.3s;
+            transition: border-color 0.3s, box-shadow 0.3s, background-color 0.3s;
         }
         input:focus, select:focus {
             outline: none;
@@ -198,6 +198,12 @@
             color: var(--iocl-mid-gray);
             margin-top: 3px;
             font-style: italic;
+        }
+
+        /* Coordinate auto-fill indication */
+        .coord-autofilled {
+            background-color: #e8f5e8 !important;
+            border-color: #4caf50 !important;
         }
 
         /* RO Location Selection Styles */
@@ -515,7 +521,7 @@
 
         <div class="section-title">
             <i class="fa-solid fa-gas-pump"></i>
-            <span>RO Location</span>
+            <span>Consignee Location</span>
         </div>
 
         <div class="ro-selection-method">
@@ -550,11 +556,11 @@
                 <div id="sapDetails" class="sap-details">
                     <div class="sap-info-grid">
                         <div class="sap-info-item">
-                            <div class="label">RO Name</div>
+                            <div class="label">Consignee Name</div>
                             <div class="value" id="roName">-</div>
                         </div>
                         <div class="sap-info-item">
-                            <div class="label">District</div>
+                            <div class="label">Sales Group</div>
                             <div class="value" id="roDistrict">-</div>
                         </div>
                         <div class="sap-info-item">
@@ -562,7 +568,7 @@
                             <div class="value" id="roState">-</div>
                         </div>
                         <div class="sap-info-item">
-                            <div class="label">Region</div>
+                            <div class="label">Customer Type</div>
                             <div class="value" id="roRegion">-</div>
                         </div>
                     </div>
@@ -574,7 +580,7 @@
 
             <!-- Manual Coordinates Panel -->
             <div id="manualPanel" class="selection-panel">
-                <label for="destination_manual">RO Coordinates</label>
+                <label for="destination_manual">Consignee Coordinates</label>
                 <input type="text" id="destination_manual" placeholder="Enter coordinates manually (lat, lng)">
                 <div class="coord-helper">Example: 19.0760, 72.8777</div>
             </div>
@@ -674,32 +680,94 @@
     document.addEventListener('DOMContentLoaded', function() {
         populateStates();
         updateDestinationField();
+        setupTerminalAutofill();
     });
 
-    // Terminal landmark selection (existing functionality)
-    const landmarkInput = document.getElementById('landmark_name');
-    const sourceInput = document.getElementById('source');
-    
-    landmarkInput.addEventListener('change', function () {
-        const name = this.value;
-        const options = document.getElementById('landmarkList').options;
-        let match = null;
+    // Enhanced Terminal landmark selection with improved auto-fill
+    function setupTerminalAutofill() {
+        const landmarkInput = document.getElementById('landmark_name');
+        const sourceInput = document.getElementById('source');
 
-        for (let i = 0; i < options.length; i++) {
-            if (options[i].value === name) {
-                match = options[i];
-                break;
+        // Function to find and set coordinates
+        function findAndSetCoordinates() {
+            const name = landmarkInput.value.trim();
+            const options = document.getElementById('landmarkList').options;
+            let match = null;
+
+            if (!name) {
+                sourceInput.value = "";
+                sourceInput.classList.remove('coord-autofilled');
+                return;
+            }
+
+            // Find exact match first
+            for (let i = 0; i < options.length; i++) {
+                if (options[i].value.toLowerCase() === name.toLowerCase()) {
+                    match = options[i];
+                    break;
+                }
+            }
+
+            // If no exact match, try partial match (minimum 3 characters)
+            if (!match && name.length >= 3) {
+                for (let i = 0; i < options.length; i++) {
+                    if (options[i].value.toLowerCase().includes(name.toLowerCase())) {
+                        match = options[i];
+                        break;
+                    }
+                }
+            }
+
+            if (match) {
+                const lat = match.getAttribute('data-lat');
+                const lng = match.getAttribute('data-lng');
+                sourceInput.value = `${lat},${lng}`;
+                sourceInput.classList.add('coord-autofilled');
+                
+                // Remove auto-fill styling after 3 seconds
+                setTimeout(() => {
+                    sourceInput.classList.remove('coord-autofilled');
+                }, 3000);
             }
         }
 
-        if (match) {
-            const lat = match.getAttribute('data-lat');
-            const lng = match.getAttribute('data-lng');
-            sourceInput.value = `${lat},${lng}`;
-        } else if (name === "") {
-            sourceInput.value = "";
-        }
-    });
+        // Multiple event listeners for comprehensive coverage
+        landmarkInput.addEventListener('change', findAndSetCoordinates);
+        landmarkInput.addEventListener('blur', findAndSetCoordinates);
+        
+        // Real-time matching with debounce
+        let searchTimeout;
+        landmarkInput.addEventListener('input', function() {
+            const currentValue = this.value.trim();
+            
+            // Clear previous timeout
+            clearTimeout(searchTimeout);
+            
+            if (currentValue === '') {
+                sourceInput.value = '';
+                sourceInput.classList.remove('coord-autofilled');
+                return;
+            }
+            
+            // Debounced search for partial matches
+            if (currentValue.length >= 3) {
+                searchTimeout = setTimeout(() => {
+                    findAndSetCoordinates();
+                }, 500);
+            }
+        });
+
+        // Enhanced focus behavior
+        sourceInput.addEventListener('focus', function() {
+            if (!this.value) {
+                this.placeholder = "Select terminal above or enter coordinates manually (lat, lng)";
+            }
+        });
+
+        sourceInput.addEventListener('blur', function() {
+            this.placeholder = "Select from above or enter manually";
+        });
+    }
 
     // RO Location Method Switching
     function switchMethod(method) {
@@ -725,7 +793,7 @@
         const stateSelect = document.getElementById('stateCode');
         
         if (Object.keys(roData).length === 0) {
-            stateSelect.innerHTML = '<option value="">No RO data available</option>';
+            stateSelect.innerHTML = '<option value="">No consignee data available</option>';
             stateSelect.disabled = true;
             return;
         }
@@ -881,7 +949,7 @@
         // Update input field
         document.getElementById('sapCode').value = sapCode;
         
-        // Show RO details
+        // Show consignee details
         document.getElementById('roName').textContent = roInfo.name;
         document.getElementById('roDistrict').textContent = roInfo.district;
         document.getElementById('roState').textContent = getStateName(selectedState);
@@ -983,7 +1051,7 @@
             e.preventDefault();
             showModal('Please fill in all required fields:', [
                 'Terminal coordinates',
-                'RO coordinates (via SAP code or manual entry)',
+                'Consignee coordinates (via SAP code or manual entry)',
                 'TT Capacity type'
             ]);
             return;
