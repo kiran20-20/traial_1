@@ -493,31 +493,133 @@ Weather: {weather_condition} - Adjust driving accordingly"""
 
 
 def ai_chat_gemini(user_question, tt_specs):
-    """Chat function using Gemini"""
+    """Enhanced chat function with full access to route analysis data"""
     if not ai_client:
         return "AI assistant unavailable. Please contact your safety supervisor for guidance."
     
     try:
         model = genai.GenerativeModel('gemini-1.5-flash')
         
-        context = f"""You are an expert assistant for truck tanker safety. The driver is operating:
-- Vehicle: {tt_specs.get('capacity_range', 'Unknown')} tanker
-- Weight: {tt_specs.get('gross_weight', 0)/1000:.1f}T
-- Cargo: Petroleum products
-
-Answer their specific question directly. Do not ask for more details unless absolutely necessary for safety.
-
-Driver question: {user_question}
-
-Provide a direct, practical answer focused on safety and compliance."""
-
-        response = model.generate_content(context)
+        # Get comprehensive route data from session
+        coords = session.get('coords', [])
+        sharp_turns = session.get('sharp_turns', [])
+        curves = session.get('curves', [])
+        all_pois = session.get('all_pois', [])
+        route_report = session.get('route_report', {})
+        
+        # Build comprehensive context with all available data
+        context_parts = [
+            f"You are an expert truck tanker safety assistant with COMPLETE access to the current route analysis.",
+            f"",
+            f"=== CURRENT VEHICLE SPECIFICATIONS ===",
+            f"- Vehicle Type: {tt_specs.get('capacity_range', 'Unknown')} Petroleum Tanker",
+            f"- Fuel Capacity: {tt_specs.get('avg_capacity_liters', 0):,} liters",
+            f"- Tare Weight: {tt_specs.get('tare_weight', 0)/1000:.1f}T (empty vehicle)",
+            f"- Product Weight: {tt_specs.get('product_weight', 0)/1000:.1f}T (petroleum cargo)",
+            f"- Gross Weight: {tt_specs.get('gross_weight', 0)/1000:.1f}T (fully loaded)",
+            f"- Axle Load: {tt_specs.get('axle_load', 0):.1f}T per axle",
+            f"- Maximum Speed: {tt_specs.get('max_speed', 50)} km/h",
+            f"- Turn Sensitivity: {tt_specs.get('turn_sensitivity', 1.0)}x (rollover risk multiplier)",
+            f"- Risk Multiplier: {tt_specs.get('risk_multiplier', 1.0)}x",
+            f""
+        ]
+        
+        # Add route analysis data if available
+        if route_report:
+            context_parts.extend([
+                f"=== CURRENT ROUTE ANALYSIS ===",
+                f"- Total Distance: {route_report.get('total_distance', 'Unknown')}",
+                f"- Estimated Duration: {route_report.get('total_duration', 'Unknown')}",
+                f"- Route Points Analyzed: {len(coords)} GPS coordinates",
+                f""
+            ])
+            
+            route_analysis = route_report.get('route_analysis', {})
+            if route_analysis:
+                context_parts.extend([
+                    f"=== HAZARD BREAKDOWN ===",
+                    f"- Critical Risk Zones: {route_analysis.get('critical_risk_zones', 0)}",
+                    f"- High Risk Zones: {route_analysis.get('high_risk_zones', 0)}",
+                    f"- Medium Risk Zones: {route_analysis.get('medium_risk_zones', 0)}",
+                    f"- Total Hazard Points: {route_analysis.get('critical_risk_zones', 0) + route_analysis.get('high_risk_zones', 0) + route_analysis.get('medium_risk_zones', 0)}",
+                    f""
+                ])
+        
+        # Add detailed turn analysis
+        if sharp_turns:
+            critical_turns = [t for t in sharp_turns if t.get('severity') == 'critical']
+            high_turns = [t for t in sharp_turns if t.get('severity') == 'high']
+            
+            context_parts.extend([
+                f"=== SHARP TURN ANALYSIS ===",
+                f"- Total Sharp Turns (90°+): {len(sharp_turns)}",
+                f"- Critical Severity: {len(critical_turns)} turns",
+                f"- High Severity: {len(high_turns)} turns",
+                f""
+            ])
+            
+            # Add specific turn details (first 5 most critical)
+            critical_turns_sorted = sorted(critical_turns, key=lambda x: x.get('turn_angle', 0), reverse=True)
+            if critical_turns_sorted:
+                context_parts.append("=== MOST CRITICAL TURNS ===")
+                for i, turn in enumerate(critical_turns_sorted[:5]):
+                    context_parts.append(f"Turn {i+1}: {turn.get('turn_angle', 0):.1f}° {turn.get('direction', 'unknown')} turn (CRITICAL)")
+                context_parts.append("")
+        
+        # Add curve analysis
+        if curves:
+            context_parts.extend([
+                f"=== CURVE ANALYSIS ===",
+                f"- Moderate Curves (45-90°): {len(curves)}",
+                f"- Average curve angle: {sum(c.get('turn_angle', 0) for c in curves) / len(curves):.1f}°",
+                f""
+            ])
+        
+        # Add emergency infrastructure
+        if all_pois:
+            hospitals = [p for p in all_pois if p['type'] == 'hospital']
+            police = [p for p in all_pois if p['type'] == 'police']
+            fuel_stations = [p for p in all_pois if p['type'] == 'fuel']
+            
+            context_parts.extend([
+                f"=== EMERGENCY INFRASTRUCTURE ===",
+                f"- Hospitals: {len(hospitals)} ({', '.join([h['name'] for h in hospitals[:3]])}{'...' if len(hospitals) > 3 else ''})",
+                f"- Police Stations: {len(police)} ({', '.join([p['name'] for p in police[:3]])}{'...' if len(police) > 3 else ''})",
+                f"- Fuel Stations: {len(fuel_stations)} ({', '.join([f['name'] for f in fuel_stations[:3]])}{'...' if len(fuel_stations) > 3 else ''})",
+                f""
+            ])
+        
+        # Add safety recommendations from analysis
+        if route_report and 'safety_recommendations' in route_report:
+            context_parts.extend([
+                f"=== CURRENT SAFETY RECOMMENDATIONS ===",
+                f"- " + f"\n- ".join(route_report['safety_recommendations'][:5]),
+                f""
+            ])
+        
+        # Final context assembly
+        context_parts.extend([
+            f"=== DRIVER QUESTION ===",
+            f"The driver operating this {tt_specs.get('capacity_range', 'Unknown')} tanker asks:",
+            f'"{user_question}"',
+            f"",
+            f"=== INSTRUCTIONS ===",
+            f"Based on ALL the route analysis data above, provide a detailed, practical answer.",
+            f"Reference specific hazards, turn angles, distances, and safety measures when relevant.",
+            f"Consider the vehicle's {tt_specs.get('gross_weight', 0)/1000:.1f}T weight and {tt_specs.get('turn_sensitivity', 1.0)}x turn sensitivity.",
+            f"If the question relates to specific route hazards, reference the actual turn data and POI locations.",
+            f"Provide actionable safety advice based on the current route conditions."
+        ])
+        
+        # Combine all context
+        full_context = "\n".join(context_parts)
+        
+        response = model.generate_content(full_context)
         return response.text
         
     except Exception as e:
         print(f"Gemini chat error: {e}")
-        return "AI assistant temporarily unavailable. For immediate safety concerns, contact your dispatcher."
-
+        return f"AI assistant temporarily unavailable. For immediate safety concerns, contact your dispatcher. (Error: {str(e)})"
 
 
 
@@ -1166,6 +1268,222 @@ def fetch_routes():
         return f"Error processing route request: {str(e)}"
 
 
+# ==============================================================================
+# ADD THESE NEW ROUTES TO YOUR app.py FILE (after your existing routes)
+# ==============================================================================
+
+@app.route('/get_suggested_questions')
+@login_required
+def get_suggested_questions():
+    """Generate contextual question suggestions based on current route analysis"""
+    try:
+        # Get current analysis data
+        tt_specs = session.get('tt_specs', {})
+        sharp_turns = session.get('sharp_turns', [])
+        curves = session.get('curves', [])
+        all_pois = session.get('all_pois', [])
+        route_report = session.get('route_report', {})
+        coords = session.get('coords', [])
+        
+        suggestions = {
+            'general': [],
+            'hazard_specific': [],
+            'emergency': [],
+            'operational': []
+        }
+        
+        # Generate suggestions based on available data
+        if tt_specs:
+            # General vehicle questions
+            suggestions['general'].extend([
+                f"What's the maximum safe speed for my {tt_specs.get('capacity_range', 'tanker')}?",
+                f"How should I handle curves with a {tt_specs.get('gross_weight', 0)/1000:.1f}T loaded tanker?",
+                f"What are the braking requirements for {tt_specs.get('avg_capacity_liters', 0):,}L of petroleum?",
+                "What pre-trip safety checks should I perform?",
+                "How do I calculate safe following distance for my tanker?",
+                "What are the stability risks with liquid cargo?"
+            ])
+            
+            # Weight-specific questions
+            if tt_specs.get('gross_weight', 0) > 30000:
+                suggestions['operational'].extend([
+                    "Are there bridge weight restrictions on this route?",
+                    "How does my heavy load affect stopping distance?",
+                    "What are the axle weight regulations I need to follow?",
+                    f"Is my {tt_specs.get('gross_weight', 0)/1000:.1f}T tanker too heavy for city roads?"
+                ])
+            
+            # Capacity-specific questions
+            if tt_specs.get('avg_capacity_liters', 0) > 25000:
+                suggestions['operational'].extend([
+                    "How do I manage liquid surge in a large tanker?",
+                    "What are the parking restrictions for large petroleum tankers?",
+                    "Do I need special permits for this capacity?"
+                ])
+        
+        # Hazard-specific suggestions based on actual route analysis
+        if sharp_turns:
+            critical_turns = [t for t in sharp_turns if t.get('severity') == 'critical']
+            high_turns = [t for t in sharp_turns if t.get('severity') == 'high']
+            
+            if critical_turns:
+                suggestions['hazard_specific'].extend([
+                    f"How should I navigate the {len(critical_turns)} critical turns detected?",
+                    f"What speed should I use for turns over 120 degrees?",
+                    "How do I prevent rollover on sharp turns?",
+                    "What's the safest approach angle for critical turns?",
+                    "Should I use engine braking before sharp turns?"
+                ])
+            
+            if len(sharp_turns) > 5:
+                suggestions['hazard_specific'].extend([
+                    f"This route has {len(sharp_turns)} sharp turns - is it safe for my tanker?",
+                    "Should I take an alternate route with fewer sharp turns?",
+                    "How do I manage liquid surge during multiple turns?",
+                    "What's the cumulative risk of multiple sharp turns?"
+                ])
+            
+            # Specific turn angle questions
+            max_angle = max((t.get('turn_angle', 0) for t in sharp_turns), default=0)
+            if max_angle > 130:
+                suggestions['hazard_specific'].extend([
+                    f"How do I safely navigate a {max_angle:.0f}° turn with liquid cargo?",
+                    f"Is a {max_angle:.0f}° turn safe for petroleum tankers?",
+                    "What are the blind spot risks at extreme turns?"
+                ])
+        
+        if curves:
+            suggestions['hazard_specific'].extend([
+                f"What's the recommended speed for the {len(curves)} curves on this route?",
+                "How do moderate curves affect liquid cargo stability?",
+                "Should I use engine braking on curved sections?",
+                "How do I maintain control through continuous curves?"
+            ])
+        
+        # Emergency and infrastructure questions
+        if all_pois:
+            hospitals = [p for p in all_pois if p['type'] == 'hospital']
+            police = [p for p in all_pois if p['type'] == 'police']
+            fuel_stations = [p for p in all_pois if p['type'] == 'fuel']
+            
+            if hospitals:
+                suggestions['emergency'].extend([
+                    f"Where are the {len(hospitals)} hospitals along my route?",
+                    "What should I do if there's a medical emergency?",
+                    "How do I contact emergency services while carrying petroleum?",
+                    f"Which hospital is closest to the dangerous turns?",
+                    "What's the evacuation procedure near medical facilities?"
+                ])
+            
+            if police:
+                suggestions['emergency'].extend([
+                    "What documents do police need for hazmat transport?",
+                    "How do I handle a police stop with petroleum cargo?",
+                    "What are my rights during a hazmat inspection?",
+                    "Should I notify police of my route in advance?"
+                ])
+            
+            if fuel_stations:
+                suggestions['operational'].extend([
+                    f"Can I use any of the {len(fuel_stations)} fuel stations on this route?",
+                    "What are the fueling safety procedures for tankers?",
+                    "Where should I plan my fuel stops?",
+                    "Are there restrictions on tanker fueling?",
+                    "How do I ground my vehicle while fueling?"
+                ])
+            
+            if not hospitals:
+                suggestions['emergency'].append("Are there medical facilities along this route?")
+            if not police:
+                suggestions['emergency'].append("Where are the nearest police stations?")
+        
+        # Route-specific operational questions
+        if route_report:
+            distance = route_report.get('total_distance', '')
+            duration = route_report.get('total_duration', '')
+            
+            if distance and duration:
+                suggestions['operational'].extend([
+                    f"How should I manage fatigue on this {distance} journey?",
+                    f"What rest stops should I plan for a {duration} trip?",
+                    "How do I maintain optimal fuel economy on this route?",
+                    f"Is {duration} too long for one driver?",
+                    "What are the mandatory rest requirements?"
+                ])
+            
+            # Traffic and timing questions
+            suggestions['operational'].extend([
+                "What's the best time to start this journey?",
+                "How do I handle heavy traffic with a loaded tanker?",
+                "Should I avoid rush hour on this route?",
+                "Are there time restrictions for petroleum transport?",
+                "What are the night driving regulations?"
+            ])
+        
+        # Weather and environmental questions
+        suggestions['operational'].extend([
+            "How does weather affect tanker safety?",
+            "What should I do if visibility becomes poor?",
+            "How do I handle crosswinds with liquid cargo?",
+            "Should I delay travel in bad weather?",
+            "What are the temperature considerations for petroleum?"
+        ])
+        
+        # Regulatory and compliance questions
+        suggestions['operational'].extend([
+            "What ADR documentation do I need?",
+            "Are there time restrictions for hazmat transport?",
+            "What are the parking regulations for petroleum tankers?",
+            "Do I need route permits for this journey?",
+            "What are the insurance requirements?",
+            "How do I comply with hazmat placarding rules?"
+        ])
+        
+        # Emergency response questions
+        suggestions['emergency'].extend([
+            "What's the emergency response procedure for spills?",
+            "How do I evacuate if there's a fire risk?",
+            "What's the emergency contact number for petroleum incidents?",
+            "How do I isolate the vehicle in an emergency?",
+            "What's the evacuation radius for petroleum tankers?",
+            "How do I use emergency shut-off valves?",
+            "What fire suppression equipment do I need?"
+        ])
+        
+        # Remove duplicates and limit suggestions
+        for category in suggestions:
+            suggestions[category] = list(dict.fromkeys(suggestions[category]))[:8]  # Limit to 8 per category
+        
+        return {
+            'suggestions': suggestions,
+            'context': {
+                'has_route_data': bool(coords),
+                'sharp_turns': len(sharp_turns),
+                'curves': len(curves),
+                'pois': len(all_pois),
+                'tt_type': tt_specs.get('capacity_range', 'Unknown'),
+                'total_suggestions': sum(len(cat) for cat in suggestions.values())
+            },
+            'status': 'success'
+        }
+        
+    except Exception as e:
+        print(f"Error generating suggestions: {e}")
+        return {
+            'suggestions': {
+                'general': [
+                    "What's the maximum safe speed for my tanker?",
+                    "How should I handle sharp turns?",
+                    "What are the braking requirements?",
+                    "What pre-trip checks should I perform?",
+                    "How do I calculate safe following distance?"
+                ]
+            },
+            'context': {'has_route_data': False},
+            'status': 'fallback'
+        }
+
+
 
 # Replace your existing AI routes with these corrected versions:
 
@@ -1216,7 +1534,7 @@ def safety_briefing():
 @app.route('/ai_chat', methods=['POST'])
 @login_required
 def ai_chat():
-    """Chat with AI about route safety using Gemini"""
+    """Enhanced chat with AI about route safety using complete analysis data"""
     try:
         user_question = request.json.get('question', '')
         tt_specs = session.get('tt_specs', {})
@@ -1224,15 +1542,57 @@ def ai_chat():
         if not user_question.strip():
             return {"error": "Please provide a question", "status": "failed"}
         
+        # Ensure we have TT specs
+        if not tt_specs:
+            return {"error": "No truck specifications found. Please analyze a route first.", "status": "failed"}
+        
         answer = ai_chat_gemini(user_question, tt_specs)
         
         return {
             "answer": answer,
+            "status": "success",
+            "context_info": {
+                "route_analyzed": bool(session.get('coords')),
+                "sharp_turns": len(session.get('sharp_turns', [])),
+                "curves": len(session.get('curves', [])),
+                "pois": len(session.get('all_pois', [])),
+                "tt_type": tt_specs.get('capacity_range', 'Unknown')
+            }
+        }
+        
+    except Exception as e:
+        return {"error": f"Chat error: {str(e)}", "status": "failed"}
+
+
+# ==============================================================================
+# ADD THIS NEW ROUTE FOR AI ANALYSIS ACCESS
+# ==============================================================================
+
+@app.route('/ai_analysis/current')
+@login_required
+def ai_current_analysis():
+    """Get AI-powered route analysis with full data access"""
+    try:
+        # Get route data from session
+        coords = session.get('coords', [])
+        sharp_turns = session.get('sharp_turns', [])
+        curves = session.get('curves', [])
+        tt_specs = session.get('tt_specs', {})
+        all_pois = session.get('all_pois', [])
+        
+        if not coords or not tt_specs:
+            return {"error": "No route data found. Please analyze a route first.", "status": "failed"}
+        
+        ai_analysis = analyze_route_with_ai(coords, sharp_turns, curves, tt_specs, all_pois)
+        
+        return {
+            "ai_analysis": ai_analysis,
             "status": "success"
         }
         
     except Exception as e:
         return {"error": str(e), "status": "failed"}
+
 
 
 @app.route('/analyze_route', methods=['POST'])
@@ -2032,6 +2392,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
