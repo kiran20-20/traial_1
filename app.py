@@ -1746,7 +1746,7 @@ def ai_current_analysis():
 @app.route('/analyze_route', methods=['POST'])
 @login_required
 def analyze_route():
-    """Enhanced route analysis with proper turn detection and animation (no audio)"""
+    """Enhanced route analysis with GPS navigation integration and voice announcements"""
     try:
         directions = session.get('directions')
         tt_specs = session.get('tt_specs')
@@ -1804,14 +1804,14 @@ def analyze_route():
         for keyword in ['hospital', 'police', 'fuel']:
             all_pois.extend(get_pois(keyword))
 
-        # Store data for AI analysis
+        # Store data for AI analysis and GPS navigation
         session['coords'] = coords
         session['sharp_turns'] = sharp_turns
         session['curves'] = curves
         session['all_pois'] = all_pois
         session.modified = True
 
-        # Create enhanced map with animation (no audio)
+        # Create enhanced map with GPS integration
         center_lat = sum(coord[0] for coord in coords) / len(coords)
         center_lng = sum(coord[1] for coord in coords) / len(coords)
         
@@ -1952,40 +1952,112 @@ def analyze_route():
                 print(f"Error adding POI marker: {e}")
                 continue
         
-        # Add truck animation (without audio)
-        # Add truck animation (without audio) - FIXED VERSION
-        truck_animation = r"""
+        # Enhanced Control Panel with GPS Navigation
+        enhanced_control_panel = f"""
+        <div id="truck-control" style="position: fixed; top: 10px; right: 10px; z-index: 1000; 
+             background: rgba(255,255,255,0.98); padding: 15px; border-radius: 10px; 
+             box-shadow: 0 6px 20px rgba(0,0,0,0.3); font-family: Arial; width: 320px; 
+             border: 3px solid #007cba;">
+            
+            <h4 style='margin: 5px 0; color: #007cba; text-align: center; font-size: 14px;'>
+                🚛 Smart TT Navigation
+            </h4>
+            
+            <div style='background: linear-gradient(135deg, #f0f8ff, #e6f3ff); padding: 10px; 
+                        border-radius: 6px; margin: 10px 0; font-size: 11px; border: 1px solid #007cba;'>
+                <div style='display: flex; justify-content: space-between;'>
+                    <div>
+                        <strong>Vehicle:</strong> {tt_specs['capacity_range']}<br>
+                        <strong>Weight:</strong> {tt_specs['gross_weight']/1000:.1f}T<br>
+                        <strong>Hazards:</strong> {len(sharp_turns)} sharp turns
+                    </div>
+                    <div style='text-align: center; color: #007cba; font-weight: bold;'>
+                        <div style='font-size: 18px;'>{tt_specs['max_speed']}</div>
+                        <div style='font-size: 8px;'>MAX km/h</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="progress-display" style='background: #f9f9f9; padding: 8px; border-radius: 4px; 
+                                             margin: 8px 0; font-size: 10px; min-height: 35px; 
+                                             border: 1px solid #ddd; text-align: center;'>
+                Animation starting...
+            </div>
+            
+            <!-- GPS Navigation Controls -->
+            <div style='background: #e8f4f8; padding: 8px; border-radius: 4px; margin: 8px 0; border: 1px solid #007cba;'>
+                <div style='font-weight: bold; font-size: 11px; margin-bottom: 5px; color: #007cba;'>GPS Navigation</div>
+                <div style='display: flex; gap: 5px; margin-bottom: 5px;'>
+                    <button onclick="startGPSNavigation()" id="start-gps-btn"
+                            style="flex: 1; padding: 6px; background: #28a745; color: white; border: none; 
+                                   border-radius: 3px; cursor: pointer; font-size: 10px;">
+                        Start GPS
+                    </button>
+                    <button onclick="stopGPSNavigation()" id="stop-gps-btn" disabled
+                            style="flex: 1; padding: 6px; background: #dc3545; color: white; border: none; 
+                                   border-radius: 3px; cursor: pointer; font-size: 10px;">
+                        Stop GPS
+                    </button>
+                </div>
+                <div id="gps-status" style='font-size: 9px; color: #666; text-align: center;'>
+                    GPS: Ready to start
+                </div>
+            </div>
+            
+            <div style='margin: 8px 0;'>
+                <button onclick="resetTruckAnimation();" style="width: 100%; padding: 6px; background: #007cba; 
+                        color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 10px;">
+                    🔄 Reset Animation
+                </button>
+            </div>
+            
+            <div style='margin-top: 8px; font-size: 8px; color: #666; text-align: center;'>
+                Enhanced navigation with real-time GPS tracking<br>
+                Voice announcements for hazard alerts
+            </div>
+        </div>
+        """
+        
+        # Truck Animation with GPS Integration
+        truck_animation_with_gps = f"""
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                setTimeout(function() {
-                    var routeCoords = """ + json.dumps(coords) + """;
-                    var sharpTurns = """ + json.dumps(sharp_turns) + """;
-                    var curves = """ + json.dumps(curves) + """;
+            // Store route data for GPS navigation
+            window.routeCoords = {json.dumps(coords)};
+            window.sharpTurns = {json.dumps(sharp_turns)};
+            window.curves = {json.dumps(curves)};
+            window.ttSpecs = {json.dumps(tt_specs)};
+            window.allPois = {json.dumps(all_pois)};
+            
+            document.addEventListener('DOMContentLoaded', function() {{
+                setTimeout(function() {{
+                    var routeCoords = window.routeCoords;
+                    var sharpTurns = window.sharpTurns;
+                    var curves = window.curves;
                     var currentIndex = 0;
                     var truckMarker = null;
                     var animationSpeed = 300;
                     var isAnimating = false;
                     
-                    function createTruckIcon(bearing, speed, hazardLevel) {
+                    function createTruckIcon(bearing, speed, hazardLevel) {{
                         var truckColor = hazardLevel === 'critical' ? '#FF0000' : 
                                        hazardLevel === 'warning' ? '#FFA500' : '#00AA00';
                         var truckSize = hazardLevel === 'critical' ? '34px' : '30px';
                         
-                        return L.divIcon({
+                        return L.divIcon({{
                             html: `
                                 <div style="
                                     position: relative;
-                                    transform: rotate(${bearing}deg); 
-                                    font-size: ${truckSize}; 
+                                    transform: rotate(${{bearing}}deg); 
+                                    font-size: ${{truckSize}}; 
                                     text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
-                                    filter: drop-shadow(0 0 4px ${truckColor});
+                                    filter: drop-shadow(0 0 4px ${{truckColor}});
                                     transition: all 0.3s ease;
                                 ">🚛</div>
                                 <div style="
                                     position: absolute; 
                                     top: -45px; 
                                     left: -30px; 
-                                    background: ${truckColor}; 
+                                    background: ${{truckColor}}; 
                                     color: white; 
                                     padding: 3px 8px; 
                                     border-radius: 4px; 
@@ -1994,15 +2066,15 @@ def analyze_route():
                                     box-shadow: 0 3px 6px rgba(0,0,0,0.4);
                                     min-width: 50px;
                                     text-align: center;
-                                ">${speed} km/h</div>
+                                ">${{speed}} km/h</div>
                             `,
                             iconSize: [60, 60],
                             iconAnchor: [30, 30],
                             className: 'truck-animated-enhanced'
-                        });
-                    }
+                        }});
+                    }}
                     
-                    function calculateBearing(lat1, lng1, lat2, lng2) {
+                    function calculateBearing(lat1, lng1, lat2, lng2) {{
                         if (lat1 === lat2 && lng1 === lng2) return 0;
                         var dLng = (lng2 - lng1) * Math.PI / 180;
                         var lat1Rad = lat1 * Math.PI / 180;
@@ -2011,205 +2083,210 @@ def analyze_route():
                         var x = Math.cos(lat1Rad) * Math.sin(lat2Rad) - Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLng);
                         var bearing = Math.atan2(y, x) * 180 / Math.PI;
                         return (bearing + 360) % 360;
-                    }
+                    }}
                     
-                    function checkNearbyHazards(currentPos, index) {
+                    function checkNearbyHazards(currentPos, index) {{
                         var hazards = [];
                         
-                        for (var i = 0; i < sharpTurns.length; i++) {
+                        for (var i = 0; i < sharpTurns.length; i++) {{
                             var turn = sharpTurns[i];
                             var distance = Math.abs(turn.index - index);
-                            if (distance <= 12) {
-                                hazards.push({
+                            if (distance <= 12) {{
+                                hazards.push({{
                                     type: 'sharp_turn',
                                     angle: turn.turn_angle,
                                     direction: turn.direction,
                                     severity: turn.severity,
                                     distance: distance
-                                });
-                            }
-                        }
+                                }});
+                            }}
+                        }}
                         
-                        for (var i = 0; i < curves.length; i++) {
+                        for (var i = 0; i < curves.length; i++) {{
                             var curve = curves[i];
                             var distance = Math.abs(curve.index - index);
-                            if (distance <= 10) {
-                                hazards.push({
+                            if (distance <= 10) {{
+                                hazards.push({{
                                     type: 'curve',
                                     angle: curve.turn_angle,
                                     direction: curve.direction,
                                     distance: distance
-                                });
-                            }
-                        }
+                                }});
+                            }}
+                        }}
                         
                         return hazards.sort((a, b) => a.distance - b.distance);
-                    }
+                    }}
                     
-                    function moveTruck() {
-                        if (currentIndex >= routeCoords.length - 1) {
+                    function moveTruck() {{
+                        if (currentIndex >= routeCoords.length - 1) {{
                             currentIndex = 0;
-                            if (truckMarker) {
-                                window.map_""" + m._id + """.removeLayer(truckMarker);
+                            if (truckMarker) {{
+                                window.map_{m._id}.removeLayer(truckMarker);
                                 truckMarker = null;
-                            }
+                            }}
                             return;
-                        }
+                        }}
                         
                         var currentPos = routeCoords[currentIndex];
                         var nextPos = routeCoords[Math.min(currentIndex + 3, routeCoords.length - 1)];
                         
-                        if (truckMarker) {
-                            window.map_""" + m._id + """.removeLayer(truckMarker);
-                        }
+                        if (truckMarker) {{
+                            window.map_{m._id}.removeLayer(truckMarker);
+                        }}
                         
                         var bearing = calculateBearing(currentPos[0], currentPos[1], nextPos[0], nextPos[1]);
                         var hazards = checkNearbyHazards(currentPos, currentIndex);
                         
-                        var speed = 45;
+                        var speed = {tt_specs['max_speed']};
                         var status = "Normal driving";
                         var hazardLevel = 'safe';
                         
-                        if (hazards.length > 0) {
+                        if (hazards.length > 0) {{
                             var criticalHazard = hazards[0];
                             
-                            if (criticalHazard.type === 'sharp_turn') {
-                                if (criticalHazard.distance <= 2) {
+                            if (criticalHazard.type === 'sharp_turn') {{
+                                if (criticalHazard.distance <= 2) {{
                                     speed = 12;
                                     status = "SHARP TURN - SLOW DOWN!";
                                     hazardLevel = 'critical';
-                                } else if (criticalHazard.distance <= 6) {
+                                }} else if (criticalHazard.distance <= 6) {{
                                     speed = 25;
                                     status = "Sharp turn ahead";
                                     hazardLevel = 'warning';
-                                }
-                            } else if (criticalHazard.type === 'curve') {
-                                if (criticalHazard.distance <= 1) {
+                                }}
+                            }} else if (criticalHazard.type === 'curve') {{
+                                if (criticalHazard.distance <= 1) {{
                                     speed = 30;
                                     status = "Curve ahead";
                                     hazardLevel = 'warning';
-                                }
-                            }
-                        }
+                                }}
+                            }}
+                        }}
                         
-                        truckMarker = L.marker([currentPos[0], currentPos[1]], {
+                        truckMarker = L.marker([currentPos[0], currentPos[1]], {{
                             icon: createTruckIcon(bearing, speed, hazardLevel),
                             zIndexOffset: 1000
-                        }).addTo(window.map_""" + m._id + """);
+                        }}).addTo(window.map_{m._id});
                         
                         var progress = Math.round((currentIndex / routeCoords.length) * 100);
                         
                         var popupContent = `
                             <div style='text-align: center; font-family: Arial; min-width: 260px; padding: 12px;'>
                                 <h4 style='margin: 5px 0; color: #333;'>🚛 Live Position</h4>
-                                <div style='background: ${hazardLevel === 'critical' ? '#FF4444' : 
-                                                           hazardLevel === 'warning' ? '#FFA500' : '#4CAF50'}; 
+                                <div style='background: ${{hazardLevel === 'critical' ? '#FF4444' : 
+                                                           hazardLevel === 'warning' ? '#FFA500' : '#4CAF50'}}; 
                                             color: white; padding: 10px; border-radius: 6px; margin: 8px 0; 
                                             font-weight: bold; font-size: 13px;'>
-                                    ${status}
+                                    ${{status}}
                                 </div>
                                 <div style='display: flex; justify-content: space-between; margin: 8px 0;'>
-                                    <span><strong>Progress:</strong> ${progress}%</span>
-                                    <span><strong>Speed:</strong> ${speed} km/h</span>
+                                    <span><strong>Progress:</strong> ${{progress}}%</span>
+                                    <span><strong>Speed:</strong> ${{speed}} km/h</span>
                                 </div>
                             </div>
                         `;
                         
                         truckMarker.bindPopup(popupContent);
                         
-                        if (hazardLevel === 'critical') {
+                        if (hazardLevel === 'critical') {{
                             setTimeout(() => truckMarker.openPopup(), 150);
-                        }
+                        }}
                         
                         currentIndex += 1;
-                    }
+                    }}
                     
-                    function startAnimation() {
-                        if (!isAnimating) {
+                    function startAnimation() {{
+                        if (!isAnimating) {{
                             isAnimating = true;
                             setInterval(moveTruck, animationSpeed);
-                        }
-                    }
+                        }}
+                    }}
                     
-                    window.resetTruckAnimation = function() {
+                    window.resetTruckAnimation = function() {{
                         currentIndex = 0;
-                        if (truckMarker) {
-                            window.map_""" + m._id + """.removeLayer(truckMarker);
+                        if (truckMarker) {{
+                            window.map_{m._id}.removeLayer(truckMarker);
                             truckMarker = null;
-                        }
+                        }}
                         moveTruck();
-                    }
+                    }}
                     
                     startAnimation();
                     
-                }, 1500);
-            });
+                }}, 1500);
+                
+                // Initialize GPS Navigation System
+                setTimeout(() => {{
+                    if (typeof GPSTruckNavigation !== 'undefined') {{
+                        window.gpsNav = new GPSTruckNavigation(
+                            window.routeCoords,
+                            window.sharpTurns,
+                            window.curves,
+                            window.ttSpecs,
+                            window.allPois
+                        );
+                        console.log('GPS Navigation System initialized with route analysis');
+                    }} else {{
+                        // Load GPS navigation script dynamically
+                        var script = document.createElement('script');
+                        script.src = '/static/js/gps_navigation.js';
+                        script.onload = function() {{
+                            window.gpsNav = new GPSTruckNavigation(
+                                window.routeCoords,
+                                window.sharpTurns,
+                                window.curves,
+                                window.ttSpecs,
+                                window.allPois
+                            );
+                            console.log('GPS Navigation System loaded and initialized');
+                        }};
+                        document.head.appendChild(script);
+                    }}
+                }}, 2000);
+                
+                // GPS Navigation Control Functions
+                window.startGPSNavigation = function() {{
+                    if (window.gpsNav) {{
+                        window.gpsNav.startGPSTracking();
+                        document.getElementById('start-gps-btn').disabled = true;
+                        document.getElementById('stop-gps-btn').disabled = false;
+                        document.getElementById('gps-status').innerHTML = 'GPS: Starting...';
+                    }} else {{
+                        alert('GPS Navigation system not ready. Please refresh the page and try again.');
+                    }}
+                }}
+                
+                window.stopGPSNavigation = function() {{
+                    if (window.gpsNav) {{
+                        window.gpsNav.stopGPSTracking();
+                        document.getElementById('start-gps-btn').disabled = false;
+                        document.getElementById('stop-gps-btn').disabled = true;
+                        document.getElementById('gps-status').innerHTML = 'GPS: Stopped';
+                    }}
+                }}
+            }});
         </script>
         
         <style>
-        .truck-animated-enhanced {
+        .truck-animated-enhanced {{
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             filter: drop-shadow(0 0 8px rgba(0,0,0,0.3));
-        }
-        .truck-animated-enhanced:hover {
+        }}
+        .truck-animated-enhanced:hover {{
             transform: scale(1.15) !important;
             filter: drop-shadow(0 0 12px rgba(0,150,255,0.6));
-        }
+        }}
         </style>
         """
-
-        # Control panel (without audio controls)
-        control_panel = f"""
-        <div id="truck-control" style="position: fixed; top: 10px; right: 10px; z-index: 1000; 
-             background: rgba(255,255,255,0.98); padding: 15px; border-radius: 10px; 
-             box-shadow: 0 6px 20px rgba(0,0,0,0.3); font-family: Arial; width: 280px; 
-             border: 3px solid #007cba;">
-            <h4 style='margin: 5px 0; color: #007cba; text-align: center; font-size: 14px;'>
-                🚛 Live Tracking System
-            </h4>
-            
-            <div style='background: linear-gradient(135deg, #f0f8ff, #e6f3ff); padding: 10px; 
-                        border-radius: 6px; margin: 10px 0; font-size: 11px; border: 1px solid #007cba;
-                        display: flex; justify-content: space-between; align-items: center;'>
-                <div style='flex: 1;'>
-                    <strong>Vehicle:</strong> {tt_specs['capacity_range']}<br>
-                    <strong>Weight:</strong> {tt_specs['gross_weight']/1000:.1f}T<br>
-                    <strong>Hazards:</strong> {len(sharp_turns)} sharp turns
-                </div>
-                <div style='text-align: center; color: #007cba; font-weight: bold; padding-left: 10px;'>
-                    <div style='font-size: 18px; line-height: 1;'>&lt;{tt_specs['max_speed']}</div>
-                    <div style='font-size: 8px; margin: 2px 0;'>MAX SPEED (km/h)</div>
-                    <div style='font-size: 7px; color: #666;'>🚛 {tt_specs['gross_weight']/1000:.1f}T Loaded Vehicle</div>
-                </div>
-            </div>
-            
-            <div id="progress-display" style='background: #f9f9f9; padding: 8px; border-radius: 4px; 
-                                             margin: 8px 0; font-size: 10px; min-height: 45px; 
-                                             border: 1px solid #ddd; text-align: center;'>
-                Animation starting...
-            </div>
-            
-            <div style='margin: 10px 0;'>
-                <button onclick="resetTruckAnimation();" style="width: 100%; padding: 8px; background: #007cba; 
-                        color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px;">
-                    🔄 Reset Animation
-                </button>
-            </div>
-            
-            <div style='margin-top: 8px; font-size: 8px; color: #666; text-align: center;'>
-                Enhanced animation with real-time hazard alerts<br>
-                Click truck for detailed hazard information
-            </div>
-        </div>
-        """
         
-        # Add comprehensive legend
+        # Comprehensive legend
         legend_html = f"""
         <div style="
             position: fixed;
             bottom: 20px;
             left: 20px;
-            width: 350px;
+            width: 380px;
             background-color: white;
             border: 2px solid #333;
             border-radius: 8px;
@@ -2218,7 +2295,7 @@ def analyze_route():
             font-size: 11px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         ">
-            <h4 style='margin-top: 0; color: #333; text-align: center;'>🚛 Enhanced TT Navigation</h4>
+            <h4 style='margin-top: 0; color: #333; text-align: center;'>🚛 Enhanced TT Navigation with GPS</h4>
             
             <div style='background: #f0f0f0; padding: 8px; border-radius: 4px; margin: 8px 0;'>
                 <strong>Vehicle: {tt_specs['capacity_range']} Tanker</strong><br>
@@ -2235,30 +2312,33 @@ def analyze_route():
             </div>
             
             <div style='margin: 8px 0;'>
-                <strong>Hazard Markers:</strong><br>
-                🔺 Critical sharp turns (90°+)<br>
-                🟡 Moderate curves (45-90°)<br>
-                <span style='color: purple;'>▓</span> Blind spot zones at turns<br>
-                🚛 Animated truck (real-time alerts)
+                <strong>GPS Features:</strong><br>
+                📍 Real-time position tracking<br>
+                🔊 Voice hazard announcements<br>
+                ⚡ Live speed monitoring<br>
+                🚨 Off-route detection
             </div>
             
             <div style='margin: 8px 0;'>
-                <strong>Emergency Facilities:</strong><br>
-                ➕ Hospitals | 🛡️ Police | ⛽ Fuel
+                <strong>Voice Alerts:</strong><br>
+                200m: Critical turn warnings<br>
+                500m: General hazard alerts<br>
+                1km: Emergency facilities<br>
+                Real-time: Speed violations
             </div>
             
             <hr style='margin: 8px 0;'>
             <div style='font-size: 9px; color: #666; text-align: center;'>
-                Sharp turns: {len(sharp_turns)} | Curves: {len(curves)}<br>
-                Blind spots shown only at hazardous turns<br>
-                Truck animation shows real-time hazard alerts
+                Sharp turns: {len(sharp_turns)} | Curves: {len(curves)} | POIs: {len(all_pois)}<br>
+                GPS tracking requires HTTPS and location permissions<br>
+                Click "Start GPS" to begin real-time navigation
             </div>
         </div>
         """
         
-        # Inject the truck animation, control panel, and legend
-        m.get_root().html.add_child(folium.Element(truck_animation))
-        m.get_root().html.add_child(folium.Element(control_panel))
+        # Inject all components into the map
+        m.get_root().html.add_child(folium.Element(enhanced_control_panel))
+        m.get_root().html.add_child(folium.Element(truck_animation_with_gps))
         m.get_root().html.add_child(folium.Element(legend_html))
         
         # Save map
@@ -2266,7 +2346,7 @@ def analyze_route():
         html_name = f"route_map_{unique_map_id}.html"
         m.save(f"templates/{html_name}")
 
-        # Generate comprehensive report that matches template expectations
+        # Generate comprehensive route report
         route_report = {
             'total_distance': total_distance,
             'total_duration': total_duration,
@@ -2296,27 +2376,38 @@ def analyze_route():
                 'heavy_traffic_segments': len(sharp_turns),
                 'average_delay_factor': 1.2 if len(sharp_turns) > 5 else 1.0
             },
+            'gps_navigation': {
+                'enabled': True,
+                'voice_announcements': True,
+                'hazard_detection_distance': '200-500 meters',
+                'speed_monitoring': 'Real-time',
+                'route_deviation_threshold': '50 meters'
+            },
             'sharp_turns_detected': len(sharp_turns),
             'curves_detected': len(curves),
             'critical_turns': len([t for t in sharp_turns if t['severity'] == 'critical']),
             'safety_recommendations': [
-                f"CRITICAL: {len(sharp_turns)} sharp turns detected (90°+) requiring extreme caution",
-                f"Reduce speed to 10-15 km/h at sharp turns to prevent rollover",
-                f"Watch for blind spots at turns - {tt_specs['capacity_range']} TT has large blind zones",
-                f"Total curves requiring reduced speed: {len(curves)}",
-                "Use lower gears for engine braking on turns and steep grades",
-                f"Maximum safe speed: {tt_specs['max_speed']} kmph for {tt_specs['capacity_range']} TT",
-                f"Gross weight {tt_specs['gross_weight']/1000:.1f}T - Check bridge weight limits",
-                "Plan fuel stops considering tanker capacity and weight distribution",
-                "Emergency contacts ready - carrying hazardous petroleum products"
+                f"GPS NAVIGATION: Start GPS tracking for real-time voice guidance",
+                f"CRITICAL: {len(sharp_turns)} sharp turns detected requiring extreme caution",
+                f"Voice alerts will announce hazards 200-500m in advance",
+                f"Speed monitoring: Current limit {tt_specs['max_speed']} km/h, reduces automatically near hazards",
+                f"Off-route detection: Alerts if deviation exceeds 50 meters from analyzed path",
+                f"Emergency facilities: {len([p for p in all_pois if p['type'] == 'hospital'])} hospitals, {len([p for p in all_pois if p['type'] == 'police'])} police stations along route",
+                f"HAZMAT compliance: ADR documentation required for {tt_specs['avg_capacity_liters']:,}L petroleum transport",
+                f"Vehicle stability: High center of gravity - avoid sudden steering at speeds above 25 km/h",
+                f"Braking distance: Allow {int(tt_specs['gross_weight']/500)}m additional stopping distance",
+                "Use engine braking on steep grades to preserve service brakes",
+                "Monitor liquid surge during acceleration and braking",
+                f"Bridge weight limits: Check for restrictions - current gross weight {tt_specs['gross_weight']/1000:.1f}T"
             ]
         }
 
+        # Store comprehensive report in session
         session['route_report'] = route_report
         session.modified = True
 
         return render_template("route_analysis.html",
-                               mode="Enhanced TT Navigation",
+                               mode="Enhanced TT Navigation with GPS",
                                turns=len(sharp_turns) + len(curves),
                                poi_count=len(all_pois),
                                html_file=html_name,
@@ -2327,13 +2418,19 @@ def analyze_route():
                                curves=len(curves),
                                critical_turns=len([t for t in sharp_turns if t['severity'] == 'critical']),
                                tt_specs=tt_specs,
-                               username=username)
+                               username=username,
+                               gps_enabled=True,
+                               total_pois=len(all_pois),
+                               hospitals=len([p for p in all_pois if p['type'] == 'hospital']),
+                               police_stations=len([p for p in all_pois if p['type'] == 'police']),
+                               fuel_stations=len([p for p in all_pois if p['type'] == 'fuel']))
 
     except Exception as e:
         print(f"Error in analyze_route: {e}")
         import traceback
         traceback.print_exc()
         return f"Error analyzing route: {str(e)}. Please try again."
+        
 
 # Add these modifications to your existing Flask app.py
 
@@ -2750,6 +2847,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
