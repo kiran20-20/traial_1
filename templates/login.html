@@ -765,11 +765,15 @@
             }
 
             handleSubmit(e) {
+                // Show loading state IMMEDIATELY
+                this.setLoadingState(true);
+                
                 const username = this.usernameInput.value.trim();
                 const password = this.passwordInput.value;
                 
                 if (!username) {
                     e.preventDefault();
+                    this.setLoadingState(false);
                     this.showAlert('Please enter your Username', 'error');
                     this.usernameInput.focus();
                     return;
@@ -777,103 +781,17 @@
                 
                 if (!password) {
                     e.preventDefault();
+                    this.setLoadingState(false);
                     this.showAlert('Please enter your Security Code', 'error');
                     this.passwordInput.focus();
                     return;
                 }
 
-                // Show loading state with enhanced animation
-                this.setLoadingState(true);
-                
-                // Auto-reset loading state after timeout
+                // Keep loading state active - will be reset after page redirect or timeout
                 setTimeout(() => {
-                    this.setLoadingState(false);
-                }, 5000);
+                    if (this.loginButton.disabled) {
+                        this.setLoadingState(false);
+                        this.showAlert('Connection timeout. Please try again.', 'error');
+                    }
+                }, 10000);
             }
-
-            setLoadingState(loading) {
-                if (loading) {
-                    this.loginButton.disabled = true;
-                    this.loginButton.innerHTML = `
-                        <span class="spinner"></span>
-                        <span>Authenticating...</span>
-                    `;
-                    document.body.classList.add('loading');
-                } else {
-                    this.loginButton.disabled = false;
-                    this.loginButton.innerHTML = `
-                        <i class="fas fa-route"></i>
-                        <span>Launch Navigation</span>
-                    `;
-                    document.body.classList.remove('loading');
-                }
-            }
-
-            showAlert(message, type) {
-                const alert = document.getElementById('alert');
-                alert.className = `alert alert-${type}`;
-                alert.textContent = message;
-                alert.style.display = 'block';
-                
-                setTimeout(() => {
-                    alert.style.display = 'none';
-                }, 5000);
-            }
-
-            checkUrlParams() {
-                const urlParams = new URLSearchParams(window.location.search);
-                const error = urlParams.get('error');
-                const success = urlParams.get('success');
-                
-                if (error) {
-                    setTimeout(() => {
-                        this.showAlert(decodeURIComponent(error), 'error');
-                    }, 500);
-                }
-                if (success) {
-                    setTimeout(() => {
-                        this.showAlert(decodeURIComponent(success), 'success');
-                    }, 500);
-                }
-            }
-
-            initializeAnimations() {
-                // Staggered animation for input boxes
-                document.querySelectorAll('.input-box, .login-button').forEach((element, index) => {
-                    element.style.opacity = '0';
-                    element.style.transform = 'translateY(30px)';
-                    
-                    setTimeout(() => {
-                        element.style.transition = 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
-                        element.style.opacity = '1';
-                        element.style.transform = 'translateY(0)';
-                    }, (index + 2) * 200);
-                });
-
-                // Connection lines animation
-                document.querySelectorAll('.flow-connection').forEach((connection, index) => {
-                    connection.style.opacity = '0';
-                    connection.style.transform = 'scaleY(0)';
-                    
-                    setTimeout(() => {
-                        connection.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
-                        connection.style.opacity = '1';
-                        connection.style.transform = 'scaleY(1)';
-                    }, (index + 3) * 200 + 400);
-                });
-            }
-
-            focusFirstField() {
-                setTimeout(() => {
-                    this.usernameInput.focus();
-                }, 1000);
-            }
-        }
-
-        // Initialize when DOM is ready
-        document.addEventListener('DOMContentLoaded', () => {
-            new SmartMargLoginFlow();
-        });
-    </script>
-</body>
-</html>
