@@ -917,6 +917,133 @@ def identify_high_risk_zones(coords, pois, tt_specs):
     
     return risk_zones
 
+# Modify your existing analyze_route function to include GPS navigation initialization
+# Add this at the end of your analyze_route function, just before the return statement:
+
+def analyze_route_with_gps_integration():
+    """Enhanced version of analyze_route that includes GPS navigation setup"""
+    
+    # ... (your existing analyze_route code) ...
+    
+    # ADD THIS SECTION before the final return statement:
+    
+    # Enhanced truck animation with GPS integration
+    gps_enhanced_animation = f"""
+    <script>
+        // Store route data for GPS navigation
+        window.routeCoords = {json.dumps(coords)};
+        window.sharpTurns = {json.dumps(sharp_turns)};
+        window.curves = {json.dumps(curves)};
+        window.ttSpecs = {json.dumps(tt_specs)};
+        window.allPois = {json.dumps(all_pois)};
+        
+        // Initialize GPS Navigation when data is ready
+        document.addEventListener('DOMContentLoaded', function() {{
+            setTimeout(() => {{
+                if (typeof GPSTruckNavigation !== 'undefined') {{
+                    window.gpsNav = new GPSTruckNavigation(
+                        window.routeCoords,
+                        window.sharpTurns,
+                        window.curves,
+                        window.ttSpecs,
+                        window.allPois
+                    );
+                    console.log('GPS Navigation System initialized with route analysis');
+                }} else {{
+                    console.warn('GPS Navigation class not loaded');
+                }}
+            }}, 2000);
+        }});
+    </script>
+    """
+    
+    # Add the GPS integration to your map
+    m.get_root().html.add_child(folium.Element(gps_enhanced_animation))
+    
+    # ADD GPS Navigation button to your control panel (modify existing control_panel)
+    enhanced_control_panel = f"""
+    <div id="truck-control" style="position: fixed; top: 10px; right: 10px; z-index: 1000; 
+         background: rgba(255,255,255,0.98); padding: 15px; border-radius: 10px; 
+         box-shadow: 0 6px 20px rgba(0,0,0,0.3); font-family: Arial; width: 300px; 
+         border: 3px solid #007cba;">
+        
+        <h4 style='margin: 5px 0; color: #007cba; text-align: center; font-size: 14px;'>
+            🚛 Smart TT Navigation
+        </h4>
+        
+        <div style='background: linear-gradient(135deg, #f0f8ff, #e6f3ff); padding: 10px; 
+                    border-radius: 6px; margin: 10px 0; font-size: 11px; border: 1px solid #007cba;'>
+            <div style='display: flex; justify-content: space-between;'>
+                <div>
+                    <strong>Vehicle:</strong> {tt_specs['capacity_range']}<br>
+                    <strong>Weight:</strong> {tt_specs['gross_weight']/1000:.1f}T<br>
+                    <strong>Hazards:</strong> {len(sharp_turns)} sharp turns
+                </div>
+                <div style='text-align: center; color: #007cba; font-weight: bold;'>
+                    <div style='font-size: 18px;'>{tt_specs['max_speed']}</div>
+                    <div style='font-size: 8px;'>MAX km/h</div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="progress-display" style='background: #f9f9f9; padding: 8px; border-radius: 4px; 
+                                         margin: 8px 0; font-size: 10px; min-height: 35px; 
+                                         border: 1px solid #ddd; text-align: center;'>
+            Animation active...
+        </div>
+        
+        <!-- GPS Navigation Controls -->
+        <div style='background: #e8f4f8; padding: 8px; border-radius: 4px; margin: 8px 0; border: 1px solid #007cba;'>
+            <div style='font-weight: bold; font-size: 11px; margin-bottom: 5px; color: #007cba;'>GPS Navigation</div>
+            <div style='display: flex; gap: 5px; margin-bottom: 5px;'>
+                <button onclick="startGPSNavigation()" id="start-gps-btn"
+                        style="flex: 1; padding: 6px; background: #28a745; color: white; border: none; 
+                               border-radius: 3px; cursor: pointer; font-size: 10px;">
+                    Start GPS
+                </button>
+                <button onclick="stopGPSNavigation()" id="stop-gps-btn" disabled
+                        style="flex: 1; padding: 6px; background: #dc3545; color: white; border: none; 
+                               border-radius: 3px; cursor: pointer; font-size: 10px;">
+                    Stop GPS
+                </button>
+            </div>
+            <div id="gps-status" style='font-size: 9px; color: #666; text-align: center;'>
+                GPS: Ready to start
+            </div>
+        </div>
+        
+        <div style='margin: 8px 0;'>
+            <button onclick="resetTruckAnimation();" style="width: 100%; padding: 6px; background: #007cba; 
+                    color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 10px;">
+                🔄 Reset Animation
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        // GPS Navigation Control Functions
+        function startGPSNavigation() {{
+            if (window.gpsNav) {{
+                window.gpsNav.startGPSTracking();
+                document.getElementById('start-gps-btn').disabled = true;
+                document.getElementById('stop-gps-btn').disabled = false;
+                document.getElementById('gps-status').innerHTML = 'GPS: Starting...';
+            }} else {{
+                alert('GPS Navigation system not ready. Please wait...');
+            }}
+        }}
+        
+        function stopGPSNavigation() {{
+            if (window.gpsNav) {{
+                window.gpsNav.stopGPSTracking();
+                document.getElementById('start-gps-btn').disabled = false;
+                document.getElementById('stop-gps-btn').disabled = true;
+                document.getElementById('gps-status').innerHTML = 'GPS: Stopped';
+            }}
+        }}
+    </script>
+    """
+
 def generate_route_report(coords, pois, risk_zones, traffic_data, total_distance, total_duration, tt_specs):
     """Generate a detailed route analysis report with TT specifications"""
     try:
@@ -2208,6 +2335,216 @@ def analyze_route():
         traceback.print_exc()
         return f"Error analyzing route: {str(e)}. Please try again."
 
+# Add these modifications to your existing Flask app.py
+
+# Add this new route after your existing routes
+@app.route('/start_gps_navigation', methods=['POST'])
+@login_required
+def start_gps_navigation():
+    """Initialize GPS navigation with current route analysis"""
+    try:
+        # Get route analysis data from session
+        coords = session.get('coords', [])
+        sharp_turns = session.get('sharp_turns', [])
+        curves = session.get('curves', [])
+        tt_specs = session.get('tt_specs', {})
+        all_pois = session.get('all_pois', [])
+        route_report = session.get('route_report', {})
+        
+        if not coords or not tt_specs:
+            return {
+                'success': False,
+                'error': 'No route analysis data found. Please analyze a route first.'
+            }
+        
+        # Prepare GPS navigation data
+        gps_navigation_data = {
+            'route_coords': coords,
+            'sharp_turns': sharp_turns,
+            'curves': curves,
+            'tt_specs': tt_specs,
+            'all_pois': all_pois,
+            'route_info': {
+                'total_distance': route_report.get('total_distance', 'Unknown'),
+                'total_duration': route_report.get('total_duration', 'Unknown'),
+                'total_hazards': len(sharp_turns) + len(curves),
+                'critical_turns': len([t for t in sharp_turns if t.get('severity') == 'critical']),
+            }
+        }
+        
+        # Store GPS session data
+        session['gps_navigation_active'] = True
+        session['gps_navigation_data'] = gps_navigation_data
+        session.modified = True
+        
+        return {
+            'success': True,
+            'message': 'GPS navigation initialized successfully',
+            'data': gps_navigation_data
+        }
+        
+    except Exception as e:
+        print(f"Error initializing GPS navigation: {e}")
+        return {
+            'success': False,
+            'error': f'Failed to initialize GPS navigation: {str(e)}'
+        }
+
+@app.route('/gps_status')
+@login_required
+def gps_status():
+    """Get current GPS navigation status"""
+    try:
+        gps_active = session.get('gps_navigation_active', False)
+        gps_data = session.get('gps_navigation_data', {})
+        
+        if not gps_active:
+            return {
+                'active': False,
+                'message': 'GPS navigation not started'
+            }
+        
+        return {
+            'active': True,
+            'route_info': gps_data.get('route_info', {}),
+            'hazard_count': len(gps_data.get('sharp_turns', [])) + len(gps_data.get('curves', [])),
+            'tt_type': gps_data.get('tt_specs', {}).get('capacity_range', 'Unknown'),
+            'max_speed': gps_data.get('tt_specs', {}).get('max_speed', 50)
+        }
+        
+    except Exception as e:
+        return {
+            'active': False,
+            'error': str(e)
+        }
+
+@app.route('/report_gps_position', methods=['POST'])
+@login_required
+def report_gps_position():
+    """Receive and process GPS position updates from client"""
+    try:
+        position_data = request.get_json()
+        
+        if not position_data:
+            return {'success': False, 'error': 'No position data received'}
+        
+        # Validate position data
+        required_fields = ['latitude', 'longitude', 'timestamp']
+        if not all(field in position_data for field in required_fields):
+            return {'success': False, 'error': 'Missing required position fields'}
+        
+        # Store latest position in session for monitoring
+        session['latest_gps_position'] = {
+            'lat': position_data['latitude'],
+            'lng': position_data['longitude'],
+            'accuracy': position_data.get('accuracy', 0),
+            'speed': position_data.get('speed', 0),
+            'timestamp': position_data['timestamp']
+        }
+        session.modified = True
+        
+        # Optional: Log position for debugging
+        print(f"GPS Position Update: {position_data['latitude']:.6f}, {position_data['longitude']:.6f} "
+              f"(±{position_data.get('accuracy', 0)}m)")
+        
+        return {
+            'success': True,
+            'message': 'Position updated successfully'
+        }
+        
+    except Exception as e:
+        print(f"Error processing GPS position: {e}")
+        return {
+            'success': False,
+            'error': f'Failed to process position: {str(e)}'
+        }
+
+@app.route('/get_navigation_guidance', methods=['POST'])
+@login_required
+def get_navigation_guidance():
+    """Get AI-powered navigation guidance based on current GPS position"""
+    try:
+        position_data = request.get_json()
+        gps_data = session.get('gps_navigation_data', {})
+        tt_specs = gps_data.get('tt_specs', {})
+        
+        if not position_data or not gps_data:
+            return {'success': False, 'error': 'No position or navigation data available'}
+        
+        current_lat = position_data['latitude']
+        current_lng = position_data['longitude']
+        current_speed = position_data.get('speed', 0)
+        
+        # Generate AI guidance using Gemini if available
+        if ai_client:
+            try:
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                
+                prompt = f"""Provide immediate navigation guidance for truck tanker driver.
+
+CURRENT SITUATION:
+- Vehicle: {tt_specs.get('capacity_range', 'Unknown')} petroleum tanker
+- Current Position: {current_lat:.6f}, {current_lng:.6f}
+- Current Speed: {current_speed:.1f} km/h
+- Gross Weight: {tt_specs.get('gross_weight', 0)/1000:.1f}T
+- Max Speed Limit: {tt_specs.get('max_speed', 50)} km/h
+
+ROUTE HAZARDS DETECTED:
+- Sharp Turns (90°+): {len(gps_data.get('sharp_turns', []))}
+- Curves: {len(gps_data.get('curves', []))}
+
+Provide specific guidance for:
+1. Immediate speed recommendation
+2. Any hazards within next 500m
+3. Safety reminders for this vehicle type
+4. Emergency contact info if needed
+
+Keep response under 100 words, prioritize safety."""
+
+                response = model.generate_content(prompt)
+                guidance_text = response.text
+                
+            except Exception as e:
+                print(f"AI guidance error: {e}")
+                guidance_text = f"GPS guidance active for {tt_specs.get('capacity_range', 'tanker')}. Monitor speed and road conditions."
+        else:
+            guidance_text = f"GPS navigation active. Current speed: {current_speed:.0f} km/h. Maximum: {tt_specs.get('max_speed', 50)} km/h."
+        
+        return {
+            'success': True,
+            'guidance': guidance_text,
+            'recommended_speed': tt_specs.get('max_speed', 50),
+            'hazard_level': 'normal'  # You can enhance this based on proximity to hazards
+        }
+        
+    except Exception as e:
+        return {
+            'success': False,
+            'error': f'Navigation guidance error: {str(e)}'
+        }
+
+@app.route('/stop_gps_navigation', methods=['POST'])
+@login_required
+def stop_gps_navigation():
+    """Stop GPS navigation and clear session data"""
+    try:
+        # Clear GPS navigation data
+        session.pop('gps_navigation_active', None)
+        session.pop('gps_navigation_data', None)
+        session.pop('latest_gps_position', None)
+        session.modified = True
+        
+        return {
+            'success': True,
+            'message': 'GPS navigation stopped successfully'
+        }
+        
+    except Exception as e:
+        return {
+            'success': False,
+            'error': f'Failed to stop GPS navigation: {str(e)}'
+        }
+
 
 
 @app.route('/detailed_report')
@@ -2413,6 +2750,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
