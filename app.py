@@ -1834,42 +1834,54 @@ def analyze_route():
         
         # Add route with color coding based on hazards
         for i in range(len(coords) - 1):
-            segment = [coords[i], coords[i + 1]]
-            segment_color = 'green'  # Default safe
+            # Draw main route using Google's original smooth geometry
+            selected = directions[index]
+            smooth_coords = []
             
-            # Check for nearby sharp turns
-            for turn in sharp_turns:
-                if abs(turn['index'] - i) <= 3:
-                    segment_color = 'red' if turn['severity'] == 'critical' else 'orange'
-                    break
+            # Extract Google's detailed step-by-step coordinates
+            for step in selected['legs'][0]['steps']:
+                step_coords = polyline.decode(step['polyline']['points'])
+                smooth_coords.extend(step_coords)
             
-            # Check for curves if no sharp turns
-            if segment_color == 'green':
-                for curve in curves:
-                    if abs(curve['index'] - i) <= 2:
-                        segment_color = 'yellow'
-                        break
-            
+            # Draw the smooth main route
             folium.PolyLine(
-                segment, 
-                color=segment_color, 
-                weight=6, 
-                opacity=0.8,
-                popup=f"Segment {i}: {segment_color} zone"
+                smooth_coords,
+                color='blue',
+                weight=5,
+                opacity=0.7,
+                popup="Main Route (Actual Road Geometry)"
             ).add_to(m)
-        
-        # Add start and end markers
-        folium.Marker(
-            source, 
-            popup='START - Truck Departure',
-            icon=folium.Icon(color='green', icon='play', prefix='fa')
-        ).add_to(m)
-        
-        folium.Marker(
-            destination, 
-            popup='DESTINATION - Truck Arrival',
-            icon=folium.Icon(color='red', icon='stop', prefix='fa')
-        ).add_to(m)
+            
+            # Add colored overlays for hazardous sections
+            for turn in sharp_turns:
+                # Get coordinates around hazard from our interpolated analysis
+                start_idx = max(0, turn['index'] - 8)
+                end_idx = min(len(coords), turn['index'] + 8)
+                hazard_section = coords[start_idx:end_idx]
+                
+                segment_color = 'darkred' if turn['severity'] == 'critical' else 'red'
+                
+                folium.PolyLine(
+                    hazard_section,
+                    color=segment_color,
+                    weight=8,
+                    opacity=0.9,
+                    popup=f"HAZARD: {turn['turn_angle']:.1f}° {turn['direction']} turn"
+                ).add_to(m)
+            
+            # Add curve overlays
+            for curve in curves:
+                start_idx = max(0, curve['index'] - 5)
+                end_idx = min(len(coords), curve['index'] + 5)
+                curve_section = coords[start_idx:end_idx]
+                
+                folium.PolyLine(
+                    curve_section,
+                    color='orange',
+                    weight=7,
+                    opacity=0.8,
+                    popup=f"CURVE: {curve['turn_angle']:.1f}° {curve['direction']}"
+                ).add_to(m)
         
         # Add sharp turn markers with detailed information and blind spots
         for turn in sharp_turns:
@@ -2555,6 +2567,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
