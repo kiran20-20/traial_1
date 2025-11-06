@@ -44,112 +44,7 @@ gmaps = googlemaps.Client(key=API_KEY)
 
 # Login credentials - modify these as needed
 LOGIN_CREDENTIALS = {
-    "Vadinar": "Vadinar@123",
-    "Afra": "Afra@123",
-    "Ahmedabad": "Ahmedabad@123",
-    "Allahabad": "Allahabad@123",
-    "Aurangabad": "Aurangabad@123",
-    "Baidyabati": "Baidyabati@123",
-    "Balitaipur": "Balitaipur@123",
-    "Bangalore": "Bangalore@123",
-    "Barauni": "Barauni@123",
-    "Belgaum": "Belgaum@123",
-    "Bhatinda": "Bhatinda@123",
-    "Bhubaneswar": "Bhubaneswar@123",
-    "Bijwasan": "Bijwasan@123",
-    "Bina": "Bina@123",
-    "Bolangir": "Bolangir@123",
-    "Bondamunda": "Bondamunda@123",
-    "RILBHOI": "RILBHOI@123",
-    "RILBHOL-BHOL-BHOURI": "RILBHOL-BHOL-BHOURI@123",
-    "Chaksu": "Chaksu@123",
-    "Chennai": "Chennai@123",
-    "Manali": "Manali@123",
-    "Tondiarpet": "Tondiarpet@123",
-    "Cochin": "Cochin@123",
-    "Cuttack": "Cuttack@123",
-    "Delhi": "Delhi@123",
-    "Deoli": "Deoli@123",
-    "Dewas": "Dewas@123",
-    "Digboi": "Digboi@123",
-    "Dumdum": "Dumdum@123",
-    "Ernakulam": "Ernakulam@123",
-    "Gandhar": "Gandhar@123",
-    "Goabari": "Goabari@123",
-    "Gulbarga": "Gulbarga@123",
-    "Guntakal": "Guntakal@123",
-    "Guwahati": "Guwahati@123",
-    "Haldia": "Haldia@123",
-    "Hassarm": "Hassarm@123",
-    "Hassaram": "Hassaram@123",
-    "Hazarimal": "Hazarimal@123",
-    "Hyderabad": "Hyderabad@123",
-    "VISHAKAPATNAM": "VISHAKAPATNAM@123",
-    "ITDCMBL": "ITDCMBL@123",
-    "Mumbai": "Mumbai@123",
-    "Jabalpur": "Jabalpur@123",
-    "Jajapur": "Jajapur@123",
-    "Jalandhar": "Jalandhar@123",
-    "Jalgaon": "Jalgaon@123",
-    "Jammu": "Jammu@123",
-    "Jasidih": "Jasidih@123",
-    "Jodhpur": "Jodhpur@123",
-    "Jothpur": "Jothpur@123",
-    "Jharsuguda": "Jharsuguda@123",
-    "Jhumri": "Jhumri@123",
-    "Kandla": "Kandla@123",
-    "Kandi": "Kandi@123",
-    "Karna": "Karna@123",
-    "Karnal": "Karnal@123",
-    "Kareil": "Kareil@123",
-    "Khairabad": "Khairabad@123",
-    "Kol": "Kol@123",
-    "KORBA": "KORBA@123",
-    "Kottayam": "Kottayam@123",
-    "Kozhikode": "Kozhikode@123",
-    "LAKHOLI": "LAKHOLI@123",
-    "Loni": "Loni@123",
-    "Lumdning": "Lumdning@123",
-    "Madurai": "Madurai@123",
-    "Mahakal": "Mahakal@123",
-    "Malkapur": "Malkapur@123",
-    "Mangalore": "Mangalore@123",
-    "Mathura": "Mathura@123",
-    "Mayapur": "Mayapur@123",
-    "Miraj": "Miraj@123",
-    "Mithapur": "Mithapur@123",
-    "Muzzafarpur": "Muzzafarpur@123",
-    "Mysore": "Mysore@123",
-    "Nagothane": "Nagothane@123",
-    "Jaipur": "Jaipur@123",
-    "Panipat": "Panipat@123",
-    "Paradeep": "Paradeep@123",
-    "Patna": "Patna@123",
-    "Pipelines": "Pipelines@123",
-    "Pune": "Pune@123",
-    "Rajahmundry": "Rajahmundry@123",
-    "Rajbandh": "Rajbandh@123",
-    "Ramgarh": "Ramgarh@123",
-    "Ramagundam": "Ramagundam@123",
-    "Ranchi": "Ranchi@123",
-    "RANINAGAR": "RANINAGAR@123",
-    "Raxaul": "Raxaul@123",
-    "Rourkela": "Rourkela@123",
-    "Sangrur": "Sangrur@123",
-    "Shillong": "Shillong@123",
-    "Silchar": "Silchar@123",
-    "Srinagar": "Srinagar@123",
-    "Tanar": "Tanar@123",
-    "Tinsukia": "Tinsukia@123",
-    "Trichy": "Trichy@123",
-    "Vedaranyan": "Vedaranyan@123",
-    "Vapi": "Vapi@123",
-    "Vadodara": "Vadodara@123",
-    "Vijayawada": "Vijayawada@123",
-    "Visakhapatnam": "Visakhapatnam@123",
-    "Viyayawada": "Viyayawada@123",
-    "Warangal": "Warangal@123",
-    "Wellington": "Wellington@123"
+    "Vadinar": "Vadinar@123"
 }
 
 # Truck Tanker (TT) Specifications with Indian standards
@@ -699,7 +594,7 @@ def calculate_precise_bearing(lat1, lng1, lat2, lng2):
         return 0
 
 def calculate_curvature_metrics(coords, index, sample_distance=3):
-    """Calculate advanced curvature metrics including radius"""
+    """Calculate curvature metrics using pure Python"""
     if index < sample_distance or index >= len(coords) - sample_distance:
         return {'radius': float('inf'), 'curvature': 0, 'turn_rate': 0}
     
@@ -708,6 +603,7 @@ def calculate_curvature_metrics(coords, index, sample_distance=3):
         p2 = coords[index]
         p3 = coords[index + sample_distance]
         
+        # Convert to approximate planar coordinates
         lat_center = p2[0]
         cos_lat = math.cos(math.radians(lat_center))
         
@@ -716,6 +612,7 @@ def calculate_curvature_metrics(coords, index, sample_distance=3):
         x3 = (p3[1] - p2[1]) * cos_lat * 111320
         y3 = (p3[0] - p2[0]) * 111320
         
+        # Calculate distances
         a = math.sqrt(x1**2 + y1**2)
         b = math.sqrt(x3**2 + y3**2)
         c = math.sqrt((x3-x1)**2 + (y3-y1)**2)
@@ -723,12 +620,14 @@ def calculate_curvature_metrics(coords, index, sample_distance=3):
         if a < 1e-6 or b < 1e-6 or c < 1e-6:
             return {'radius': float('inf'), 'curvature': 0, 'turn_rate': 0}
         
+        # Calculate area using cross product
         area = abs(x1 * y3 - x3 * y1) / 2
         
         if area < 1e-10:
             radius = float('inf')
             curvature = 0
         else:
+            # Circumradius formula - pure math, no scipy needed
             radius = (a * b * c) / (4 * area)
             curvature = 1 / radius if radius > 0 else 0
         
@@ -736,6 +635,7 @@ def calculate_curvature_metrics(coords, index, sample_distance=3):
         turn_rate = curvature * total_distance if total_distance > 0 else 0
         
         return {'radius': radius, 'curvature': curvature, 'turn_rate': turn_rate}
+        
     except Exception as e:
         print(f"Curvature calculation error: {e}")
         return {'radius': float('inf'), 'curvature': 0, 'turn_rate': 0}
@@ -2576,6 +2476,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
