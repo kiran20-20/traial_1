@@ -1162,7 +1162,7 @@
         document.getElementById('popupEstimatedDistance').textContent = "~" + Math.floor(Math.random() * 500 + 50) + " km";
         document.getElementById('popupEstimatedTime').textContent = "~" + Math.floor(Math.random() * 8 + 2) + " hrs";
         
-        // Show the popup
+        // Show the popup (stays open until manually closed)
         document.getElementById('sapDetailsPopup').classList.add('active');
         
         // Hide suggestions
@@ -1170,38 +1170,17 @@
         
         // Update destination field
         updateDestinationField();
-        
-        // Add backdrop click to close
-        setTimeout(() => {
-            document.addEventListener('click', handleSAPBackdropClick);
-        }, 100);
     }
 
-    // Close SAP popup
+    // Close SAP popup (only when manually closed)
     function closeSAPPopup() {
         document.getElementById('sapDetailsPopup').classList.remove('active');
-        document.removeEventListener('click', handleSAPBackdropClick);
     }
 
     // Confirm SAP selection and close popup
     function confirmSAPSelection() {
         closeSAPPopup();
         // You could add additional logic here if needed
-    }
-
-    // Handle backdrop click to close SAP popup
-    function handleSAPBackdropClick(event) {
-        const popup = document.getElementById('sapDetailsPopup');
-        const sapCodeInput = document.getElementById('sapCode');
-        const stateSelect = document.getElementById('stateCode');
-        
-        // Don't close if clicking inside popup or on the SAP-related inputs
-        if (!popup.contains(event.target) && 
-            !sapCodeInput.contains(event.target) && 
-            !stateSelect.contains(event.target) &&
-            !document.getElementById('sapSuggestions').contains(event.target)) {
-            closeSAPPopup();
-        }
     }
 
     // Update the hideSAPDetails function to also close popup
@@ -1295,13 +1274,8 @@
                 popupWarningBox.style.display = 'none';
             }
             
-            // Show the popup
+            // Show the popup (stays open until manually closed)
             document.getElementById('ttSpecsPopup').classList.add('active');
-            
-            // Add backdrop click to close
-            setTimeout(() => {
-                document.addEventListener('click', handleBackdropClick);
-            }, 100);
             
         } else {
             // Close popup if no selection
@@ -1309,21 +1283,9 @@
         }
     }
 
-    // Close TT popup
+    // Close TT popup (only when manually closed)
     function closeTTPopup() {
         document.getElementById('ttSpecsPopup').classList.remove('active');
-        document.removeEventListener('click', handleBackdropClick);
-    }
-
-    // Handle backdrop click to close popup
-    function handleBackdropClick(event) {
-        const popup = document.getElementById('ttSpecsPopup');
-        const select = document.getElementById('tt_type');
-        
-        // Don't close if clicking inside popup or on the select dropdown
-        if (!popup.contains(event.target) && !select.contains(event.target)) {
-            closeTTPopup();
-        }
     }
 
     // Prevent popup from closing when clicking inside it
@@ -1391,24 +1353,6 @@
         `;
         document.body.appendChild(modal);
     }
-
-    // Prevent popups from closing when clicking inside them
-    document.addEventListener('DOMContentLoaded', function() {
-        const ttPopup = document.getElementById('ttSpecsPopup');
-        const sapPopup = document.getElementById('sapDetailsPopup');
-        
-        if (ttPopup) {
-            ttPopup.addEventListener('click', function(event) {
-                event.stopPropagation();
-            });
-        }
-        
-        if (sapPopup) {
-            sapPopup.addEventListener('click', function(event) {
-                event.stopPropagation();
-            });
-        }
-    });
 
     // Make functions available globally
     window.switchMethod = switchMethod;
