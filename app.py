@@ -1759,8 +1759,6 @@ def ai_current_analysis():
 
 @app.route('/analyze_route', methods=['POST'])
 @login_required
-@app.route('/analyze_route', methods=['POST'])
-@login_required
 def analyze_route():
     """Enhanced route analysis with physics-based hazard detection and smooth route rendering"""
     try:
@@ -2649,6 +2647,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
