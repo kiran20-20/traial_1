@@ -571,7 +571,7 @@ def ai_chat_gemini(user_question, tt_specs):
         print(f"Gemini chat error: {e}")
         return f"AI assistant temporarily unavailable. For immediate safety concerns, contact your dispatcher. (Error: {str(e)})"
 
-def interpolate_route_for_accuracy(coords, target_points_per_km=50):
+def interpolate_route_for_accuracy(coords, target_points_per_km=300):
     """Interpolate route to achieve target point density"""
     if len(coords) < 2:
         return coords
@@ -2555,6 +2555,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
