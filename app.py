@@ -236,7 +236,7 @@ def analyze_route_with_ai(coords, sharp_turns, curves, tt_specs, pois):
         return generate_fallback_analysis(sharp_turns, curves, tt_specs, pois)
     
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-pro')
         
         # Prepare comprehensive data summary
         route_report = session.get('route_report', {})
@@ -391,7 +391,7 @@ def generate_safety_briefing(tt_specs, weather_condition="clear"):
         return generate_fallback_briefing(tt_specs, weather_condition)
     
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-pro')
         
         prompt = f"""Generate a pre-trip safety checklist for this specific vehicle. Do not ask for more information.
 
@@ -498,7 +498,7 @@ def ai_chat_gemini(user_question, tt_specs):
         return "AI assistant unavailable. Please contact your safety supervisor for guidance."
     
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-pro')
         
         # Get comprehensive route data from session
         coords = session.get('coords', [])
@@ -2413,3 +2413,4 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
