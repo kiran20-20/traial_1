@@ -446,59 +446,6 @@
             transform: rotate(90deg);
         }
 
-        .specs-title {
-            text-align: center;
-            color: var(--iocl-blue);
-            font-weight: bold;
-            font-size: 1.1em;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .specs-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-        }
-
-        .spec-item {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 12px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            border: 1px solid rgba(224, 224, 224, 0.5);
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .spec-item:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        }
-
-        .spec-item .icon {
-            font-size: 1.4em;
-            margin-bottom: 6px;
-            color: var(--iocl-orange);
-        }
-
-        .spec-item .value {
-            font-size: 1.0em;
-            font-weight: bold;
-            color: var(--iocl-blue);
-            margin-bottom: 4px;
-        }
-
-        .spec-item .label {
-            font-size: 0.75em;
-            color: var(--iocl-mid-gray);
-            font-weight: 500;
-        }
-
         .warning-box {
             background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
             border: 2px solid #fdd663;
@@ -700,49 +647,6 @@
             </option>
             {% endfor %}
         </select>
-
-        <div id="ttSpecsDisplay" class="tt-specs-display">
-            <div class="specs-title">
-                <i class="fas fa-truck"></i>
-                <span>Selected TT Specifications</span>
-            </div>
-            <div class="specs-grid">
-                <div class="spec-item">
-                    <div class="icon"><i class="fas fa-gas-pump"></i></div>
-                    <div class="value" id="specCapacity">-</div>
-                    <div class="label">Capacity</div>
-                </div>
-                <div class="spec-item">
-                    <div class="icon"><i class="fas fa-weight-hanging"></i></div>
-                    <div class="value" id="specGrossWeight">-</div>
-                    <div class="label">Gross Wt</div>
-                </div>
-                <div class="spec-item">
-                    <div class="icon"><i class="fas fa-oil-can"></i></div>
-                    <div class="value" id="specProductWeight">-</div>
-                    <div class="label">Product Wt</div>
-                </div>
-                <div class="spec-item">
-                    <div class="icon"><i class="fas fa-truck"></i></div>
-                    <div class="value" id="specTareWeight">-</div>
-                    <div class="label">Tare Wt</div>
-                </div>
-                <div class="spec-item">
-                    <div class="icon"><i class="fas fa-balance-scale"></i></div>
-                    <div class="value" id="specAxleLoad">-</div>
-                    <div class="label">Axle Load</div>
-                </div>
-                <div class="spec-item">
-                    <div class="icon"><i class="fas fa-tachometer-alt"></i></div>
-                    <div class="value" id="specMaxSpeed">-</div>
-                    <div class="label">Max Speed</div>
-                </div>
-            </div>
-            <div class="warning-box" id="warningBox" style="display: none;">
-                <i class="fas fa-exclamation-triangle"></i>
-                <span id="warningText"></span>
-            </div>
-        </div>
 
         <button type="submit">
             <i class="fa-solid fa-route"></i> Generate Smart Routes
