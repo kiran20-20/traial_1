@@ -12,6 +12,7 @@ import glob
 from uuid import uuid4
 import math
 import numpy as np
+from scipy import interpolate
 from geopy.distance import geodesic
 import time
 from functools import wraps
@@ -155,58 +156,73 @@ LOGIN_CREDENTIALS = {
 TT_SPECIFICATIONS = {
     "12-16KL": {
         "capacity_range": "12-16 KL",
-        "avg_capacity_liters": 14000,  # Average of 12-16KL
-        "product_weight": 12600,  # 14000L * 0.9 density
-        "tare_weight": 8500,  # Empty truck weight (Indian standard)
-        "gross_weight": 21100,  # Total weight
-        "axle_load": 10.5,  # Per axle in tonnes
-        "risk_multiplier": 1.0,  # Base risk
-        "max_speed": 60,  # kmph
-        "turn_sensitivity": 1.0
+        "avg_capacity_liters": 14000,
+        "product_weight": 12600,
+        "tare_weight": 8500,
+        "gross_weight": 21100,
+        "axle_load": 10.5,
+        "risk_multiplier": 1.0,
+        "max_speed": 60,
+        "turn_sensitivity": 1.0,
+        "cg_height": 2.3,
+        "track_width": 2.0,
+        "stability_factor": 1.0
     },
     "16-20KL": {
         "capacity_range": "16-20 KL",
         "avg_capacity_liters": 18000,
-        "product_weight": 16200,  # 18000L * 0.9
+        "product_weight": 16200,
         "tare_weight": 9500,
         "gross_weight": 25700,
         "axle_load": 12.85,
         "risk_multiplier": 1.2,
         "max_speed": 55,
-        "turn_sensitivity": 1.15
+        "turn_sensitivity": 1.15,
+        "cg_height": 2.4,
+        "track_width": 2.0,
+        "stability_factor": 0.95
     },
     "20-24KL": {
         "capacity_range": "20-24 KL",
         "avg_capacity_liters": 22000,
-        "product_weight": 19800,  # 22000L * 0.9
+        "product_weight": 19800,
         "tare_weight": 10500,
         "gross_weight": 30300,
         "axle_load": 15.15,
         "risk_multiplier": 1.4,
         "max_speed": 50,
-        "turn_sensitivity": 1.3
+        "turn_sensitivity": 1.3,
+        "cg_height": 2.5,
+        "track_width": 2.0,
+        "stability_factor": 0.88
     },
     "24-30KL": {
         "capacity_range": "24-30 KL",
         "avg_capacity_liters": 27000,
-        "product_weight": 24300,  # 27000L * 0.9
+        "product_weight": 24300,
         "tare_weight": 11500,
         "gross_weight": 35800,
         "axle_load": 17.9,
         "risk_multiplier": 1.6,
         "max_speed": 45,
-        "turn_sensitivity": 1.5
+        "turn_sensitivity": 1.5,
+        "cg_height": 2.6,
+        "track_width": 2.0,
+        "stability_factor": 0.80
     },
     "30KL+": {
         "capacity_range": "30+ KL",
         "avg_capacity_liters": 35000,
-        "product_weight": 31500,  # 35000L * 0.9
+        "product_weight": 31500,
         "tare_weight": 13000,
         "gross_weight": 44500,
         "axle_load": 22.25,
         "risk_multiplier": 2.0,
         "max_speed": 40,
-        "turn_sensitivity": 1.8
+        "turn_sensitivity": 1.8,
+        "cg_height": 2.8,
+        "track_width": 2.0,
+        "stability_factor": 0.70
     }
 }
 
@@ -665,18 +681,105 @@ def ai_chat_gemini(user_question, tt_specs):
 
 # REPLACE your calculate_bearing function with:
 def calculate_precise_bearing(lat1, lng1, lat2, lng2):
-    """Calculate precise bearing between two points using proper geodesic calculations"""
-    lat1, lng1, lat2, lng2 = map(math.radians, [lat1, lng1, lat2, lng2])
+    """Enhanced bearing calculation using spherical trigonometry"""
+    try:
+        lat1_rad, lng1_rad = math.radians(lat1), math.radians(lng1)
+        lat2_rad, lng2_rad = math.radians(lat2), math.radians(lng2)
+        
+        dlng = lng2_rad - lng1_rad
+        y = math.sin(dlng) * math.cos(lat2_rad)
+        x = (math.cos(lat1_rad) * math.sin(lat2_rad) - 
+             math.sin(lat1_rad) * math.cos(lat2_rad) * math.cos(dlng))
+        
+        bearing = math.atan2(y, x)
+        bearing_degrees = math.degrees(bearing)
+        return (bearing_degrees + 360) % 360
+    except Exception as e:
+        print(f"Bearing calculation error: {e}")
+        return 0
+
+def calculate_curvature_metrics(coords, index, sample_distance=3):
+    """Calculate advanced curvature metrics including radius"""
+    if index < sample_distance or index >= len(coords) - sample_distance:
+        return {'radius': float('inf'), 'curvature': 0, 'turn_rate': 0}
     
-    dlng = lng2 - lng1
-    y = math.sin(dlng) * math.cos(lat2)
-    x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dlng)
-    
-    bearing = math.atan2(y, x)
-    bearing = math.degrees(bearing)
-    bearing = (bearing + 360) % 360
-    
-    return bearing
+    try:
+        p1 = coords[index - sample_distance]
+        p2 = coords[index]
+        p3 = coords[index + sample_distance]
+        
+        lat_center = p2[0]
+        cos_lat = math.cos(math.radians(lat_center))
+        
+        x1 = (p1[1] - p2[1]) * cos_lat * 111320
+        y1 = (p1[0] - p2[0]) * 111320
+        x3 = (p3[1] - p2[1]) * cos_lat * 111320
+        y3 = (p3[0] - p2[0]) * 111320
+        
+        a = math.sqrt(x1**2 + y1**2)
+        b = math.sqrt(x3**2 + y3**2)
+        c = math.sqrt((x3-x1)**2 + (y3-y1)**2)
+        
+        if a < 1e-6 or b < 1e-6 or c < 1e-6:
+            return {'radius': float('inf'), 'curvature': 0, 'turn_rate': 0}
+        
+        area = abs(x1 * y3 - x3 * y1) / 2
+        
+        if area < 1e-10:
+            radius = float('inf')
+            curvature = 0
+        else:
+            radius = (a * b * c) / (4 * area)
+            curvature = 1 / radius if radius > 0 else 0
+        
+        total_distance = a + b
+        turn_rate = curvature * total_distance if total_distance > 0 else 0
+        
+        return {'radius': radius, 'curvature': curvature, 'turn_rate': turn_rate}
+    except Exception as e:
+        print(f"Curvature calculation error: {e}")
+        return {'radius': float('inf'), 'curvature': 0, 'turn_rate': 0}
+
+def calculate_physics_risk_score(turn_angle, curvature_radius, tt_specs):
+    """Physics-based risk scoring (0-10 scale)"""
+    try:
+        gross_weight = tt_specs.get('gross_weight', 25000)
+        cg_height = tt_specs.get('cg_height', 2.5)
+        track_width = tt_specs.get('track_width', 2.0)
+        stability_factor = tt_specs.get('stability_factor', 1.0)
+        
+        if turn_angle > 120:
+            approach_speed = 15
+        elif turn_angle > 90:
+            approach_speed = 25
+        elif turn_angle > 60:
+            approach_speed = 35
+        else:
+            approach_speed = 45
+        
+        approach_speed_ms = approach_speed / 3.6
+        
+        if curvature_radius > 0 and curvature_radius != float('inf'):
+            lateral_acceleration = approach_speed_ms**2 / curvature_radius
+        else:
+            estimated_radius = max(20, 200 - turn_angle * 1.5)
+            lateral_acceleration = approach_speed_ms**2 / estimated_radius
+        
+        rollover_threshold = 9.81 * (track_width / 2) / cg_height * stability_factor
+        risk_ratio = lateral_acceleration / rollover_threshold
+        
+        if gross_weight > 35000:
+            risk_ratio *= 1.4
+        elif gross_weight > 25000:
+            risk_ratio *= 1.2
+        
+        risk_ratio *= 1.25
+        physics_score = min(10.0, risk_ratio * 5)
+        
+        return physics_score
+    except Exception as e:
+        print(f"Physics risk calculation error: {e}")
+        return 5.0
 
 # REPLACE your calculate_turn_angle function with:
 def calculate_turn_angle_precise(bearing1, bearing2):
@@ -692,58 +795,78 @@ def calculate_turn_angle_precise(bearing1, bearing2):
     return abs(diff)
 
 
-def detect_sharp_turns_and_curves(coords, min_turn_angle=45, sample_distance=5):
-    """Detect actual sharp turns (90+ degrees) and curves with proper sampling"""
+def detect_sharp_turns_and_curves(coords, min_turn_angle=45, sample_distance=5, tt_specs=None):
+    """ENHANCED: Advanced hazard detection using physics"""
     sharp_turns = []
     curves = []
     
     if len(coords) < sample_distance * 2:
         return sharp_turns, curves
     
+    if not tt_specs:
+        tt_specs = TT_SPECIFICATIONS["16-20KL"]
+    
     for i in range(sample_distance, len(coords) - sample_distance):
         try:
-            point_before = coords[i - sample_distance]
-            current_point = coords[i]
-            point_after = coords[i + sample_distance]
-            
             bearing_in = calculate_precise_bearing(
-                point_before[0], point_before[1], 
-                current_point[0], current_point[1]
+                coords[i - sample_distance][0], coords[i - sample_distance][1],
+                coords[i][0], coords[i][1]
             )
             bearing_out = calculate_precise_bearing(
-                current_point[0], current_point[1],
-                point_after[0], point_after[1]
+                coords[i][0], coords[i][1],
+                coords[i + sample_distance][0], coords[i + sample_distance][1]
             )
             
             turn_angle = calculate_turn_angle_precise(bearing_in, bearing_out)
-            turn_direction = "right" if (bearing_out - bearing_in + 360) % 360 < 180 else "left"
             
-            if turn_angle >= 90:  # Sharp turn (90+ degrees)
-                sharp_turns.append({
-                    'location': current_point,
-                    'index': i,
-                    'turn_angle': turn_angle,
-                    'direction': turn_direction,
-                    'bearing_in': bearing_in,
-                    'bearing_out': bearing_out,
-                    'severity': 'critical' if turn_angle > 120 else 'high'
-                })
-            elif turn_angle >= min_turn_angle:  # Moderate curve
-                curves.append({
-                    'location': current_point,
-                    'index': i,
-                    'turn_angle': turn_angle,
-                    'direction': turn_direction,
-                    'bearing_in': bearing_in,
-                    'bearing_out': bearing_out,
-                    'severity': 'moderate' if turn_angle > 60 else 'low'
-                })
+            if turn_angle >= min_turn_angle:
+                # Get curvature metrics
+                curvature_metrics = calculate_curvature_metrics(coords, i, sample_distance)
                 
+                # Calculate physics risk score
+                physics_score = calculate_physics_risk_score(turn_angle, curvature_metrics['radius'], tt_specs)
+                
+                # Determine direction
+                bearing_diff = bearing_out - bearing_in
+                if bearing_diff > 180:
+                    bearing_diff -= 360
+                elif bearing_diff < -180:
+                    bearing_diff += 360
+                turn_direction = "right" if bearing_diff > 0 else "left"
+                
+                # Enhanced severity
+                if physics_score > 7 or turn_angle > 100:
+                    severity = 'critical'
+                elif physics_score > 5 or turn_angle > 75:
+                    severity = 'high'
+                else:
+                    severity = 'moderate'
+                
+                hazard = {
+                    'location': coords[i],
+                    'index': i,
+                    'turn_angle': turn_angle,
+                    'curvature_radius': curvature_metrics['radius'],
+                    'direction': turn_direction,
+                    'bearing_in': bearing_in,
+                    'bearing_out': bearing_out,
+                    'severity': severity,
+                    'physics_score': physics_score
+                }
+                
+                if turn_angle >= 90:
+                    sharp_turns.append(hazard)
+                else:
+                    curves.append(hazard)
+                    
         except Exception as e:
-            print(f"Error calculating turn at index {i}: {e}")
+            print(f"Error analyzing turn at index {i}: {e}")
             continue
     
+    print(f"Enhanced detection: {len(sharp_turns)} sharp turns, {len(curves)} curves")
     return sharp_turns, curves
+
+
 
 def calculate_blind_spots(lat, lng, bearing, tt_specs):
     """Calculate precise blind spot polygons for truck tankers"""
@@ -1685,7 +1808,7 @@ def analyze_route():
             distance_value = 1
 
         # Detect sharp turns and curves with proper algorithm
-        sharp_turns, curves = detect_sharp_turns_and_curves(coords, min_turn_angle=45, sample_distance=8)
+        sharp_turns, curves = detect_sharp_turns_and_curves(coords, min_turn_angle=45, sample_distance=5, tt_specs=tt_specs)
         
         print(f"Detected {len(sharp_turns)} sharp turns (90°+) and {len(curves)} curves")
         
@@ -2453,5 +2576,6 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
