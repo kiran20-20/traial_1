@@ -1853,21 +1853,48 @@ def analyze_route():
             ).add_to(m)
             
             # Add colored overlays for hazardous sections
+            # Add colored overlays for hazardous sections with validation
             for turn in sharp_turns:
-                # Get coordinates around hazard from our interpolated analysis
-                start_idx = max(0, turn['index'] - 8)
-                end_idx = min(len(coords), turn['index'] + 8)
-                hazard_section = coords[start_idx:end_idx]
-                
-                segment_color = 'darkred' if turn['severity'] == 'critical' else 'red'
-                
-                folium.PolyLine(
-                    hazard_section,
-                    color=segment_color,
-                    weight=8,
-                    opacity=0.9,
-                    popup=f"HAZARD: {turn['turn_angle']:.1f}° {turn['direction']} turn"
-                ).add_to(m)
+                try:
+                    start_idx = max(0, turn['index'] - 8)
+                    end_idx = min(len(coords), turn['index'] + 8)
+                    
+                    if start_idx < end_idx and end_idx <= len(coords):
+                        hazard_section = coords[start_idx:end_idx]
+                        
+                        if hazard_section and len(hazard_section) >= 2:
+                            segment_color = 'darkred' if turn['severity'] == 'critical' else 'red'
+                            folium.PolyLine(
+                                hazard_section,
+                                color=segment_color,
+                                weight=8,
+                                opacity=0.9,
+                                popup=f"HAZARD: {turn['turn_angle']:.1f}° {turn['direction']} turn"
+                            ).add_to(m)
+                except Exception as e:
+                    print(f"Error drawing hazard: {e}")
+                    continue
+            
+            # Add curve overlays with validation
+            for curve in curves:
+                try:
+                    start_idx = max(0, curve['index'] - 5)
+                    end_idx = min(len(coords), curve['index'] + 5)
+                    
+                    if start_idx < end_idx and end_idx <= len(coords):
+                        curve_section = coords[start_idx:end_idx]
+                        
+                        if curve_section and len(curve_section) >= 2:
+                            folium.PolyLine(
+                                curve_section,
+                                color='orange',
+                                weight=7,
+                                opacity=0.8,
+                                popup=f"CURVE: {curve['turn_angle']:.1f}° {curve['direction']}"
+                            ).add_to(m)
+                except Exception as e:
+                    print(f"Error drawing curve: {e}")
+                    continue
             
             # Add curve overlays
             for curve in curves:
@@ -2567,6 +2594,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
