@@ -2379,7 +2379,7 @@ def analyze_route():
                 'stability_factor': f"{tt_specs.get('stability_factor', 1.0):.2f}",
                 'track_width': f"{tt_specs.get('track_width', 2.0):.1f} m"
             },
-            'enhanced_route_analysis': {
+            'route_analysis': {
                 'total_points': len(coords),
                 'points_per_km': len(coords) / distance_value,
                 'physics_validated_hazards': len(sharp_turns),
@@ -2647,6 +2647,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
