@@ -377,7 +377,7 @@
             50%, 100% { top: 100%; }
         }
 
-        /* Enhanced Login Button */
+        /* Enhanced Login Button with Rotation */
         .login-button {
             background: linear-gradient(135deg, var(--iocl-primary), var(--iocl-secondary));
             color: white;
@@ -403,13 +403,13 @@
         }
 
         .login-button:hover {
-            transform: translateY(-4px);
+            transform: translateY(-4px) rotate(2deg);
             box-shadow: 0 20px 60px rgba(243, 112, 34, 0.4);
             background: linear-gradient(135deg, var(--iocl-accent), var(--iocl-primary));
         }
 
         .login-button:active {
-            transform: translateY(-2px);
+            transform: translateY(-2px) rotate(1deg);
         }
 
         .login-button:disabled {
@@ -435,6 +435,11 @@
 
         .login-button i {
             font-size: 1.4rem;
+            transition: transform 0.3s ease;
+        }
+
+        .login-button:hover i {
+            transform: rotate(15deg);
         }
 
         /* Password Toggle */
@@ -795,3 +800,70 @@
                     }
                 }, 10000);
             }
+
+            setLoadingState(loading) {
+                const button = this.loginButton;
+                const buttonText = button.querySelector('span');
+                const buttonIcon = button.querySelector('i');
+                
+                if (loading) {
+                    button.disabled = true;
+                    document.body.classList.add('loading');
+                    buttonText.textContent = 'Authenticating...';
+                    buttonIcon.className = 'spinner';
+                } else {
+                    button.disabled = false;
+                    document.body.classList.remove('loading');
+                    buttonText.textContent = 'Login';
+                    buttonIcon.className = 'fas fa-route';
+                }
+            }
+
+            showAlert(message, type) {
+                const alert = document.getElementById('alert');
+                alert.textContent = message;
+                alert.className = `alert alert-${type}`;
+                alert.style.display = 'block';
+                
+                setTimeout(() => {
+                    alert.style.display = 'none';
+                }, 4000);
+            }
+
+            checkUrlParams() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const error = urlParams.get('error');
+                const success = urlParams.get('success');
+                
+                if (error) {
+                    this.showAlert(error, 'error');
+                }
+                
+                if (success) {
+                    this.showAlert(success, 'success');
+                }
+            }
+
+            initializeAnimations() {
+                // Add staggered animation delays
+                const flowSteps = document.querySelectorAll('.flow-step');
+                flowSteps.forEach((step, index) => {
+                    step.style.animationDelay = `${0.2 + (index * 0.2)}s`;
+                });
+            }
+
+            focusFirstField() {
+                // Focus on username field after animations complete
+                setTimeout(() => {
+                    this.usernameInput.focus();
+                }, 1200);
+            }
+        }
+
+        // Initialize the login flow
+        document.addEventListener('DOMContentLoaded', function() {
+            new SmartMargLoginFlow();
+        });
+    </script>
+</body>
+</html>
