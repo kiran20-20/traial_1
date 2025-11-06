@@ -12,7 +12,6 @@ import glob
 from uuid import uuid4
 import math
 import numpy as np
-from scipy import interpolate
 from geopy.distance import geodesic
 import time
 from functools import wraps
@@ -2476,6 +2475,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
