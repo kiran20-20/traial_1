@@ -571,7 +571,43 @@ def ai_chat_gemini(user_question, tt_specs):
         print(f"Gemini chat error: {e}")
         return f"AI assistant temporarily unavailable. For immediate safety concerns, contact your dispatcher. (Error: {str(e)})"
 
-
+def interpolate_route_for_accuracy(coords, target_points_per_km=50):
+    """Interpolate route to achieve target point density"""
+    if len(coords) < 2:
+        return coords
+    
+    try:
+        interpolated = [coords[0]]
+        
+        for i in range(1, len(coords)):
+            start = coords[i-1]
+            end = coords[i]
+            
+            # Calculate distance between consecutive points
+            distance_km = geodesic(start, end).kilometers
+            
+            # If points are too far apart, add intermediate points
+            if distance_km > (1.0 / target_points_per_km):
+                # Calculate how many points we need to insert
+                num_intermediate = int(distance_km * target_points_per_km)
+                
+                # Add intermediate points using linear interpolation
+                for j in range(1, num_intermediate + 1):
+                    ratio = j / (num_intermediate + 1)
+                    lat = start[0] + (end[0] - start[0]) * ratio
+                    lng = start[1] + (end[1] - start[1]) * ratio
+                    interpolated.append((lat, lng))
+            
+            interpolated.append(end)
+        
+        print(f"Route interpolation: {len(coords)} → {len(interpolated)} points")
+        print(f"Density improvement: {len(interpolated)/len(coords):.1f}x more points")
+        
+        return interpolated
+        
+    except Exception as e:
+        print(f"Interpolation error: {e}")
+        return coords
 
 # REPLACE your calculate_bearing function with:
 def calculate_precise_bearing(lat1, lng1, lat2, lng2):
@@ -695,12 +731,19 @@ def calculate_turn_angle_precise(bearing1, bearing2):
 
 
 def detect_sharp_turns_and_curves(coords, min_turn_angle=45, sample_distance=5, tt_specs=None):
-    """ENHANCED: Advanced hazard detection using physics"""
+    """ENHANCED: Advanced hazard detection with high-density interpolation"""
+    
+    # STEP 1: Interpolate for higher accuracy
+    print(f"Original route: {len(coords)} points")
+    coords = interpolate_route_for_accuracy(coords, target_points_per_km=50)
+    print(f"Enhanced route: {len(coords)} points")
+    
     sharp_turns = []
     curves = []
     
     if len(coords) < sample_distance * 2:
         return sharp_turns, curves
+    
     
     if not tt_specs:
         tt_specs = TT_SPECIFICATIONS["16-20KL"]
@@ -847,38 +890,74 @@ def get_recommended_speed(turn_angle, tt_specs, road_type="urban"):
     except:
         return 25  # Default safe speed
 
-def interpolate_route_points(coords, points_per_km=10):
-    """Interpolate route to get more points per kilometer"""
-    if len(coords) < 2:
+def interpolate_route_advanced(coords, target_points_per_km=100):
+    """Advanced interpolation using spline-like smoothing"""
+    if len(coords) < 4:
         return coords
     
     try:
-        interpolated = [coords[0]]
+        interpolated = []
         
-        for i in range(1, len(coords)):
-            start = coords[i-1]
-            end = coords[i]
+        for i in range(len(coords) - 1):
+            start = coords[i]
+            end = coords[i + 1]
             
-            # Calculate distance between points
+            # Add the start point
+            interpolated.append(start)
+            
+            # Calculate segment distance
             distance_km = geodesic(start, end).kilometers
             
-            if distance_km > 1/points_per_km:  # If points are far apart
-                # Calculate number of intermediate points needed
-                num_points = int(distance_km * points_per_km)
+            # Determine number of intermediate points needed
+            if distance_km > (1.0 / target_points_per_km):
+                num_points = max(1, int(distance_km * target_points_per_km))
                 
-                # Interpolate points
+                # Use Catmull-Rom spline for smoother interpolation
                 for j in range(1, num_points + 1):
-                    ratio = j / (num_points + 1)
-                    lat = start[0] + (end[0] - start[0]) * ratio
-                    lng = start[1] + (end[1] - start[1]) * ratio
+                    t = j / (num_points + 1)
+                    
+                    # Get control points for smooth interpolation
+                    p0 = coords[max(0, i-1)]
+                    p1 = start
+                    p2 = end
+                    p3 = coords[min(len(coords)-1, i+2)]
+                    
+                    # Catmull-Rom interpolation
+                    lat = catmull_rom_interpolate(p0[0], p1[0], p2[0], p3[0], t)
+                    lng = catmull_rom_interpolate(p0[1], p1[1], p2[1], p3[1], t)
+                    
                     interpolated.append((lat, lng))
-            
-            interpolated.append(end)
         
+        # Add the final point
+        interpolated.append(coords[-1])
+        
+        print(f"Advanced interpolation: {len(coords)} → {len(interpolated)} points")
         return interpolated
+        
     except Exception as e:
-        print(f"Error in interpolation: {e}")
+        print(f"Advanced interpolation error: {e}")
         return coords
+
+def catmull_rom_interpolate(p0, p1, p2, p3, t):
+    """Catmull-Rom spline interpolation for smooth curves"""
+    return 0.5 * (
+        (2 * p1) +
+        (-p0 + p2) * t +
+        (2*p0 - 5*p1 + 4*p2 - p3) * t*t +
+        (-p0 + 3*p1 - 3*p2 + p3) * t*t*t
+    )
+
+
+def get_optimal_density(distance_km):
+    """Get optimal point density based on route length"""
+    if distance_km < 10:      # Short city routes
+        return 100  # 100 points/km
+    elif distance_km < 50:    # Medium routes  
+        return 75   # 75 points/km
+    elif distance_km < 200:   # Long routes
+        return 50   # 50 points/km
+    else:                     # Very long routes
+        return 25   # 25 points/km (to avoid memory issues)
 
 def get_traffic_data(coords):
     """Get traffic data for route coordinates"""
@@ -1707,7 +1786,8 @@ def analyze_route():
             distance_value = 1
 
         # Detect sharp turns and curves with proper algorithm
-        sharp_turns, curves = detect_sharp_turns_and_curves(coords, min_turn_angle=45, sample_distance=5, tt_specs=tt_specs)
+        print(f"Starting enhanced analysis for {total_distance} route...")
+        sharp_turns, curves = detect_sharp_turns_and_curves(coords, min_turn_angle=45, sample_distance=3, tt_specs=tt_specs)
         
         print(f"Detected {len(sharp_turns)} sharp turns (90°+) and {len(curves)} curves")
         
@@ -2475,6 +2555,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
