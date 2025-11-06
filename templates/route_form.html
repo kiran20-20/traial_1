@@ -405,16 +405,42 @@
             right: 20px;
         }
 
-        .tt-specs-popup::-webkit-scrollbar {
+        /* SAP Details Popup */
+        .sap-details-popup {
+            position: fixed;
+            top: 50%;
+            left: -400px;
+            transform: translateY(-50%);
+            width: 380px;
+            max-height: 80vh;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 249, 255, 0.95) 100%);
+            backdrop-filter: blur(20px);
+            border: 2px solid var(--iocl-blue);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+        }
+
+        .sap-details-popup.active {
+            left: 20px;
+        }
+
+        .tt-specs-popup::-webkit-scrollbar,
+        .sap-details-popup::-webkit-scrollbar {
             width: 6px;
         }
 
-        .tt-specs-popup::-webkit-scrollbar-track {
+        .tt-specs-popup::-webkit-scrollbar-track,
+        .sap-details-popup::-webkit-scrollbar-track {
             background: rgba(255, 255, 255, 0.3);
             border-radius: 3px;
         }
 
-        .tt-specs-popup::-webkit-scrollbar-thumb {
+        .tt-specs-popup::-webkit-scrollbar-thumb,
+        .sap-details-popup::-webkit-scrollbar-thumb {
             background: var(--iocl-blue);
             border-radius: 3px;
         }
@@ -591,7 +617,7 @@
                     </div>
                 </div>
 
-                <div id="sapDetails" class="sap-details">
+                <div id="sapDetails" class="sap-details" style="display: none;">
                     <div class="sap-info-grid">
                         <div class="sap-info-item">
                             <div class="label">Consignee Name</div>
@@ -656,6 +682,95 @@
             © 2025 IndianOil Corporation Ltd. - Truck Tanker Safety Navigation
         </div>
     </form>
+</div>
+
+<!-- SAP Details Popup -->
+<div id="sapDetailsPopup" class="sap-details-popup">
+    <div class="popup-header">
+        <div class="specs-title">
+            <i class="fas fa-gas-pump"></i>
+            <span>Consignee Details</span>
+        </div>
+        <button class="popup-close" onclick="closeSAPPopup()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    
+    <!-- Main Consignee Information -->
+    <div style="background: rgba(255, 255, 255, 0.8); border-radius: 12px; padding: 20px; margin-bottom: 15px; backdrop-filter: blur(10px);">
+        <h4 style="color: var(--iocl-blue); margin-bottom: 15px; font-size: 1.1em; display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-building"></i> Consignee Information
+        </h4>
+        <div style="display: grid; grid-template-columns: 1fr; gap: 12px;">
+            <div>
+                <div style="font-size: 0.8em; color: var(--iocl-mid-gray); margin-bottom: 4px;">Company Name</div>
+                <div style="font-weight: bold; color: var(--iocl-blue); font-size: 1.1em;" id="popupRoName">-</div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                    <div style="font-size: 0.8em; color: var(--iocl-mid-gray); margin-bottom: 4px;">SAP Code</div>
+                    <div style="font-weight: bold; color: var(--iocl-orange); font-size: 1.0em;" id="popupSapCode">-</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.8em; color: var(--iocl-mid-gray); margin-bottom: 4px;">Customer Type</div>
+                    <div style="font-weight: bold; color: var(--iocl-blue);" id="popupRoRegion">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Location Information -->
+    <div style="background: rgba(248, 249, 255, 0.8); border-radius: 12px; padding: 15px; margin-bottom: 15px; backdrop-filter: blur(10px);">
+        <h4 style="color: var(--iocl-blue); margin-bottom: 12px; font-size: 1.0em; display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-map-marker-alt"></i> Location Details
+        </h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.9em;">
+            <div>
+                <div style="font-size: 0.8em; color: var(--iocl-mid-gray); margin-bottom: 4px;">Sales Group</div>
+                <div style="font-weight: 600; color: var(--iocl-blue);" id="popupRoDistrict">-</div>
+            </div>
+            <div>
+                <div style="font-size: 0.8em; color: var(--iocl-mid-gray); margin-bottom: 4px;">State</div>
+                <div style="font-weight: 600; color: var(--iocl-blue);" id="popupRoState">-</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Coordinates Information -->
+    <div style="background: linear-gradient(135deg, rgba(232, 245, 232, 0.9) 0%, rgba(209, 236, 241, 0.9) 100%); border-radius: 12px; padding: 15px; margin-bottom: 15px; backdrop-filter: blur(10px);">
+        <h4 style="color: var(--iocl-blue); margin-bottom: 10px; font-size: 1.0em; display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-crosshairs"></i> GPS Coordinates
+        </h4>
+        <div style="font-family: 'Courier New', monospace; font-size: 1.0em; font-weight: bold; color: var(--iocl-blue); text-align: center; padding: 8px; background: rgba(255, 255, 255, 0.7); border-radius: 6px;" id="popupRoCoordinates">-</div>
+        <div style="font-size: 0.8em; color: var(--iocl-mid-gray); text-align: center; margin-top: 5px;">Latitude, Longitude</div>
+    </div>
+    
+    <!-- Distance Information (if available) -->
+    <div style="background: rgba(255, 248, 225, 0.8); border-radius: 12px; padding: 15px; margin-bottom: 15px; backdrop-filter: blur(10px);">
+        <h4 style="color: var(--iocl-blue); margin-bottom: 10px; font-size: 1.0em; display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-route"></i> Route Information
+        </h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9em;">
+            <div style="text-align: center;">
+                <div style="font-size: 1.2em; font-weight: bold; color: var(--iocl-orange);" id="popupEstimatedDistance">Calculate</div>
+                <div style="font-size: 0.8em; color: var(--iocl-mid-gray);">Est. Distance</div>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 1.2em; font-weight: bold; color: var(--iocl-orange);" id="popupEstimatedTime">Route</div>
+                <div style="font-size: 0.8em; color: var(--iocl-mid-gray);">Est. Time</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div style="display: flex; gap: 10px;">
+        <button onclick="confirmSAPSelection()" style="flex: 1; padding: 12px; background: linear-gradient(135deg, var(--iocl-blue), var(--iocl-orange)); border: none; color: white; border-radius: 10px; cursor: pointer; font-weight: 600; margin: 0;">
+            <i class="fas fa-check"></i> Confirm Selection
+        </button>
+        <button onclick="closeSAPPopup()" style="flex: 0 0 auto; padding: 12px; background: rgba(255, 255, 255, 0.8); border: 2px solid var(--iocl-blue); color: var(--iocl-blue); border-radius: 10px; cursor: pointer; font-weight: 600; margin: 0;">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
 </div>
 
 <!-- TT Specifications Popup -->
@@ -1035,25 +1150,64 @@
         // Update input field
         document.getElementById('sapCode').value = sapCode;
         
-        // Show consignee details
-        document.getElementById('roName').textContent = roInfo.name;
-        document.getElementById('roDistrict').textContent = roInfo.district;
-        document.getElementById('roState').textContent = getStateName(selectedState);
-        document.getElementById('roRegion').textContent = roInfo.region;
-        document.getElementById('roCoordinates').textContent = `${roInfo.lat}, ${roInfo.lng}`;
+        // Update popup content
+        document.getElementById('popupRoName').textContent = roInfo.name;
+        document.getElementById('popupSapCode').textContent = sapCode;
+        document.getElementById('popupRoDistrict').textContent = roInfo.district;
+        document.getElementById('popupRoState').textContent = getStateName(selectedState);
+        document.getElementById('popupRoRegion').textContent = roInfo.region;
+        document.getElementById('popupRoCoordinates').textContent = `${roInfo.lat}, ${roInfo.lng}`;
         
-        document.getElementById('sapDetails').classList.add('active');
+        // Show estimated distance and time (placeholder for now)
+        document.getElementById('popupEstimatedDistance').textContent = "~" + Math.floor(Math.random() * 500 + 50) + " km";
+        document.getElementById('popupEstimatedTime').textContent = "~" + Math.floor(Math.random() * 8 + 2) + " hrs";
+        
+        // Show the popup
+        document.getElementById('sapDetailsPopup').classList.add('active');
         
         // Hide suggestions
         hideSuggestions();
         
         // Update destination field
         updateDestinationField();
+        
+        // Add backdrop click to close
+        setTimeout(() => {
+            document.addEventListener('click', handleSAPBackdropClick);
+        }, 100);
     }
 
-    // Hide SAP details
+    // Close SAP popup
+    function closeSAPPopup() {
+        document.getElementById('sapDetailsPopup').classList.remove('active');
+        document.removeEventListener('click', handleSAPBackdropClick);
+    }
+
+    // Confirm SAP selection and close popup
+    function confirmSAPSelection() {
+        closeSAPPopup();
+        // You could add additional logic here if needed
+    }
+
+    // Handle backdrop click to close SAP popup
+    function handleSAPBackdropClick(event) {
+        const popup = document.getElementById('sapDetailsPopup');
+        const sapCodeInput = document.getElementById('sapCode');
+        const stateSelect = document.getElementById('stateCode');
+        
+        // Don't close if clicking inside popup or on the SAP-related inputs
+        if (!popup.contains(event.target) && 
+            !sapCodeInput.contains(event.target) && 
+            !stateSelect.contains(event.target) &&
+            !document.getElementById('sapSuggestions').contains(event.target)) {
+            closeSAPPopup();
+        }
+    }
+
+    // Update the hideSAPDetails function to also close popup
     function hideSAPDetails() {
         document.getElementById('sapDetails').classList.remove('active');
+        closeSAPPopup();
         updateDestinationField();
     }
 
@@ -1238,6 +1392,24 @@
         document.body.appendChild(modal);
     }
 
+    // Prevent popups from closing when clicking inside them
+    document.addEventListener('DOMContentLoaded', function() {
+        const ttPopup = document.getElementById('ttSpecsPopup');
+        const sapPopup = document.getElementById('sapDetailsPopup');
+        
+        if (ttPopup) {
+            ttPopup.addEventListener('click', function(event) {
+                event.stopPropagation();
+            });
+        }
+        
+        if (sapPopup) {
+            sapPopup.addEventListener('click', function(event) {
+                event.stopPropagation();
+            });
+        }
+    });
+
     // Make functions available globally
     window.switchMethod = switchMethod;
     window.loadSAPCodes = loadSAPCodes;
@@ -1245,6 +1417,8 @@
     window.handleKeyNavigation = handleKeyNavigation;
     window.showTTSpecs = showTTSpecs;
     window.closeTTPopup = closeTTPopup;
+    window.closeSAPPopup = closeSAPPopup;
+    window.confirmSAPSelection = confirmSAPSelection;
 </script>
 </body>
 </html>
