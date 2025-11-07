@@ -120,6 +120,10 @@ TT_SPECIFICATIONS = {
     }
 }
 
+# ADD AFTER TT_SPECIFICATIONS:
+PRACTICAL_SPEED_MATRIX = { ... }
+PRACTICAL_RISK_CATEGORIES = { ... }
+
 # Default values (will be updated based on TT selection)
 TRUCK_WEIGHT = 25.0  # Will be dynamically set
 MAX_SPEED_LIMIT = 50  # Will be dynamically set
@@ -675,45 +679,65 @@ def calculate_curvature_metrics(coords, index, sample_distance=3):
         print(f"Curvature calculation error: {e}")
         return {'radius': float('inf'), 'curvature': 0, 'turn_rate': 0}
 
-def calculate_physics_risk_score(turn_angle, curvature_radius, tt_specs):
-    """Physics-based risk scoring (0-10 scale)"""
+def calculate_practical_physics_risk_score(turn_angle, curvature_radius, tt_specs):
+    """PRACTICAL risk scoring based on real truck tanker operations"""
     try:
         gross_weight = tt_specs.get('gross_weight', 25000)
         cg_height = tt_specs.get('cg_height', 2.5)
         track_width = tt_specs.get('track_width', 2.0)
         stability_factor = tt_specs.get('stability_factor', 1.0)
         
-        if turn_angle > 120:
-            approach_speed = 15
-        elif turn_angle > 90:
-            approach_speed = 25
-        elif turn_angle > 60:
-            approach_speed = 35
-        else:
-            approach_speed = 45
+        # PRACTICAL SPEED RECOMMENDATIONS based on real-world scenarios:
+        if turn_angle >= 90:    # CRITICAL: U-turns, roundabouts, tight turns
+            approach_speed = 10   # Walking pace - liquid surge risk very high
+        elif turn_angle >= 65:  # HIGH RISK: Highway ramps, sharp corners
+            approach_speed = 18   # Slow residential speed
+        elif turn_angle >= 45:  # MODERATE: Normal intersections, city turns
+            approach_speed = 25   # City driving speed
+        elif turn_angle >= 25:  # CAUTION: Highway curves, wide turns
+            approach_speed = 35   # Reduced highway speed
+        else:                   # NORMAL: Straight roads, gentle bends
+            approach_speed = 50   # Normal driving (up to vehicle max)
         
         approach_speed_ms = approach_speed / 3.6
         
+        # Enhanced radius calculations for practical scenarios
         if curvature_radius > 0 and curvature_radius != float('inf'):
             lateral_acceleration = approach_speed_ms**2 / curvature_radius
         else:
-            estimated_radius = max(20, 200 - turn_angle * 1.5)
+            # Practical radius estimates based on turn types
+            if turn_angle >= 90:
+                estimated_radius = 15    # Tight intersections/roundabouts
+            elif turn_angle >= 65:
+                estimated_radius = 25    # Highway ramps
+            elif turn_angle >= 45:
+                estimated_radius = 50    # Normal turns
+            else:
+                estimated_radius = 100   # Wide curves
             lateral_acceleration = approach_speed_ms**2 / estimated_radius
         
         rollover_threshold = 9.81 * (track_width / 2) / cg_height * stability_factor
         risk_ratio = lateral_acceleration / rollover_threshold
         
-        if gross_weight > 35000:
-            risk_ratio *= 1.4
-        elif gross_weight > 25000:
-            risk_ratio *= 1.2
+        # PRACTICAL risk multipliers based on cargo and weight
+        if gross_weight > 35000:    # Heavy tanker (30+ KL)
+            risk_ratio *= 1.6       # Significant increase for heavy loads
+        elif gross_weight > 25000:  # Medium tanker (16-24 KL)
+            risk_ratio *= 1.3       # Moderate increase
+        else:                       # Light tanker (12-16 KL)
+            risk_ratio *= 1.1       # Slight increase
         
-        risk_ratio *= 1.25
-        physics_score = min(10.0, risk_ratio * 5)
+        # Additional practical factors for liquid surge
+        if turn_angle >= 90:        # U-turns and sharp corners
+            risk_ratio *= 1.8       # High surge risk
+        elif turn_angle >= 65:      # Highway ramps and exits
+            risk_ratio *= 1.4       # Moderate surge risk
+        
+        physics_score = min(10.0, risk_ratio * 5.5)
         
         return physics_score
     except Exception as e:
-        print(f"Physics risk calculation error: {e}")
+        print(f"Practical physics calculation error: {e}")
         return 5.0
 
 # REPLACE your calculate_turn_angle function with:
@@ -729,11 +753,10 @@ def calculate_turn_angle_precise(bearing1, bearing2):
     
     return abs(diff)
 
-
-def detect_sharp_turns_and_curves(coords, min_turn_angle=45, sample_distance=5, tt_specs=None):
-    """ENHANCED: Advanced hazard detection with high-density interpolation"""
+def detect_practical_hazards(coords, min_turn_angle=25, sample_distance=5, tt_specs=None):
+    """PRACTICAL hazard detection with real-world criteria and scenarios"""
     
-    # STEP 1: Interpolate for higher accuracy
+    # Interpolate for higher accuracy
     print(f"Original route: {len(coords)} points")
     coords = interpolate_route_for_accuracy(coords, target_points_per_km=50)
     print(f"Enhanced route: {len(coords)} points")
@@ -743,7 +766,6 @@ def detect_sharp_turns_and_curves(coords, min_turn_angle=45, sample_distance=5, 
     
     if len(coords) < sample_distance * 2:
         return sharp_turns, curves
-    
     
     if not tt_specs:
         tt_specs = TT_SPECIFICATIONS["16-20KL"]
@@ -765,8 +787,8 @@ def detect_sharp_turns_and_curves(coords, min_turn_angle=45, sample_distance=5, 
                 # Get curvature metrics
                 curvature_metrics = calculate_curvature_metrics(coords, i, sample_distance)
                 
-                # Calculate physics risk score
-                physics_score = calculate_physics_risk_score(turn_angle, curvature_metrics['radius'], tt_specs)
+                # Calculate practical risk score
+                physics_score = calculate_practical_physics_risk_score(turn_angle, curvature_metrics['radius'], tt_specs)
                 
                 # Determine direction
                 bearing_diff = bearing_out - bearing_in
@@ -776,13 +798,30 @@ def detect_sharp_turns_and_curves(coords, min_turn_angle=45, sample_distance=5, 
                     bearing_diff += 360
                 turn_direction = "right" if bearing_diff > 0 else "left"
                 
-                # Enhanced severity
-                if physics_score > 7 or turn_angle > 100:
+                # PRACTICAL severity classification with real-world context
+                if turn_angle >= 90:        # U-turns, tight roundabouts
                     severity = 'critical'
-                elif physics_score > 5 or turn_angle > 75:
+                    risk_category = 'U-Turn/Roundabout/Tight Turn'
+                    warning = 'LIQUID SURGE DANGER - Use extreme caution'
+                    scenario_type = 'critical_maneuver'
+                elif turn_angle >= 65:     # Highway ramps, sharp corners  
                     severity = 'high'
-                else:
+                    risk_category = 'Highway Ramp/Sharp Corner'
+                    warning = 'HIGH ROLLOVER RISK - Reduce speed significantly'
+                    scenario_type = 'highway_hazard'
+                elif turn_angle >= 45:     # Normal intersections
                     severity = 'moderate'
+                    risk_category = 'Intersection/City Turn'
+                    warning = 'CAUTION REQUIRED - Standard intersection speed'
+                    scenario_type = 'normal_turn'
+                else:                       # Gentle curves
+                    severity = 'low'
+                    risk_category = 'Highway Curve/Wide Turn'
+                    warning = 'REDUCE SPEED - Monitor liquid movement'
+                    scenario_type = 'gentle_curve'
+                
+                # Get practical speed recommendation
+                practical_speed = get_practical_speed(turn_angle, tt_specs)
                 
                 hazard = {
                     'location': coords[i],
@@ -793,19 +832,24 @@ def detect_sharp_turns_and_curves(coords, min_turn_angle=45, sample_distance=5, 
                     'bearing_in': bearing_in,
                     'bearing_out': bearing_out,
                     'severity': severity,
-                    'physics_score': physics_score
+                    'physics_score': physics_score,
+                    'risk_category': risk_category,
+                    'warning': warning,
+                    'scenario_type': scenario_type,
+                    'practical_speed': practical_speed
                 }
                 
-                if turn_angle >= 90:
+                # Classify based on practical criteria
+                if turn_angle >= 45:  # Significant turns requiring attention
                     sharp_turns.append(hazard)
-                else:
+                else:                # Gentle curves
                     curves.append(hazard)
                     
         except Exception as e:
             print(f"Error analyzing turn at index {i}: {e}")
             continue
     
-    print(f"Enhanced detection: {len(sharp_turns)} sharp turns, {len(curves)} curves")
+    print(f"Practical detection: {len(sharp_turns)} significant turns, {len(curves)} gentle curves")
     return sharp_turns, curves
 
 
@@ -853,6 +897,89 @@ def calculate_blind_spots(lat, lng, bearing, tt_specs):
         'rear': rear_blind_spot
     }
 
+def get_practical_speed(turn_angle, tt_specs):
+    """Get practical speed recommendations based on real driving scenarios"""
+    tanker_type = tt_specs.get('capacity_range', '16-20KL')
+    
+    # Practical speed matrix based on tanker capacity
+    speed_matrix = {
+        '12-16KL': {    # Light tanker
+            'critical': 12,     # U-turns, roundabouts
+            'high': 20,         # Highway ramps
+            'moderate': 28,     # Intersections
+            'low': 40           # Highway curves
+        },
+        '16-20KL': {    # Medium tanker  
+            'critical': 10,
+            'high': 18,
+            'moderate': 25,
+            'low': 35
+        },
+        '20-24KL': {    # Heavy tanker
+            'critical': 8,
+            'high': 15,
+            'moderate': 22,
+            'low': 32
+        },
+        '24-30KL': {    # Very heavy tanker
+            'critical': 8,
+            'high': 12,
+            'moderate': 20,
+            'low': 30
+        },
+        '30KL+': {      # Extra heavy tanker
+            'critical': 5,
+            'high': 10,
+            'moderate': 18,
+            'low': 28
+        }
+    }
+    
+    # Get speeds for this tanker type
+    speeds = speed_matrix.get(tanker_type, speed_matrix['16-20KL'])
+    
+    # Return appropriate speed based on turn angle
+    if turn_angle >= 90:
+        return speeds['critical']
+    elif turn_angle >= 65:
+        return speeds['high']
+    elif turn_angle >= 45:
+        return speeds['moderate']
+    else:
+        return speeds['low']
+
+
+def get_practical_colors(turn_angle, physics_score):
+    """Get practical color coding for map visualization based on real scenarios"""
+    
+    if turn_angle >= 90:        # Critical: U-turns, roundabouts
+        return {
+            'color': 'darkred',
+            'icon_color': 'darkred',
+            'alert_level': 'CRITICAL',
+            'scenario': 'U-Turn/Roundabout'
+        }
+    elif turn_angle >= 65:      # High: Highway ramps, sharp corners
+        return {
+            'color': 'red',
+            'icon_color': 'red', 
+            'alert_level': 'HIGH RISK',
+            'scenario': 'Highway Ramp'
+        }
+    elif turn_angle >= 45:      # Moderate: Normal intersections
+        return {
+            'color': 'orange',
+            'icon_color': 'orange',
+            'alert_level': 'MODERATE',
+            'scenario': 'Intersection'
+        }
+    else:                       # Low: Gentle curves
+        return {
+            'color': 'yellow',
+            'icon_color': 'yellow',
+            'alert_level': 'CAUTION',
+            'scenario': 'Highway Curve'
+        }
 
 
 def get_recommended_speed(turn_angle, tt_specs, road_type="urban"):
@@ -1756,11 +1883,14 @@ def ai_current_analysis():
         return {"error": str(e), "status": "failed"}
 
 
+# ============================================================================
+# COMPLETE analyze_route FUNCTION - REPLACE ENTIRE FUNCTION IN YOUR app.py
+# ============================================================================
 
 @app.route('/analyze_route', methods=['POST'])
 @login_required
 def analyze_route():
-    """Enhanced route analysis with physics-based hazard detection and smooth route rendering"""
+    """PRACTICAL Enhanced route analysis with real-world criteria and fixed truck alignment"""
     try:
         directions = session.get('directions')
         tt_specs = session.get('tt_specs')
@@ -1785,13 +1915,13 @@ def analyze_route():
         except:
             distance_value = 1
 
-        # Enhanced physics-based turn detection
-        print(f"Starting enhanced analysis for {total_distance} route...")
-        sharp_turns, curves = detect_sharp_turns_and_curves(coords, min_turn_angle=25, sample_distance=2, tt_specs=tt_specs)
+        # PRACTICAL Enhanced hazard detection with real-world criteria
+        print(f"Starting PRACTICAL analysis for {total_distance} route...")
+        sharp_turns, curves = detect_practical_hazards(coords, min_turn_angle=25, sample_distance=2, tt_specs=tt_specs)
         
-        print(f"Detected {len(sharp_turns)} sharp turns (60°+) and {len(curves)} curves")
+        print(f"PRACTICAL detection: {len(sharp_turns)} significant turns, {len(curves)} gentle curves")
         
-        # Get POIs along route
+        # Get POIs along route (unchanged)
         def get_pois(keyword):
             pois = []
             try:
@@ -1826,31 +1956,29 @@ def analyze_route():
         session['all_pois'] = all_pois
         session.modified = True
 
-        # Create enhanced map with physics-based visualization
+        # Create enhanced map with PRACTICAL visualization
         center_lat = sum(coord[0] for coord in coords) / len(coords)
         center_lng = sum(coord[1] for coord in coords) / len(coords)
         
         m = folium.Map(location=(center_lat, center_lng), zoom_start=12)
         
-        # ENHANCED ROUTE RENDERING - Draw main route using Google's smooth geometry
+        # Draw main route using Google's smooth geometry
         selected = directions[index]
         smooth_coords = []
 
-        # Extract Google's detailed step-by-step coordinates for smooth curves
         for step in selected['legs'][0]['steps']:
             step_coords = polyline.decode(step['polyline']['points'])
             smooth_coords.extend(step_coords)
 
-        # Draw the main route ONCE with actual road geometry
         folium.PolyLine(
             smooth_coords,
             color='blue',
             weight=5,
             opacity=0.7,
-            popup="Main Route (Actual Road Geometry)"
+            popup="Main Route (Practical Analysis)"
         ).add_to(m)
 
-        # Add physics-validated hazard overlays
+        # Add PRACTICAL hazard overlays with real-world scenarios
         for turn in sharp_turns:
             try:
                 start_idx = max(0, turn['index'] - 8)
@@ -1860,27 +1988,21 @@ def analyze_route():
                     hazard_section = coords[start_idx:end_idx]
                     
                     if hazard_section and len(hazard_section) >= 2:
-                        # Color based on physics risk score
-                        physics_score = turn.get('physics_score', 0)
-                        if physics_score > 7:
-                            segment_color = 'darkred'
-                        elif physics_score > 5:
-                            segment_color = 'red'
-                        else:
-                            segment_color = 'orange'
-                            
+                        turn_angle = turn['turn_angle']
+                        practical_colors = get_practical_colors(turn_angle, turn.get('physics_score', 0))
+                        
                         folium.PolyLine(
                             hazard_section,
-                            color=segment_color,
+                            color=practical_colors['color'],
                             weight=8,
                             opacity=0.9,
-                            popup=f"PHYSICS HAZARD: {turn['turn_angle']:.1f}° {turn['direction']} turn (Risk: {physics_score:.1f}/10)"
+                            popup=f"PRACTICAL HAZARD: {turn['risk_category']} - {turn['turn_angle']:.1f}° {turn['direction']} ({turn['warning']})"
                         ).add_to(m)
             except Exception as e:
                 print(f"Error drawing hazard: {e}")
                 continue
 
-        # Add curve overlays with validation
+        # Add curve overlays with practical context
         for curve in curves:
             try:
                 start_idx = max(0, curve['index'] - 5)
@@ -1898,7 +2020,7 @@ def analyze_route():
                             color=curve_color,
                             weight=7,
                             opacity=0.8,
-                            popup=f"CURVE: {curve['turn_angle']:.1f}° {curve['direction']} (Risk: {physics_score:.1f}/10)"
+                            popup=f"PRACTICAL CURVE: {curve['risk_category']} - {curve['turn_angle']:.1f}° {curve['direction']}"
                         ).add_to(m)
             except Exception as e:
                 print(f"Error drawing curve: {e}")
@@ -1907,59 +2029,68 @@ def analyze_route():
         # Add start and end markers
         folium.Marker(
             source, 
-            popup='START - Enhanced TT Departure',
+            popup='START - Practical TT Departure',
             icon=folium.Icon(color='green', icon='play', prefix='fa')
         ).add_to(m)
         
         folium.Marker(
             destination, 
-            popup='DESTINATION - Enhanced TT Arrival',
+            popup='DESTINATION - Practical TT Arrival',
             icon=folium.Icon(color='red', icon='stop', prefix='fa')
         ).add_to(m)
         
-        # Add enhanced physics-based turn markers
+        # Add PRACTICAL enhanced turn markers with real-world context
         for turn in sharp_turns:
             lat, lng = turn['location']
+            turn_angle = turn['turn_angle']
             physics_score = turn.get('physics_score', 0)
-            radius = turn.get('curvature_radius', float('inf'))
-            safe_speed = turn.get('safe_speeds', {}).get('safe_entry', 15) if 'safe_speeds' in turn else 15
+            practical_colors = get_practical_colors(turn_angle, physics_score)
+            
+            # Get tanker-specific speed from practical matrix
+            tanker_type = tt_specs['capacity_range']
+            practical_speed = get_practical_speed(turn_angle, tt_specs)
             
             turn_popup = f"""
-            <div style='font-family: Arial; width: 350px;'>
-                <h4 style='color: red; margin: 5px 0;'>⚠️ PHYSICS-VALIDATED HAZARD</h4>
+            <div style='font-family: Arial; width: 400px;'>
+                <h4 style='color: red; margin: 5px 0;'>⚠️ PRACTICAL HAZARD ANALYSIS</h4>
+                <p><strong>Real-World Scenario:</strong> {turn['risk_category']}</p>
                 <p><strong>Turn Angle:</strong> {turn['turn_angle']:.1f}°</p>
-                <p><strong>Curvature Radius:</strong> {radius:.0f}m</p>
-                <p><strong>Physics Risk Score:</strong> {physics_score:.1f}/10</p>
+                <p><strong>Risk Level:</strong> <span style='color: {practical_colors["color"]}; font-weight: bold;'>{practical_colors["alert_level"]}</span></p>
                 <p><strong>Direction:</strong> {turn['direction'].upper()}</p>
-                <p><strong>Severity:</strong> {turn['severity'].upper()}</p>
-                <p><strong>Physics-Based Safe Speed:</strong> {safe_speed} km/h</p>
-                <p><strong>Vehicle:</strong> {tt_specs['capacity_range']}</p>
-                <p><strong>Stability Factor:</strong> {tt_specs.get('stability_factor', 1.0):.2f}</p>
+                <p><strong>Recommended Speed:</strong> {practical_speed} km/h (for {tanker_type})</p>
+                <p><strong>Driver Warning:</strong> {turn['warning']}</p>
+                <p><strong>Vehicle:</strong> {tt_specs['capacity_range']} ({tt_specs['gross_weight']/1000:.1f}T)</p>
                 <hr>
-                <p style='color: red; font-weight: bold;'>
-                    ROLLOVER RISK: Physics-calculated danger zone!
-                </p>
-                <p style='font-size: 12px; color: #666;'>
-                    Enhanced analysis using vehicle center of gravity: {tt_specs.get('cg_height', 2.5):.1f}m
+                <div style='background: #fffacd; padding: 8px; border-radius: 4px; margin: 8px 0;'>
+                    <strong>Common Real-World Examples:</strong><br>
+                    • Highway off-ramps and on-ramps<br>
+                    • Shopping center exits and entrances<br>
+                    • Roundabout navigation points<br>
+                    • Urban intersection turns<br>
+                    • Parking lot maneuvers
+                </div>
+                <div style='background: #ffe6e6; padding: 6px; border-radius: 4px; margin: 4px 0; border: 1px solid red;'>
+                    <strong style='color: red;'>PRACTICAL SPEEDS FOR {tanker_type}:</strong><br>
+                    <span style='font-size: 10px;'>
+                    Critical (90°+): {PRACTICAL_SPEED_MATRIX[tanker_type]['critical']} km/h | 
+                    High (65-90°): {PRACTICAL_SPEED_MATRIX[tanker_type]['high']} km/h<br>
+                    Moderate (45-65°): {PRACTICAL_SPEED_MATRIX[tanker_type]['moderate']} km/h | 
+                    Low (25-45°): {PRACTICAL_SPEED_MATRIX[tanker_type]['low']} km/h
+                    </span>
+                </div>
+                <p style='color: red; font-weight: bold; font-size: 12px; text-align: center;'>
+                    {turn['warning']}
                 </p>
             </div>
             """
-            
-            # Physics-based icon color
-            if physics_score > 7:
-                icon_color = 'darkred'
-            elif physics_score > 5:
-                icon_color = 'red'
-            else:
-                icon_color = 'orange'
                 
             folium.Marker(
                 location=(lat, lng),
                 popup=turn_popup,
-                icon=folium.Icon(color=icon_color, icon='exclamation-triangle', prefix='fa')
+                icon=folium.Icon(color=practical_colors['icon_color'], icon='exclamation-triangle', prefix='fa')
             ).add_to(m)
             
-            # Enhanced blind spot visualization with physics data
+            # Enhanced blind spot visualization with practical context
             bearing = turn['bearing_out']
             blind_spots = calculate_blind_spots(lat, lng, bearing, tt_specs)
             
@@ -1972,7 +2103,7 @@ def analyze_route():
                         fillColor='purple',
                         fillOpacity=0.3,
                         weight=2,
-                        popup=f"Enhanced {spot_name.title()} blind spot - Physics Risk: {physics_score:.1f}/10"
+                        popup=f"PRACTICAL {spot_name.title()} blind spot - {turn['risk_category']} scenario"
                     ).add_to(m)
         
         # Add enhanced curve markers
@@ -1980,16 +2111,16 @@ def analyze_route():
             lat, lng = curve['location']
             physics_score = curve.get('physics_score', 0)
             radius = curve.get('curvature_radius', float('inf'))
-            safe_speed = curve.get('safe_speeds', {}).get('safe_entry', 25) if 'safe_speeds' in curve else 25
             
             curve_popup = f"""
-            <div style='font-family: Arial; width: 280px;'>
-                <h4 style='color: orange; margin: 5px 0;'>🔄 PHYSICS-ANALYZED CURVE</h4>
+            <div style='font-family: Arial; width: 300px;'>
+                <h4 style='color: orange; margin: 5px 0;'>🔄 PRACTICAL CURVE ANALYSIS</h4>
+                <p><strong>Scenario:</strong> {curve.get('risk_category', 'Highway Curve')}</p>
                 <p><strong>Curve Angle:</strong> {curve['turn_angle']:.1f}°</p>
-                <p><strong>Radius:</strong> {radius:.0f}m</p>
-                <p><strong>Physics Score:</strong> {physics_score:.1f}/10</p>
-                <p><strong>Recommended Speed:</strong> {safe_speed} km/h</p>
+                <p><strong>Curvature Radius:</strong> {radius:.0f}m</p>
+                <p><strong>Practical Speed:</strong> {curve.get('practical_speed', 35)} km/h</p>
                 <p><strong>Vehicle:</strong> {tt_specs['capacity_range']}</p>
+                <p><strong>Warning:</strong> {curve.get('warning', 'Monitor liquid movement')}</p>
             </div>
             """
             
@@ -2002,7 +2133,7 @@ def analyze_route():
                 fillOpacity=0.6
             ).add_to(m)
         
-        # Add enhanced POI markers
+        # Add enhanced POI markers (unchanged)
         marker_styles = {
             'hospital': {'color': 'red', 'icon': 'plus'},
             'police': {'color': 'blue', 'icon': 'shield'},
@@ -2015,7 +2146,7 @@ def analyze_route():
                 <div style='font-family: Arial;'>
                     <h4>{poi['type'].upper()}</h4>
                     <p><strong>Name:</strong> {poi['name']}</p>
-                    <p><strong>Relevance:</strong> Emergency facility for enhanced TT operations</p>
+                    <p><strong>Relevance:</strong> Emergency facility for practical TT operations</p>
                     <p><strong>Vehicle:</strong> {tt_specs['capacity_range']} compatibility verified</p>
                 </div>
                 """
@@ -2030,339 +2161,409 @@ def analyze_route():
                 print(f"Error adding POI marker: {e}")
                 continue
         
-        # Enhanced truck animation with physics alerts
-        truck_animation = r"""
+        # PRACTICAL Enhanced truck animation with FIXED alignment and real-world alerts
+        practical_truck_animation = f"""
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                setTimeout(function() {
-                    var routeCoords = """ + json.dumps(coords) + """;
-                    var sharpTurns = """ + json.dumps(sharp_turns) + """;
-                    var curves = """ + json.dumps(curves) + """;
+            document.addEventListener('DOMContentLoaded', function() {{
+                setTimeout(function() {{
+                    var routeCoords = {json.dumps(coords)};
+                    var sharpTurns = {json.dumps(sharp_turns)};
+                    var curves = {json.dumps(curves)};
                     var currentIndex = 0;
                     var truckMarker = null;
                     var animationSpeed = 300;
                     var isAnimating = false;
                     
-                    function createEnhancedTruckIcon(bearing, speed, hazardLevel, physicsScore) {
-                        var truckColor = physicsScore > 7 ? '#8B0000' : 
-                                       physicsScore > 5 ? '#FF0000' : 
-                                       physicsScore > 3 ? '#FFA500' : '#00AA00';
-                        var truckSize = physicsScore > 7 ? '36px' : '30px';
+                    // PRACTICAL risk categories with real scenarios
+                    var practicalRisks = {{
+                        'critical': {{angle: 90, color: '#8B0000', warning: 'LIQUID SURGE DANGER'}},
+                        'high': {{angle: 65, color: '#FF0000', warning: 'HIGH ROLLOVER RISK'}},
+                        'moderate': {{angle: 45, color: '#FFA500', warning: 'CAUTION REQUIRED'}},
+                        'low': {{angle: 25, color: '#FFD700', warning: 'REDUCE SPEED'}}
+                    }};
+                    
+                    // Tanker-specific speed matrix from server
+                    var speedMatrix = {json.dumps(PRACTICAL_SPEED_MATRIX)};
+                    var tankerSpeeds = speedMatrix['{tt_specs['capacity_range']}'] || speedMatrix['16-20KL'];
+                    
+                    function createPracticalTruckIcon(bearing, speed, alertLevel, scenario) {{
+                        var alertColor = '#00AA00'; // Default green
+                        if (alertLevel === 'critical') alertColor = '#8B0000';
+                        else if (alertLevel === 'high') alertColor = '#FF0000';
+                        else if (alertLevel === 'moderate') alertColor = '#FFA500';
+                        else if (alertLevel === 'approaching') alertColor = '#FFD700';
                         
-                        return L.divIcon({
+                        var truckSize = speed < 15 ? '36px' : '32px';
+                        
+                        return L.divIcon({{
                             html: `
                                 <div style="
                                     position: relative;
-                                    transform: rotate(${bearing}deg); 
-                                    font-size: ${truckSize}; 
-                                    text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
-                                    filter: drop-shadow(0 0 4px ${truckColor});
+                                    transform: rotate(${{bearing + 90}}deg); 
+                                    font-size: ${{truckSize}}; 
+                                    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+                                    filter: drop-shadow(0 0 6px ${{alertColor}});
                                     transition: all 0.3s ease;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    width: 44px;
+                                    height: 44px;
                                 ">🚛</div>
-                                <div style="
-                                    position: absolute; 
-                                    top: -45px; 
-                                    left: -35px; 
-                                    background: ${truckColor}; 
-                                    color: white; 
-                                    padding: 3px 8px; 
-                                    border-radius: 4px; 
-                                    font-size: 10px; 
-                                    font-weight: bold;
-                                    box-shadow: 0 3px 6px rgba(0,0,0,0.4);
-                                    min-width: 60px;
-                                    text-align: center;
-                                ">${speed} km/h<br>Risk: ${physicsScore.toFixed(1)}/10</div>
                             `,
-                            iconSize: [70, 70],
-                            iconAnchor: [35, 35],
-                            className: 'enhanced-truck-animated'
-                        });
-                    }
+                            iconSize: [44, 44],
+                            iconAnchor: [22, 22],
+                            popupAnchor: [0, -55],
+                            className: 'practical-truck-animated'
+                        }});
+                    }}
                     
-                    function calculateBearing(lat1, lng1, lat2, lng2) {
-                        if (lat1 === lat2 && lng1 === lng2) return 0;
+                    function calculateBearing(lat1, lng1, lat2, lng2) {{
+                        if (Math.abs(lat1 - lat2) < 1e-6 && Math.abs(lng1 - lng2) < 1e-6) return 0;
+                        
                         var dLng = (lng2 - lng1) * Math.PI / 180;
                         var lat1Rad = lat1 * Math.PI / 180;
                         var lat2Rad = lat2 * Math.PI / 180;
+                        
                         var y = Math.sin(dLng) * Math.cos(lat2Rad);
                         var x = Math.cos(lat1Rad) * Math.sin(lat2Rad) - Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLng);
+                        
                         var bearing = Math.atan2(y, x) * 180 / Math.PI;
                         return (bearing + 360) % 360;
-                    }
+                    }}
                     
-                    function checkEnhancedHazards(currentPos, index) {
+                    function checkPracticalHazards(currentPos, index) {{
                         var hazards = [];
-                        var maxPhysicsScore = 0;
+                        var currentRisk = 'normal';
+                        var scenario = 'Normal highway driving';
                         
-                        for (var i = 0; i < sharpTurns.length; i++) {
+                        for (var i = 0; i < sharpTurns.length; i++) {{
                             var turn = sharpTurns[i];
                             var distance = Math.abs(turn.index - index);
-                            if (distance <= 12) {
-                                var physicsScore = turn.physics_score || 0;
-                                maxPhysicsScore = Math.max(maxPhysicsScore, physicsScore);
-                                hazards.push({
-                                    type: 'sharp_turn',
-                                    angle: turn.turn_angle,
-                                    direction: turn.direction,
-                                    severity: turn.severity,
-                                    physicsScore: physicsScore,
-                                    radius: turn.curvature_radius || 0,
-                                    safeSpeed: (turn.safe_speeds && turn.safe_speeds.safe_entry) || 15,
-                                    distance: distance
-                                });
-                            }
-                        }
+                            
+                            if (distance <= 25) {{
+                                var angle = turn.turn_angle;
+                                var alertLevel = 'low';
+                                var practicalSpeed = tankerSpeeds.low;
+                                var riskCategory = turn.risk_category || 'Unknown hazard';
+                                
+                                if (angle >= 90) {{
+                                    alertLevel = 'critical';
+                                    practicalSpeed = tankerSpeeds.critical;
+                                    scenario = 'U-TURN/ROUNDABOUT AHEAD';
+                                }} else if (angle >= 65) {{
+                                    alertLevel = 'high';
+                                    practicalSpeed = tankerSpeeds.high;
+                                    scenario = 'HIGHWAY RAMP/SHARP CORNER';
+                                }} else if (angle >= 45) {{
+                                    alertLevel = 'moderate';
+                                    practicalSpeed = tankerSpeeds.moderate;
+                                    scenario = 'INTERSECTION TURN AHEAD';
+                                }} else {{
+                                    alertLevel = 'low';
+                                    practicalSpeed = tankerSpeeds.low;
+                                    scenario = 'HIGHWAY CURVE AHEAD';
+                                }}
+                                
+                                hazards.push({{
+                                    type: 'practical_turn',
+                                    angle: angle,
+                                    alertLevel: alertLevel,
+                                    practicalSpeed: practicalSpeed,
+                                    scenario: scenario,
+                                    riskCategory: riskCategory,
+                                    distance: distance,
+                                    warning: practicalRisks[alertLevel]?.warning || 'Caution'
+                                }});
+                                
+                                // Set current risk level based on closest hazard
+                                if (distance <= 10 && (currentRisk === 'normal' || alertLevel === 'critical' || alertLevel === 'high')) {{
+                                    currentRisk = alertLevel;
+                                }}
+                            }}
+                        }}
                         
-                        for (var i = 0; i < curves.length; i++) {
-                            var curve = curves[i];
-                            var distance = Math.abs(curve.index - index);
-                            if (distance <= 10) {
-                                var physicsScore = curve.physics_score || 0;
-                                maxPhysicsScore = Math.max(maxPhysicsScore, physicsScore);
-                                hazards.push({
-                                    type: 'curve',
-                                    angle: curve.turn_angle,
-                                    direction: curve.direction,
-                                    physicsScore: physicsScore,
-                                    radius: curve.curvature_radius || 0,
-                                    safeSpeed: (curve.safe_speeds && curve.safe_speeds.safe_entry) || 25,
-                                    distance: distance
-                                });
-                            }
-                        }
-                        
-                        return {hazards: hazards.sort((a, b) => a.distance - b.distance), maxPhysicsScore: maxPhysicsScore};
-                    }
+                        return {{
+                            hazards: hazards.sort((a, b) => a.distance - b.distance),
+                            currentRisk: currentRisk,
+                            scenario: scenario
+                        }};
+                    }}
                     
-                    function moveEnhancedTruck() {
-                        if (currentIndex >= routeCoords.length - 1) {
+                    function movePracticalTruck() {{
+                        if (currentIndex >= routeCoords.length - 1) {{
                             currentIndex = 0;
-                            if (truckMarker) {
-                                window.map_""" + m._id + """.removeLayer(truckMarker);
+                            if (truckMarker) {{
+                                window.map_{m._id}.removeLayer(truckMarker);
                                 truckMarker = null;
-                            }
+                            }}
                             return;
-                        }
+                        }}
                         
                         var currentPos = routeCoords[currentIndex];
-                        var nextPos = routeCoords[Math.min(currentIndex + 3, routeCoords.length - 1)];
+                        var nextIndex = Math.min(currentIndex + 5, routeCoords.length - 1);
+                        var nextPos = routeCoords[nextIndex];
                         
-                        if (truckMarker) {
-                            window.map_""" + m._id + """.removeLayer(truckMarker);
-                        }
+                        if (truckMarker) {{
+                            window.map_{m._id}.removeLayer(truckMarker);
+                        }}
                         
                         var bearing = calculateBearing(currentPos[0], currentPos[1], nextPos[0], nextPos[1]);
-                        var hazardData = checkEnhancedHazards(currentPos, currentIndex);
+                        var hazardData = checkPracticalHazards(currentPos, currentIndex);
                         var hazards = hazardData.hazards;
-                        var maxPhysicsScore = hazardData.maxPhysicsScore;
+                        var currentRisk = hazardData.currentRisk;
+                        var scenario = hazardData.scenario;
                         
-                        var speed = 45;
-                        var status = "Normal driving";
-                        var hazardLevel = 'safe';
+                        var speed = {tt_specs['max_speed']};
+                        var status = "Normal highway driving";
+                        var alertColor = '#4CAF50';
+                        var alertLevel = 'normal';
+                        var warningText = '';
                         
-                        if (hazards.length > 0) {
-                            var criticalHazard = hazards[0];
+                        if (hazards.length > 0) {{
+                            var nearestHazard = hazards[0];
                             
-                            if (criticalHazard.type === 'sharp_turn') {
-                                if (criticalHazard.distance <= 2) {
-                                    speed = criticalHazard.safeSpeed;
-                                    status = `PHYSICS ALERT: ${criticalHazard.physicsScore.toFixed(1)}/10 RISK!`;
-                                    hazardLevel = 'critical';
-                                } else if (criticalHazard.distance <= 6) {
-                                    speed = Math.min(25, criticalHazard.safeSpeed + 10);
-                                    status = `Physics hazard ahead: ${criticalHazard.physicsScore.toFixed(1)}/10`;
-                                    hazardLevel = 'warning';
-                                }
-                            } else if (criticalHazard.type === 'curve') {
-                                if (criticalHazard.distance <= 1) {
-                                    speed = criticalHazard.safeSpeed;
-                                    status = `Curve: Physics Score ${criticalHazard.physicsScore.toFixed(1)}/10`;
-                                    hazardLevel = 'warning';
-                                }
-                            }
-                        }
+                            if (nearestHazard.distance <= 5) {{
+                                speed = nearestHazard.practicalSpeed;
+                                status = `${{nearestHazard.scenario}} - ${{nearestHazard.warning}}`;
+                                alertColor = practicalRisks[nearestHazard.alertLevel]?.color || '#FFA500';
+                                alertLevel = nearestHazard.alertLevel;
+                                scenario = nearestHazard.riskCategory;
+                                warningText = nearestHazard.warning;
+                            }} else if (nearestHazard.distance <= 12) {{
+                                speed = Math.min(speed, nearestHazard.practicalSpeed + 15);
+                                status = `Approaching ${{nearestHazard.riskCategory.toLowerCase()}}`;
+                                alertColor = '#FFA500';
+                                alertLevel = 'approaching';
+                                warningText = 'Prepare for ' + nearestHazard.riskCategory.toLowerCase();
+                            }}
+                        }}
                         
-                        truckMarker = L.marker([currentPos[0], currentPos[1]], {
-                            icon: createEnhancedTruckIcon(bearing, speed, hazardLevel, maxPhysicsScore),
+                        truckMarker = L.marker([currentPos[0], currentPos[1]], {{
+                            icon: createPracticalTruckIcon(bearing, speed, alertLevel, scenario),
                             zIndexOffset: 1000
-                        }).addTo(window.map_""" + m._id + """);
+                        }}).addTo(window.map_{m._id});
                         
                         var progress = Math.round((currentIndex / routeCoords.length) * 100);
                         
                         var popupContent = `
-                            <div style='text-align: center; font-family: Arial; min-width: 300px; padding: 12px;'>
-                                <h4 style='margin: 5px 0; color: #333;'>🚛 Enhanced Physics Tracking</h4>
-                                <div style='background: ${hazardLevel === 'critical' ? '#8B0000' : 
-                                                           hazardLevel === 'warning' ? '#FFA500' : '#4CAF50'}; 
-                                            color: white; padding: 10px; border-radius: 6px; margin: 8px 0; 
-                                            font-weight: bold; font-size: 13px;'>
-                                    ${status}
+                            <div style='text-align: center; font-family: Arial; min-width: 360px; padding: 12px;'>
+                                <h4 style='margin: 5px 0; color: #333;'>🚛 Practical Tanker Navigation</h4>
+                                <div style='background: ${{alertColor}}; 
+                                            color: white; padding: 12px; border-radius: 8px; margin: 8px 0; 
+                                            font-weight: bold; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.3);'>
+                                    ${{status}}
                                 </div>
-                                <div style='display: flex; justify-content: space-between; margin: 8px 0;'>
-                                    <span><strong>Progress:</strong> ${progress}%</span>
-                                    <span><strong>Speed:</strong> ${speed} km/h</span>
+                                <div style='display: flex; justify-content: space-between; margin: 8px 0; background: #f9f9f9; padding: 6px; border-radius: 4px;'>
+                                    <span><strong>Progress:</strong> ${{progress}}%</span>
+                                    <span><strong>Speed:</strong> ${{speed}} km/h</span>
+                                    <span><strong>Vehicle:</strong> {tt_specs['capacity_range']}</span>
                                 </div>
-                                <div style='font-size: 11px; color: #666; margin: 4px 0;'>
-                                    Max Physics Risk: ${maxPhysicsScore.toFixed(1)}/10<br>
-                                    Vehicle: """ + tt_specs['capacity_range'] + """ (""" + str(round(tt_specs['gross_weight']/1000, 1)) + """T)
+                                <div style='font-size: 11px; color: #666; margin: 4px 0; background: #f0f8ff; padding: 8px; border-radius: 4px; border: 1px solid #ccc;'>
+                                    <strong>Real-World Scenario:</strong> ${{scenario}}<br>
+                                    <strong>Weight:</strong> {round(tt_specs['gross_weight']/1000, 1)}T | 
+                                    <strong>Capacity:</strong> {tt_specs['avg_capacity_liters']:,}L<br>
+                                    ${{warningText ? '<span style="color: red; font-weight: bold;">' + warningText + '</span>' : ''}}
+                                </div>
+                                <div style='font-size: 10px; color: #888; border-top: 1px solid #ddd; padding-top: 6px; margin-top: 6px;'>
+                                    <strong>PRACTICAL SPEEDS ({tt_specs['capacity_range']}):</strong><br>
+                                    Critical: ${{tankerSpeeds.critical}} km/h | High: ${{tankerSpeeds.high}} km/h | 
+                                    Moderate: ${{tankerSpeeds.moderate}} km/h | Low: ${{tankerSpeeds.low}} km/h
                                 </div>
                             </div>
                         `;
                         
-                        truckMarker.bindPopup(popupContent);
+                        truckMarker.bindPopup(popupContent, {{
+                            offset: [0, -55],
+                            className: 'practical-truck-popup',
+                            autoPan: false,
+                            closeOnEscapeKey: false,
+                            maxWidth: 400
+                        }});
                         
-                        if (hazardLevel === 'critical' || maxPhysicsScore > 7) {
-                            setTimeout(() => truckMarker.openPopup(), 150);
-                        }
+                        // Auto-open popup for critical and high-risk scenarios
+                        if (alertLevel === 'critical' || (alertLevel === 'high' && speed <= 15)) {{
+                            setTimeout(() => truckMarker.openPopup(), 200);
+                        }}
                         
                         currentIndex += 1;
-                    }
+                    }}
                     
-                    function startEnhancedAnimation() {
-                        if (!isAnimating) {
+                    function startPracticalAnimation() {{
+                        if (!isAnimating) {{
                             isAnimating = true;
-                            setInterval(moveEnhancedTruck, animationSpeed);
-                        }
-                    }
+                            setInterval(movePracticalTruck, animationSpeed);
+                        }}
+                    }}
                     
-                    window.resetEnhancedTruckAnimation = function() {
+                    window.resetPracticalTruckAnimation = function() {{
                         currentIndex = 0;
-                        if (truckMarker) {
-                            window.map_""" + m._id + """.removeLayer(truckMarker);
+                        if (truckMarker) {{
+                            window.map_{m._id}.removeLayer(truckMarker);
                             truckMarker = null;
-                        }
-                        moveEnhancedTruck();
-                    }
+                        }}
+                        movePracticalTruck();
+                    }}
                     
-                    startEnhancedAnimation();
+                    startPracticalAnimation();
                     
-                }, 1500);
-            });
+                }}, 1500);
+            }});
         </script>
         
         <style>
-        .enhanced-truck-animated {
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            filter: drop-shadow(0 0 10px rgba(0,0,0,0.4));
-        }
-        .enhanced-truck-animated:hover {
+        .practical-truck-animated {{
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            filter: drop-shadow(0 0 8px rgba(0,0,0,0.5));
+        }}
+        .practical-truck-animated:hover {{
             transform: scale(1.2) !important;
-            filter: drop-shadow(0 0 15px rgba(0,150,255,0.8));
-        }
+            filter: drop-shadow(0 0 12px rgba(0,150,255,0.8));
+        }}
+        .practical-truck-popup .leaflet-popup-content-wrapper {{
+            border-radius: 10px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+            border: 3px solid #007cba;
+            max-width: 420px !important;
+        }}
+        .practical-truck-popup .leaflet-popup-content {{
+            margin: 0 !important;
+        }}
+        .practical-truck-popup .leaflet-popup-tip {{
+            background: #007cba;
+            border: 1px solid #007cba;
+        }}
         </style>
         """
 
-        # Enhanced control panel
-        control_panel = f"""
-        <div id="enhanced-truck-control" style="position: fixed; top: 10px; right: 10px; z-index: 1000; 
-             background: rgba(255,255,255,0.98); padding: 15px; border-radius: 10px; 
-             box-shadow: 0 6px 20px rgba(0,0,0,0.3); font-family: Arial; width: 320px; 
+        # PRACTICAL Enhanced control panel with real-world scenarios
+        critical_turns = len([t for t in sharp_turns if t.get('turn_angle', 0) >= 90])
+        high_turns = len([t for t in sharp_turns if 65 <= t.get('turn_angle', 0) < 90])
+        moderate_turns = len([t for t in sharp_turns if 45 <= t.get('turn_angle', 0) < 65])
+        low_turns = len([t for t in sharp_turns if 25 <= t.get('turn_angle', 0) < 45])
+        
+        practical_control_panel = f"""
+        <div id="practical-truck-control" style="position: fixed; top: 10px; right: 10px; z-index: 1000; 
+             background: rgba(255,255,255,0.98); padding: 16px; border-radius: 12px; 
+             box-shadow: 0 8px 24px rgba(0,0,0,0.3); font-family: Arial; width: 380px; 
              border: 3px solid #007cba;">
-            <h4 style='margin: 5px 0; color: #007cba; text-align: center; font-size: 14px;'>
-                🚛 Enhanced Physics Tracking System
+            <h4 style='margin: 5px 0; color: #007cba; text-align: center; font-size: 15px;'>
+                🚛 Practical Tanker Navigation System
             </h4>
             
-            <div style='background: linear-gradient(135deg, #f0f8ff, #e6f3ff); padding: 12px; 
-                        border-radius: 6px; margin: 10px 0; font-size: 11px; border: 1px solid #007cba;'>
-                <div style='display: flex; justify-content: space-between; margin-bottom: 8px;'>
+            <div style='background: linear-gradient(135deg, #f0f8ff, #e6f3ff); padding: 14px; 
+                        border-radius: 8px; margin: 12px 0; font-size: 11px; border: 1px solid #007cba;'>
+                <div style='display: flex; justify-content: space-between; margin-bottom: 10px;'>
                     <div style='flex: 1;'>
                         <strong>Vehicle:</strong> {tt_specs['capacity_range']}<br>
                         <strong>Weight:</strong> {tt_specs['gross_weight']/1000:.1f}T<br>
-                        <strong>CG Height:</strong> {tt_specs.get('cg_height', 2.5):.1f}m<br>
-                        <strong>Stability:</strong> {tt_specs.get('stability_factor', 1.0):.2f}
-                    </div>
-                    <div style='text-align: center; color: #007cba; font-weight: bold; padding-left: 10px;'>
-                        <div style='font-size: 18px; line-height: 1;'>&lt;{tt_specs['max_speed']}</div>
-                        <div style='font-size: 8px; margin: 2px 0;'>MAX SPEED (km/h)</div>
-                        <div style='font-size: 7px; color: #666;'>Physics Limited</div>
+                        <strong>Capacity:</strong> {tt_specs['avg_capacity_liters']:,}L<br>
+                        <strong>Max Speed:</strong> {tt_specs['max_speed']} km/h
                     </div>
                 </div>
-                <div style='font-size: 10px; color: #666; text-align: center; border-top: 1px solid #ddd; padding-top: 6px;'>
-                    <strong>Physics Analysis:</strong> {len(sharp_turns)} hazards validated<br>
-                    Enhanced with rollover calculations & stability factors
+                
+                <div style='margin-top: 10px; padding-top: 10px; border-top: 1px solid #ccc;'>
+                    <strong style='color: #8B0000;'>PRACTICAL HAZARD SCENARIOS:</strong><br>
+                    <div style='font-size: 10px; margin: 3px 0; line-height: 1.4;'>
+                        🔴 <strong>U-turns/Roundabouts (90°+):</strong> {critical_turns} detected<br>
+                        🟠 <strong>Highway Ramps (65-90°):</strong> {high_turns} detected<br>
+                        🟡 <strong>Intersections (45-65°):</strong> {moderate_turns} detected<br>
+                        🟢 <strong>Highway Curves (25-45°):</strong> {low_turns + len(curves)} detected
+                    </div>
+                </div>
+                
+                <div style='margin-top: 10px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 9px; background: #fffef7; padding: 8px; border-radius: 4px;'>
+                    <strong>PRACTICAL SPEED GUIDE ({tt_specs['capacity_range']}):</strong><br>
+                    <div style='margin: 2px 0;'>
+                        Critical: {PRACTICAL_SPEED_MATRIX[tt_specs['capacity_range']]['critical']} km/h | 
+                        High Risk: {PRACTICAL_SPEED_MATRIX[tt_specs['capacity_range']]['high']} km/h<br>
+                        Moderate: {PRACTICAL_SPEED_MATRIX[tt_specs['capacity_range']]['moderate']} km/h | 
+                        Low Risk: {PRACTICAL_SPEED_MATRIX[tt_specs['capacity_range']]['low']} km/h
+                    </div>
                 </div>
             </div>
             
-            <div style='margin: 10px 0;'>
-                <button onclick="resetEnhancedTruckAnimation();" style="width: 100%; padding: 8px; background: #007cba; 
-                        color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px;">
-                    🔄 Reset Enhanced Animation
+            <div style='margin: 12px 0;'>
+                <button onclick="resetPracticalTruckAnimation();" style="width: 100%; padding: 10px; background: #007cba; 
+                        color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;
+                        transition: background 0.3s ease;">
+                    🔄 Reset Practical Animation
                 </button>
             </div>
             
-            <div style='margin-top: 8px; font-size: 8px; color: #666; text-align: center;'>
-                Physics-based animation with real-time rollover risk alerts<br>
-                Click truck for detailed physics analysis
+            <div style='margin-top: 10px; font-size: 8px; color: #666; text-align: center; line-height: 1.3;'>
+                <strong>Real-world scenarios:</strong> U-turns, highway ramps, intersections<br>
+                Tanker-specific speeds | Fixed truck alignment | Practical warnings
             </div>
         </div>
         """
         
-        # Enhanced legend with physics information
-        legend_html = f"""
+        # PRACTICAL Enhanced legend with real-world context
+        practical_legend_html = f"""
         <div style="
             position: fixed;
             bottom: 20px;
             left: 20px;
-            width: 380px;
+            width: 420px;
             background-color: white;
-            border: 2px solid #333;
-            border-radius: 8px;
+            border: 3px solid #333;
+            border-radius: 10px;
             z-index: 9999;
-            padding: 15px;
+            padding: 16px;
             font-size: 11px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.3);
         ">
-            <h4 style='margin-top: 0; color: #333; text-align: center;'>🚛 Enhanced Physics-Based TT Navigation</h4>
+            <h4 style='margin-top: 0; color: #333; text-align: center; font-size: 14px;'>🚛 Practical Physics-Based TT Navigation</h4>
             
-            <div style='background: #f0f0f0; padding: 8px; border-radius: 4px; margin: 8px 0;'>
-                <strong>Enhanced Vehicle: {tt_specs['capacity_range']} Tanker</strong><br>
-                Capacity: {tt_specs['avg_capacity_liters']:,}L | Weight: {tt_specs['gross_weight']/1000:.1f}T<br>
-                CG Height: {tt_specs.get('cg_height', 2.5):.1f}m | Stability: {tt_specs.get('stability_factor', 1.0):.2f} | User: {username}
+            <div style='background: #f0f0f0; padding: 10px; border-radius: 6px; margin: 10px 0;'>
+                <strong>Vehicle: {tt_specs['capacity_range']} Tanker</strong><br>
+                Capacity: {tt_specs['avg_capacity_liters']:,}L | Weight: {tt_specs['gross_weight']/1000:.1f}T | User: {username}
             </div>
             
-            <div style='margin: 8px 0;'>
-                <strong>Physics-Based Route Segments:</strong><br>
-                <span style='color: green; font-size: 16px;'>━</span> Safe (Physics Score &lt;3)<br>
-                <span style='color: yellow; font-size: 16px;'>━</span> Moderate risk (Score 3-5)<br>
-                <span style='color: orange; font-size: 16px;'>━</span> High risk (Score 5-7)<br>
-                <span style='color: red; font-size: 16px;'>━</span> Extreme risk (Score &gt;7)<br>
-                <span style='color: darkred; font-size: 16px;'>━</span> Critical rollover zone
+            <div style='margin: 10px 0;'>
+                <strong>PRACTICAL Risk Zones (Real-World Scenarios):</strong><br>
+                <div style='margin: 4px 0; line-height: 1.4;'>
+                    <span style='color: green; font-size: 16px;'>━</span> <strong>Safe:</strong> Straight roads, gentle bends<br>
+                    <span style='color: #FFD700; font-size: 16px;'>━</span> <strong>Highway Curves (25-45°):</strong> Wide turns, lane changes<br>
+                    <span style='color: orange; font-size: 16px;'>━</span> <strong>Intersections (45-65°):</strong> City turns, normal corners<br>
+                    <span style='color: red; font-size: 16px;'>━</span> <strong>Highway Ramps (65-90°):</strong> Off-ramps, sharp corners<br>
+                    <span style='color: darkred; font-size: 16px;'>━</span> <strong>U-Turns/Roundabouts (90°+):</strong> Critical maneuvers
+                </div>
             </div>
             
-            <div style='margin: 8px 0;'>
-                <strong>Enhanced Hazard Markers:</strong><br>
-                🔺 Physics-validated sharp turns<br>
-                🟡 Curvature-analyzed curves<br>
+            <div style='margin: 10px 0;'>
+                <strong>Enhanced Features:</strong><br>
+                🔺 Real-world hazard scenarios with context<br>
+                🟡 Practical curve analysis<br>
                 <span style='color: purple;'>▓</span> Enhanced blind spot zones<br>
-                🚛 Physics-tracking truck (real-time risk alerts)
+                🚛 <strong>FIXED</strong> truck alignment (+90° rotation correction)
             </div>
             
-            <div style='margin: 8px 0;'>
+            <div style='margin: 10px 0;'>
                 <strong>Emergency Facilities:</strong><br>
-                ➕ Hospitals | 🛡️ Police | ⛽ Fuel (Enhanced compatibility)
+                ➕ Hospitals | 🛡️ Police | ⛽ Fuel Stations
             </div>
             
-            <hr style='margin: 8px 0;'>
-            <div style='font-size: 9px; color: #666; text-align: center;'>
-                Physics Analysis: {len(sharp_turns)} sharp turns | {len(curves)} curves<br>
-                Enhanced with rollover calculations, stability factors & CG analysis<br>
-                Real-time physics risk scoring (0-10 scale)
+            <hr style='margin: 10px 0;'>
+            <div style='font-size: 9px; color: #666; text-align: center; line-height: 1.3;'>
+                <strong>PRACTICAL APPROACH:</strong> Real driving scenarios instead of just angles<br>
+                Tanker-specific speed recommendations | Fixed popup positioning<br>
+                Enhanced analysis: {len(sharp_turns)} significant turns | {len(curves)} gentle curves
             </div>
         </div>
         """
         
         # Inject all enhanced elements
-        m.get_root().html.add_child(folium.Element(truck_animation))
-        m.get_root().html.add_child(folium.Element(control_panel))
-        m.get_root().html.add_child(folium.Element(legend_html))
+        m.get_root().html.add_child(folium.Element(practical_truck_animation))
+        m.get_root().html.add_child(folium.Element(practical_control_panel))
+        m.get_root().html.add_child(folium.Element(practical_legend_html))
         
         # Save enhanced map
         unique_map_id = uuid4().hex
-        html_name = f"enhanced_route_map_{unique_map_id}.html"
+        html_name = f"practical_route_map_{unique_map_id}.html"
         m.save(f"templates/{html_name}")
 
-        # Generate enhanced comprehensive report
+        # Generate PRACTICAL comprehensive report
         route_report = {
             'total_distance': total_distance,
             'total_duration': total_duration,
@@ -2382,39 +2583,36 @@ def analyze_route():
             'route_analysis': {
                 'total_points': len(coords),
                 'points_per_km': len(coords) / distance_value,
-                'physics_validated_hazards': len(sharp_turns),
-                'critical_risk_zones': len([t for t in sharp_turns if t.get('physics_score', 0) > 7]),
-                'high_risk_zones': len([t for t in sharp_turns if t.get('physics_score', 0) > 5]),
-                'medium_risk_zones': len([t for t in sharp_turns if t.get('physics_score', 0) > 3]),
+                'practical_hazards_detected': len(sharp_turns),
+                'critical_scenarios': critical_turns,  # U-turns, roundabouts
+                'high_risk_scenarios': high_turns,     # Highway ramps
+                'moderate_risk_scenarios': moderate_turns,  # Intersections
+                'low_risk_scenarios': low_turns + len(curves),  # Highway curves
                 'curves_analyzed': len(curves),
                 'hospitals_along_route': len([p for p in all_pois if p['type'] == 'hospital']),
                 'fuel_stations': len([p for p in all_pois if p['type'] == 'fuel']),
                 'police_stations': len([p for p in all_pois if p['type'] == 'police']),
                 'average_physics_score': sum(t.get('physics_score', 0) for t in sharp_turns) / len(sharp_turns) if sharp_turns else 0,
-                'analysis_method': 'Enhanced Physics-Based Detection'
+                'analysis_method': 'PRACTICAL Real-World Scenario Detection'
             },
-            'traffic_analysis': {
-                'light_traffic_segments': len(coords) - len(sharp_turns) - len(curves),
-                'moderate_traffic_segments': len(curves),
-                'heavy_traffic_segments': len(sharp_turns),
-                'average_delay_factor': 1.3 if len(sharp_turns) > 5 else 1.0
-            },
-            'physics_summary': {
-                'rollover_risk_zones': len([t for t in sharp_turns if t.get('physics_score', 0) > 6]),
-                'stability_challenges': len([t for t in sharp_turns if t.get('curvature_radius', float('inf')) < 50]),
-                'enhanced_analysis': True,
-                'vehicle_specific_calculations': True
+            'practical_improvements': {
+                'scenario_based_classification': 'U-turns, highway ramps, intersections, curves',
+                'tanker_specific_speeds': f'{PRACTICAL_SPEED_MATRIX[tt_specs["capacity_range"]]}',
+                'truck_alignment_fix': 'Applied +90° rotation correction',
+                'popup_positioning_fix': 'Corrected anchor points and offset',
+                'real_world_context': 'Drivers see actual scenarios instead of just angles'
             },
             'safety_recommendations': [
-                f"PHYSICS ALERT: {len([t for t in sharp_turns if t.get('physics_score', 0) > 7])} extreme rollover risk zones detected",
-                f"Enhanced speed limits: Use physics-calculated speeds (5-{min(tt_specs['max_speed'], 35)} km/h)",
-                f"Center of gravity monitoring: {tt_specs.get('cg_height', 2.5):.1f}m height increases rollover risk",
-                f"Stability factor consideration: {tt_specs.get('stability_factor', 1.0):.2f} affects all maneuvers",
-                f"Curvature analysis: {len([t for t in sharp_turns if t.get('curvature_radius', float('inf')) < 50])} tight radius turns require extreme caution",
-                "Physics-based braking: Calculate stopping distance using enhanced vehicle weight",
-                f"Enhanced blind spot awareness: {tt_specs.get('wheelbase', 5.0):.1f}m wheelbase affects visibility",
-                "Real-time physics monitoring: Watch for physics risk scores >7/10",
-                f"Liquid cargo dynamics: {tt_specs['avg_capacity_liters']:,}L surge effect amplified by {tt_specs['turn_sensitivity']}x"
+                f"PRACTICAL ALERT: {critical_turns} critical maneuvers (U-turns/roundabouts) - {PRACTICAL_SPEED_MATRIX[tt_specs['capacity_range']]['critical']} km/h max",
+                f"HIGH RISK SCENARIOS: {high_turns} highway ramps/sharp corners - {PRACTICAL_SPEED_MATRIX[tt_specs['capacity_range']]['high']} km/h max",
+                f"MODERATE SCENARIOS: {moderate_turns} normal intersections - {PRACTICAL_SPEED_MATRIX[tt_specs['capacity_range']]['moderate']} km/h max",
+                f"LOW RISK AREAS: {low_turns + len(curves)} highway curves - {PRACTICAL_SPEED_MATRIX[tt_specs['capacity_range']]['low']} km/h max",
+                f"Enhanced for {tt_specs['capacity_range']}: Tanker-specific speed matrix applied",
+                f"Real-world context: Drivers see 'Highway Ramp' instead of '75° turn'",
+                "FIXED truck animation: Proper alignment with route direction (+90° correction)",
+                "FIXED popup positioning: No more abnormal popouts from route",
+                f"Liquid cargo dynamics: {tt_specs['avg_capacity_liters']:,}L surge effect critical in tight maneuvers",
+                "Enhanced safety: More intuitive warnings based on actual driving scenarios"
             ]
         }
 
@@ -2422,25 +2620,28 @@ def analyze_route():
         session.modified = True
 
         return render_template("route_analysis.html",
-                               mode="Enhanced Physics-Based TT Navigation",
+                               mode="PRACTICAL Real-World TT Navigation",
                                turns=len(sharp_turns) + len(curves),
                                poi_count=len(all_pois),
                                html_file=html_name,
                                route_report=route_report,
                                risk_zones=len(sharp_turns) + len(curves),
-                               high_risk_zones=len([t for t in sharp_turns if t.get('physics_score', 0) > 5]),
+                               high_risk_zones=critical_turns + high_turns,  # Combined critical + high
                                sharp_turns=len(sharp_turns),
                                curves=len(curves),
-                               critical_turns=len([t for t in sharp_turns if t.get('physics_score', 0) > 7]),
+                               critical_turns=critical_turns,      # U-turns, roundabouts (90°+)
+                               high_turns=high_turns,              # Highway ramps (65-90°)
+                               moderate_turns=moderate_turns,      # Intersections (45-65°)
+                               low_turns=low_turns,                # Highway curves (25-45°)
                                tt_specs=tt_specs,
                                username=username)
 
     except Exception as e:
-        print(f"Error in enhanced analyze_route: {e}")
+        print(f"Error in practical analyze_route: {e}")
         import traceback
         traceback.print_exc()
-        return f"Error in enhanced route analysis: {str(e)}. Please try again."
-   
+        return f"Error in practical route analysis: {str(e)}. Please try again."
+
 
 
 
@@ -2647,6 +2848,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
