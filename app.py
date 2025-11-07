@@ -1887,8 +1887,7 @@ def ai_current_analysis():
 # COMPLETE analyze_route FUNCTION - REPLACE ENTIRE FUNCTION IN YOUR app.py
 # ============================================================================
 
-
-    @app.route('/analyze_route', methods=['POST'])
+@app.route('/analyze_route', methods=['POST'])
 @login_required
 def analyze_route():
     """COMPLETE route analysis with enhanced location mapping and map indicators"""
@@ -2923,6 +2922,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
