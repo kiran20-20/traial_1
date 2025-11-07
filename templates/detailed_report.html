@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Route Analysis Report - IndianOil Corporation Limited</title>
+    <title>Comprehensive Route Analysis Report - IndianOil Corporation Limited</title>
     <style>
         * {
             margin: 0;
@@ -14,777 +14,857 @@
         body {
             font-family: 'Times New Roman', Times, serif;
             background: white;
-            min-height: 100vh;
             color: black;
             line-height: 1.4;
             font-size: 12pt;
-            padding: 0;
+            padding: 20px;
         }
 
         .container {
-            max-width: 210mm;
+            max-width: 1200px;
             margin: 0 auto;
             background: white;
-            min-height: 297mm;
         }
 
         .header {
-            background: black;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             color: white;
-            padding: 20px;
+            padding: 30px;
             text-align: center;
-            border-bottom: 3px solid black;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
 
         .header h1 {
-            font-size: 18pt;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            font-weight: bold;
-        }
-
-        .header .subtitle {
-            font-size: 14pt;
-            font-weight: normal;
-            margin-bottom: 15px;
+            font-size: 28pt;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
 
         .header-info {
-            background: white;
-            color: black;
-            padding: 12px;
-            margin: 15px 0 0 0;
-            border: 2px solid black;
-        }
-
-        .header-info-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            font-size: 11pt;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+            font-size: 14pt;
         }
 
-        .content {
-            padding: 25px;
+        .header-info div {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 5px;
         }
 
-        .section {
-            margin-bottom: 25px;
+        .back-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: #007cba;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: #005a9e;
+            transform: translateY(-2px);
+            color: white;
+        }
+
+        /* Executive Summary */
+        .executive-summary {
+            background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .summary-card {
+            background: rgba(255,255,255,0.1);
             padding: 20px;
-            border: 1px solid black;
-            page-break-inside: avoid;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .summary-value {
+            font-size: 24pt;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .summary-label {
+            font-size: 12pt;
+            opacity: 0.9;
+        }
+
+        /* Section Styles */
+        .section {
+            background: white;
+            margin-bottom: 30px;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            border-left: 5px solid #3498db;
         }
 
         .section h2 {
-            color: black;
-            margin-bottom: 15px;
-            font-size: 14pt;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 18pt;
             font-weight: bold;
             text-transform: uppercase;
-            border-bottom: 2px solid black;
-            padding-bottom: 8px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
         }
 
         .section h3 {
-            color: black;
-            margin: 20px 0 12px 0;
-            font-size: 12pt;
+            color: #34495e;
+            margin: 20px 0 15px 0;
+            font-size: 14pt;
             font-weight: bold;
-            text-decoration: underline;
         }
 
-        /* Enhanced Table Styles for Location Data */
-        .location-table {
+        /* Enhanced Table Styles */
+        .data-table {
             width: 100%;
             border-collapse: collapse;
-            border: 2px solid black;
-            margin: 15px 0;
-            font-size: 9pt;
+            margin: 20px 0;
+            font-size: 11pt;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
         }
 
-        .location-table th {
-            background: black;
+        .data-table th {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
             color: white;
-            border: 1px solid black;
-            padding: 8px;
-            font-size: 10pt;
+            padding: 15px 10px;
             text-align: center;
             font-weight: bold;
+            font-size: 11pt;
         }
 
-        .location-table td {
-            border: 1px solid black;
-            padding: 6px;
+        .data-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #ecf0f1;
             vertical-align: top;
         }
 
-        .location-table .coordinate-cell {
-            font-family: 'Courier New', monospace;
-            background: #f9f9f9;
-            text-align: center;
-            font-weight: bold;
+        .data-table tr:nth-child(even) {
+            background: #f8f9fa;
         }
 
-        .location-table .risk-critical {
-            background: #ffebee;
-            color: #8B0000;
-            font-weight: bold;
-        }
-
-        .location-table .risk-high {
-            background: #ffebee;
-            color: #FF0000;
-            font-weight: bold;
-        }
-
-        .location-table .risk-moderate {
-            background: #fff8e1;
-            color: #FF8C00;
-            font-weight: bold;
-        }
-
-        .location-table .risk-low {
-            background: #f1f8e9;
-            color: #556B2F;
-            font-weight: bold;
-        }
-
-        .facility-medical {
-            background: #ffebee;
-            color: #d32f2f;
-        }
-
-        .facility-police {
+        .data-table tr:hover {
             background: #e3f2fd;
-            color: #1976d2;
         }
 
-        .facility-fuel {
-            background: #fff3e0;
-            color: #f57c00;
-        }
-
-        .facility-fire {
-            background: #ffebee;
-            color: #8B0000;
-        }
-
-        .facility-pharmacy {
-            background: #e8f5e8;
-            color: #2e7d32;
-        }
-
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        .grid-3 {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-        }
-
-        .grid-4 {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 15px;
-            border: 2px solid black;
+        .coordinate-cell {
+            font-family: 'Courier New', monospace;
+            background: #f1f8e9;
             text-align: center;
-        }
-
-        .stat-value {
-            font-size: 20pt;
             font-weight: bold;
-            color: black;
-            display: block;
-            margin-bottom: 5px;
+            cursor: pointer;
+            color: #007cba;
+            padding: 8px;
+            border-radius: 4px;
         }
 
-        .stat-label {
-            color: black;
-            font-size: 10pt;
+        .coordinate-cell:hover {
+            background: #c8e6c9;
+            text-decoration: underline;
+        }
+
+        /* Risk Level Colors */
+        .risk-critical {
+            background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+            color: #b71c1c;
+            font-weight: bold;
+            text-align: center;
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        .risk-high {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            color: #e65100;
+            font-weight: bold;
+            text-align: center;
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        .risk-moderate {
+            background: linear-gradient(135deg, #fffde7 0%, #fff9c4 100%);
+            color: #f57f17;
+            font-weight: bold;
+            text-align: center;
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        .risk-low {
+            background: linear-gradient(135deg, #f1f8e9 0%, #dcedc8 100%);
+            color: #33691e;
+            font-weight: bold;
+            text-align: center;
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        /* Facility Categories */
+        .facility-medical { background: #ffebee; color: #c62828; }
+        .facility-police { background: #e3f2fd; color: #1565c0; }
+        .facility-fuel { background: #fff3e0; color: #ef6c00; }
+        .facility-fire { background: #ffebee; color: #b71c1c; }
+        .facility-pharmacy { background: #e8f5e8; color: #2e7d32; }
+
+        /* Grid Layouts */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+
+        /* Vehicle Specification Cards */
+        .spec-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+            transition: all 0.3s ease;
+        }
+
+        .spec-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .spec-value {
+            font-size: 24pt;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .spec-label {
+            font-size: 11pt;
+            color: #6c757d;
             text-transform: uppercase;
             font-weight: bold;
         }
 
+        /* Alert Boxes */
         .alert {
-            padding: 15px;
-            border: 2px solid black;
-            margin: 15px 0;
-            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 5px solid;
+        }
+
+        .alert-info {
+            background: #e3f2fd;
+            border-left-color: #2196f3;
+            color: #0d47a1;
+        }
+
+        .alert-warning {
+            background: #fff3e0;
+            border-left-color: #ff9800;
+            color: #e65100;
+        }
+
+        .alert-danger {
+            background: #ffebee;
+            border-left-color: #f44336;
+            color: #b71c1c;
+        }
+
+        .alert-success {
+            background: #e8f5e8;
+            border-left-color: #4caf50;
+            color: #2e7d32;
         }
 
         .alert-title {
             font-weight: bold;
-            font-size: 12pt;
-            margin-bottom: 8px;
+            font-size: 14pt;
+            margin-bottom: 10px;
             text-transform: uppercase;
         }
 
-        .alert-info .alert-title::before {
-            content: "ℹ ";
-        }
-
-        .alert-warning .alert-title::before {
-            content: "⚠ ";
-        }
-
-        .alert-danger .alert-title::before {
-            content: "⚠ CRITICAL: ";
-        }
-
-        .summary-box {
-            background: black;
-            color: white;
-            padding: 20px;
-            margin: 20px 0;
-            text-align: center;
-            border: 3px solid black;
-        }
-
-        .summary-box h3 {
-            margin-bottom: 15px;
-            color: white;
-            font-size: 14pt;
-            text-decoration: none;
-            border: none;
-        }
-
-        .summary-box .grid-3 > div {
-            padding: 12px;
-            background: white;
-            color: black;
-            border: 1px solid black;
-            margin: 5px;
-        }
-
-        .clickable-coordinate {
-            cursor: pointer;
-            text-decoration: underline;
-            color: #007cba;
-        }
-
-        .clickable-coordinate:hover {
-            background: #f0f8ff;
-            font-weight: bold;
-        }
-
-        .timestamp {
-            text-align: center;
-            color: black;
-            font-size: 11pt;
-            margin-top: 25px;
-            padding-top: 20px;
-            border-top: 2px solid black;
-            background: white;
-            padding: 20px;
-            border: 1px solid black;
-        }
-
-        .company-logo {
-            display: inline-block;
-            margin-right: 10px;
-            padding: 5px 10px;
-            background: white;
-            color: black;
-            border: 1px solid white;
-            font-weight: bold;
-        }
-
-        /* Enhanced Interactive Map Container */
-        .map-container {
-            margin: 20px 0;
-            border: 3px solid #007cba;
-            border-radius: 10px;
+        /* Risk Assessment Visual */
+        .risk-meter {
+            background: #ecf0f1;
+            height: 30px;
+            border-radius: 15px;
+            position: relative;
+            margin: 15px 0;
             overflow: hidden;
-            text-align: center;
-            padding: 20px;
-            background: #f8f9fa;
         }
 
-        .map-link {
-            display: inline-block;
-            padding: 15px 30px;
-            background: #007cba;
+        .risk-fill {
+            height: 100%;
+            border-radius: 15px;
+            position: relative;
+            transition: width 0.5s ease;
+        }
+
+        .risk-fill.low { background: linear-gradient(to right, #27ae60, #2ecc71); }
+        .risk-fill.moderate { background: linear-gradient(to right, #f39c12, #f1c40f); }
+        .risk-fill.high { background: linear-gradient(to right, #e74c3c, #c0392b); }
+
+        .risk-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             color: white;
-            text-decoration: none;
-            border-radius: 5px;
             font-weight: bold;
-            font-size: 14pt;
-            margin: 10px;
-            transition: background 0.3s ease;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
 
-        .map-link:hover {
-            background: #005a9e;
-            color: white;
-        }
-
+        /* Print Styles */
         @media print {
-            body {
-                background: white !important;
-                padding: 0 !important;
-                font-size: 11pt;
-                line-height: 1.3;
-            }
-
-            .container {
-                box-shadow: none !important;
-                border-radius: 0 !important;
-                margin: 0 !important;
-                max-width: none !important;
-            }
-
-            .section {
-                page-break-inside: avoid;
-                margin-bottom: 20px !important;
-                padding: 15px !important;
-            }
-
-            .location-table {
-                font-size: 8pt;
-            }
-
-            .location-table th,
-            .location-table td {
-                padding: 4px;
-            }
+            .back-button { display: none; }
+            .section { box-shadow: none; border: 1px solid #ddd; }
+            .data-table { box-shadow: none; }
+            .spec-card { box-shadow: none; }
+            body { font-size: 10pt; }
         }
 
+        /* Responsive Design */
         @media (max-width: 768px) {
-            .grid-2, .grid-3, .grid-4 {
-                grid-template-columns: 1fr;
-            }
-
-            .content {
-                padding: 15px;
-            }
-
-            .location-table {
-                font-size: 8pt;
-            }
-
-            .location-table th,
-            .location-table td {
-                padding: 4px;
-            }
+            .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+            .header-info { grid-template-columns: 1fr; }
+            .summary-grid { grid-template-columns: 1fr; }
+            .data-table { font-size: 9pt; }
+            .data-table th, .data-table td { padding: 8px 6px; }
         }
     </style>
 </head>
 <body>
+    <a href="javascript:history.back()" class="back-button">← Back to Analysis</a>
+    
     <div class="container">
         <div class="header">
-            <div class="header-content">
-                <h1>
-                    <span class="company-logo">IOCL</span>
-                    Enhanced Route Analysis Report with GPS Mapping
-                </h1>
-                <div class="subtitle">IndianOil Corporation Limited - Advanced Location-Based Tank Truck Safety Assessment</div>
-                <div class="header-info">
-                    <div class="header-info-grid">
-                        <div><strong>Terminal:</strong> {{ username }}</div>
-                        <div><strong>Tank Truck Type:</strong> {{ tt_specs.capacity_range }} TT</div>
-                        <div><strong>Report Generated:</strong> <span id="current-timestamp"></span></div>
-                        <div><strong>Route Distance:</strong> {{ route_report.total_distance }}</div>
+            <h1>📊 COMPREHENSIVE ROUTE ANALYSIS REPORT</h1>
+            <p style="font-size: 16pt; margin: 10px 0;">IndianOil Corporation Limited - Advanced Safety Intelligence</p>
+            <div class="header-info">
+                <div><strong>Terminal:</strong> {{ username|default('User') }}</div>
+                <div><strong>Vehicle:</strong> {{ tt_specs.capacity_range|default('Unknown') }} Tank Truck</div>
+                <div><strong>Distance:</strong> {{ route_report.total_distance|default('Unknown') }}</div>
+                <div><strong>Duration:</strong> {{ route_report.total_duration|default('Unknown') }}</div>
+                <div><strong>Generated:</strong> <span id="report-timestamp"></span></div>
+            </div>
+        </div>
+
+        <!-- Executive Summary -->
+        <div class="executive-summary">
+            <h2 style="color: white; border: none; margin-bottom: 20px;">🎯 EXECUTIVE SUMMARY</h2>
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <div class="summary-value">{{ route_report.location_mapping.danger_zones|length|default(0) }}</div>
+                    <div class="summary-label">GPS-Mapped Danger Zones</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-value">{{ route_report.location_mapping.safety_facilities|length|default(0) }}</div>
+                    <div class="summary-label">Emergency Facilities</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-value">{{ (critical_turns|default(0)) + (high_turns|default(0)) }}</div>
+                    <div class="summary-label">High-Risk Zones</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-value">{{ route_report.detailed_coordinates.total_mapped_locations|default(0) }}</div>
+                    <div class="summary-label">Total GPS Locations</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overall Risk Assessment -->
+        <div class="section">
+            <h2>📈 Overall Risk Assessment</h2>
+            
+            {% set total_hazards = (sharp_turns|length|default(0)) + (curves|length|default(0)) %}
+            {% set critical_count = critical_turns|default(0) %}
+            {% set high_count = high_turns|default(0) %}
+            
+            {% if total_hazards > 15 or critical_count > 5 %}
+                {% set risk_level = "high" %}
+                {% set risk_percentage = 85 %}
+                {% set risk_label = "HIGH RISK ROUTE" %}
+                {% set risk_color = "danger" %}
+            {% elif total_hazards > 8 or critical_count > 2 %}
+                {% set risk_level = "moderate" %}
+                {% set risk_percentage = 60 %}
+                {% set risk_label = "MODERATE RISK ROUTE" %}
+                {% set risk_color = "warning" %}
+            {% else %}
+                {% set risk_level = "low" %}
+                {% set risk_percentage = 30 %}
+                {% set risk_label = "LOW RISK ROUTE" %}
+                {% set risk_color = "success" %}
+            {% endif %}
+
+            <div class="alert alert-{{ risk_color }}">
+                <div class="alert-title">🎯 {{ risk_label }}</div>
+                <div>
+                    <strong>Risk Analysis:</strong> {{ total_hazards }} total hazards detected including {{ critical_count }} critical zones and {{ high_count }} high-risk areas. 
+                    {% if risk_level == "high" %}
+                        Enhanced safety protocols and reduced speeds mandatory throughout journey.
+                    {% elif risk_level == "moderate" %}
+                        Standard safety protocols apply with extra caution at marked zones.
+                    {% else %}
+                        Route suitable for normal tanker operations with standard safety measures.
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="risk-meter">
+                <div class="risk-fill {{ risk_level }}" style="width: {{ risk_percentage }}%;">
+                    <div class="risk-text">{{ risk_percentage }}% Risk Level</div>
+                </div>
+            </div>
+
+            <div class="grid-3" style="margin-top: 20px;">
+                <div class="alert alert-danger">
+                    <div class="alert-title">Critical Zones</div>
+                    <div style="font-size: 20pt; font-weight: bold;">{{ critical_count }}</div>
+                    <div>Turns ≥90° requiring extreme caution</div>
+                </div>
+                <div class="alert alert-warning">
+                    <div class="alert-title">High Risk Zones</div>
+                    <div style="font-size: 20pt; font-weight: bold;">{{ high_count }}</div>
+                    <div>Sharp turns requiring reduced speed</div>
+                </div>
+                <div class="alert alert-info">
+                    <div class="alert-title">Emergency Support</div>
+                    <div style="font-size: 20pt; font-weight: bold;">{{ route_report.location_mapping.safety_facilities|length|default(0) }}</div>
+                    <div>Verified emergency facilities available</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vehicle Technical Analysis -->
+        <div class="section">
+            <h2>🚛 Vehicle Technical Specifications & Analysis</h2>
+            
+            <div class="grid-4">
+                <div class="spec-card">
+                    <div class="spec-value">{{ "{:,}".format(tt_specs.avg_capacity_liters|default(0)) }}</div>
+                    <div class="spec-label">Liters Capacity</div>
+                </div>
+                <div class="spec-card">
+                    <div class="spec-value">{{ "%.1f"|format(tt_specs.gross_weight|default(0)/1000) }}</div>
+                    <div class="spec-label">Gross Weight (T)</div>
+                </div>
+                <div class="spec-card">
+                    <div class="spec-value">{{ "%.1f"|format(tt_specs.axle_load|default(0)) }}</div>
+                    <div class="spec-label">Axle Load (T)</div>
+                </div>
+                <div class="spec-card">
+                    <div class="spec-value">{{ tt_specs.max_speed|default(0) }}</div>
+                    <div class="spec-label">Max Speed (km/h)</div>
+                </div>
+                <div class="spec-card">
+                    <div class="spec-value">{{ tt_specs.risk_multiplier|default(1) }}x</div>
+                    <div class="spec-label">Risk Multiplier</div>
+                </div>
+                <div class="spec-card">
+                    <div class="spec-value">{{ tt_specs.turn_sensitivity|default(1) }}x</div>
+                    <div class="spec-label">Turn Sensitivity</div>
+                </div>
+                <div class="spec-card">
+                    <div class="spec-value">{{ "%.1f"|format(tt_specs.tare_weight|default(0)/1000) }}</div>
+                    <div class="spec-label">Empty Weight (T)</div>
+                </div>
+                <div class="spec-card">
+                    <div class="spec-value">{{ "%.1f"|format(tt_specs.product_weight|default(0)/1000) }}</div>
+                    <div class="spec-label">Cargo Weight (T)</div>
+                </div>
+            </div>
+
+            <div class="alert alert-info" style="margin-top: 20px;">
+                <div class="alert-title">Vehicle-Specific Risk Analysis</div>
+                <div class="grid-2">
+                    <div>
+                        <h4>Physical Characteristics:</h4>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li><strong>High Center of Gravity:</strong> {{ "{:,}".format(tt_specs.avg_capacity_liters|default(0)) }}L liquid cargo creates elevated rollover risk</li>
+                            <li><strong>Liquid Surge:</strong> Cargo movement amplifies instability during turns and braking</li>
+                            <li><strong>Weight Distribution:</strong> {{ "%.1f"|format(tt_specs.axle_load|default(0)) }}T per axle affects braking performance</li>
+                            <li><strong>Turn Radius:</strong> {{ tt_specs.turn_sensitivity|default(1) }}x sensitivity requires wider turning circles</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Operational Impacts:</h4>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li><strong>Braking Distance:</strong> {{ "%.0f"|format((tt_specs.gross_weight|default(25000)/1000) * 3) }}m additional stopping distance</li>
+                            <li><strong>Speed Limitations:</strong> Reduced by {{ ((2.0 - tt_specs.risk_multiplier|default(1)) * 100)|round }}% in hazard zones</li>
+                            <li><strong>Stability Factor:</strong> {{ tt_specs.risk_multiplier|default(1) }}x increased rollover risk</li>
+                            <li><strong>Hazmat Requirements:</strong> ADR compliance mandatory for petroleum transport</li>
+                        </ul>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="content">
-            <!-- Executive Summary -->
-            <div class="summary-box">
-                <h3>ENHANCED EXECUTIVE SUMMARY with GPS MAPPING</h3>
-                <div class="grid-3">
-                    <div>
-                        <div style="font-size: 16pt; font-weight: bold; margin-bottom: 5px;">{{ route_report.total_distance }}</div>
-                        <div style="font-size: 11pt; font-weight: bold;">TOTAL DISTANCE MAPPED</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 16pt; font-weight: bold; margin-bottom: 5px;">{{ route_report.location_mapping.danger_zones|length|default(0) }}</div>
-                        <div style="font-size: 11pt; font-weight: bold;">GPS-MAPPED DANGER ZONES</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 16pt; font-weight: bold; margin-bottom: 5px;">{{ route_report.location_mapping.safety_facilities|length|default(0) }}</div>
-                        <div style="font-size: 11pt; font-weight: bold;">EMERGENCY FACILITIES MAPPED</div>
-                    </div>
-                </div>
+        <!-- GPS Danger Zones Analysis -->
+        <div class="section">
+            <h2>🔴 GPS-Mapped Danger Zones Analysis</h2>
+            
+            <div class="alert alert-info">
+                <div class="alert-title">Precision GPS Mapping</div>
+                <div>{{ route_report.location_mapping.danger_zones|length|default(0) }} critical danger zones mapped with 6-decimal precision GPS coordinates (±1 meter accuracy). All coordinates verified and compatible with navigation systems.</div>
             </div>
 
-            <!-- Interactive Map Access -->
-            <div class="map-container">
-                <h3>🗺️ INTERACTIVE GPS MAP WITH LOCATION INDICATORS</h3>
-                <p style="margin: 15px 0; font-size: 11pt;">
-                    Enhanced map with precise GPS coordinates, clickable location markers, and real-time navigation support
-                </p>
-                <a href="{{ html_file }}" target="_blank" class="map-link">
-                    📍 VIEW INTERACTIVE MAP WITH GPS LOCATIONS
-                </a>
-                <div style="margin-top: 15px; font-size: 10pt; color: #666;">
-                    <strong>Map Features:</strong> 
-                    {{ route_report.location_mapping.danger_zones|length|default(0) }} danger zone markers • 
-                    {{ route_report.location_mapping.safety_facilities|length|default(0) }} facility markers • 
-                    {{ route_report.location_mapping.navigation_waypoints|length|default(0) }} navigation waypoints • 
-                    Interactive coordinate display
-                </div>
-            </div>
-
-            <!-- Enhanced GPS Danger Zones Mapping -->
-            <div class="section">
-                <h2>🔴 GPS-Mapped Danger Zones & Coordinates</h2>
-                
-                <div class="alert alert-info">
-                    <div class="alert-title">Precision GPS Mapping</div>
-                    <div>{{ route_report.location_mapping.danger_zones|length|default(0) }} critical danger zones mapped with 6-decimal precision GPS coordinates (±1 meter accuracy). All coordinates verified against Google Maps API.</div>
-                </div>
-
-                {% if route_report.location_mapping and route_report.location_mapping.danger_zones %}
-                <table class="location-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 10%;">Zone ID</th>
-                            <th style="width: 20%;">GPS Coordinates</th>
-                            <th style="width: 20%;">Hazard Type</th>
-                            <th style="width: 15%;">Risk Level</th>
-                            <th style="width: 15%;">Turn Details</th>
-                            <th style="width: 10%;">Speed Limit</th>
-                            <th style="width: 10%;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for zone in route_report.location_mapping.danger_zones %}
-                        <tr>
-                            <td style="text-align: center; font-weight: bold;">
-                                <strong>{{ zone.id }}</strong>
-                            </td>
-                            <td class="coordinate-cell clickable-coordinate" 
-                                onclick="openMaps('{{ zone.coordinates.formatted }}')"
-                                title="Click to open in Google Maps">
-                                {{ zone.coordinates.formatted }}
-                            </td>
-                            <td>
-                                <strong>{{ zone.hazard_type }}</strong><br>
-                                <small>{{ zone.warning_message|default('Extreme caution required') }}</small>
-                            </td>
-                            <td class="{% if zone.severity == 'CRITICAL' %}risk-critical{% elif zone.severity == 'HIGH' %}risk-high{% elif zone.severity == 'MODERATE' %}risk-moderate{% else %}risk-low{% endif %}" style="text-align: center;">
-                                {{ zone.severity }}
-                            </td>
-                            <td style="text-align: center;">
-                                <strong>{{ "%.1f"|format(zone.turn_angle) }}°</strong><br>
-                                <small>{{ zone.direction|upper }}</small>
-                            </td>
-                            <td style="text-align: center; font-weight: bold; color: red;">
-                                {{ zone.recommended_speed }} km/h
-                            </td>
-                            <td style="font-size: 8pt;">
-                                • Engine braking<br>
-                                • Monitor surge<br>
-                                • Radio update
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <div class="alert alert-info">
-                    <div class="alert-title">Route Analysis Complete</div>
-                    <div>No critical danger zones detected. Route suitable for standard tanker operations with normal safety protocols.</div>
-                </div>
-                {% endif %}
-            </div>
-
-            <!-- Enhanced Emergency Facilities Mapping -->
-            <div class="section">
-                <h2>🟢 GPS-Mapped Emergency Facilities & Services</h2>
-
-                <div class="alert alert-info">
-                    <div class="alert-title">Emergency Infrastructure Coverage</div>
-                    <div>{{ route_report.location_mapping.safety_facilities|length|default(0) }} verified emergency facilities mapped within 1km of route with complete service information and GPS coordinates.</div>
-                </div>
-
-                {% if route_report.location_mapping and route_report.location_mapping.safety_facilities %}
-                <table class="location-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 8%;">ID</th>
-                            <th style="width: 8%;">Type</th>
-                            <th style="width: 22%;">Facility Name</th>
-                            <th style="width: 20%;">GPS Coordinates</th>
-                            <th style="width: 25%;">Services Available</th>
-                            <th style="width: 12%;">Emergency Contact</th>
-                            <th style="width: 5%;">Rating</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for facility in route_report.location_mapping.safety_facilities %}
-                        <tr>
-                            <td style="text-align: center; font-weight: bold;">
-                                {{ facility.id }}
-                            </td>
-                            <td class="{% if facility.category == 'MEDICAL' %}facility-medical{% elif facility.category == 'POLICE' %}facility-police{% elif facility.category == 'FUEL' %}facility-fuel{% elif facility.category == 'FIRE' %}facility-fire{% else %}facility-pharmacy{% endif %}" 
-                                style="text-align: center;">
-                                {{ facility.icon }}<br>
-                                <small>{{ facility.category }}</small>
-                            </td>
-                            <td>
-                                <strong>{{ facility.name }}</strong><br>
-                                <small>{{ facility.vicinity|default('Location verified')|truncate(30) }}</small>
-                            </td>
-                            <td class="coordinate-cell clickable-coordinate" 
-                                onclick="openMaps('{{ facility.coordinates.formatted }}')"
-                                title="Click to open in Google Maps">
-                                {{ facility.coordinates.formatted }}
-                            </td>
-                            <td style="font-size: 8pt;">
-                                {% for service in facility.services[:3] %}
-                                • {{ service }}<br>
-                                {% endfor %}
-                            </td>
-                            <td style="text-align: center; font-weight: bold; font-size: 9pt;">
-                                {{ facility.emergency_contact }}
-                            </td>
-                            <td style="text-align: center;">
-                                {% if facility.rating != 'N/A' %}
-                                    {{ facility.rating }} ⭐
-                                {% else %}
-                                    N/A
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <div class="alert alert-warning">
-                    <div class="alert-title">Limited Emergency Infrastructure</div>
-                    <div>No emergency facilities detected within immediate route vicinity. Ensure satellite communication and extended-range emergency protocols are activated.</div>
-                </div>
-                {% endif %}
-            </div>
-
-            <!-- Enhanced Navigation Waypoints -->
-            <div class="section">
-                <h2>🗺️ Critical Navigation Waypoints & GPS Programming</h2>
-
-                <div class="alert alert-info">
-                    <div class="alert-title">Navigation System Programming</div>
-                    <div>{{ route_report.location_mapping.navigation_waypoints|length|default(0) }} critical waypoints identified for GPS system programming. Pre-load coordinates for enhanced safety awareness.</div>
-                </div>
-
-                {% if route_report.location_mapping and route_report.location_mapping.navigation_waypoints %}
-                <table class="location-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 12%;">Waypoint ID</th>
-                            <th style="width: 20%;">GPS Coordinates</th>
-                            <th style="width: 25%;">Description</th>
-                            <th style="width: 28%;">Required Actions</th>
-                            <th style="width: 15%;">Navigation Notes</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for waypoint in route_report.location_mapping.navigation_waypoints %}
-                        <tr {% if waypoint.type == 'START' %}style="background: #f0fff0;"{% elif waypoint.type == 'DESTINATION' %}style="background: #f0f8ff;"{% else %}style="background: #fff8f0;"{% endif %}>
-                            <td style="text-align: center; font-weight: bold;">
-                                {{ waypoint.icon }} {{ waypoint.id }}
-                            </td>
-                            <td class="coordinate-cell clickable-coordinate" 
-                                onclick="openMaps('{{ waypoint.coordinates.formatted }}')"
-                                title="Click to open in Google Maps">
-                                {{ waypoint.coordinates.formatted }}
-                            </td>
-                            <td>
-                                <strong>{{ waypoint.description }}</strong><br>
-                                {% if waypoint.get('turn_details') %}
-                                    <small>{{ waypoint.turn_details }}</small>
-                                {% endif %}
-                            </td>
-                            <td style="font-size: 8pt;">
-                                {% for action in waypoint.actions[:4] %}
-                                • {{ action }}<br>
-                                {% endfor %}
-                            </td>
-                            <td style="text-align: center; font-size: 9pt;">
-                                {% if waypoint.type == 'START' %}
-                                    <strong>DEPARTURE</strong><br>
-                                    <small>Begin monitoring</small>
-                                {% elif waypoint.type == 'DESTINATION' %}
-                                    <strong>ARRIVAL</strong><br>
-                                    <small>Complete protocols</small>
-                                {% else %}
-                                    <strong>{{ waypoint.get('severity', 'CAUTION') }}</strong><br>
-                                    <small>{{ waypoint.get('color', 'Alert') }} zone</small>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% endif %}
-            </div>
-
-            <!-- Emergency Response Distance Matrix -->
-            <div class="section">
-                <h2>📏 Emergency Response Distance Matrix & Time Calculations</h2>
-
-                {% if route_report.location_mapping and route_report.location_mapping.emergency_distances %}
-                <div class="alert alert-info">
-                    <div class="alert-title">Response Time Analysis</div>
-                    <div>Distance and estimated response times calculated for {{ route_report.location_mapping.emergency_distances|length }} critical danger zones to nearest emergency facilities.</div>
-                </div>
-
-                {% for distance_data in route_report.location_mapping.emergency_distances %}
-                <div style="margin: 15px 0; padding: 15px; border: 1px solid #ccc; background: #f9f9f9;">
-                    <h4 style="color: #333; margin-bottom: 10px;">
-                        🚨 {{ distance_data.danger_zone_id }} - {{ distance_data.hazard_type|default('Danger Zone') }}
-                    </h4>
-                    <div style="font-size: 10pt; margin-bottom: 10px; font-family: monospace;">
-                        <strong>GPS:</strong> {{ distance_data.coordinates }}
-                    </div>
-                    
-                    <table style="width: 100%; border-collapse: collapse; font-size: 9pt;">
-                        <thead>
-                            <tr style="background: #333; color: white;">
-                                <th style="border: 1px solid #333; padding: 5px; text-align: left;">Nearest Emergency Facility</th>
-                                <th style="border: 1px solid #333; padding: 5px; text-align: center;">Distance</th>
-                                <th style="border: 1px solid #333; padding: 5px; text-align: center;">Est. Response Time</th>
-                                <th style="border: 1px solid #333; padding: 5px; text-align: center;">Facility Type</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for facility in distance_data.nearest_facilities %}
-                            <tr>
-                                <td style="border: 1px solid #ccc; padding: 5px;">
-                                    <strong>{{ facility.facility_name }}</strong>
-                                </td>
-                                <td style="border: 1px solid #ccc; padding: 5px; text-align: center;">
-                                    <strong>{{ facility.distance_km }} km</strong><br>
-                                    <small>({{ "{:,}".format(facility.distance_meters) }}m)</small>
-                                </td>
-                                <td style="border: 1px solid #ccc; padding: 5px; text-align: center;">
-                                    <strong>{{ facility.response_time_min }} min</strong>
-                                </td>
-                                <td style="border: 1px solid #ccc; padding: 5px; text-align: center;">
-                                    {{ facility.facility_type|upper }}
-                                </td>
-                            </tr>
+            {% if route_report.location_mapping and route_report.location_mapping.danger_zones %}
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Zone ID</th>
+                        <th>GPS Coordinates</th>
+                        <th>Hazard Type</th>
+                        <th>Risk Level</th>
+                        <th>Turn Details</th>
+                        <th>Recommended Speed</th>
+                        <th>Safety Actions</th>
+                        <th>Physics Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for zone in route_report.location_mapping.danger_zones %}
+                    <tr>
+                        <td style="text-align: center; font-weight: bold;">{{ zone.id }}</td>
+                        <td class="coordinate-cell" onclick="openMaps('{{ zone.coordinates.formatted }}')" title="Click to open in Google Maps">
+                            {{ zone.coordinates.formatted }}
+                        </td>
+                        <td>
+                            <strong>{{ zone.hazard_type }}</strong><br>
+                            <small style="color: #666;">{{ zone.warning_message|default('Extreme caution required') }}</small>
+                        </td>
+                        <td class="risk-{{ zone.severity.lower() }}">{{ zone.severity }}</td>
+                        <td style="text-align: center;">
+                            <strong>{{ "%.1f"|format(zone.turn_angle) }}°</strong><br>
+                            <small>{{ zone.direction|title }} Turn</small>
+                        </td>
+                        <td style="text-align: center; font-weight: bold; color: #e74c3c;">{{ zone.recommended_speed }} km/h</td>
+                        <td style="font-size: 10pt;">
+                            {% for action in zone.safety_actions[:3] %}
+                            • {{ action }}<br>
                             {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% endfor %}
-                {% else %}
-                <div class="alert alert-warning">
-                    <div class="alert-title">Distance Matrix Unavailable</div>
-                    <div>Emergency response distance calculations require both danger zones and emergency facilities to be detected along the route.</div>
-                </div>
-                {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if zone.get('physics_score') %}
+                                <span style="font-weight: bold; color: {% if zone.physics_score > 7 %}#e74c3c{% elif zone.physics_score > 4 %}#f39c12{% else %}#27ae60{% endif %};">
+                                    {{ "%.1f"|format(zone.physics_score) }}/10
+                                </span>
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="alert alert-success">
+                <div class="alert-title">Route Analysis Complete</div>
+                <div>No critical danger zones detected. Route is suitable for standard tanker operations with normal safety protocols.</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Emergency Facilities Analysis -->
+        <div class="section">
+            <h2>🟢 Emergency Infrastructure Analysis</h2>
+
+            <div class="alert alert-info">
+                <div class="alert-title">Emergency Response Coverage</div>
+                <div>{{ route_report.location_mapping.safety_facilities|length|default(0) }} verified emergency facilities mapped within proximity of route with complete service information and GPS coordinates for rapid response.</div>
             </div>
 
-            <!-- Enhanced Safety Protocols with GPS References -->
-            <div class="section">
-                <h2>🛡️ GPS-Based Safety Protocols & Location-Specific Procedures</h2>
+            {% if route_report.location_mapping and route_report.location_mapping.safety_facilities %}
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Facility ID</th>
+                        <th>Category</th>
+                        <th>Facility Name</th>
+                        <th>GPS Coordinates</th>
+                        <th>Services Available</th>
+                        <th>Emergency Contact</th>
+                        <th>Rating</th>
+                        <th>Response Priority</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for facility in route_report.location_mapping.safety_facilities %}
+                    <tr>
+                        <td style="text-align: center; font-weight: bold;">{{ facility.id }}</td>
+                        <td class="facility-{{ facility.category.lower() }}" style="text-align: center;">
+                            {{ facility.icon }}<br>
+                            <strong>{{ facility.category }}</strong>
+                        </td>
+                        <td>
+                            <strong>{{ facility.name }}</strong><br>
+                            <small style="color: #666;">{{ facility.vicinity|default('Location verified')|truncate(40) }}</small>
+                        </td>
+                        <td class="coordinate-cell" onclick="openMaps('{{ facility.coordinates.formatted }}')" title="Click to open in Google Maps">
+                            {{ facility.coordinates.formatted }}
+                        </td>
+                        <td style="font-size: 10pt;">
+                            {% for service in facility.services[:4] %}
+                            • {{ service }}<br>
+                            {% endfor %}
+                        </td>
+                        <td style="text-align: center; font-weight: bold; font-size: 11pt;">{{ facility.emergency_contact }}</td>
+                        <td style="text-align: center;">
+                            {% if facility.rating != 'N/A' %}{{ facility.rating }} ⭐{% else %}N/A{% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if facility.category == 'MEDICAL' or facility.category == 'FIRE' %}
+                                <span style="color: #e74c3c; font-weight: bold;">HIGH</span>
+                            {% elif facility.category == 'POLICE' %}
+                                <span style="color: #f39c12; font-weight: bold;">MEDIUM</span>
+                            {% else %}
+                                <span style="color: #27ae60; font-weight: bold;">STANDARD</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="alert alert-warning">
+                <div class="alert-title">Limited Emergency Infrastructure</div>
+                <div>No emergency facilities detected within immediate route vicinity. Ensure satellite communication and extended-range emergency protocols are activated for this journey.</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Navigation Waypoints -->
+        <div class="section">
+            <h2>🗺️ Navigation Waypoints & GPS Programming</h2>
+
+            <div class="alert alert-info">
+                <div class="alert-title">GPS System Integration</div>
+                <div>{{ route_report.location_mapping.navigation_waypoints|length|default(0) }} critical waypoints identified for GPS system programming. Pre-load these coordinates for enhanced safety awareness and navigation assistance.</div>
+            </div>
+
+            {% if route_report.location_mapping and route_report.location_mapping.navigation_waypoints %}
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Waypoint ID</th>
+                        <th>GPS Coordinates</th>
+                        <th>Description</th>
+                        <th>Waypoint Type</th>
+                        <th>Required Actions</th>
+                        <th>Navigation Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for waypoint in route_report.location_mapping.navigation_waypoints %}
+                    <tr style="background: {% if waypoint.type == 'START' %}#f0fff0{% elif waypoint.type == 'DESTINATION' %}#f0f8ff{% else %}#fff8f0{% endif %};">
+                        <td style="text-align: center; font-weight: bold;">
+                            {{ waypoint.icon }} {{ waypoint.id }}
+                        </td>
+                        <td class="coordinate-cell" onclick="openMaps('{{ waypoint.coordinates.formatted }}')" title="Click to open in Google Maps">
+                            {{ waypoint.coordinates.formatted }}
+                        </td>
+                        <td>
+                            <strong>{{ waypoint.description }}</strong>
+                            {% if waypoint.get('turn_details') %}
+                                <br><small style="color: #666;">{{ waypoint.turn_details }}</small>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            {% if waypoint.type == 'START' %}
+                                <span style="color: #27ae60; font-weight: bold;">DEPARTURE</span>
+                            {% elif waypoint.type == 'DESTINATION' %}
+                                <span style="color: #3498db; font-weight: bold;">ARRIVAL</span>
+                            {% else %}
+                                <span style="color: #e74c3c; font-weight: bold;">HAZARD</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-size: 10pt;">
+                            {% for action in waypoint.actions[:4] %}
+                            • {{ action }}<br>
+                            {% endfor %}
+                        </td>
+                        <td style="text-align: center; font-size: 10pt;">
+                            {% if waypoint.type == 'START' %}
+                                <strong>Begin journey monitoring</strong>
+                            {% elif waypoint.type == 'DESTINATION' %}
+                                <strong>Complete safety protocols</strong>
+                            {% else %}
+                                <strong>{{ waypoint.get('severity', 'CAUTION') }}</strong><br>
+                                <small>{{ waypoint.get('color', 'Alert') }} zone</small>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
+
+        <!-- Emergency Response Matrix -->
+        {% if route_report.location_mapping and route_report.location_mapping.emergency_distances %}
+        <div class="section">
+            <h2>📏 Emergency Response Distance Matrix</h2>
+
+            <div class="alert alert-info">
+                <div class="alert-title">Response Time Analysis</div>
+                <div>Calculated distances and estimated response times for {{ route_report.location_mapping.emergency_distances|length }} critical danger zones to nearest emergency facilities for rapid emergency coordination.</div>
+            </div>
+
+            {% for distance_data in route_report.location_mapping.emergency_distances %}
+            <div style="margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #3498db;">
+                <h4 style="color: #2c3e50; margin-bottom: 15px;">
+                    🚨 {{ distance_data.danger_zone_id }} - {{ distance_data.hazard_type|default('Critical Zone') }}
+                </h4>
+                <div style="font-size: 12pt; margin-bottom: 15px; font-family: 'Courier New', monospace; background: white; padding: 8px; border-radius: 4px;">
+                    <strong>GPS Coordinates:</strong> {{ distance_data.coordinates }}
+                </div>
                 
-                <h3>Coordinate-Based Emergency Procedures</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Emergency Facility</th>
+                            <th>Facility Type</th>
+                            <th>Distance</th>
+                            <th>Estimated Response Time</th>
+                            <th>Response Priority</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for facility in distance_data.nearest_facilities %}
+                        <tr>
+                            <td><strong>{{ facility.facility_name }}</strong></td>
+                            <td style="text-align: center;">{{ facility.facility_type|upper }}</td>
+                            <td style="text-align: center;">
+                                <strong>{{ facility.distance_km }} km</strong><br>
+                                <small>({{ "{:,}".format(facility.distance_meters) }} meters)</small>
+                            </td>
+                            <td style="text-align: center; font-weight: bold;">{{ facility.response_time_min }} minutes</td>
+                            <td style="text-align: center;">
+                                {% if facility.distance_km < 2 %}
+                                    <span style="color: #27ae60; font-weight: bold;">IMMEDIATE</span>
+                                {% elif facility.distance_km < 5 %}
+                                    <span style="color: #f39c12; font-weight: bold;">RAPID</span>
+                                {% else %}
+                                    <span style="color: #e74c3c; font-weight: bold;">EXTENDED</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Enhanced Safety Recommendations -->
+        <div class="section">
+            <h2>🛡️ Comprehensive Safety Recommendations</h2>
+            
+            <div class="grid-2">
+                <div class="alert alert-danger">
+                    <div class="alert-title">🚨 Critical Safety Protocols</div>
+                    <ul style="margin: 10px 0; padding-left: 20px; line-height: 1.8;">
+                        <li><strong>Speed Management:</strong> Maximum {{ tt_specs.max_speed|default(50) }} km/h, reduce to {{ 
+                            10 if critical_turns|default(0) > 0 else 25 
+                        }} km/h at critical zones</li>
+                        <li><strong>Vehicle Control:</strong> {{ tt_specs.turn_sensitivity|default(1) }}x turn sensitivity requires extended turning radius</li>
+                        <li><strong>Load Monitoring:</strong> {{ "{:,}".format(tt_specs.avg_capacity_liters|default(0)) }}L liquid cargo creates surge effects</li>
+                        <li><strong>Braking Protocol:</strong> {{ "%.0f"|format((tt_specs.gross_weight|default(25000)/1000) * 3) }}m additional stopping distance required</li>
+                        <li><strong>Communication:</strong> Radio check every 30 minutes, GPS coordinates at critical zones</li>
+                    </ul>
+                </div>
+                
+                <div class="alert alert-success">
+                    <div class="alert-title">✅ Emergency Preparedness</div>
+                    <ul style="margin: 10px 0; padding-left: 20px; line-height: 1.8;">
+                        <li><strong>Medical Support:</strong> {{ route_report.route_analysis.hospitals_along_route|default(0) }} hospitals mapped along route</li>
+                        <li><strong>Law Enforcement:</strong> {{ route_report.route_analysis.police_stations|default(0) }} police stations for assistance</li>
+                        <li><strong>Fuel Services:</strong> {{ route_report.route_analysis.fuel_stations|default(0) }} service stations available</li>
+                        <li><strong>GPS Coverage:</strong> {{ route_report.detailed_coordinates.total_mapped_locations|default(0) }} total locations programmed</li>
+                        <li><strong>Response Matrix:</strong> Emergency distances calculated for all critical zones</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="alert alert-warning" style="margin-top: 20px;">
+                <div class="alert-title">📋 Pre-Departure Mandatory Checklist</div>
                 <div class="grid-2">
-                    <div style="background: #fff0f0; padding: 15px; border: 2px solid red;">
-                        <h4 style="color: red;">🚨 CRITICAL ZONE PROTOCOLS (90°+ turns)</h4>
-                        <ul style="margin: 10px 0; padding-left: 20px; font-size: 10pt;">
-                            <li><strong>Speed:</strong> Maximum {{ route_report.route_analysis.critical_scenarios|default(0) > 0 and '8-12 km/h' or 'N/A' }}</li>
-                            <li><strong>Action:</strong> Activate hazard lights 500m before GPS coordinate</li>
-                            <li><strong>Communication:</strong> Radio position using exact GPS coordinates</li>
-                            <li><strong>Emergency:</strong> If ANY instability - STOP and call 100+101</li>
-                        </ul>
-                        <div style="background: white; padding: 8px; margin: 10px 0; border: 1px solid red;">
-                            <strong>GPS Zones:</strong> {{ route_report.route_analysis.critical_scenarios|default(0) }} critical locations mapped
-                        </div>
+                    <div>
+                        <h4>Vehicle & Cargo Inspection:</h4>
+                        <ol style="margin: 10px 0; padding-left: 20px; line-height: 1.6;">
+                            <li>Verify {{ "{:,}".format(tt_specs.avg_capacity_liters|default(0)) }}L load securement and tank integrity</li>
+                            <li>Test brake system for {{ "%.1f"|format(tt_specs.gross_weight|default(0)/1000) }}T gross weight</li>
+                            <li>Check tire pressure for {{ "%.1f"|format(tt_specs.axle_load|default(0)) }}T axle loading</li>
+                            <li>Inspect emergency equipment (fire extinguisher, spill kit, warning triangles)</li>
+                            <li>Verify ADR documentation and hazmat placards</li>
+                        </ol>
                     </div>
-                    <div style="background: #f0fff0; padding: 15px; border: 2px solid green;">
-                        <h4 style="color: green;">✅ EMERGENCY FACILITY ACCESS</h4>
-                        <ul style="margin: 10px 0; padding-left: 20px; font-size: 10pt;">
-                            <li><strong>Medical:</strong> {{ route_report.route_analysis.hospitals_along_route|default(0) }} facilities mapped</li>
-                            <li><strong>Police:</strong> {{ route_report.route_analysis.police_stations|default(0) }} stations located</li>
-                            <li><strong>Fuel:</strong> {{ route_report.route_analysis.fuel_stations|default(0) }} service points available</li>
-                            <li><strong>Response:</strong> All coordinates pre-programmed for rapid access</li>
-                        </ul>
-                        <div style="background: white; padding: 8px; margin: 10px 0; border: 1px solid green;">
-                            <strong>Coverage:</strong> {{ route_report.location_mapping.safety_facilities|length|default(0) }} total emergency support locations
-                        </div>
+                    <div>
+                        <h4>Navigation & Communication:</h4>
+                        <ol style="margin: 10px 0; padding-left: 20px; line-height: 1.6;">
+                            <li>Program {{ route_report.location_mapping.danger_zones|length|default(0) }} danger zone coordinates in GPS</li>
+                            <li>Load {{ route_report.location_mapping.safety_facilities|length|default(0) }} emergency facility locations</li>
+                            <li>Set {{ route_report.location_mapping.navigation_waypoints|length|default(0) }} critical navigation waypoints</li>
+                            <li>Test communication equipment and emergency contacts</li>
+                            <li>Confirm weather conditions and route restrictions</li>
+                        </ol>
                     </div>
-                </div>
-
-                <h3>Pre-Departure GPS Programming Checklist</h3>
-                <ol style="margin: 15px 0; padding-left: 25px; line-height: 1.8;">
-                    <li><strong>Load danger zone coordinates</strong> - {{ route_report.location_mapping.danger_zones|length|default(0) }} critical GPS points</li>
-                    <li><strong>Program emergency facility locations</strong> - {{ route_report.location_mapping.safety_facilities|length|default(0) }} verified coordinates</li>
-                    <li><strong>Set navigation waypoints</strong> - {{ route_report.location_mapping.navigation_waypoints|length|default(0) }} route-critical points</li>
-                    <li><strong>Verify GPS accuracy</strong> - Ensure ±1 meter precision for all coordinates</li>
-                    <li><strong>Test emergency communication</strong> - Confirm ability to transmit GPS position</li>
-                </ol>
-            </div>
-
-            <!-- Technical Specifications -->
-            <div class="section">
-                <h2>Tank Truck Technical Specifications</h2>
-                
-                <div class="grid-4">
-                    <div class="stat-card">
-                        <span class="stat-value">{{ "{:,}".format(tt_specs.avg_capacity_liters|default(0)|int) }}</span>
-                        <div class="stat-label">Liters Capacity</div>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-value">{{ "%.1f"|format(tt_specs.gross_weight|default(0)/1000) }}</span>
-                        <div class="stat-label">Gross Weight (T)</div>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-value">{{ tt_specs.max_speed|default(0) }}</span>
-                        <div class="stat-label">Max Speed (km/h)</div>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-value">{{ tt_specs.risk_multiplier|default('N/A') }}</span>
-                        <div class="stat-label">Risk Factor</div>
-                    </div>
-                </div>
-
-                <div class="alert alert-info">
-                    <div class="alert-title">Enhanced GPS Mapping Capabilities</div>
-                    <div>This route analysis incorporates advanced GPS precision mapping with {{ route_report.detailed_coordinates.coordinate_precision|default('6 decimal places') }} accuracy using {{ route_report.detailed_coordinates.coordinate_system|default('WGS84') }} standard for maximum compatibility with navigation systems.</div>
                 </div>
             </div>
+        </div>
 
-            <!-- Footer & Certification -->
-            <div class="timestamp">
-                <div style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20px; margin-bottom: 15px;">
-                    <div style="text-align: left;">
-                        <strong>Document ID:</strong> IOCL-GPS-{{ username }}-<span id="doc-id"></span><br>
-                        <strong>Classification:</strong> Enhanced Location Mapping Report
-                    </div>
-                    <div style="text-align: center; padding: 10px; background: black; color: white;">
-                        <strong>IOCL</strong><br>
-                        <small>Smart Marg GPS System</small>
-                    </div>
-                    <div style="text-align: right;">
-                        <strong>Generated:</strong> <span id="full-timestamp"></span><br>
-                        <strong>GPS Accuracy:</strong> ±1 meter precision
-                    </div>
+        <!-- Report Footer -->
+        <div style="text-align: center; margin-top: 40px; padding: 30px; background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; border-radius: 10px;">
+            <h3 style="margin-bottom: 15px;">📋 Report Certification</h3>
+            <div style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20px; margin-bottom: 20px;">
+                <div style="text-align: left;">
+                    <strong>Document ID:</strong> IOCL-COMP-{{ username }}-<span id="doc-id"></span><br>
+                    <strong>Classification:</strong> Comprehensive Route Intelligence Report
                 </div>
-                <hr style="margin: 15px 0; border: 1px solid black;">
-                <p style="font-size: 11pt; color: black; line-height: 1.4; text-align: justify;">
-                    This enhanced GPS-enabled route analysis report has been generated using advanced location mapping technology 
-                    with {{ route_report.detailed_coordinates.total_mapped_locations|default(0) }} precisely mapped locations. 
-                    All GPS coordinates have been verified against Google Maps API and comply with WGS84 international standards. 
-                    Interactive map features and clickable coordinates provide real-time navigation support for enhanced safety operations.
-                </p>
-                <p style="font-size: 10pt; color: black; margin-top: 15px; text-align: center;">
-                    <strong>ENHANCED FEATURES:</strong> GPS precision mapping | Interactive coordinate display | Emergency response matrix | Real-time navigation support
-                </p>
+                <div style="text-align: center; padding: 15px; background: white; color: black; border-radius: 8px;">
+                    <strong>IOCL</strong><br>
+                    <small>Smart Marg Advanced System</small>
+                </div>
+                <div style="text-align: right;">
+                    <strong>Generated:</strong> <span id="full-timestamp"></span><br>
+                    <strong>GPS Precision:</strong> ±1 meter accuracy (WGS84)
+                </div>
+            </div>
+            <hr style="margin: 20px 0; border-color: rgba(255,255,255,0.3);">
+            <p style="font-size: 12pt; line-height: 1.6; text-align: justify; opacity: 0.9;">
+                This comprehensive route analysis report incorporates advanced GPS precision mapping, vehicle-specific risk assessment, 
+                and emergency response planning with {{ route_report.detailed_coordinates.total_mapped_locations|default(0) }} verified locations. 
+                All coordinates comply with international WGS84 standards and are compatible with navigation systems. The analysis considers 
+                {{ tt_specs.capacity_range|default('tanker') }} specific characteristics including {{ "{:,}".format(tt_specs.avg_capacity_liters|default(0)) }}L 
+                capacity, {{ "%.1f"|format(tt_specs.gross_weight|default(0)/1000) }}T gross weight, and {{ tt_specs.risk_multiplier|default(1) }}x risk multiplication factor.
+            </p>
+            <div style="margin-top: 15px; font-size: 11pt;">
+                <strong>ENHANCED INTELLIGENCE:</strong> Physics-based risk analysis | Emergency response matrix | GPS precision mapping | Vehicle-specific protocols | Real-time safety intelligence
             </div>
         </div>
     </div>
@@ -797,10 +877,10 @@
             const docId = now.getFullYear().toString().substr(-2) + 
                          (now.getMonth() + 1).toString().padStart(2, '0') + 
                          now.getDate().toString().padStart(2, '0') + '-' +
-                         Math.random().toString(36).substr(2, 6).toUpperCase();
+                         Math.random().toString(36).substr(2, 8).toUpperCase();
             
             // Update timestamps
-            const headerTimestamp = now.toISOString().slice(0, 19).replace('T', ' ');
+            const reportTimestamp = now.toISOString().slice(0, 19).replace('T', ' ');
             const fullTimestamp = now.toLocaleDateString('en-IN', {
                 year: 'numeric', month: 'long', day: 'numeric',
                 hour: '2-digit', minute: '2-digit', second: '2-digit',
@@ -808,22 +888,26 @@
             });
             
             // Set timestamp elements
-            const elements = {
-                'current-timestamp': headerTimestamp,
+            const timestampElements = {
+                'report-timestamp': reportTimestamp,
                 'full-timestamp': fullTimestamp,
                 'doc-id': docId
             };
             
-            Object.entries(elements).forEach(([id, value]) => {
+            Object.entries(timestampElements).forEach(([id, value]) => {
                 const element = document.getElementById(id);
                 if (element) element.textContent = value;
             });
 
-            // Log enhanced mapping statistics
-            console.log('Enhanced GPS Route Analysis Loaded');
-            console.log('Danger Zones:', {{ route_report.location_mapping.danger_zones|length|default(0) }});
-            console.log('Safety Facilities:', {{ route_report.location_mapping.safety_facilities|length|default(0) }});
-            console.log('Navigation Waypoints:', {{ route_report.location_mapping.navigation_waypoints|length|default(0) }});
+            // Enhanced logging
+            console.log('Comprehensive Route Analysis Report Loaded');
+            console.log('Report ID:', docId);
+            console.log('Analysis Summary:', {
+                dangerZones: {{ route_report.location_mapping.danger_zones|length|default(0) }},
+                safetyFacilities: {{ route_report.location_mapping.safety_facilities|length|default(0) }},
+                navigationWaypoints: {{ route_report.location_mapping.navigation_waypoints|length|default(0) }},
+                totalMappedLocations: {{ route_report.detailed_coordinates.total_mapped_locations|default(0) }}
+            });
         });
 
         // Enhanced GPS coordinate functionality
@@ -835,25 +919,44 @@
         function copyCoordinates(coordinates) {
             navigator.clipboard.writeText(coordinates).then(function() {
                 alert('GPS Coordinates copied to clipboard: ' + coordinates);
+            }).catch(function() {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = coordinates;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('GPS Coordinates copied to clipboard: ' + coordinates);
             });
         }
 
-        // Add click handlers for enhanced coordinate interaction
+        // Enhanced coordinate interaction
         document.addEventListener('click', function(event) {
-            if (event.target.classList.contains('clickable-coordinate')) {
+            if (event.target.classList.contains('coordinate-cell')) {
                 const coords = event.target.textContent.trim();
-                // Also copy to clipboard on click
-                copyCoordinates(coords);
+                // Double-click to copy, single-click to open maps
+                if (event.detail === 2) {
+                    copyCoordinates(coords);
+                }
             }
         });
 
         // Print optimization
         window.addEventListener('beforeprint', function() {
             document.body.style.background = 'white';
+            document.querySelectorAll('.section').forEach(section => {
+                section.style.boxShadow = 'none';
+                section.style.border = '1px solid #ddd';
+            });
         });
 
         window.addEventListener('afterprint', function() {
             document.body.style.background = '';
+            document.querySelectorAll('.section').forEach(section => {
+                section.style.boxShadow = '';
+                section.style.border = '';
+            });
         });
     </script>
 </body>
