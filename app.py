@@ -1886,11 +1886,13 @@ def ai_current_analysis():
 # ============================================================================
 # COMPLETE analyze_route FUNCTION - REPLACE ENTIRE FUNCTION IN YOUR app.py
 # ============================================================================
-
 @app.route('/analyze_route', methods=['POST'])
 @login_required
 def analyze_route():
-    """COMPLETE route analysis with enhanced location mapping and map indicators"""
+    """Complete route analysis with enhanced location mapping and detailed report support"""
+    import math
+    from uuid import uuid4
+    
     try:
         directions = session.get('directions')
         tt_specs = session.get('tt_specs')
@@ -1927,21 +1929,21 @@ def analyze_route():
         except:
             distance_value = 1
 
-        # Enhanced hazard detection with real-world criteria
-        print(f"Starting ENHANCED LOCATION analysis for {total_distance} route...")
+        # Enhanced hazard detection
+        print(f"Starting ENHANCED analysis for {total_distance} route...")
         sharp_turns, curves = detect_practical_hazards(coords, min_turn_angle=25, sample_distance=2, tt_specs=tt_specs)
         
         print(f"ENHANCED detection: {len(sharp_turns)} significant turns, {len(curves)} gentle curves")
         
-        # Get POIs along route with enhanced location data
+        # Get enhanced POIs along route
         def get_enhanced_pois(keyword):
             pois = []
             try:
-                sample_coords = coords[::20] if len(coords) > 20 else coords  # More frequent sampling
+                sample_coords = coords[::20] if len(coords) > 20 else coords
                 for lat, lng in sample_coords:
                     try:
                         places = gmaps.places_nearby(location=(lat, lng), radius=1000, keyword=keyword)
-                        for place in places.get('results', [])[:3]:  # Get more POIs
+                        for place in places.get('results', [])[:3]:
                             poi_data = {
                                 'name': place['name'],
                                 'location': (
@@ -1974,15 +1976,15 @@ def analyze_route():
             for existing in unique_pois:
                 lat_diff = abs(poi['location'][0] - existing['location'][0])
                 lng_diff = abs(poi['location'][1] - existing['location'][1])
-                if lat_diff < 0.001 and lng_diff < 0.001:  # ~100m radius
+                if lat_diff < 0.001 and lng_diff < 0.001:
                     is_duplicate = True
                     break
             if not is_duplicate:
                 unique_pois.append(poi)
         
-        all_pois = unique_pois[:20]  # Limit to 20 most relevant POIs
+        all_pois = unique_pois[:20]
 
-        # Calculate detailed location data for enhanced mapping
+        # Calculate detailed location mapping
         location_mapping = {
             'danger_zones': [],
             'safety_facilities': [],
@@ -1992,7 +1994,6 @@ def analyze_route():
 
         # Process danger zones with detailed coordinates
         for i, turn in enumerate(sharp_turns):
-            # Determine risk level
             if turn['turn_angle'] >= 90:
                 risk_level = 'CRITICAL'
                 risk_color = '#8B0000'
@@ -2036,9 +2037,8 @@ def analyze_route():
             }
             location_mapping['danger_zones'].append(danger_zone)
 
-        # Process safety facilities with enhanced coordinates
+        # Process safety facilities
         for poi in all_pois:
-            # Determine facility category
             facility_category = 'OTHER'
             icon_symbol = '📍'
             if 'hospital' in poi['type'] or any('hospital' in t for t in poi['types']):
@@ -2071,7 +2071,7 @@ def analyze_route():
                 'rating': poi.get('rating', 'N/A'),
                 'vicinity': poi.get('vicinity', ''),
                 'services': {
-                    'MEDICAL': ['Emergency Medical Care', 'Trauma Response', 'Hazmat Injury Treatment'],
+                    'MEDICAL': ['Emergency Medical Care', 'Trauma Response', 'Hazmat Treatment'],
                     'POLICE': ['Traffic Control', 'Emergency Coordination', 'Route Assistance'],
                     'FUEL': ['Fuel Services', 'Vehicle Maintenance', 'Rest Facilities'],
                     'PHARMACY': ['Medical Supplies', 'Emergency Medications', 'First Aid'],
@@ -2097,7 +2097,7 @@ def analyze_route():
         # Sort safety facilities by priority
         location_mapping['safety_facilities'].sort(key=lambda x: x['priority_level'])
 
-        # Create enhanced navigation waypoints
+        # Create navigation waypoints
         navigation_waypoints = [
             {
                 'id': 'WP-START',
@@ -2120,7 +2120,7 @@ def analyze_route():
             }
         ]
 
-        # Add critical hazard waypoints (top 10 most dangerous)
+        # Add critical hazard waypoints
         critical_turns = sorted([t for t in sharp_turns], 
                                key=lambda x: x.get('physics_score', 0) + x.get('turn_angle', 0), reverse=True)[:10]
 
@@ -2173,13 +2173,12 @@ def analyze_route():
 
         # Calculate emergency response distances
         def calculate_distance(coord1, coord2):
-            """Calculate approximate distance in meters between two GPS coordinates"""
             lat_diff = coord1[0] - coord2[0]
             lng_diff = coord1[1] - coord2[1]
             return ((lat_diff**2 + lng_diff**2)**0.5) * 111000
 
         emergency_distances = []
-        for i, turn in enumerate(sharp_turns[:10]):  # Top 10 danger zones
+        for i, turn in enumerate(sharp_turns[:10]):
             turn_distances = []
             for poi in all_pois:
                 distance = calculate_distance(turn['location'], poi['location'])
@@ -2189,7 +2188,7 @@ def analyze_route():
                     'facility_type': poi['type'],
                     'distance_meters': round(distance),
                     'distance_km': round(distance/1000, 1),
-                    'response_time_min': round(distance/1000 * 2 + 5, 1)  # Estimate: 30km/h + 5min setup
+                    'response_time_min': round(distance/1000 * 2 + 5, 1)
                 })
             
             emergency_distances.append({
@@ -2211,54 +2210,17 @@ def analyze_route():
         session['destination'] = destination
         session.modified = True
 
-        # Create enhanced map with detailed location indicators
+        # Create enhanced map
         center_lat = sum(coord[0] for coord in coords) / len(coords)
         center_lng = sum(coord[1] for coord in coords) / len(coords)
         
-        # Create map with enhanced styling
         m = folium.Map(
             location=(center_lat, center_lng), 
             zoom_start=12,
-            tiles='OpenStreetMap',
-            attr='Enhanced TT Route Analysis'
+            tiles='OpenStreetMap'
         )
 
-        # Add custom CSS for enhanced map styling
-        map_css = """
-        <style>
-        .enhanced-map-container {
-            border: 3px solid #007cba;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        .location-popup {
-            font-family: Arial, sans-serif;
-            max-width: 400px;
-        }
-        .popup-header {
-            background: #007cba;
-            color: white;
-            padding: 10px;
-            margin: -10px -10px 10px -10px;
-            font-weight: bold;
-            text-align: center;
-        }
-        .popup-content {
-            padding: 5px;
-            line-height: 1.4;
-        }
-        .coordinate-display {
-            background: #f0f0f0;
-            padding: 5px;
-            border-radius: 3px;
-            font-family: monospace;
-            font-size: 11px;
-            margin: 5px 0;
-        }
-        </style>
-        """
-        
-        # Draw main route using Google's smooth geometry
+        # Draw main route
         smooth_coords = []
         for step in selected['legs'][0]['steps']:
             step_coords = polyline.decode(step['polyline']['points'])
@@ -2269,341 +2231,108 @@ def analyze_route():
             color='#007cba',
             weight=6,
             opacity=0.8,
-            popup="<div class='popup-header'>Main Route</div><div class='popup-content'>Enhanced TT Safety Analysis<br><strong>Distance:</strong> " + total_distance + "<br><strong>Vehicle:</strong> " + tanker_type_str + "</div>"
+            popup=f"Main Route - {total_distance}"
         ).add_to(m)
 
-        # Add enhanced danger zone indicators
+        # Add danger zone markers
         for i, turn in enumerate(sharp_turns):
             lat, lng = turn['location']
             turn_angle = turn['turn_angle']
             
-            # Determine colors and styling based on severity
             if turn_angle >= 90:
                 marker_color = 'darkred'
-                icon_color = 'white'
-                popup_color = '#8B0000'
                 severity = 'CRITICAL'
                 speed_limit = safe_speed_matrix['critical']
             elif turn_angle >= 65:
                 marker_color = 'red'
-                icon_color = 'white'
-                popup_color = '#FF0000'
                 severity = 'HIGH RISK'
                 speed_limit = safe_speed_matrix['high']
             elif turn_angle >= 45:
                 marker_color = 'orange'
-                icon_color = 'black'
-                popup_color = '#FFA500'
                 severity = 'MODERATE'
                 speed_limit = safe_speed_matrix['moderate']
             else:
                 marker_color = 'yellow'
-                icon_color = 'black'
-                popup_color = '#FFD700'
                 severity = 'LOW RISK'
                 speed_limit = safe_speed_matrix['low']
 
-            # Create enhanced popup with comprehensive information
             popup_html = f"""
-            <div class='location-popup'>
-                <div class='popup-header' style='background: {popup_color};'>
-                    ⚠️ DANGER ZONE DZ-{i+1:02d}
-                </div>
-                <div class='popup-content'>
-                    <table style='width: 100%; font-size: 11px;'>
-                        <tr><td><strong>Hazard Type:</strong></td><td>{turn.get('risk_category', 'Sharp Turn')}</td></tr>
-                        <tr><td><strong>Turn Angle:</strong></td><td>{turn_angle:.1f}° {turn['direction']}</td></tr>
-                        <tr><td><strong>Risk Level:</strong></td><td><span style='color: {popup_color}; font-weight: bold;'>{severity}</span></td></tr>
-                        <tr><td><strong>Speed Limit:</strong></td><td><strong>{speed_limit} km/h</strong></td></tr>
-                        <tr><td><strong>Vehicle:</strong></td><td>{tanker_type_str} ({tt_specs['gross_weight']/1000:.1f}T)</td></tr>
-                    </table>
-                    
-                    <div class='coordinate-display'>
-                        <strong>GPS:</strong> {lat:.6f}, {lng:.6f}
-                        <br><small>Click coordinates to copy</small>
-                    </div>
-                    
-                    <div style='background: #fffacd; padding: 8px; border-radius: 4px; margin: 8px 0;'>
-                        <strong>Safety Actions Required:</strong><br>
-                        • Engine braking mandatory<br>
-                        • Liquid surge monitoring<br>
-                        • Emergency flashers ON<br>
-                        • Radio position to control<br>
-                        • Maintain {speed_limit} km/h maximum
-                    </div>
-                    
-                    <div style='background: #ffe6e6; padding: 6px; border-radius: 4px; font-size: 10px;'>
-                        <strong>Emergency Protocol:</strong><br>
-                        Fire: 101 | Police: 100 | Medical: 108<br>
-                        Report: "Tanker {tanker_type_str} at coordinates {lat:.6f}, {lng:.6f}"
-                    </div>
+            <div style='font-family: Arial; width: 300px;'>
+                <h4 style='color: red; margin: 5px 0;'>⚠️ DANGER ZONE DZ-{i+1:02d}</h4>
+                <p><strong>Hazard:</strong> {turn.get('risk_category', 'Sharp Turn')}</p>
+                <p><strong>Angle:</strong> {turn_angle:.1f}° {turn['direction']}</p>
+                <p><strong>Risk:</strong> {severity}</p>
+                <p><strong>Speed:</strong> {speed_limit} km/h</p>
+                <p><strong>GPS:</strong> {lat:.6f}, {lng:.6f}</p>
+                <div style='background: #ffe6e6; padding: 6px; margin: 6px 0;'>
+                    <strong>Actions:</strong><br>
+                    • Engine braking mandatory<br>
+                    • Monitor liquid surge<br>
+                    • Emergency flashers ON
                 </div>
             </div>
             """
 
-            # Add enhanced marker with detailed information
             folium.Marker(
                 location=(lat, lng),
-                popup=folium.Popup(popup_html, max_width=400),
-                icon=folium.Icon(
-                    color=marker_color, 
-                    icon='exclamation-triangle', 
-                    prefix='fa',
-                    icon_color=icon_color
-                ),
-                tooltip=f"DZ-{i+1:02d}: {severity} - {turn_angle:.1f}° {turn['direction']} turn"
+                popup=folium.Popup(popup_html, max_width=300),
+                icon=folium.Icon(color=marker_color, icon='exclamation-triangle', prefix='fa'),
+                tooltip=f"DZ-{i+1:02d}: {severity}"
             ).add_to(m)
 
-            # Add danger zone circle overlay
-            folium.Circle(
-                location=(lat, lng),
-                radius=100,  # 100m danger zone
-                color=popup_color,
-                fill=True,
-                fillColor=popup_color,
-                fillOpacity=0.2,
-                weight=2,
-                popup=f"Danger Zone {i+1} - 100m Safety Perimeter"
-            ).add_to(m)
-
-            # Add direction arrow indicator
-            try:
-                bearing = turn.get('bearing_out', 0)
-                end_lat = lat + 0.001 * math.cos(math.radians(bearing))
-                end_lng = lng + 0.001 * math.sin(math.radians(bearing))
-                
-                folium.PolyLine(
-                    [(lat, lng), (end_lat, end_lng)],
-                    color=popup_color,
-                    weight=4,
-                    opacity=0.8,
-                    popup=f"Turn Direction: {turn['direction']}"
-                ).add_to(m)
-            except:
-                pass
-
-        # Add enhanced safety facility indicators
-        facility_icons = {
-            'hospital': {'icon': 'plus', 'color': 'red', 'prefix': 'fa'},
-            'police': {'icon': 'shield', 'color': 'blue', 'prefix': 'fa'},
-            'fuel': {'icon': 'gas-pump', 'color': 'orange', 'prefix': 'fa'},
-            'pharmacy': {'icon': 'pills', 'color': 'green', 'prefix': 'fa'},
-            'fire station': {'icon': 'fire', 'color': 'darkred', 'prefix': 'fa'}
-        }
-
+        # Add safety facility markers
         for i, poi in enumerate(all_pois):
             lat, lng = poi['location']
-            facility_type = poi['type']
             
-            # Get facility styling
-            styling = facility_icons.get(facility_type, {'icon': 'info-circle', 'color': 'gray', 'prefix': 'fa'})
-            
-            # Determine facility category
-            if 'hospital' in facility_type or any('hospital' in str(t) for t in poi.get('types', [])):
-                category = 'MEDICAL FACILITY'
-                category_color = '#FF0000'
-                services = ['Emergency Medical Care', 'Trauma Response', 'Hazmat Treatment']
-                contact = '108 (Ambulance)'
-            elif 'police' in facility_type or any('police' in str(t) for t in poi.get('types', [])):
-                category = 'LAW ENFORCEMENT'
-                category_color = '#0000FF'
-                services = ['Traffic Control', 'Emergency Response', 'Incident Management']
-                contact = '100 (Police)'
-            elif 'fuel' in facility_type or any('gas' in str(t) for t in poi.get('types', [])):
-                category = 'FUEL & SERVICE'
-                category_color = '#FF8C00'
-                services = ['Fuel Services', 'Vehicle Maintenance', 'Driver Facilities']
-                contact = 'On-site Contact'
-            elif 'pharmacy' in facility_type:
-                category = 'MEDICAL SUPPLIES'
-                category_color = '#008000'
-                services = ['Emergency Medications', 'First Aid Supplies', 'Medical Support']
-                contact = 'Local Pharmacy'
-            elif 'fire' in facility_type:
-                category = 'FIRE & RESCUE'
-                category_color = '#8B0000'
-                services = ['Fire Suppression', 'Hazmat Response', 'Emergency Rescue']
-                contact = '101 (Fire Service)'
+            if 'hospital' in poi['type']:
+                icon_props = {'color': 'red', 'icon': 'plus', 'prefix': 'fa'}
+                category = 'MEDICAL'
+            elif 'police' in poi['type']:
+                icon_props = {'color': 'blue', 'icon': 'shield', 'prefix': 'fa'}
+                category = 'POLICE'
+            elif 'fuel' in poi['type']:
+                icon_props = {'color': 'orange', 'icon': 'gas-pump', 'prefix': 'fa'}
+                category = 'FUEL'
             else:
-                category = 'SUPPORT FACILITY'
-                category_color = '#666666'
-                services = ['General Support']
-                contact = 'Local Contact'
+                icon_props = {'color': 'green', 'icon': 'info-circle', 'prefix': 'fa'}
+                category = 'OTHER'
 
-            # Create enhanced facility popup
             facility_popup = f"""
-            <div class='location-popup'>
-                <div class='popup-header' style='background: {category_color};'>
-                    {poi.get('icon', '📍')} FACILITY SF-{i+1:02d}
-                </div>
-                <div class='popup-content'>
-                    <table style='width: 100%; font-size: 11px; margin-bottom: 8px;'>
-                        <tr><td><strong>Name:</strong></td><td>{poi['name']}</td></tr>
-                        <tr><td><strong>Category:</strong></td><td>{category}</td></tr>
-                        <tr><td><strong>Type:</strong></td><td>{facility_type.title()}</td></tr>
-                        <tr><td><strong>Rating:</strong></td><td>{poi.get('rating', 'N/A')} ⭐</td></tr>
-                        <tr><td><strong>Emergency:</strong></td><td>{contact}</td></tr>
-                    </table>
-                    
-                    <div class='coordinate-display'>
-                        <strong>GPS:</strong> {lat:.6f}, {lng:.6f}
-                        <br><small>Distance calculations available</small>
-                    </div>
-                    
-                    <div style='background: #f0fff0; padding: 8px; border-radius: 4px; margin: 8px 0;'>
-                        <strong>Services Available:</strong><br>
-                        {'<br>'.join(f'• {service}' for service in services)}
-                    </div>
-                    
-                    <div style='background: #f0f8ff; padding: 6px; border-radius: 4px; font-size: 10px;'>
-                        <strong>TT Support:</strong> Verified facility for {tanker_type_str} operations<br>
-                        <strong>Address:</strong> {poi.get('vicinity', 'Contact facility for details')}
-                    </div>
-                </div>
-            </div>
-            """
-
-            # Add enhanced facility marker
-            folium.Marker(
-                location=(lat, lng),
-                popup=folium.Popup(facility_popup, max_width=400),
-                icon=folium.Icon(
-                    color=styling['color'],
-                    icon=styling['icon'],
-                    prefix=styling['prefix']
-                ),
-                tooltip=f"SF-{i+1:02d}: {poi['name']} ({category})"
-            ).add_to(m)
-
-            # Add facility coverage circle
-            folium.Circle(
-                location=(lat, lng),
-                radius=500,  # 500m service radius
-                color=category_color,
-                fill=True,
-                fillColor=category_color,
-                fillOpacity=0.1,
-                weight=1,
-                popup=f"{category} - 500m Service Radius"
-            ).add_to(m)
-
-        # Add enhanced navigation waypoints
-        waypoint_colors = {'START': 'green', 'DESTINATION': 'blue', 'HAZARD': 'red'}
-        
-        for waypoint in navigation_waypoints:
-            lat, lng = waypoint['coordinates']['latitude'], waypoint['coordinates']['longitude']
-            
-            wp_type = waypoint['type']
-            if wp_type == 'START':
-                icon_props = {'color': 'green', 'icon': 'play', 'prefix': 'fa'}
-                popup_bg = '#008000'
-            elif wp_type == 'DESTINATION':
-                icon_props = {'color': 'blue', 'icon': 'stop', 'prefix': 'fa'}
-                popup_bg = '#0000FF'
-            else:  # HAZARD waypoints
-                icon_props = {'color': 'red', 'icon': 'warning', 'prefix': 'fa'}
-                popup_bg = '#FF0000'
-
-            waypoint_popup = f"""
-            <div class='location-popup'>
-                <div class='popup-header' style='background: {popup_bg};'>
-                    {waypoint.get('icon', '📍')} WAYPOINT {waypoint['id']}
-                </div>
-                <div class='popup-content'>
-                    <table style='width: 100%; font-size: 11px; margin-bottom: 8px;'>
-                        <tr><td><strong>Type:</strong></td><td>{wp_type}</td></tr>
-                        <tr><td><strong>Description:</strong></td><td>{waypoint['description']}</td></tr>
-                    </table>
-                    
-                    <div class='coordinate-display'>
-                        <strong>GPS:</strong> {lat:.6f}, {lng:.6f}
-                    </div>
-                    
-                    <div style='background: #fffacd; padding: 8px; border-radius: 4px; margin: 8px 0;'>
-                        <strong>Actions Required:</strong><br>
-                        {'<br>'.join(f'• {action}' for action in waypoint['actions'])}
-                    </div>
-                </div>
+            <div style='font-family: Arial; width: 250px;'>
+                <h4 style='margin: 5px 0;'>🏥 FACILITY SF-{i+1:02d}</h4>
+                <p><strong>Name:</strong> {poi['name']}</p>
+                <p><strong>Type:</strong> {category}</p>
+                <p><strong>GPS:</strong> {lat:.6f}, {lng:.6f}</p>
+                <p><strong>Rating:</strong> {poi.get('rating', 'N/A')} ⭐</p>
             </div>
             """
 
             folium.Marker(
                 location=(lat, lng),
-                popup=folium.Popup(waypoint_popup, max_width=400),
+                popup=folium.Popup(facility_popup, max_width=250),
                 icon=folium.Icon(**icon_props),
-                tooltip=f"{waypoint['id']}: {waypoint['description']}"
+                tooltip=f"SF-{i+1:02d}: {poi['name']}"
             ).add_to(m)
 
-        # Add enhanced map legend
-        legend_html = f"""
-        <div style="position: fixed; bottom: 20px; left: 20px; width: 450px; height: auto; 
-                    background-color: white; border: 3px solid #333; z-index: 9999; 
-                    font-size: 11px; padding: 15px; border-radius: 10px;
-                    box-shadow: 0 6px 16px rgba(0,0,0,0.3);">
-            
-            <h4 style="margin-top: 0; color: #333; text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px;">
-                🗺️ ENHANCED LOCATION MAPPING LEGEND
-            </h4>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div>
-                    <h5 style="color: #333; margin: 10px 0 5px 0;">⚠️ DANGER ZONES</h5>
-                    <div style="line-height: 1.8;">
-                        <span style="color: #8B0000;">🔴</span> <strong>Critical (90°+):</strong> {len([t for t in sharp_turns if t['turn_angle'] >= 90])}<br>
-                        <span style="color: #FF0000;">🟠</span> <strong>High Risk (65-90°):</strong> {len([t for t in sharp_turns if 65 <= t['turn_angle'] < 90])}<br>
-                        <span style="color: #FFA500;">🟡</span> <strong>Moderate (45-65°):</strong> {len([t for t in sharp_turns if 45 <= t['turn_angle'] < 65])}<br>
-                        <span style="color: #FFD700;">🟢</span> <strong>Low Risk (25-45°):</strong> {len([t for t in sharp_turns if 25 <= t['turn_angle'] < 45])}
-                    </div>
-                    
-                    <h5 style="color: #333; margin: 15px 0 5px 0;">🛡️ SAFETY ZONES</h5>
-                    <div style="line-height: 1.8;">
-                        <span style="color: #FF0000;">🏥</span> Medical: {len([p for p in all_pois if 'hospital' in p['type']])}<br>
-                        <span style="color: #0000FF;">🚔</span> Police: {len([p for p in all_pois if 'police' in p['type']])}<br>
-                        <span style="color: #FF8C00;">⛽</span> Fuel: {len([p for p in all_pois if 'fuel' in p['type']])}<br>
-                        <span style="color: #008000;">💊</span> Pharmacy: {len([p for p in all_pois if 'pharmacy' in p['type']])}<br>
-                        <span style="color: #8B0000;">🚒</span> Fire: {len([p for p in all_pois if 'fire' in p['type']])}
-                    </div>
-                </div>
-                
-                <div>
-                    <h5 style="color: #333; margin: 10px 0 5px 0;">📍 NAVIGATION</h5>
-                    <div style="line-height: 1.8;">
-                        <span style="color: #008000;">🚛</span> <strong>Start Point:</strong> Route Origin<br>
-                        <span style="color: #0000FF;">🏁</span> <strong>End Point:</strong> Destination<br>
-                        <span style="color: #007cba;">━</span> <strong>Main Route:</strong> {total_distance}<br>
-                        <span style="color: #FF0000;">⚠️</span> <strong>Waypoints:</strong> {len(navigation_waypoints)} points
-                    </div>
-                    
-                    <h5 style="color: #333; margin: 15px 0 5px 0;">🔧 TECHNICAL</h5>
-                    <div style="font-size: 10px; line-height: 1.6;">
-                        <strong>Vehicle:</strong> {tanker_type_str} ({tt_specs['gross_weight']/1000:.1f}T)<br>
-                        <strong>Coordinates:</strong> WGS84 (6 decimal precision)<br>
-                        <strong>Analysis Points:</strong> {len(coords):,} GPS coordinates<br>
-                        <strong>Map File:</strong> Interactive features enabled<br>
-                        <strong>Emergency Zones:</strong> {len(sharp_turns)} critical locations<br>
-                        <strong>Support Facilities:</strong> {len(all_pois)} verified locations
-                    </div>
-                </div>
-            </div>
-            
-            <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #ccc; font-size: 9px; text-align: center; color: #666;">
-                <strong>ENHANCED MAPPING:</strong> All locations verified • GPS coordinates provided • Real-time analysis<br>
-                Click markers for detailed information • Coordinates clickable for navigation
-            </div>
-        </div>
-        """
+        # Add start and end markers
+        folium.Marker(
+            source, 
+            popup='START - Route Origin',
+            icon=folium.Icon(color='green', icon='play', prefix='fa')
+        ).add_to(m)
+        
+        folium.Marker(
+            destination, 
+            popup='END - Route Destination',
+            icon=folium.Icon(color='blue', icon='stop', prefix='fa')
+        ).add_to(m)
 
-        # Inject map styling and legend
-        m.get_root().html.add_child(folium.Element(map_css))
-        m.get_root().html.add_child(folium.Element(legend_html))
-
-        # Save enhanced map
+        # Save map
         unique_map_id = uuid4().hex
-        html_name = f"enhanced_location_map_{unique_map_id}.html"
+        html_name = f"enhanced_route_map_{unique_map_id}.html"
         m.save(f"templates/{html_name}")
-        print(f"Enhanced map saved: {html_name}")
 
-        # COMPLETE ROUTE REPORT WITH ENHANCED LOCATION DATA
+        # Create comprehensive route report
         route_report = {
             'total_distance': total_distance,
             'total_duration': total_duration,
@@ -2615,10 +2344,7 @@ def analyze_route():
                 'gross_weight': f"{tt_specs['gross_weight']/1000:.1f} T",
                 'axle_load': f"{tt_specs['axle_load']:.1f} T per axle",
                 'max_speed': f"{tt_specs['max_speed']} kmph",
-                'risk_multiplier': f"{tt_specs['risk_multiplier']}x",
-                'cg_height': f"{tt_specs.get('cg_height', 2.5):.1f} m",
-                'stability_factor': f"{tt_specs.get('stability_factor', 1.0):.2f}",
-                'track_width': f"{tt_specs.get('track_width', 2.0):.1f} m"
+                'risk_multiplier': f"{tt_specs['risk_multiplier']}x"
             },
             'route_analysis': {
                 'total_points': len(coords),
@@ -2632,14 +2358,11 @@ def analyze_route():
                 'hospitals_along_route': len([p for p in all_pois if 'hospital' in p['type']]),
                 'fuel_stations': len([p for p in all_pois if 'fuel' in p['type']]),
                 'police_stations': len([p for p in all_pois if 'police' in p['type']]),
-                'average_physics_score': sum(t.get('physics_score', 0) for t in sharp_turns) / len(sharp_turns) if sharp_turns else 0,
-                'analysis_method': 'ENHANCED LOCATION MAPPING with GPS Precision',
-                # REQUIRED BY TEMPLATE:
+                'analysis_method': 'ENHANCED GPS Location Mapping',
                 'critical_risk_zones': len([t for t in sharp_turns if t['turn_angle'] >= 90]),
                 'high_risk_zones': len([t for t in sharp_turns if 65 <= t['turn_angle'] < 90]), 
                 'medium_risk_zones': len([t for t in sharp_turns if 45 <= t['turn_angle'] < 65])
             },
-            # REQUIRED BY TEMPLATE:
             'traffic_analysis': {
                 'light_traffic_segments': len(coords) - len(sharp_turns) - len(curves),
                 'moderate_traffic_segments': len(curves),
@@ -2648,16 +2371,14 @@ def analyze_route():
                 'total_segments': len(coords),
                 'traffic_density': 'moderate' if len(sharp_turns) > 5 else 'light'
             },
-            # REQUIRED BY TEMPLATE:
             'physics_summary': {
                 'rollover_risk_zones': len([t for t in sharp_turns if t['turn_angle'] >= 65]),
                 'stability_challenges': len([t for t in sharp_turns if t.get('curvature_radius', float('inf')) < 50]),
                 'enhanced_analysis': True,
                 'vehicle_specific_calculations': True,
-                'total_risk_assessment': f"{len(sharp_turns)} enhanced location-mapped zones",
-                'physics_method': 'GPS-enhanced real-world mapping with precise coordinates'
+                'total_risk_assessment': f"{len(sharp_turns)} GPS-mapped zones",
+                'physics_method': 'GPS-enhanced real-world mapping'
             },
-            # ENHANCED LOCATION DATA:
             'location_mapping': location_mapping,
             'detailed_coordinates': {
                 'danger_zones_count': len(location_mapping['danger_zones']),
@@ -2670,71 +2391,739 @@ def analyze_route():
                 'total_mapped_locations': len(location_mapping['danger_zones']) + len(location_mapping['safety_facilities'])
             },
             'safety_recommendations': [
-                f"ENHANCED MAPPING: {len(location_mapping['danger_zones'])} danger zones with precise GPS coordinates",
-                f"CRITICAL ZONES: {len([t for t in sharp_turns if t['turn_angle'] >= 90])} locations requiring {safe_speed_matrix['critical']} km/h maximum",
-                f"HIGH RISK AREAS: {len([t for t in sharp_turns if 65 <= t['turn_angle'] < 90])} locations requiring {safe_speed_matrix['high']} km/h maximum",
-                f"EMERGENCY SUPPORT: {len(location_mapping['safety_facilities'])} verified facilities mapped with coordinates",
-                f"NAVIGATION WAYPOINTS: {len(navigation_waypoints)} critical points for GPS programming",
-                "ENHANCED FEATURES: Interactive map with clickable coordinates and facility details",
-                f"DISTANCE CALCULATIONS: Emergency response times calculated for all {len(emergency_distances)} danger zones",
-                "REAL-TIME MAPPING: All coordinates verified against Google Maps API",
-                "GPS INTEGRATION: Compatible with all navigation systems (WGS84 standard)",
-                f"COMPREHENSIVE COVERAGE: {len(all_pois)} total facilities within 1km of route"
+                f"ENHANCED MAPPING: {len(location_mapping['danger_zones'])} danger zones with GPS coordinates",
+                f"CRITICAL ZONES: {len([t for t in sharp_turns if t['turn_angle'] >= 90])} locations requiring {safe_speed_matrix['critical']} km/h",
+                f"EMERGENCY SUPPORT: {len(location_mapping['safety_facilities'])} facilities mapped",
+                f"NAVIGATION WAYPOINTS: {len(navigation_waypoints)} critical points for GPS",
+                "GPS INTEGRATION: All coordinates compatible with navigation systems"
             ]
         }
 
-        # Critical turns calculation for template
+        # Store complete route report in session
+        session['route_report'] = route_report
+        session.modified = True
+
+        # Calculate statistics for template
         critical_turns = len([t for t in sharp_turns if t['turn_angle'] >= 90])
         high_turns = len([t for t in sharp_turns if 65 <= t['turn_angle'] < 90])
         moderate_turns = len([t for t in sharp_turns if 45 <= t['turn_angle'] < 65])
         low_turns = len([t for t in sharp_turns if 25 <= t['turn_angle'] < 45])
 
-        print(f"Enhanced location mapping completed: {len(location_mapping['danger_zones'])} danger zones, {len(location_mapping['safety_facilities'])} facilities, {len(navigation_waypoints)} waypoints")
+        print(f"Enhanced analysis completed: {len(location_mapping['danger_zones'])} danger zones, {len(location_mapping['safety_facilities'])} facilities")
 
         return render_template("route_analysis.html",
-                               mode="ENHANCED LOCATION MAPPING with GPS Precision",
+                               mode="ENHANCED GPS Location Mapping",
                                turns=len(sharp_turns) + len(curves),
                                poi_count=len(all_pois),
                                html_file=html_name,
                                route_report=route_report,
                                risk_zones=len(sharp_turns) + len(curves),
                                high_risk_zones=critical_turns + high_turns,
-                               sharp_turns=len(sharp_turns),
-                               curves=len(curves),
+                               sharp_turns=sharp_turns,
+                               curves=curves,
+                               all_pois=all_pois,
                                critical_turns=critical_turns,
                                high_turns=high_turns,
                                moderate_turns=moderate_turns,
                                low_turns=low_turns,
                                tt_specs=tt_specs,
                                username=username,
-                               # Enhanced location data for template:
                                location_mapping=location_mapping,
                                source=source,
-                               destination=destination,
-                               all_pois=all_pois)
+                               destination=destination)
 
     except Exception as e:
-        print(f"Error in ENHANCED LOCATION analyze_route: {e}")
+        print(f"Error in enhanced analyze_route: {e}")
         import traceback
         traceback.print_exc()
-        return f"Error in enhanced location route analysis: {str(e)}. Please try again."
+        return f"Error in enhanced route analysis: {str(e)}. Please try again."
+
 
 @app.route('/detailed_report')
 @login_required
 def detailed_report():
-    """Show detailed route analysis report with TT specifications"""
+    """Generate detailed route analysis report using the same template"""
     try:
-        report = session.get('route_report')
+        # Get data from session
+        route_report = session.get('route_report')
+        location_mapping = session.get('location_mapping')
+        sharp_turns = session.get('sharp_turns', [])
+        all_pois = session.get('all_pois', [])
+        source = session.get('source')
+        destination = session.get('destination')
         tt_specs = session.get('tt_specs')
         username = session.get('username', 'User')
-        if not report or not tt_specs:
-            return "No route analysis data found. Please analyze a route first."
         
-        return render_template("detailed_report.html", report=report, tt_specs=tt_specs, username=username)
+        # Check if data exists
+        if not route_report:
+            flash("No route analysis data found. Please analyze a route first.", "error")
+            return redirect(url_for('fetch_routes'))
+        
+        # Use the same template but with detailed focus
+        return render_template("route_analysis.html",
+                               mode="DETAILED GPS REPORT",
+                               turns=len(sharp_turns),
+                               poi_count=len(all_pois),
+                               html_file=route_report.get('detailed_coordinates', {}).get('map_file_reference', 'map.html'),
+                               route_report=route_report,
+                               risk_zones=len(sharp_turns),
+                               sharp_turns=sharp_turns,
+                               all_pois=all_pois,
+                               tt_specs=tt_specs,
+                               username=username,
+                               location_mapping=location_mapping,
+                               source=source,
+                               destination=destination,
+                               detailed_view=True)  # Flag to indicate detailed view
         
     except Exception as e:
         print(f"Error in detailed_report: {e}")
-        return f"Error generating detailed report: {str(e)}"
+        flash(f"Error generating detailed report: {str(e)}", "error")
+        return redirect(url_for('fetch_routes'))
+
+
+@app.route('/detailed_report')
+@login_required
+def detailed_report():
+    """Generate detailed route analysis report with all location data - FIXED SESSION HANDLING"""
+    try:
+        # Get all required data from session with comprehensive fallbacks
+        route_report = session.get('route_report')
+        location_mapping = session.get('location_mapping')
+        sharp_turns = session.get('sharp_turns', [])
+        all_pois = session.get('all_pois', [])
+        curves = session.get('curves', [])
+        source = session.get('source')
+        destination = session.get('destination')
+        tt_specs = session.get('tt_specs')
+        username = session.get('username', 'User')
+        coords = session.get('coords', [])
+        
+        print(f"DEBUG - Detailed Report Session Data:")
+        print(f"  route_report exists: {route_report is not None}")
+        print(f"  location_mapping exists: {location_mapping is not None}")
+        print(f"  sharp_turns count: {len(sharp_turns)}")
+        print(f"  all_pois count: {len(all_pois)}")
+        print(f"  tt_specs exists: {tt_specs is not None}")
+        
+        # Check if essential data exists
+        if not route_report and not sharp_turns and not tt_specs:
+            return render_template('error.html', 
+                                 error_message="No route analysis data found. Please analyze a route first.",
+                                 return_url=url_for('fetch_routes'))
+        
+        # Create minimal route_report if missing
+        if not route_report:
+            route_report = {
+                'total_distance': '0 km',
+                'total_duration': '0 min',
+                'tt_specifications': {
+                    'capacity_range': tt_specs.get('capacity_range', 'Unknown') if tt_specs else 'Unknown',
+                    'fuel_capacity': f"{tt_specs.get('avg_capacity_liters', 0):,} L" if tt_specs else '0 L',
+                    'gross_weight': f"{tt_specs.get('gross_weight', 0)/1000:.1f} T" if tt_specs else '0 T',
+                    'max_speed': f"{tt_specs.get('max_speed', 0)} kmph" if tt_specs else '0 kmph',
+                    'risk_multiplier': f"{tt_specs.get('risk_multiplier', 1)}x" if tt_specs else '1x'
+                },
+                'route_analysis': {
+                    'total_points': len(coords),
+                    'critical_scenarios': len([t for t in sharp_turns if t.get('turn_angle', 0) >= 90]),
+                    'high_risk_scenarios': len([t for t in sharp_turns if 65 <= t.get('turn_angle', 0) < 90]),
+                    'moderate_risk_scenarios': len([t for t in sharp_turns if 45 <= t.get('turn_angle', 0) < 65]),
+                    'low_risk_scenarios': len([t for t in sharp_turns if 25 <= t.get('turn_angle', 0) < 45]) + len(curves),
+                    'hospitals_along_route': len([p for p in all_pois if 'hospital' in p.get('type', '')]),
+                    'fuel_stations': len([p for p in all_pois if 'fuel' in p.get('type', '')]),
+                    'police_stations': len([p for p in all_pois if 'police' in p.get('type', '')])
+                },
+                'traffic_analysis': {
+                    'light_traffic_segments': len(coords) - len(sharp_turns),
+                    'moderate_traffic_segments': len(curves),
+                    'heavy_traffic_segments': len(sharp_turns),
+                    'average_delay_factor': 1.1
+                },
+                'physics_summary': {
+                    'rollover_risk_zones': len([t for t in sharp_turns if t.get('turn_angle', 0) >= 65]),
+                    'enhanced_analysis': True
+                }
+            }
+        
+        # Ensure location_mapping exists (create if missing)
+        if not location_mapping:
+            location_mapping = {
+                'danger_zones': [],
+                'safety_facilities': [],
+                'navigation_waypoints': [],
+                'emergency_distances': []
+            }
+            
+            # Recreate danger zones from sharp_turns
+            if sharp_turns:
+                for i, turn in enumerate(sharp_turns):
+                    # Determine severity and speed based on turn angle
+                    turn_angle = turn.get('turn_angle', 0)
+                    if turn_angle >= 90:
+                        severity = 'CRITICAL'
+                        speed = 10
+                    elif turn_angle >= 65:
+                        severity = 'HIGH'
+                        speed = 18
+                    elif turn_angle >= 45:
+                        severity = 'MODERATE'
+                        speed = 25
+                    else:
+                        severity = 'LOW'
+                        speed = 35
+                    
+                    danger_zone = {
+                        'id': f'DZ-{i+1:02d}',
+                        'coordinates': {
+                            'latitude': turn['location'][0],
+                            'longitude': turn['location'][1],
+                            'formatted': f"{turn['location'][0]:.6f}, {turn['location'][1]:.6f}"
+                        },
+                        'hazard_type': turn.get('risk_category', 'Sharp Turn'),
+                        'turn_angle': turn_angle,
+                        'direction': turn.get('direction', 'Unknown'),
+                        'severity': severity,
+                        'recommended_speed': speed,
+                        'safety_actions': [
+                            'Engine braking mandatory',
+                            'Liquid surge monitoring', 
+                            'Emergency flashers ON',
+                            f'Reduce to {speed} km/h'
+                        ],
+                        'warning_message': turn.get('warning', 'Extreme caution required')
+                    }
+                    location_mapping['danger_zones'].append(danger_zone)
+            
+            # Recreate safety facilities from POIs
+            if all_pois:
+                for i, poi in enumerate(all_pois):
+                    # Determine facility category and icon
+                    poi_type = poi.get('type', '').lower()
+                    if 'hospital' in poi_type:
+                        category = 'MEDICAL'
+                        icon = '🏥'
+                        contact = '108 (Ambulance)'
+                        services = ['Emergency Medical Care', 'Trauma Response', 'Hazmat Treatment']
+                    elif 'police' in poi_type:
+                        category = 'POLICE'
+                        icon = '🚔'
+                        contact = '100 (Police)'
+                        services = ['Traffic Control', 'Emergency Response', 'Route Assistance']
+                    elif 'fuel' in poi_type:
+                        category = 'FUEL'
+                        icon = '⛽'
+                        contact = 'Local Contact'
+                        services = ['Fuel Services', 'Vehicle Maintenance', 'Rest Facilities']
+                    elif 'pharmacy' in poi_type:
+                        category = 'PHARMACY'
+                        icon = '💊'
+                        contact = 'Local Contact'
+                        services = ['Medical Supplies', 'First Aid', 'Emergency Medications']
+                    elif 'fire' in poi_type:
+                        category = 'FIRE'
+                        icon = '🚒'
+                        contact = '101 (Fire Service)'
+                        services = ['Fire Suppression', 'Hazmat Response', 'Emergency Rescue']
+                    else:
+                        category = 'OTHER'
+                        icon = '📍'
+                        contact = 'Local Contact'
+                        services = ['General Support']
+                    
+                    safety_facility = {
+                        'id': f'SF-{i+1:02d}',
+                        'type': poi_type,
+                        'category': category,
+                        'icon': icon,
+                        'name': poi.get('name', 'Unknown Facility'),
+                        'coordinates': {
+                            'latitude': poi['location'][0],
+                            'longitude': poi['location'][1],
+                            'formatted': f"{poi['location'][0]:.6f}, {poi['location'][1]:.6f}"
+                        },
+                        'rating': poi.get('rating', 'N/A'),
+                        'vicinity': poi.get('vicinity', 'Location verified'),
+                        'services': services,
+                        'emergency_contact': contact
+                    }
+                    location_mapping['safety_facilities'].append(safety_facility)
+            
+            # Create navigation waypoints
+            waypoints = []
+            if source:
+                waypoints.append({
+                    'id': 'WP-START',
+                    'type': 'START',
+                    'icon': '🚛',
+                    'description': 'Route Departure Point',
+                    'coordinates': {
+                        'latitude': source[0],
+                        'longitude': source[1],
+                        'formatted': f"{source[0]:.6f}, {source[1]:.6f}"
+                    },
+                    'actions': [
+                        'Complete pre-departure checklist',
+                        'Verify load securement',
+                        'Test emergency equipment',
+                        'Check weather conditions'
+                    ]
+                })
+            
+            # Add critical hazard waypoints
+            for i, turn in enumerate(sharp_turns[:5]):  # Top 5 most critical
+                if turn.get('turn_angle', 0) >= 45:  # Only significant turns
+                    waypoints.append({
+                        'id': f'WP-HAZ-{i+1:02d}',
+                        'type': f'HAZARD-{i+1}',
+                        'icon': '⚠️',
+                        'description': turn.get('risk_category', 'Critical Hazard Zone'),
+                        'coordinates': {
+                            'latitude': turn['location'][0],
+                            'longitude': turn['location'][1],
+                            'formatted': f"{turn['location'][0]:.6f}, {turn['location'][1]:.6f}"
+                        },
+                        'turn_details': f"{turn.get('turn_angle', 0):.1f}° {turn.get('direction', 'turn')}",
+                        'severity': 'CRITICAL' if turn.get('turn_angle', 0) >= 90 else 'HIGH',
+                        'actions': [
+                            f'Reduce to {10 if turn.get("turn_angle", 0) >= 90 else 18} km/h',
+                            'Monitor liquid surge',
+                            'Use engine braking',
+                            'Activate hazard lights'
+                        ]
+                    })
+            
+            if destination:
+                waypoints.append({
+                    'id': 'WP-END',
+                    'type': 'DESTINATION',
+                    'icon': '🏁',
+                    'description': 'Route Destination Point',
+                    'coordinates': {
+                        'latitude': destination[0],
+                        'longitude': destination[1],
+                        'formatted': f"{destination[0]:.6f}, {destination[1]:.6f}"
+                    },
+                    'actions': [
+                        'Complete delivery checklist',
+                        'Verify cargo discharge',
+                        'Submit safety report'
+                    ]
+                })
+            
+            location_mapping['navigation_waypoints'] = waypoints
+            
+            # Calculate emergency distances (simplified)
+            emergency_distances = []
+            for i, turn in enumerate(sharp_turns[:5]):
+                distances = []
+                for poi in all_pois[:3]:  # Nearest 3 facilities
+                    # Simple distance calculation
+                    lat_diff = turn['location'][0] - poi['location'][0]
+                    lng_diff = turn['location'][1] - poi['location'][1]
+                    distance_m = ((lat_diff**2 + lng_diff**2)**0.5) * 111000
+                    
+                    distances.append({
+                        'facility_name': poi.get('name', 'Unknown'),
+                        'facility_type': poi.get('type', 'unknown'),
+                        'distance_meters': round(distance_m),
+                        'distance_km': round(distance_m/1000, 1),
+                        'response_time_min': round(distance_m/1000 * 2 + 5, 1)
+                    })
+                
+                emergency_distances.append({
+                    'danger_zone_id': f'DZ-{i+1:02d}',
+                    'coordinates': f"{turn['location'][0]:.6f}, {turn['location'][1]:.6f}",
+                    'hazard_type': turn.get('risk_category', 'Turn'),
+                    'nearest_facilities': sorted(distances, key=lambda x: x['distance_meters'])[:2]
+                })
+            
+            location_mapping['emergency_distances'] = emergency_distances
+            
+            # Update session with recreated data
+            session['location_mapping'] = location_mapping
+            session.modified = True
+        
+        # Ensure route_report has location_mapping
+        route_report['location_mapping'] = location_mapping
+        
+        # Ensure detailed_coordinates exists
+        if 'detailed_coordinates' not in route_report:
+            route_report['detailed_coordinates'] = {
+                'danger_zones_count': len(location_mapping.get('danger_zones', [])),
+                'safety_facilities_count': len(location_mapping.get('safety_facilities', [])),
+                'navigation_waypoints_count': len(location_mapping.get('navigation_waypoints', [])),
+                'coordinate_precision': '6 decimal places (~1 meter accuracy)',
+                'coordinate_system': 'WGS84 Decimal Degrees',
+                'total_mapped_locations': len(location_mapping.get('danger_zones', [])) + len(location_mapping.get('safety_facilities', []))
+            }
+        
+        # Get the saved map file name or create default
+        html_file = route_report.get('detailed_coordinates', {}).get('map_file_reference', 'route_analysis_map.html')
+        
+        print(f"DEBUG - Final data for template:")
+        print(f"  Danger zones: {len(location_mapping.get('danger_zones', []))}")
+        print(f"  Safety facilities: {len(location_mapping.get('safety_facilities', []))}")
+        print(f"  Navigation waypoints: {len(location_mapping.get('navigation_waypoints', []))}")
+        print(f"  Map file: {html_file}")
+        
+        # Render the detailed report template with complete data
+        return render_template("detailed_route_report.html",
+                               route_report=route_report,
+                               location_mapping=location_mapping,
+                               sharp_turns=sharp_turns,
+                               all_pois=all_pois,
+                               source=source,
+                               destination=destination,
+                               tt_specs=tt_specs,
+                               username=username,
+                               html_file=html_file,
+                               # Calculate statistics for template
+                               critical_turns=len([t for t in sharp_turns if t.get('turn_angle', 0) >= 90]),
+                               high_turns=len([t for t in sharp_turns if 65 <= t.get('turn_angle', 0) < 90]),
+                               moderate_turns=len([t for t in sharp_turns if 45 <= t.get('turn_angle', 0) < 65]),
+                               low_turns=len([t for t in sharp_turns if 25 <= t.get('turn_angle', 0) < 45]))
+
+    except Exception as e:
+        print(f"Error in detailed_report: {e}")
+        import traceback
+        traceback.print_exc()
+        return render_template('error.html', 
+                             error_message=f"Error generating detailed report: {str(e)}",
+                             return_url=url_for('fetch_routes'))
+
+@app.route('/detailed_report')
+@login_required
+def detailed_report():
+    """Generate detailed route analysis report with all location data - FIXED SESSION HANDLING"""
+    try:
+        # Get all required data from session with comprehensive fallbacks
+        route_report = session.get('route_report')
+        location_mapping = session.get('location_mapping')
+        sharp_turns = session.get('sharp_turns', [])
+        all_pois = session.get('all_pois', [])
+        curves = session.get('curves', [])
+        source = session.get('source')
+        destination = session.get('destination')
+        tt_specs = session.get('tt_specs')
+        username = session.get('username', 'User')
+        coords = session.get('coords', [])
+        
+        print(f"DEBUG - Detailed Report Session Data:")
+        print(f"  route_report exists: {route_report is not None}")
+        print(f"  location_mapping exists: {location_mapping is not None}")
+        print(f"  sharp_turns count: {len(sharp_turns)}")
+        print(f"  all_pois count: {len(all_pois)}")
+        print(f"  tt_specs exists: {tt_specs is not None}")
+        
+        # Check if essential data exists
+        if not route_report and not sharp_turns and not tt_specs:
+            return render_template('error.html', 
+                                 error_message="No route analysis data found. Please analyze a route first.",
+                                 return_url=url_for('fetch_routes'))
+        
+        # Create minimal route_report if missing
+        if not route_report:
+            route_report = {
+                'total_distance': '0 km',
+                'total_duration': '0 min',
+                'tt_specifications': {
+                    'capacity_range': tt_specs.get('capacity_range', 'Unknown') if tt_specs else 'Unknown',
+                    'fuel_capacity': f"{tt_specs.get('avg_capacity_liters', 0):,} L" if tt_specs else '0 L',
+                    'gross_weight': f"{tt_specs.get('gross_weight', 0)/1000:.1f} T" if tt_specs else '0 T',
+                    'max_speed': f"{tt_specs.get('max_speed', 0)} kmph" if tt_specs else '0 kmph',
+                    'risk_multiplier': f"{tt_specs.get('risk_multiplier', 1)}x" if tt_specs else '1x'
+                },
+                'route_analysis': {
+                    'total_points': len(coords),
+                    'critical_scenarios': len([t for t in sharp_turns if t.get('turn_angle', 0) >= 90]),
+                    'high_risk_scenarios': len([t for t in sharp_turns if 65 <= t.get('turn_angle', 0) < 90]),
+                    'moderate_risk_scenarios': len([t for t in sharp_turns if 45 <= t.get('turn_angle', 0) < 65]),
+                    'low_risk_scenarios': len([t for t in sharp_turns if 25 <= t.get('turn_angle', 0) < 45]) + len(curves),
+                    'hospitals_along_route': len([p for p in all_pois if 'hospital' in p.get('type', '')]),
+                    'fuel_stations': len([p for p in all_pois if 'fuel' in p.get('type', '')]),
+                    'police_stations': len([p for p in all_pois if 'police' in p.get('type', '')])
+                },
+                'traffic_analysis': {
+                    'light_traffic_segments': len(coords) - len(sharp_turns),
+                    'moderate_traffic_segments': len(curves),
+                    'heavy_traffic_segments': len(sharp_turns),
+                    'average_delay_factor': 1.1
+                },
+                'physics_summary': {
+                    'rollover_risk_zones': len([t for t in sharp_turns if t.get('turn_angle', 0) >= 65]),
+                    'enhanced_analysis': True
+                }
+            }
+        
+        # Ensure location_mapping exists (create if missing)
+        if not location_mapping:
+            location_mapping = {
+                'danger_zones': [],
+                'safety_facilities': [],
+                'navigation_waypoints': [],
+                'emergency_distances': []
+            }
+            
+            # Recreate danger zones from sharp_turns
+            if sharp_turns:
+                for i, turn in enumerate(sharp_turns):
+                    # Determine severity and speed based on turn angle
+                    turn_angle = turn.get('turn_angle', 0)
+                    if turn_angle >= 90:
+                        severity = 'CRITICAL'
+                        speed = 10
+                    elif turn_angle >= 65:
+                        severity = 'HIGH'
+                        speed = 18
+                    elif turn_angle >= 45:
+                        severity = 'MODERATE'
+                        speed = 25
+                    else:
+                        severity = 'LOW'
+                        speed = 35
+                    
+                    danger_zone = {
+                        'id': f'DZ-{i+1:02d}',
+                        'coordinates': {
+                            'latitude': turn['location'][0],
+                            'longitude': turn['location'][1],
+                            'formatted': f"{turn['location'][0]:.6f}, {turn['location'][1]:.6f}"
+                        },
+                        'hazard_type': turn.get('risk_category', 'Sharp Turn'),
+                        'turn_angle': turn_angle,
+                        'direction': turn.get('direction', 'Unknown'),
+                        'severity': severity,
+                        'recommended_speed': speed,
+                        'safety_actions': [
+                            'Engine braking mandatory',
+                            'Liquid surge monitoring', 
+                            'Emergency flashers ON',
+                            f'Reduce to {speed} km/h'
+                        ],
+                        'warning_message': turn.get('warning', 'Extreme caution required')
+                    }
+                    location_mapping['danger_zones'].append(danger_zone)
+            
+            # Recreate safety facilities from POIs
+            if all_pois:
+                for i, poi in enumerate(all_pois):
+                    # Determine facility category and icon
+                    poi_type = poi.get('type', '').lower()
+                    if 'hospital' in poi_type:
+                        category = 'MEDICAL'
+                        icon = '🏥'
+                        contact = '108 (Ambulance)'
+                        services = ['Emergency Medical Care', 'Trauma Response', 'Hazmat Treatment']
+                    elif 'police' in poi_type:
+                        category = 'POLICE'
+                        icon = '🚔'
+                        contact = '100 (Police)'
+                        services = ['Traffic Control', 'Emergency Response', 'Route Assistance']
+                    elif 'fuel' in poi_type:
+                        category = 'FUEL'
+                        icon = '⛽'
+                        contact = 'Local Contact'
+                        services = ['Fuel Services', 'Vehicle Maintenance', 'Rest Facilities']
+                    elif 'pharmacy' in poi_type:
+                        category = 'PHARMACY'
+                        icon = '💊'
+                        contact = 'Local Contact'
+                        services = ['Medical Supplies', 'First Aid', 'Emergency Medications']
+                    elif 'fire' in poi_type:
+                        category = 'FIRE'
+                        icon = '🚒'
+                        contact = '101 (Fire Service)'
+                        services = ['Fire Suppression', 'Hazmat Response', 'Emergency Rescue']
+                    else:
+                        category = 'OTHER'
+                        icon = '📍'
+                        contact = 'Local Contact'
+                        services = ['General Support']
+                    
+                    safety_facility = {
+                        'id': f'SF-{i+1:02d}',
+                        'type': poi_type,
+                        'category': category,
+                        'icon': icon,
+                        'name': poi.get('name', 'Unknown Facility'),
+                        'coordinates': {
+                            'latitude': poi['location'][0],
+                            'longitude': poi['location'][1],
+                            'formatted': f"{poi['location'][0]:.6f}, {poi['location'][1]:.6f}"
+                        },
+                        'rating': poi.get('rating', 'N/A'),
+                        'vicinity': poi.get('vicinity', 'Location verified'),
+                        'services': services,
+                        'emergency_contact': contact
+                    }
+                    location_mapping['safety_facilities'].append(safety_facility)
+            
+            # Create navigation waypoints
+            waypoints = []
+            if source:
+                waypoints.append({
+                    'id': 'WP-START',
+                    'type': 'START',
+                    'icon': '🚛',
+                    'description': 'Route Departure Point',
+                    'coordinates': {
+                        'latitude': source[0],
+                        'longitude': source[1],
+                        'formatted': f"{source[0]:.6f}, {source[1]:.6f}"
+                    },
+                    'actions': [
+                        'Complete pre-departure checklist',
+                        'Verify load securement',
+                        'Test emergency equipment',
+                        'Check weather conditions'
+                    ]
+                })
+            
+            # Add critical hazard waypoints
+            for i, turn in enumerate(sharp_turns[:5]):  # Top 5 most critical
+                if turn.get('turn_angle', 0) >= 45:  # Only significant turns
+                    waypoints.append({
+                        'id': f'WP-HAZ-{i+1:02d}',
+                        'type': f'HAZARD-{i+1}',
+                        'icon': '⚠️',
+                        'description': turn.get('risk_category', 'Critical Hazard Zone'),
+                        'coordinates': {
+                            'latitude': turn['location'][0],
+                            'longitude': turn['location'][1],
+                            'formatted': f"{turn['location'][0]:.6f}, {turn['location'][1]:.6f}"
+                        },
+                        'turn_details': f"{turn.get('turn_angle', 0):.1f}° {turn.get('direction', 'turn')}",
+                        'severity': 'CRITICAL' if turn.get('turn_angle', 0) >= 90 else 'HIGH',
+                        'actions': [
+                            f'Reduce to {10 if turn.get("turn_angle", 0) >= 90 else 18} km/h',
+                            'Monitor liquid surge',
+                            'Use engine braking',
+                            'Activate hazard lights'
+                        ]
+                    })
+            
+            if destination:
+                waypoints.append({
+                    'id': 'WP-END',
+                    'type': 'DESTINATION',
+                    'icon': '🏁',
+                    'description': 'Route Destination Point',
+                    'coordinates': {
+                        'latitude': destination[0],
+                        'longitude': destination[1],
+                        'formatted': f"{destination[0]:.6f}, {destination[1]:.6f}"
+                    },
+                    'actions': [
+                        'Complete delivery checklist',
+                        'Verify cargo discharge',
+                        'Submit safety report'
+                    ]
+                })
+            
+            location_mapping['navigation_waypoints'] = waypoints
+            
+            # Calculate emergency distances (simplified)
+            emergency_distances = []
+            for i, turn in enumerate(sharp_turns[:5]):
+                distances = []
+                for poi in all_pois[:3]:  # Nearest 3 facilities
+                    # Simple distance calculation
+                    lat_diff = turn['location'][0] - poi['location'][0]
+                    lng_diff = turn['location'][1] - poi['location'][1]
+                    distance_m = ((lat_diff**2 + lng_diff**2)**0.5) * 111000
+                    
+                    distances.append({
+                        'facility_name': poi.get('name', 'Unknown'),
+                        'facility_type': poi.get('type', 'unknown'),
+                        'distance_meters': round(distance_m),
+                        'distance_km': round(distance_m/1000, 1),
+                        'response_time_min': round(distance_m/1000 * 2 + 5, 1)
+                    })
+                
+                emergency_distances.append({
+                    'danger_zone_id': f'DZ-{i+1:02d}',
+                    'coordinates': f"{turn['location'][0]:.6f}, {turn['location'][1]:.6f}",
+                    'hazard_type': turn.get('risk_category', 'Turn'),
+                    'nearest_facilities': sorted(distances, key=lambda x: x['distance_meters'])[:2]
+                })
+            
+            location_mapping['emergency_distances'] = emergency_distances
+            
+            # Update session with recreated data
+            session['location_mapping'] = location_mapping
+            session.modified = True
+        
+        # Ensure route_report has location_mapping
+        route_report['location_mapping'] = location_mapping
+        
+        # Ensure detailed_coordinates exists
+        if 'detailed_coordinates' not in route_report:
+            route_report['detailed_coordinates'] = {
+                'danger_zones_count': len(location_mapping.get('danger_zones', [])),
+                'safety_facilities_count': len(location_mapping.get('safety_facilities', [])),
+                'navigation_waypoints_count': len(location_mapping.get('navigation_waypoints', [])),
+                'coordinate_precision': '6 decimal places (~1 meter accuracy)',
+                'coordinate_system': 'WGS84 Decimal Degrees',
+                'total_mapped_locations': len(location_mapping.get('danger_zones', [])) + len(location_mapping.get('safety_facilities', []))
+            }
+        
+        # Get the saved map file name or create default
+        html_file = route_report.get('detailed_coordinates', {}).get('map_file_reference', 'route_analysis_map.html')
+        
+        print(f"DEBUG - Final data for template:")
+        print(f"  Danger zones: {len(location_mapping.get('danger_zones', []))}")
+        print(f"  Safety facilities: {len(location_mapping.get('safety_facilities', []))}")
+        print(f"  Navigation waypoints: {len(location_mapping.get('navigation_waypoints', []))}")
+        print(f"  Map file: {html_file}")
+        
+        # Render the detailed report template with complete data
+        return render_template("detailed_route_report.html",
+                               route_report=route_report,
+                               location_mapping=location_mapping,
+                               sharp_turns=sharp_turns,
+                               all_pois=all_pois,
+                               source=source,
+                               destination=destination,
+                               tt_specs=tt_specs,
+                               username=username,
+                               html_file=html_file,
+                               # Calculate statistics for template
+                               critical_turns=len([t for t in sharp_turns if t.get('turn_angle', 0) >= 90]),
+                               high_turns=len([t for t in sharp_turns if 65 <= t.get('turn_angle', 0) < 90]),
+                               moderate_turns=len([t for t in sharp_turns if 45 <= t.get('turn_angle', 0) < 65]),
+                               low_turns=len([t for t in sharp_turns if 25 <= t.get('turn_angle', 0) < 45]))
+
+    except Exception as e:
+        print(f"Error in detailed_report: {e}")
+        import traceback
+        traceback.print_exc()
+        return render_template('error.html', 
+                             error_message=f"Error generating detailed report: {str(e)}",
+                             return_url=url_for('fetch_routes'))
+
+# ALSO ADD THIS BUTTON TO YOUR ROUTE ANALYSIS TEMPLATE
+# Add this button in your route_analysis.html template where you want the detailed report button:
+
+"""
+<div class="map-container" style="margin: 20px 0;">
+    <h3>📊 DETAILED ANALYSIS OPTIONS</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
+        <a href="{{ html_file }}" target="_blank" class="map-link">
+            🗺️ VIEW INTERACTIVE MAP
+        </a>
+        <a href="{{ url_for('detailed_report') }}" target="_blank" class="map-link" style="background: #28a745;">
+            📋 DETAILED GPS REPORT
+        </a>
+    </div>
+</div>
+"""
+
+print("DETAILED REPORT ROUTE CREATED")
+print("1. Add the detailed_report route to your app.py")
+print("2. Save your template as 'detailed_route_report.html'")
+print("3. Add the detailed report button to your route_analysis.html")
+print("4. Test by clicking the button after route analysis")
 
 @app.route('/view_map/<filename>')
 @login_required
@@ -2922,6 +3311,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
