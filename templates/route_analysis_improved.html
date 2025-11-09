@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IOCL Route Analysis - IndianOil Corporation Limited</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -13,163 +14,276 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: #f8fafc;
-            color: #1e293b;
+            color: #0f172a;
             line-height: 1.6;
             overflow-x: hidden;
         }
 
-        /* Header */
-        .header {
-            background: linear-gradient(135deg, #0f172a, #1e293b);
-            color: white;
+        /* Top Navigation */
+        .top-nav {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
             padding: 1rem 2rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            position: relative;
-            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
 
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .nav-container {
             max-width: 1400px;
             margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        .logo-section {
+        .nav-brand {
             display: flex;
             align-items: center;
             gap: 1rem;
         }
 
-        .logo {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-            border-radius: 12px;
+        .brand-logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
-            font-size: 18px;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
         }
 
-        .header-title {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .header-title h1 {
+        .brand-text h1 {
             font-size: 1.5rem;
             font-weight: 700;
-            margin-bottom: 0.25rem;
-        }
-
-        .header-subtitle {
-            font-size: 0.875rem;
-            opacity: 0.8;
-        }
-
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem 1.25rem;
-            background: rgba(255,255,255,0.1);
-            border-radius: 50px;
-            backdrop-filter: blur(10px);
-        }
-
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, #10b981, #059669);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-        }
-
-        /* Main Container */
-        .main-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            height: calc(100vh - 100px);
-            max-width: 1400px;
-            margin: 0 auto;
-            gap: 0;
-        }
-
-        /* Left Side - Map */
-        .map-section {
-            background: white;
-            border-radius: 0 0 0 24px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-        }
-
-        .map-header {
-            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
-            padding: 1.5rem;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .map-title {
-            font-size: 1.125rem;
-            font-weight: 600;
             color: #0f172a;
+        }
+
+        .brand-text p {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-top: -2px;
+        }
+
+        .nav-actions {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 1.5rem;
         }
 
-        .map-controls {
-            display: flex;
-            gap: 0.75rem;
-        }
-
-        .control-btn {
-            padding: 0.5rem 1rem;
-            background: white;
-            border: 1px solid #e2e8f0;
+        .nav-btn {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
             border-radius: 8px;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
-            font-size: 0.875rem;
-            font-weight: 500;
+            text-decoration: none;
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
 
-        .control-btn:hover {
-            background: #f1f5f9;
-            border-color: #cbd5e1;
+        .nav-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
         }
 
-        .control-btn.active {
-            background: #3b82f6;
+        .nav-btn.secondary {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .nav-btn.secondary:hover {
+            background: #e2e8f0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 1rem;
+            background: #f8fafc;
+            border-radius: 50px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: white;
-            border-color: #3b82f6;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        /* Main Container */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            background: white;
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-bg {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 400px;
+            height: 200px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1));
+            border-radius: 0 16px 0 50px;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            max-width: 600px;
+        }
+
+        .hero-badge {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+
+        .hero-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        .hero-description {
+            font-size: 1.125rem;
+            color: #64748b;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .hero-stat {
+            text-align: left;
+        }
+
+        .hero-stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .hero-stat-label {
+            font-size: 0.875rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        /* Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Map Section */
+        .map-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .map-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc;
+        }
+
+        .map-header-top {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .map-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex: 1;
+        }
+
+        .map-controls {
+            display: flex;
+            gap: 0.5rem;
+            background: #f1f5f9;
+            padding: 0.25rem;
+            border-radius: 8px;
+        }
+
+        .map-control-btn {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #64748b;
+        }
+
+        .map-control-btn.active {
+            background: white;
+            color: #0f172a;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         .map-container {
-            height: calc(100% - 80px);
+            flex: 1;
             position: relative;
         }
 
@@ -179,151 +293,132 @@
             border: none;
         }
 
+        .map-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #64748b;
+            gap: 1rem;
+        }
+
         .map-overlay {
             position: absolute;
             top: 1rem;
             right: 1rem;
             background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(20px);
+            backdrop-filter: blur(10px);
             padding: 1rem;
             border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-            min-width: 200px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            min-width: 180px;
         }
 
-        .overlay-title {
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-bottom: 0.75rem;
-            color: #0f172a;
-        }
-
-        .overlay-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.75rem;
-        }
-
-        .overlay-stat {
-            text-align: center;
-            padding: 0.75rem;
-            background: #f8fafc;
-            border-radius: 8px;
-        }
-
-        .overlay-stat-value {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #dc2626;
-        }
-
-        .overlay-stat-label {
-            font-size: 0.75rem;
-            color: #64748b;
-            margin-top: 0.25rem;
-        }
-
-        /* Right Side - Analysis Panel */
-        .analysis-section {
+        /* Analysis Section */
+        .analysis-card {
             background: white;
-            border-radius: 0 0 24px 0;
+            border-radius: 16px;
             overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+            height: 600px;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
         }
 
         .analysis-header {
-            background: linear-gradient(135deg, #0f172a, #1e293b);
-            color: white;
             padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc;
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
         }
 
         .analysis-title {
-            font-size: 1.125rem;
+            font-size: 1.25rem;
             font-weight: 600;
-            flex: 1;
+            color: #0f172a;
         }
 
-        .tab-navigation {
+        .analysis-tabs {
             display: flex;
-            background: rgba(255,255,255,0.1);
+            background: #f1f5f9;
             border-radius: 8px;
             padding: 0.25rem;
         }
 
-        .tab-btn {
+        .analysis-tab {
             padding: 0.5rem 1rem;
             background: transparent;
             border: none;
-            color: rgba(255,255,255,0.7);
             border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s;
             font-size: 0.875rem;
             font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #64748b;
         }
 
-        .tab-btn.active {
+        .analysis-tab.active {
             background: white;
             color: #0f172a;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         .analysis-content {
             flex: 1;
             overflow-y: auto;
-            padding: 0;
         }
 
-        .tab-panel {
+        .tab-content {
             display: none;
             padding: 1.5rem;
-            height: 100%;
-            overflow-y: auto;
         }
 
-        .tab-panel.active {
+        .tab-content.active {
             display: block;
         }
 
-        /* Analysis Cards */
-        .metric-grid {
+        /* Metrics Grid */
+        .metrics-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            grid-template-columns: repeat(2, 1fr);
             gap: 1rem;
             margin-bottom: 1.5rem;
         }
 
         .metric-card {
-            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-            padding: 1.25rem;
-            border-radius: 12px;
-            text-align: center;
+            background: #f8fafc;
             border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.25rem;
+            text-align: center;
             transition: all 0.2s;
         }
 
         .metric-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
         .metric-value {
-            font-size: 1.75rem;
+            font-size: 1.875rem;
             font-weight: 700;
             color: #0f172a;
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.5rem;
         }
 
         .metric-label {
-            font-size: 0.75rem;
+            font-size: 0.875rem;
             color: #64748b;
             font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+        }
+
+        /* Risk Assessment */
+        .risk-section {
+            margin-bottom: 1.5rem;
         }
 
         .section-title {
@@ -336,116 +431,105 @@
             gap: 0.5rem;
         }
 
-        .risk-matrix {
-            background: linear-gradient(135deg, #fef7f7, #fdf2f2);
-            border: 1px solid #fed7d7;
-            border-radius: 12px;
-            padding: 1.25rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .risk-bars {
+        .risk-grid {
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
         }
 
-        .risk-bar {
+        .risk-item {
             display: flex;
             align-items: center;
             gap: 0.75rem;
+            padding: 0.75rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
         }
 
-        .risk-label {
-            min-width: 80px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: #374151;
+        .risk-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
         }
 
-        .risk-progress {
+        .risk-critical { background: #dc2626; }
+        .risk-high { background: #ea580c; }
+        .risk-moderate { background: #d97706; }
+
+        .risk-content {
             flex: 1;
-            height: 24px;
-            background: #f3f4f6;
-            border-radius: 12px;
-            overflow: hidden;
-            position: relative;
         }
 
-        .risk-fill {
-            height: 100%;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            padding: 0 0.75rem;
-            color: white;
-            font-size: 0.75rem;
+        .risk-title {
             font-weight: 600;
-            transition: width 1s ease;
+            font-size: 0.875rem;
+            color: #0f172a;
         }
 
-        .risk-critical { background: linear-gradient(135deg, #dc2626, #991b1b); }
-        .risk-high { background: linear-gradient(135deg, #ea580c, #c2410c); }
-        .risk-moderate { background: linear-gradient(135deg, #d97706, #b45309); }
+        .risk-description {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+        }
 
         .risk-count {
-            min-width: 40px;
-            text-align: right;
+            background: #0f172a;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
             font-weight: 600;
-            font-size: 0.875rem;
         }
 
         /* Action Buttons */
-        .action-grid {
+        .actions-grid {
             display: grid;
             gap: 0.75rem;
-            margin-top: 1.5rem;
         }
 
         .action-btn {
-            padding: 1rem 1.25rem;
+            padding: 1rem;
             border: none;
             border-radius: 12px;
-            cursor: pointer;
             font-weight: 600;
-            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.75rem;
-            transition: all 0.2s;
-            text-decoration: none;
-            color: white;
+            font-size: 0.875rem;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            color: white;
         }
 
-        .btn-secondary {
-            background: linear-gradient(135deg, #10b981, #047857);
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
         }
 
         .btn-outline {
             background: white;
             color: #374151;
             border: 1px solid #e5e7eb;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         .action-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
-        /* AI Chat Section */
+        /* Chat Section */
         .chat-container {
+            height: 100%;
             display: flex;
             flex-direction: column;
-            height: 100%;
-            max-height: 500px;
         }
 
         .chat-messages {
@@ -453,7 +537,7 @@
             overflow-y: auto;
             padding: 1rem;
             background: #f8fafc;
-            border-radius: 12px;
+            border-radius: 8px;
             margin-bottom: 1rem;
             max-height: 300px;
         }
@@ -473,7 +557,7 @@
         }
 
         .message-content {
-            max-width: 80%;
+            max-width: 85%;
             padding: 0.75rem 1rem;
             border-radius: 12px;
             font-size: 0.875rem;
@@ -481,7 +565,7 @@
         }
 
         .message.user .message-content {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            background: #3b82f6;
             color: white;
             border-bottom-right-radius: 4px;
         }
@@ -499,51 +583,7 @@
             margin-top: 0.25rem;
         }
 
-        .chat-input {
-            display: flex;
-            gap: 0.75rem;
-        }
-
-        .chat-input input {
-            flex: 1;
-            padding: 0.875rem 1rem;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            font-size: 0.875rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .chat-input input:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        .send-btn {
-            padding: 0.875rem 1.25rem;
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .send-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-        }
-
-        .send-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .suggestion-chips {
+        .chat-suggestions {
             display: flex;
             flex-wrap: wrap;
             gap: 0.5rem;
@@ -563,19 +603,100 @@
 
         .suggestion-chip:hover {
             background: #e2e8f0;
-            border-color: #cbd5e1;
         }
 
-        /* Loading States */
-        .loading {
+        .chat-input-container {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 0.875rem 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .chat-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .chat-send {
+            padding: 0.875rem 1.25rem;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
             display: flex;
             align-items: center;
-            justify-content: center;
-            padding: 2rem;
-            color: #9ca3af;
+            gap: 0.5rem;
         }
 
-        .spinner {
+        .chat-send:hover {
+            background: #2563eb;
+        }
+
+        .chat-send:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Bottom Section */
+        .bottom-section {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+        }
+
+        .bottom-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+
+        .specifications-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .spec-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .spec-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .spec-label {
+            font-weight: 500;
+            color: #64748b;
+        }
+
+        .spec-value {
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        /* Loading and Error States */
+        .loading-spinner {
             width: 24px;
             height: 24px;
             border: 2px solid #e5e7eb;
@@ -591,864 +712,641 @@
 
         /* Responsive Design */
         @media (max-width: 1024px) {
-            .main-container {
+            .content-grid {
                 grid-template-columns: 1fr;
-                grid-template-rows: 1fr 1fr;
-                height: auto;
-                min-height: calc(100vh - 100px);
+                gap: 1.5rem;
             }
 
-            .map-section, .analysis-section {
-                border-radius: 0;
+            .map-card, .analysis-card {
+                height: 500px;
             }
 
-            .header-content {
+            .bottom-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .hero-stats {
                 flex-direction: column;
                 gap: 1rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 1rem;
+            }
+
+            .nav-container {
+                padding: 0 1rem;
+            }
+
+            .nav-actions {
+                display: none;
+            }
+
+            .hero-section {
+                padding: 1.5rem;
                 text-align: center;
             }
 
-            .header-actions {
-                justify-content: center;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .header {
-                padding: 1rem;
+            .hero-title {
+                font-size: 2rem;
             }
 
-            .header-title h1 {
-                font-size: 1.25rem;
+            .metrics-grid {
+                grid-template-columns: 1fr;
             }
 
-            .user-info {
-                padding: 0.5rem 1rem;
-                font-size: 0.875rem;
+            .spec-grid {
+                grid-template-columns: 1fr;
             }
 
-            .map-header {
-                padding: 1rem;
-            }
-
-            .map-controls {
+            .map-controls, .analysis-tabs {
                 flex-direction: column;
-                gap: 0.5rem;
-            }
-
-            .metric-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .tab-navigation {
-                flex-direction: column;
-            }
-
-            .overlay-stats {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-</head>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            color: #2c3e50;
-            line-height: 1.6;
-            min-height: 100vh;
-        }
-
-        .dashboard-container {
-            display: grid;
-            grid-template-columns: 320px 1fr;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* Left Sidebar - Analysis Panel */
-        .analysis-sidebar {
-            background: linear-gradient(180deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
-            overflow-y: auto;
-            box-shadow: 2px 0 15px rgba(0,0,0,0.2);
-            position: relative;
-        }
-
-        .sidebar-header {
-            padding: 25px;
-            text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.05);
-        }
-
-        .iocl-logo {
-            width: 70px;
-            height: 70px;
-            background: white;
-            border-radius: 50%;
-            margin: 0 auto 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: #1e3c72;
-            font-size: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-
-        .sidebar-title {
-            font-size: 16px;
-            font-weight: 700;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .sidebar-subtitle {
-            font-size: 12px;
-            opacity: 0.8;
-            margin-bottom: 5px;
-        }
-
-        .user-info {
-            font-size: 11px;
-            opacity: 0.7;
-            background: rgba(255,255,255,0.1);
-            padding: 8px 12px;
-            border-radius: 15px;
-            margin-top: 10px;
-            display: inline-block;
-        }
-
-        .analysis-section {
-            padding: 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .section-title {
-            font-size: 13px;
-            font-weight: 700;
-            margin-bottom: 15px;
-            color: #ffd700;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .metric-card {
-            background: rgba(255,255,255,0.1);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255,255,255,0.2);
-            transition: all 0.3s ease;
-        }
-
-        .metric-card:hover {
-            background: rgba(255,255,255,0.15);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-        }
-
-        .metric-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-
-        .metric-label {
-            font-size: 11px;
-            opacity: 0.9;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .metric-value {
-            font-size: 22px;
-            font-weight: 900;
-            color: #ffffff;
-        }
-
-        .metric-unit {
-            font-size: 10px;
-            opacity: 0.8;
-            margin-top: 2px;
-        }
-
-        .risk-indicator {
-            padding: 4px 10px;
-            border-radius: 15px;
-            font-size: 9px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .risk-low { background: #27ae60; color: white; }
-        .risk-moderate { background: #f39c12; color: white; }
-        .risk-high { background: #e74c3c; color: white; }
-        .risk-critical { background: #8b0000; color: white; }
-
-        .progress-bar {
-            background: rgba(255,255,255,0.2);
-            height: 8px;
-            border-radius: 4px;
-            overflow: hidden;
-            margin-top: 8px;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #27ae60, #2ecc71);
-            border-radius: 4px;
-            transition: width 1s ease;
-        }
-
-        /* Action Buttons */
-        .action-buttons {
-            padding: 20px;
-            background: rgba(0,0,0,0.1);
-        }
-
-        .action-btn {
-            width: 100%;
-            padding: 14px 16px;
-            margin-bottom: 12px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            text-decoration: none;
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            color: white;
-            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
-        }
-
-        .btn-secondary {
-            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
-            color: white;
-            box-shadow: 0 4px 15px rgba(149, 165, 166, 0.3);
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, #27ae60, #2ecc71);
-            color: white;
-            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
-            color: white;
-            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
-        }
-
-        .action-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-        }
-
-        /* Main Content Area */
-        .main-content {
-            display: flex;
-            flex-direction: column;
-            background: white;
-            overflow: hidden;
-        }
-
-        .top-header {
-            background: linear-gradient(135deg, #fff, #f8f9fa);
-            padding: 20px 30px;
-            border-bottom: 2px solid #e9ecef;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .header-info {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .route-title {
-            font-size: 24px;
-            font-weight: 700;
-            color: #1e3c72;
-        }
-
-        .route-meta {
-            font-size: 14px;
-            color: #6c757d;
-            margin-top: 2px;
-        }
-
-        .status-badges {
-            display: flex;
-            gap: 12px;
-        }
-
-        .status-badge {
-            padding: 8px 16px;
-            border-radius: 25px;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .badge-analyzing {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #fdd663;
-        }
-
-        .badge-complete {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .badge-warning {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f1b2b7;
-        }
-
-        .content-area {
-            flex: 1;
-            display: grid;
-            grid-template-columns: 1fr 350px;
-            overflow: hidden;
-        }
-
-        /* Map Section */
-        .map-section {
-            background: #f8f9fa;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .map-container {
-            width: 100%;
-            height: 100%;
-            border: none;
-            background: white;
-        }
-
-        .map-overlay {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(15px);
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-            border: 1px solid rgba(255,255,255,0.2);
-            min-width: 220px;
-        }
-
-        .overlay-title {
-            font-size: 13px;
-            font-weight: 700;
-            color: #1e3c72;
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .overlay-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .overlay-stat {
-            text-align: center;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border: 1px solid #e9ecef;
-        }
-
-        .overlay-stat-value {
-            font-size: 18px;
-            font-weight: 900;
-            color: #e74c3c;
-        }
-
-        .overlay-stat-label {
-            font-size: 9px;
-            color: #6c757d;
-            text-transform: uppercase;
-            margin-top: 2px;
-            font-weight: 600;
-        }
-
-        /* Right Info Panel */
-        .info-panel {
-            background: white;
-            border-left: 1px solid #e9ecef;
-            overflow-y: auto;
-            padding: 20px;
-        }
-
-        .info-card {
-            background: white;
-            border: 1px solid #e9ecef;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        }
-
-        .card-header {
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-            padding: 18px 20px;
-            border-bottom: 1px solid #e9ecef;
-            font-weight: 700;
-            color: #1e3c72;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .card-body {
-            padding: 20px;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 1200px) {
-            .dashboard-container {
-                grid-template-columns: 280px 1fr;
-            }
-            
-            .content-area {
-                grid-template-columns: 1fr 300px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .dashboard-container {
-                grid-template-columns: 1fr;
-                grid-template-rows: auto 1fr;
-            }
-            
-            .analysis-sidebar {
-                height: auto;
-                overflow-y: visible;
-            }
-            
-            .content-area {
-                grid-template-columns: 1fr;
-                grid-template-rows: 1fr auto;
-            }
-            
-            .info-panel {
-                border-left: none;
-                border-top: 1px solid #e9ecef;
-                max-height: 400px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="dashboard-container">
-        <!-- Left Analysis Sidebar -->
-        <div class="analysis-sidebar">
-            <div class="sidebar-header">
-                <div class="iocl-logo">IOCL</div>
-                <div class="sidebar-title">Route Analysis Complete</div>
-                <div class="sidebar-subtitle">IndianOil Corporation Limited</div>
-                <div class="user-info">
-                    Terminal: {{ username|default('User') }} | {{ tt_specs.capacity_range|default('Unknown') }} TT
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <div class="brand-logo">IOCL</div>
+                <div class="brand-text">
+                    <h1>Route Intelligence</h1>
+                    <p>Advanced Safety Assessment Platform</p>
                 </div>
             </div>
-
-            <!-- Executive Summary -->
-            <div class="analysis-section">
-                <div class="section-title">
-                    <i class="fas fa-chart-bar"></i>
-                    Executive Summary
-                </div>
-                
-                <div class="metric-card">
-                    <div class="metric-header">
-                        <span class="metric-label">Total Distance</span>
-                        <span class="metric-value">{{ route_report.total_distance|default('N/A') }}</span>
-                    </div>
-                </div>
-
-                <div class="metric-card">
-                    <div class="metric-header">
-                        <span class="metric-label">Estimated Duration</span>
-                        <span class="metric-value">{{ route_report.total_duration|default('N/A') }}</span>
-                    </div>
-                </div>
-
-                <div class="metric-card">
-                    <div class="metric-header">
-                        <span class="metric-label">High Risk Zones</span>
-                        <span class="metric-value">{{ (critical_turns|default(0)) + (high_turns|default(0)) }}</span>
-                    </div>
-                    {% set total_high_risk = (critical_turns|default(0)) + (high_turns|default(0)) %}
-                    <span class="risk-indicator {% if total_high_risk > 10 %}risk-critical{% elif total_high_risk > 5 %}risk-high{% elif total_high_risk > 2 %}risk-moderate{% else %}risk-low{% endif %}">
-                        {% if total_high_risk > 10 %}Very High Risk{% elif total_high_risk > 5 %}High Risk{% elif total_high_risk > 2 %}Moderate Risk{% else %}Low Risk{% endif %}
-                    </span>
-                </div>
-            </div>
-
-            <!-- Tank Truck Specifications -->
-            <div class="analysis-section">
-                <div class="section-title">
-                    <i class="fas fa-truck"></i>
-                    Vehicle Specifications
-                </div>
-                
-                <div class="metric-card">
-                    <div class="metric-header">
-                        <span class="metric-label">Tank Capacity</span>
-                        <span class="metric-value">{{ "{:,}".format(tt_specs.avg_capacity_liters|default(0)) }}</span>
-                    </div>
-                    <div class="metric-unit">Liters</div>
-                </div>
-
-                <div class="metric-card">
-                    <div class="metric-header">
-                        <span class="metric-label">Gross Vehicle Weight</span>
-                        <span class="metric-value">{{ "%.1f"|format(tt_specs.gross_weight|default(0)/1000) }}</span>
-                    </div>
-                    <div class="metric-unit">Tonnes</div>
-                </div>
-
-                <div class="metric-card">
-                    <div class="metric-header">
-                        <span class="metric-label">Maximum Legal Speed</span>
-                        <span class="metric-value">{{ tt_specs.max_speed|default(50) }}</span>
-                    </div>
-                    <div class="metric-unit">km/h</div>
-                </div>
-            </div>
-
-            <!-- Route Analysis Metrics -->
-            <div class="analysis-section">
-                <div class="section-title">
-                    <i class="fas fa-route"></i>
-                    Route Analysis
-                </div>
-                
-                <div class="metric-card">
-                    <div class="metric-header">
-                        <span class="metric-label">GPS Points Analyzed</span>
-                        <span class="metric-value">{{ route_report.route_analysis.total_points|default(0) if route_report and route_report.get('route_analysis') else 0 }}</span>
-                    </div>
-                </div>
-
-                <div class="metric-card">
-                    <div class="metric-header">
-                        <span class="metric-label">Emergency Facilities</span>
-                        <span class="metric-value">{{ (route_report.route_analysis.hospitals_along_route|default(0)) + (route_report.route_analysis.police_stations|default(0)) if route_report and route_report.get('route_analysis') else 0 }}</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="action-buttons">
-                <a href="{{ url_for('detailed_report') }}" target="_blank" class="action-btn btn-primary">
+            <div class="nav-actions">
+                <a href="{{ url_for('home') }}" class="nav-btn secondary">
+                    <i class="fas fa-plus"></i>
+                    New Analysis
+                </a>
+                <a href="{{ url_for('detailed_report') }}" target="_blank" class="nav-btn">
                     <i class="fas fa-file-alt"></i>
-                    Detailed GPS Report
+                    Export Report
                 </a>
-                
-                {% if html_file and html_file != 'None' %}
-                <a href="{{ url_for('view_map', filename=html_file) }}" target="_blank" class="action-btn btn-secondary">
-                    <i class="fas fa-map"></i>
-                    Interactive Map
-                </a>
-                {% endif %}
-                
-                <button onclick="generateSafetyBriefing()" class="action-btn btn-success">
-                    <i class="fas fa-shield-alt"></i>
-                    Safety Briefing
-                </button>
-                
-                <a href="{{ url_for('home') }}" class="action-btn btn-danger">
-                    <i class="fas fa-arrow-left"></i>
-                    New Route Analysis
-                </a>
+                <div class="user-profile">
+                    <div class="user-avatar">{{ username[0]|upper if username else 'U' }}</div>
+                    <span>{{ username|default('User') }}</span>
+                </div>
             </div>
         </div>
+    </nav>
 
-        <!-- Main Content Area -->
-        <div class="main-content">
-            <!-- Top Header -->
-            <div class="top-header">
-                <div class="header-info">
-                    <div>
-                        <div class="route-title">🗺️ Interactive Route Dashboard</div>
-                        <div class="route-meta">
-                            Real-time GPS analysis for {{ tt_specs.capacity_range|default('Tank Truck') }} petroleum transport
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-bg"></div>
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <i class="fas fa-shield-alt"></i>
+                    Route Analysis Complete
+                </div>
+                <h1 class="hero-title">
+                    Advanced Safety Assessment for
+                    <span style="color: #3b82f6;">{{ tt_specs.capacity_range|default('Tank Truck') }}</span>
+                </h1>
+                <p class="hero-description">
+                    Comprehensive GPS-based route analysis with real-time hazard detection, emergency facility mapping, 
+                    and AI-powered safety recommendations for petroleum transport operations.
+                </p>
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">{{ route_report.total_distance|default('N/A') }}</div>
+                        <div class="hero-stat-label">Route Distance</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">{{ (critical_turns|default(0)) + (high_turns|default(0)) + (moderate_turns|default(0)) }}</div>
+                        <div class="hero-stat-label">Hazard Zones Detected</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">{{ all_pois|length|default(0) }}</div>
+                        <div class="hero-stat-label">Emergency Facilities</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">{{ tt_specs.max_speed|default(50) }} km/h</div>
+                        <div class="hero-stat-label">Maximum Safe Speed</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Content Grid -->
+        <div class="content-grid">
+            <!-- Interactive Map Card (50%) -->
+            <div class="map-card">
+                <div class="map-header">
+                    <div class="map-header-top">
+                        <div class="map-title">
+                            <i class="fas fa-map-marked-alt"></i>
+                            Interactive Route Visualization
+                        </div>
+                        <div class="map-controls">
+                            <button class="map-control-btn active" onclick="toggleMapView('route')">
+                                <i class="fas fa-route"></i>
+                                Route
+                            </button>
+                            <button class="map-control-btn" onclick="toggleMapView('hazards')">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Hazards
+                            </button>
+                            <button class="map-control-btn" onclick="toggleMapView('facilities')">
+                                <i class="fas fa-hospital"></i>
+                                Facilities
+                            </button>
                         </div>
                     </div>
                 </div>
-                <div class="status-badges">
-                    <div class="status-badge badge-complete">
-                        <i class="fas fa-check-circle"></i> Analysis Complete
-                    </div>
-                    {% set total_risk_zones = (critical_turns|default(0)) + (high_turns|default(0)) + (moderate_turns|default(0)) %}
-                    {% if total_risk_zones > 10 %}
-                    <div class="status-badge badge-warning">
-                        <i class="fas fa-exclamation-triangle"></i> High Risk Route
-                    </div>
-                    {% elif total_risk_zones > 5 %}
-                    <div class="status-badge badge-analyzing">
-                        <i class="fas fa-info-circle"></i> Moderate Risk
-                    </div>
+                <div class="map-container">
+                    {% if html_file and html_file != 'None' %}
+                        <iframe src="{{ url_for('view_map', filename=html_file) }}" 
+                                class="map-iframe"
+                                onload="handleMapLoad()"
+                                onerror="handleMapError()">
+                        </iframe>
+                    {% else %}
+                        <div class="map-loading">
+                            <div class="loading-spinner"></div>
+                            <p>Loading interactive route visualization...</p>
+                            <small>Processing {{ route_report.route_analysis.total_points|default(0) if route_report and route_report.get('route_analysis') else 0 }} GPS coordinates</small>
+                        </div>
                     {% endif %}
-                </div>
-            </div>
-
-            <!-- Content Grid -->
-            <div class="content-area">
-                <!-- Map Section -->
-                <div class="map-section">
-                    <!-- Map Container -->
-                    <div id="map-container" class="map-container">
-                        {% if html_file and html_file != 'None' %}
-                            <iframe src="{{ url_for('view_map', filename=html_file) }}" 
-                                    style="width: 100%; height: 100%; border: none;"
-                                    onload="handleMapLoad()"
-                                    onerror="handleMapError()">
-                            </iframe>
-                        {% else %}
-                            <div style="display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column; gap: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-align: center; padding: 40px;">
-                                <div style="font-size: 64px;">🗺️</div>
-                                <h2 style="margin: 0;">Interactive Map Loading</h2>
-                                <p style="opacity: 0.9; max-width: 400px; line-height: 1.6;">
-                                    Generating GPS-based route visualization with hazard zones, emergency facilities, and navigation waypoints.
-                                </p>
-                                <div style="width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid white; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-                                <div style="font-size: 12px; opacity: 0.7;">
-                                    Processing {{ route_report.route_analysis.total_points|default(0) if route_report and route_report.get('route_analysis') else 0 }} GPS coordinates
-                                </div>
-                            </div>
-                        {% endif %}
-                    </div>
 
                     <!-- Map Overlay -->
                     <div class="map-overlay">
-                        <div class="overlay-title">
-                            <i class="fas fa-crosshairs"></i>
-                            Route Intelligence
-                        </div>
-                        <div class="overlay-stats">
-                            <div class="overlay-stat">
-                                <div class="overlay-stat-value">{{ location_mapping.danger_zones|length|default(0) if location_mapping else 0 }}</div>
-                                <div class="overlay-stat-label">Danger Zones</div>
+                        <h4 style="margin-bottom: 0.75rem; font-size: 0.875rem; font-weight: 600;">Quick Stats</h4>
+                        <div style="display: grid; gap: 0.5rem; font-size: 0.75rem;">
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>Critical Zones:</span>
+                                <strong style="color: #dc2626;">{{ critical_turns|default(0) }}</strong>
                             </div>
-                            <div class="overlay-stat">
-                                <div class="overlay-stat-value">{{ location_mapping.safety_facilities|length|default(0) if location_mapping else 0 }}</div>
-                                <div class="overlay-stat-label">Emergency</div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>High Risk:</span>
+                                <strong style="color: #ea580c;">{{ high_turns|default(0) }}</strong>
                             </div>
-                            <div class="overlay-stat">
-                                <div class="overlay-stat-value">{{ critical_turns|default(0) }}</div>
-                                <div class="overlay-stat-label">Critical</div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>Facilities:</span>
+                                <strong>{{ all_pois|length|default(0) }}</strong>
                             </div>
-                            <div class="overlay-stat">
-                                <div class="overlay-stat-value">{{ tt_specs.max_speed|default(50) }}</div>
-                                <div class="overlay-stat-label">Max km/h</div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>Coverage:</span>
+                                <strong style="color: #10b981;">{{ 'Good' if all_pois|length >= 3 else 'Limited' }}</strong>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Right Info Panel -->
-                <div class="info-panel">
-                    <!-- Risk Assessment Card -->
-                    <div class="info-card">
-                        <div class="card-header">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            Risk Assessment Matrix
+            <!-- Analysis Panel Card (50%) -->
+            <div class="analysis-card">
+                <div class="analysis-header">
+                    <div class="analysis-title">Safety Analysis & AI Assistant</div>
+                    <div class="analysis-tabs">
+                        <button class="analysis-tab active" onclick="switchAnalysisTab('overview')">Overview</button>
+                        <button class="analysis-tab" onclick="switchAnalysisTab('details')">Details</button>
+                        <button class="analysis-tab" onclick="switchAnalysisTab('chat')">AI Chat</button>
+                    </div>
+                </div>
+                <div class="analysis-content">
+                    <!-- Overview Tab -->
+                    <div id="overview-content" class="tab-content active">
+                        <div class="metrics-grid">
+                            <div class="metric-card">
+                                <div class="metric-value">{{ route_report.total_distance|default('N/A') }}</div>
+                                <div class="metric-label">Route Distance</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value">{{ route_report.total_duration|default('N/A') }}</div>
+                                <div class="metric-label">Est. Duration</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value">{{ critical_turns|default(0) }}</div>
+                                <div class="metric-label">Critical Zones</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value">{{ "{:,}".format(tt_specs.avg_capacity_liters|default(0)) }}</div>
+                                <div class="metric-label">Tank Capacity (L)</div>
+                            </div>
                         </div>
-                        <div class="card-body">
-                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
-                                <div style="text-align: center; padding: 15px; background: #ffebee; border-radius: 8px; border: 2px solid #e74c3c;">
-                                    <div style="font-size: 24px; font-weight: bold; color: #e74c3c;">{{ critical_turns|default(0) }}</div>
-                                    <div style="font-size: 11px; color: #c62828; font-weight: 600; text-transform: uppercase;">Critical</div>
-                                </div>
-                                <div style="text-align: center; padding: 15px; background: #fff3e0; border-radius: 8px; border: 2px solid #f39c12;">
-                                    <div style="font-size: 24px; font-weight: bold; color: #f39c12;">{{ high_turns|default(0) }}</div>
-                                    <div style="font-size: 11px; color: #e65100; font-weight: 600; text-transform: uppercase;">High Risk</div>
-                                </div>
-                                <div style="text-align: center; padding: 15px; background: #fffde7; border-radius: 8px; border: 2px solid #fbc02d;">
-                                    <div style="font-size: 24px; font-weight: bold; color: #f57f17;">{{ moderate_turns|default(0) }}</div>
-                                    <div style="font-size: 11px; color: #f57f17; font-weight: 600; text-transform: uppercase;">Medium</div>
-                                </div>
-                            </div>
 
-                            {% set total_hazards = (sharp_turns|length|default(0)) + (curves|length|default(0)) %}
-                            {% set hazard_density = (total_hazards / (route_report.total_distance|replace(' km', '')|float if route_report and route_report.total_distance and 'km' in route_report.total_distance else 1))|round(2) %}
-                            
-                            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                    <span style="font-size: 12px; font-weight: 600;">Hazard Density</span>
-                                    <span style="font-size: 12px; font-weight: bold; color: #e74c3c;">{{ hazard_density }} zones/km</span>
+                        <div class="risk-section">
+                            <div class="section-title">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Risk Assessment Matrix
+                            </div>
+                            <div class="risk-grid">
+                                <div class="risk-item">
+                                    <div class="risk-indicator risk-critical"></div>
+                                    <div class="risk-content">
+                                        <div class="risk-title">Critical Risk Zones</div>
+                                        <div class="risk-description">Liquid surge danger - extreme caution required</div>
+                                    </div>
+                                    <div class="risk-count">{{ critical_turns|default(0) }}</div>
                                 </div>
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                    <span style="font-size: 12px; font-weight: 600;">Route Distance</span>
-                                    <span style="font-size: 12px;">{{ route_report.total_distance|default('N/A') }}</span>
+                                <div class="risk-item">
+                                    <div class="risk-indicator risk-high"></div>
+                                    <div class="risk-content">
+                                        <div class="risk-title">High Risk Zones</div>
+                                        <div class="risk-description">Rollover risk - significant speed reduction</div>
+                                    </div>
+                                    <div class="risk-count">{{ high_turns|default(0) }}</div>
                                 </div>
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                    <span style="font-size: 12px; font-weight: 600;">Total Hazards</span>
-                                    <span style="font-size: 12px;">{{ total_hazards }} identified zones</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="font-size: 12px; font-weight: 600;">TT Risk Amplification</span>
-                                    <span style="font-size: 12px; color: #e74c3c; font-weight: bold;">{{ tt_specs.risk_multiplier|default(1) }}x factor</span>
+                                <div class="risk-item">
+                                    <div class="risk-indicator risk-moderate"></div>
+                                    <div class="risk-content">
+                                        <div class="risk-title">Moderate Risk Zones</div>
+                                        <div class="risk-description">Standard intersection speed required</div>
+                                    </div>
+                                    <div class="risk-count">{{ moderate_turns|default(0) }}</div>
                                 </div>
                             </div>
+                        </div>
 
-                            {% if hazard_density > 2.0 %}
-                            <div style="background: #ffebee; color: #d32f2f; padding: 12px; border-radius: 8px; border-left: 4px solid #d32f2f; font-size: 12px;">
-                                <strong>⚠️ HIGH RISK ROUTE:</strong> Consider alternative routing or enhanced safety protocols for {{ tt_specs.capacity_range|default('tanker') }} petroleum transport operations.
-                            </div>
-                            {% elif hazard_density > 1.0 %}
-                            <div style="background: #fff3e0; color: #f57c00; padding: 12px; border-radius: 8px; border-left: 4px solid #f57c00; font-size: 12px;">
-                                <strong>⚠️ MODERATE RISK:</strong> Enhanced awareness required. Speed reduction mandatory at marked zones.
-                            </div>
-                            {% else %}
-                            <div style="background: #e8f5e8; color: #2e7d32; padding: 12px; border-radius: 8px; border-left: 4px solid #4caf50; font-size: 12px;">
-                                <strong>✅ LOW RISK:</strong> Standard protocols sufficient. Route suitable for petroleum transport operations.
-                            </div>
+                        <div class="actions-grid">
+                            <a href="{{ url_for('detailed_report') }}" target="_blank" class="action-btn btn-primary">
+                                <i class="fas fa-file-alt"></i>
+                                View Complete GPS Report
+                            </a>
+                            {% if html_file and html_file != 'None' %}
+                            <a href="{{ url_for('view_map', filename=html_file) }}" target="_blank" class="action-btn btn-success">
+                                <i class="fas fa-expand"></i>
+                                Full Screen Map
+                            </a>
                             {% endif %}
+                            <a href="{{ url_for('home') }}" class="action-btn btn-outline">
+                                <i class="fas fa-plus"></i>
+                                Analyze New Route
+                            </a>
                         </div>
                     </div>
 
-                    <!-- Quick Actions Card -->
-                    <div class="info-card">
-                        <div class="card-header">
-                            <i class="fas fa-tools"></i>
-                            Quick Actions
+                    <!-- Details Tab -->
+                    <div id="details-content" class="tab-content">
+                        <div class="section-title">
+                            <i class="fas fa-hospital"></i>
+                            Emergency Infrastructure
                         </div>
-                        <div class="card-body">
-                            <div style="display: grid; gap: 10px;">
-                                <a href="{{ url_for('detailed_report') }}" target="_blank" 
-                                   style="padding: 12px 16px; background: linear-gradient(135deg, #3498db, #2980b9); color: white; text-decoration: none; border-radius: 8px; text-align: center; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease;">
-                                    <i class="fas fa-file-alt"></i>
-                                    View Detailed GPS Report
-                                </a>
-                                
-                                {% if html_file and html_file != 'None' %}
-                                <a href="{{ url_for('view_map', filename=html_file) }}" target="_blank"
-                                   style="padding: 12px 16px; background: linear-gradient(135deg, #27ae60, #2ecc71); color: white; text-decoration: none; border-radius: 8px; text-align: center; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease;">
-                                    <i class="fas fa-expand"></i>
-                                    Open Full Screen Map
-                                </a>
+                        <div class="metrics-grid">
+                            {% set hospitals = 0 %}
+                            {% set police = 0 %}
+                            {% set fuel = 0 %}
+                            {% for poi in all_pois %}
+                                {% if 'hospital' in poi.type %}
+                                    {% set hospitals = hospitals + 1 %}
+                                {% elif 'police' in poi.type %}
+                                    {% set police = police + 1 %}
+                                {% elif 'fuel' in poi.type %}
+                                    {% set fuel = fuel + 1 %}
                                 {% endif %}
-                                
-                                <button onclick="downloadReport()" 
-                                        style="padding: 12px 16px; background: linear-gradient(135deg, #95a5a6, #7f8c8d); color: white; border: none; border-radius: 8px; text-align: center; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.3s ease;">
-                                    <i class="fas fa-download"></i>
-                                    Download Analysis
+                            {% endfor %}
+                            
+                            <div class="metric-card">
+                                <div class="metric-value">{{ hospitals }}</div>
+                                <div class="metric-label">Medical Facilities</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value">{{ police }}</div>
+                                <div class="metric-label">Police Stations</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value">{{ fuel }}</div>
+                                <div class="metric-label">Fuel Stations</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value">{{ 'Good' if all_pois|length >= 3 else 'Limited' }}</div>
+                                <div class="metric-label">Coverage Status</div>
+                            </div>
+                        </div>
+
+                        <div class="section-title" style="margin-top: 1.5rem;">
+                            <i class="fas fa-route"></i>
+                            Route Analysis Details
+                        </div>
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem;">
+                            <div style="display: grid; gap: 0.75rem; font-size: 0.875rem;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #64748b;">GPS Points Analyzed:</span>
+                                    <strong>{{ route_report.route_analysis.total_points|default(0) if route_report and route_report.get('route_analysis') else 0 }}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #64748b;">Analysis Density:</span>
+                                    <strong>{{ "%.1f"|format(route_report.route_analysis.points_per_km|default(1.0)) if route_report and route_report.get('route_analysis') else '1.0' }} points/km</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #64748b;">Total Hazard Zones:</span>
+                                    <strong>{{ (critical_turns|default(0)) + (high_turns|default(0)) + (moderate_turns|default(0)) }}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #64748b;">Risk Amplification:</span>
+                                    <strong style="color: #dc2626;">{{ tt_specs.risk_multiplier|default(1.4) }}x factor</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Chat Tab -->
+                    <div id="chat-content" class="tab-content">
+                        <div class="chat-container">
+                            <div class="chat-suggestions" id="chat-suggestions">
+                                <div class="suggestion-chip" onclick="sendSuggestion('What are the main safety risks on this route?')">
+                                    Route safety risks?
+                                </div>
+                                <div class="suggestion-chip" onclick="sendSuggestion('What speed should I use for sharp turns?')">
+                                    Speed for turns?
+                                </div>
+                                <div class="suggestion-chip" onclick="sendSuggestion('Where are the emergency facilities?')">
+                                    Emergency facilities?
+                                </div>
+                                <div class="suggestion-chip" onclick="sendSuggestion('How should I handle liquid cargo safely?')">
+                                    Liquid cargo safety?
+                                </div>
+                            </div>
+                            
+                            <div class="chat-messages" id="chat-messages">
+                                <div class="message ai">
+                                    <div class="message-content">
+                                        👋 Hello! I'm your AI safety assistant with complete access to your {{ tt_specs.capacity_range|default('tank truck') }} route analysis. I can help with:
+                                        <br><br>
+                                        • Route hazards and safety protocols<br>
+                                        • Speed recommendations for different zones<br>
+                                        • Emergency procedures and facility locations<br>
+                                        • Vehicle-specific safety guidelines<br>
+                                        • Regulatory compliance requirements
+                                    </div>
+                                    <div class="message-time">AI Safety Assistant</div>
+                                </div>
+                            </div>
+                            
+                            <div class="chat-input-container">
+                                <input type="text" 
+                                       class="chat-input" 
+                                       id="chat-input-field"
+                                       placeholder="Ask about route safety, hazards, emergency procedures..."
+                                       onkeypress="handleChatKeyPress(event)"
+                                       maxlength="500">
+                                <button class="chat-send" id="chat-send-btn" onclick="sendChatMessage()">
+                                    <i class="fas fa-paper-plane"></i>
+                                    Send
                                 </button>
-                                
-                                <a href="{{ url_for('home') }}"
-                                   style="padding: 12px 16px; background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; text-decoration: none; border-radius: 8px; text-align: center; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease;">
-                                    <i class="fas fa-plus"></i>
-                                    Analyze New Route
-                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- Bottom Section - Vehicle Specifications -->
+        <section class="bottom-section">
+            <div class="bottom-grid">
+                <div>
+                    <div class="section-title">
+                        <i class="fas fa-truck"></i>
+                        {{ tt_specs.capacity_range|default('Tank Truck') }} Technical Specifications
+                    </div>
+                    <div class="specifications-card">
+                        <div class="spec-grid">
+                            <div class="spec-item">
+                                <span class="spec-label">Tank Capacity</span>
+                                <span class="spec-value">{{ "{:,}".format(tt_specs.avg_capacity_liters|default(0)) }} L</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Gross Weight</span>
+                                <span class="spec-value">{{ "%.1f"|format(tt_specs.gross_weight|default(0)/1000) }} T</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Axle Load</span>
+                                <span class="spec-value">{{ "%.1f"|format(tt_specs.axle_load|default(0)) }} T</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Max Legal Speed</span>
+                                <span class="spec-value">{{ tt_specs.max_speed|default(50) }} km/h</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Risk Multiplier</span>
+                                <span class="spec-value">{{ tt_specs.risk_multiplier|default(1.4) }}x</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="spec-label">Vehicle Class</span>
+                                <span class="spec-value">{{ tt_specs.capacity_range|default('N/A') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="section-title">
+                        <i class="fas fa-shield-alt"></i>
+                        Safety Compliance
+                    </div>
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 1.5rem;">
+                        <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.875rem; line-height: 1.8;">
+                            <li style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                                <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                                <span>ADR certified for petroleum transport</span>
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                                <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                                <span>PESO guidelines compliance verified</span>
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                                <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                                <span>Emergency response protocols active</span>
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 0.75rem;">
+                                <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                                <span>Route analysis meets safety standards</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
 
-    <style>
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
-
     <script>
-        // Global variables
+        // Global state
+        let currentTab = 'overview';
         let mapLoaded = false;
+        let chatHistory = [];
 
-        // Initialize dashboard
+        // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚛 IOCL Route Analysis Dashboard Loaded');
-            checkMapStatus();
+            console.log('🚛 IOCL Modern Dashboard Initialized');
+            initializeChat();
         });
 
-        // Map handling functions
+        // Tab switching
+        function switchAnalysisTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.analysis-tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Update content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName + '-content').classList.add('active');
+            
+            currentTab = tabName;
+            
+            if (tabName === 'chat') {
+                setTimeout(() => {
+                    document.getElementById('chat-input-field').focus();
+                }, 100);
+            }
+        }
+
+        // Map controls
+        function toggleMapView(viewType) {
+            document.querySelectorAll('.map-control-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            console.log('Map view changed to:', viewType);
+        }
+
+        // Map handlers
         function handleMapLoad() {
             mapLoaded = true;
-            console.log('✅ Interactive map loaded successfully');
+            console.log('✅ Map loaded successfully');
         }
 
         function handleMapError() {
             console.error('❌ Map loading failed');
-            const mapContainer = document.getElementById('map-container');
-            if (mapContainer) {
-                mapContainer.innerHTML = `
-                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column; gap: 20px; background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: white; text-align: center; padding: 40px;">
-                        <div style="font-size: 64px;">⚠️</div>
-                        <h2 style="margin: 0;">Map Loading Error</h2>
-                        <p style="opacity: 0.9; max-width: 400px; line-height: 1.6;">
-                            Unable to load interactive route visualization. Route analysis data is available in the sidebar.
-                        </p>
-                        <button onclick="retryMapLoad()" style="background: white; color: #e74c3c; border: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; cursor: pointer;">
-                            🔄 Retry Loading
-                        </button>
+            document.querySelector('.map-container').innerHTML = `
+                <div class="map-loading">
+                    <i class="fas fa-exclamation-triangle" style="color: #dc2626; font-size: 2rem;"></i>
+                    <div>
+                        <p style="font-weight: 600;">Map Loading Error</p>
+                        <small>Unable to load interactive visualization</small>
                     </div>
-                `;
+                </div>
+            `;
+        }
+
+        // Chat functionality
+        function initializeChat() {
+            const messagesContainer = document.getElementById('chat-messages');
+            if (messagesContainer) {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
             }
         }
 
-        function checkMapStatus() {
-            const htmlFile = '{{ html_file }}';
-            if (!htmlFile || htmlFile === 'None') {
-                console.log('📍 No map file available, using fallback display');
+        function sendSuggestion(message) {
+            const input = document.getElementById('chat-input-field');
+            input.value = message;
+            sendChatMessage();
+        }
+
+        function handleChatKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendChatMessage();
             }
         }
 
-        function retryMapLoad() {
-            location.reload();
+        async function sendChatMessage() {
+            const input = document.getElementById('chat-input-field');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            input.value = '';
+            const sendBtn = document.getElementById('chat-send-btn');
+            sendBtn.disabled = true;
+            
+            addChatMessage(message, 'user');
+            
+            // Hide suggestions after first message
+            const suggestions = document.getElementById('chat-suggestions');
+            if (suggestions) {
+                suggestions.style.display = 'none';
+            }
+            
+            try {
+                addTypingIndicator();
+                
+                const response = await fetch('/ai_chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: message
+                    })
+                });
+                
+                const data = await response.json();
+                
+                removeTypingIndicator();
+                
+                if (data.status === 'success') {
+                    addChatMessage(data.answer, 'ai');
+                } else {
+                    addChatMessage('Sorry, I encountered an error. Please try again.', 'ai');
+                }
+            } catch (error) {
+                console.error('Chat error:', error);
+                removeTypingIndicator();
+                addChatMessage('Sorry, I\'m having trouble connecting. Please try again.', 'ai');
+            } finally {
+                sendBtn.disabled = false;
+            }
         }
 
-        function generateSafetyBriefing() {
-            alert('Safety briefing feature will be implemented');
+        function addChatMessage(content, sender) {
+            const messagesContainer = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            messageDiv.innerHTML = `
+                <div class="message-content">${content.replace(/\n/g, '<br>')}</div>
+                <div class="message-time">${sender === 'user' ? 'You' : 'AI Assistant'} • ${timeString}</div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            chatHistory.push({
+                content: content,
+                sender: sender,
+                timestamp: now
+            });
         }
 
-        function downloadReport() {
-            window.open('{{ url_for("detailed_report") }}', '_blank');
+        function addTypingIndicator() {
+            const messagesContainer = document.getElementById('chat-messages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message ai';
+            typingDiv.id = 'typing-indicator';
+            
+            typingDiv.innerHTML = `
+                <div class="message-content">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div class="loading-spinner" style="width: 16px; height: 16px;"></div>
+                        <span>Analyzing your route data...</span>
+                    </div>
+                </div>
+                <div class="message-time">AI Assistant</div>
+            `;
+            
+            messagesContainer.appendChild(typingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) {
+                indicator.remove();
+            }
         }
     </script>
 </body>
