@@ -667,9 +667,18 @@
                 <div class="section-title">🟢 Emergency Infrastructure Assessment</div>
                 
                 <div class="bar-section">
-                    {% set hospitals = all_pois|selectattr('type', 'containing', 'hospital')|list|length %}
-                    {% set police = all_pois|selectattr('type', 'containing', 'police')|list|length %}
-                    {% set fuel = all_pois|selectattr('type', 'containing', 'fuel')|list|length %}
+                    {% set hospitals = 0 %}
+                    {% set police = 0 %}
+                    {% set fuel = 0 %}
+                    {% for poi in all_pois %}
+                        {% if 'hospital' in poi.type %}
+                            {% set hospitals = hospitals + 1 %}
+                        {% elif 'police' in poi.type %}
+                            {% set police = police + 1 %}
+                        {% elif 'fuel' in poi.type %}
+                            {% set fuel = fuel + 1 %}
+                        {% endif %}
+                    {% endfor %}
                     {% set max_facilities = [hospitals, police, fuel]|max if [hospitals, police, fuel]|max > 0 else 1 %}
                     
                     <div class="bar-item">
