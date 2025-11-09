@@ -23,19 +23,356 @@ app.secret_key = 'your_secret_key_here'
 app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
 
-# Replace OpenAI imports with:
 try:
-    import google.generativeai as genai
-    GEMINI_API_KEY = os.environ.get("GOOGLE_API_KEY")
     if GEMINI_API_KEY:
         genai.configure(api_key=GEMINI_API_KEY)
+        print(f"✅ Google Gemini API configured with key: {GEMINI_API_KEY[:8]}...")
         ai_client = True
     else:
+        print("❌ GEMINI_API_KEY not found in environment variables")
         ai_client = False
-        print("GEMINI_API_KEY not found")
 except Exception as e:
-    print(f"Gemini initialization error: {e}")
+    print(f"❌ Gemini initialization error: {e}")
     ai_client = False
+
+def get_working_gemini_model():
+    """Get working Gemini model with current model names"""
+    if not ai_client:
+        return None
+    
+    model_attempts = [
+        'gemini-1.5-flash',
+        'gemini-1.5-pro', 
+        'gemini-pro',
+        'models/gemini-1.5-flash',
+        'models/gemini-1.5-pro',
+        'models/gemini-pro'
+    ]
+    
+    for model_name in model_attempts:
+        try:
+            print(f"🔄 Trying Gemini model: {model_name}")
+            
+            safety_settings = [
+                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
+            ]
+            
+            model = genai.GenerativeModel(
+                model_name=model_name,
+                safety_settings=safety_settings
+            )
+            
+            test_response = model.generate_content("Say 'OK'")
+            
+            if test_response and hasattr(test_response, 'text') and test_response.text:
+                print(f"✅ Successfully using Gemini model: {model_name}")
+                return model
+                
+        except Exception as e:
+            print(f"❌ {model_name} failed: {str(e)[:100]}")
+            continue
+    
+    print("⚠️ All Gemini models failed")
+    return None
+
+def build_complete_route_context():
+    """Build comprehensive route context with ALL available data"""
+    
+    # Get ALL route data from session
+    coords = session.get('coords', [])
+    sharp_turns = session.get('sharp_turns', [])
+    curves = session.get('curves', [])
+    all_pois = session.get('all_pois', [])
+    route_report = session.get('route_report', {})
+    location_mapping = session.get('location_mapping', {})
+    tt_specs = session.get('tt_specs', {})
+    source = session.get('source', [])
+    destination = session.get('destination', [])
+    
+    print(f"🔍 Building complete context: {len(coords)} coords, {len(sharp_turns)} turns, {len(all_pois)} POIs")
+    
+    # Build comprehensive context
+    context = f"""=== COMPLETE ROUTE ANALYSIS DATA ===
+
+ROUTE OVERVIEW:
+- Total Distance: {route_report.get('total_distance', 'Calculating...')}
+- Estimated Duration: {route_report.get('total_duration', 'Calculating...')}
+- GPS Points Analyzed: {len(coords)}
+- Route Density: {len(coords)/(float(route_report.get('total_distance', '1 km').split()[0]) if route_report.get('total_distance') else 1):.1f} points per km
+- Analysis Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+SOURCE TO DESTINATION:
+- Starting Point: {source[0]:.6f}, {source[1]:.6f} (Latitude, Longitude)
+- Destination Point: {destination[0]:.6f}, {destination[1]:.6f} (Latitude, Longitude)
+
+VEHICLE SPECIFICATIONS:
+- Tanker Type: {tt_specs.get('capacity_range', 'Unknown')}
+- Fuel Capacity: {tt_specs.get('avg_capacity_liters', 0):,} liters
+- Tare Weight (Empty): {tt_specs.get('tare_weight', 0)/1000:.1f} tonnes
+- Product Weight (Petroleum): {tt_specs.get('product_weight', 0)/1000:.1f} tonnes  
+- Gross Vehicle Weight (Loaded): {tt_specs.get('gross_weight', 0)/1000:.1f} tonnes
+- Axle Load: {tt_specs.get('axle_load', 0):.1f} tonnes per axle
+- Maximum Legal Speed: {tt_specs.get('max_speed', 50)} km/h
+- Turn Sensitivity Factor: {tt_specs.get('turn_sensitivity', 1.0)}x
+- Risk Amplification Factor: {tt_specs.get('risk_multiplier', 1.0)}x
+- Center of Gravity Height: {tt_specs.get('cg_height', 2.5):.1f} meters
+
+DETAILED HAZARD ANALYSIS:"""
+    
+    # Add comprehensive turn analysis
+    if sharp_turns:
+        context += f"\nSHARP TURNS DETECTED ({len(sharp_turns)} total):"
+        
+        # Categorize turns by severity
+        critical_turns = [t for t in sharp_turns if t.get('turn_angle', 0) >= 90]
+        high_turns = [t for t in sharp_turns if 65 <= t.get('turn_angle', 0) < 90]
+        moderate_turns = [t for t in sharp_turns if 45 <= t.get('turn_angle', 0) < 65]
+        
+        context += f"""
+- CRITICAL (90°+ turns): {len(critical_turns)} detected
+- HIGH RISK (65-89° turns): {len(high_turns)} detected  
+- MODERATE (45-64° turns): {len(moderate_turns)} detected
+
+CRITICAL TURN DETAILS:"""
+        
+        for i, turn in enumerate(critical_turns[:8]):  # Show top 8 critical turns
+            angle = turn.get('turn_angle', 0)
+            direction = turn.get('direction', 'unknown')
+            lat, lng = turn.get('location', [0, 0])
+            physics_score = turn.get('physics_score', 0)
+            recommended_speed = turn.get('practical_speed', 10)
+            
+            context += f"""
+Turn #{i+1} CRITICAL:
+  - Location: {lat:.6f}, {lng:.6f}
+  - Angle: {angle:.1f}° {direction} turn
+  - Physics Risk Score: {physics_score:.1f}/10
+  - Recommended Speed: {recommended_speed} km/h
+  - Hazard Type: {turn.get('risk_category', 'Sharp Turn')}
+  - Warning: {turn.get('warning', 'Extreme caution required')}"""
+        
+        # Add high-risk turn summary
+        if high_turns:
+            context += f"\n\nHIGH RISK TURN SUMMARY ({len(high_turns)} turns):"
+            for i, turn in enumerate(high_turns[:5]):
+                angle = turn.get('turn_angle', 0)
+                direction = turn.get('direction', 'unknown')
+                lat, lng = turn.get('location', [0, 0])
+                context += f"\n  Turn #{i+1}: {angle:.1f}° {direction} at {lat:.6f}, {lng:.6f}"
+    
+    # Add curve analysis
+    if curves:
+        context += f"\n\nMODERATE CURVES ({len(curves)} total):"
+        for i, curve in enumerate(curves[:5]):
+            angle = curve.get('turn_angle', 0)
+            direction = curve.get('direction', 'unknown')
+            lat, lng = curve.get('location', [0, 0])
+            context += f"\n  Curve #{i+1}: {angle:.1f}° {direction} at {lat:.6f}, {lng:.6f}"
+    
+    # Add comprehensive POI analysis
+    if all_pois:
+        context += f"\n\nEMERGENCY FACILITIES ANALYSIS ({len(all_pois)} total facilities):"
+        
+        hospitals = [p for p in all_pois if 'hospital' in p.get('type', '')]
+        police = [p for p in all_pois if 'police' in p.get('type', '')]
+        fuel = [p for p in all_pois if 'fuel' in p.get('type', '')]
+        
+        if hospitals:
+            context += f"\n\nMEDICAL FACILITIES ({len(hospitals)}):"
+            for i, hospital in enumerate(hospitals):
+                lat, lng = hospital.get('location', [0, 0])
+                context += f"\n  Hospital #{i+1}: {hospital.get('name', 'Unknown')} at {lat:.6f}, {lng:.6f}"
+                if hospital.get('rating'):
+                    context += f" (Rating: {hospital['rating']})"
+        
+        if police:
+            context += f"\n\nPOLICE STATIONS ({len(police)}):"
+            for i, station in enumerate(police):
+                lat, lng = station.get('location', [0, 0])
+                context += f"\n  Police #{i+1}: {station.get('name', 'Unknown')} at {lat:.6f}, {lng:.6f}"
+        
+        if fuel:
+            context += f"\n\nFUEL STATIONS ({len(fuel)}):"
+            for i, station in enumerate(fuel):
+                lat, lng = station.get('location', [0, 0])
+                context += f"\n  Fuel #{i+1}: {station.get('name', 'Unknown')} at {lat:.6f}, {lng:.6f}"
+    
+    # Add route analysis summary
+    route_analysis = route_report.get('route_analysis', {})
+    if route_analysis:
+        context += f"\n\nROUTE PERFORMANCE ANALYSIS:"
+        context += f"\n- GPS Point Density: {route_analysis.get('points_per_km', 1):.1f} points per kilometer"
+        context += f"\n- Critical Risk Zones: {route_analysis.get('critical_risk_zones', 0)}"
+        context += f"\n- High Risk Zones: {route_analysis.get('high_risk_zones', 0)}"
+        context += f"\n- Medium Risk Zones: {route_analysis.get('medium_risk_zones', 0)}"
+        context += f"\n- Total Hazard Zones: {route_analysis.get('critical_risk_zones', 0) + route_analysis.get('high_risk_zones', 0) + route_analysis.get('medium_risk_zones', 0)}"
+    
+    # Add safety recommendations if available
+    safety_recommendations = route_report.get('safety_recommendations', [])
+    if safety_recommendations:
+        context += f"\n\nCURRENT SAFETY RECOMMENDATIONS:"
+        for i, recommendation in enumerate(safety_recommendations):
+            context += f"\n{i+1}. {recommendation}"
+    
+    # Add location mapping details
+    if location_mapping:
+        danger_zones = location_mapping.get('danger_zones', [])
+        if danger_zones:
+            context += f"\n\nDETAILED DANGER ZONE MAPPING ({len(danger_zones)} zones):"
+            for i, zone in enumerate(danger_zones[:5]):
+                context += f"""
+Zone #{i+1}: {zone.get('id', 'Unknown')}
+  - GPS: {zone.get('coordinates', {}).get('formatted', 'Unknown')}
+  - Hazard: {zone.get('hazard_type', 'Unknown')}
+  - Severity: {zone.get('severity', 'Unknown')}
+  - Recommended Speed: {zone.get('recommended_speed', 15)} km/h
+  - Actions: {', '.join(zone.get('safety_actions', []))}"""
+        
+        safety_facilities = location_mapping.get('safety_facilities', [])
+        if safety_facilities:
+            context += f"\n\nDETAILED SAFETY FACILITY MAPPING ({len(safety_facilities)} facilities):"
+            for i, facility in enumerate(safety_facilities[:8]):
+                context += f"""
+Facility #{i+1}: {facility.get('id', 'Unknown')}
+  - Name: {facility.get('name', 'Unknown')}
+  - Type: {facility.get('category', 'Unknown')}
+  - GPS: {facility.get('coordinates', {}).get('formatted', 'Unknown')}
+  - Contact: {facility.get('emergency_contact', 'Unknown')}
+  - Services: {', '.join(facility.get('services', []))}"""
+    
+    print(f"✅ Complete context built: {len(context)} characters")
+    return context
+
+def ai_chat_gemini_complete(user_question, tt_specs):
+    """Complete AI chat with full route analysis context"""
+    
+    if not ai_client:
+        return "AI assistant unavailable. Please check your GEMINI_API_KEY configuration."
+    
+    try:
+        print("📡 Initializing Google Gemini with complete route context...")
+        model = get_working_gemini_model()
+        
+        if not model:
+            return "Gemini model unavailable. Please try again or check your API configuration."
+        
+        # Build complete route context
+        complete_context = build_complete_route_context()
+        
+        # Build comprehensive system prompt
+        system_prompt = f"""You are an expert petroleum tanker safety advisor for IndianOil Corporation Limited (IOCL). You have COMPLETE access to the current route analysis data.
+
+Your role:
+- Analyze the provided route data thoroughly
+- Give specific, actionable safety advice
+- Reference exact GPS coordinates, turn angles, and facility locations when relevant
+- Consider the vehicle's specifications and liquid cargo dynamics
+- Provide practical recommendations for Indian road conditions
+- Always prioritize safety over speed or convenience
+
+Guidelines:
+- Use specific data points from the route analysis
+- Reference exact turn angles, coordinates, and facilities by name
+- Consider the tanker's weight, capacity, and physics
+- Provide speed recommendations based on actual hazard severity
+- Give location-specific warnings and advice
+- Be practical and implementable for truck drivers"""
+
+        # Build the final prompt with user question
+        final_prompt = f"""{system_prompt}
+
+{complete_context}
+
+=== DRIVER'S QUESTION ===
+The truck driver operating this {tt_specs.get('capacity_range', 'petroleum tanker')} asks:
+"{user_question}"
+
+=== INSTRUCTIONS ===
+Based on ALL the route analysis data provided above, give a detailed, specific answer that:
+1. References actual data points when relevant (turn angles, GPS coordinates, facility names)
+2. Provides specific speed recommendations for the hazards detected
+3. Considers the vehicle's {tt_specs.get('gross_weight', 25000)/1000:.1f}T weight and liquid cargo
+4. Gives actionable safety advice
+5. References emergency facilities by location when appropriate
+
+Provide a comprehensive answer using the actual route data."""
+
+        print(f"🚀 Sending {len(final_prompt)} character prompt to Gemini...")
+        
+        # Generate response with appropriate settings
+        response = model.generate_content(
+            final_prompt,
+            generation_config=genai.types.GenerationConfig(
+                max_output_tokens=1200,
+                temperature=0.3,  # Lower temperature for more factual responses
+                top_p=0.8,
+                top_k=40
+            )
+        )
+        
+        if response and hasattr(response, 'text') and response.text:
+            print(f"✅ Gemini responded with {len(response.text)} characters")
+            return response.text
+        else:
+            return "I couldn't generate a response. Please try rephrasing your question."
+            
+    except Exception as e:
+        print(f"❌ Gemini complete chat error: {e}")
+        return f"I encountered an error while analyzing your route data. Please try again. (Error: {str(e)[:100]})"
+
+def analyze_route_with_complete_ai(coords, sharp_turns, curves, tt_specs, pois):
+    """Generate comprehensive AI analysis with complete route data"""
+    
+    if not ai_client:
+        return generate_comprehensive_fallback(sharp_turns, curves, tt_specs, pois, session.get('route_report', {}))
+    
+    try:
+        model = get_working_gemini_model()
+        if not model:
+            return generate_comprehensive_fallback(sharp_turns, curves, tt_specs, pois, session.get('route_report', {}))
+        
+        # Build complete analysis context
+        route_context = build_complete_route_context()
+        
+        analysis_prompt = f"""You are conducting a comprehensive safety analysis for a petroleum tanker route. Provide a detailed assessment.
+
+{route_context}
+
+=== ANALYSIS REQUIRED ===
+Based on the complete route data above, provide:
+
+1. OVERALL SAFETY RATING (1-10 scale, 10 = extremely dangerous)
+2. TOP 5 SPECIFIC SAFETY CONCERNS with exact locations and turn angles
+3. DETAILED SPEED RECOMMENDATIONS for different hazard types detected
+4. EMERGENCY PREPAREDNESS assessment based on available facilities
+5. VEHICLE-SPECIFIC RISKS considering the {tt_specs.get('gross_weight', 25000)/1000:.1f}T tanker specifications
+6. ROUTE OPTIMIZATION suggestions based on hazard analysis
+7. CRITICAL ACTION POINTS for the driver
+
+Make your analysis specific, practical, and reference the actual data points provided."""
+
+        response = model.generate_content(
+            analysis_prompt,
+            generation_config=genai.types.GenerationConfig(
+                max_output_tokens=1500,
+                temperature=0.2,
+                top_p=0.9
+            )
+        )
+        
+        if response and hasattr(response, 'text') and response.text:
+            return response.text
+        else:
+            return generate_comprehensive_fallback(sharp_turns, curves, tt_specs, pois, session.get('route_report', {}))
+            
+    except Exception as e:
+        print(f"Complete AI analysis error: {e}")
+        return generate_comprehensive_fallback(sharp_turns, curves, tt_specs, pois, session.get('route_report', {}))
+
+
     
 
 API_KEY = os.environ.get("API_KEY")  # Secure access
@@ -448,137 +785,15 @@ REGULATORY COMPLIANCE:
 Weather: {weather_condition} - Adjust driving accordingly"""
 
 
+# Replace your existing AI functions with these:
 def ai_chat_gemini(user_question, tt_specs):
-    """Enhanced chat function with full access to route analysis data"""
-    if not ai_client:
-        return "AI assistant unavailable. Please contact your safety supervisor for guidance."
-    
-    try:
-        print("📡 Initializing Gemini model...")
-        model = get_working_gemini_model()  # ✅ NEW LINE
-        if not model:
-            return "AI assistant temporarily unavailable. Please try again."
-        
-        # Get comprehensive route data from session
-        coords = session.get('coords', [])
-        sharp_turns = session.get('sharp_turns', [])
-        curves = session.get('curves', [])
-        all_pois = session.get('all_pois', [])
-        route_report = session.get('route_report', {})
-        
-        # Build comprehensive context with all available data
-        context_parts = [
-            f"You are an expert truck tanker safety assistant with COMPLETE access to the current route analysis.",
-            f"",
-            f"=== CURRENT VEHICLE SPECIFICATIONS ===",
-            f"- Vehicle Type: {tt_specs.get('capacity_range', 'Unknown')} Petroleum Tanker",
-            f"- Fuel Capacity: {tt_specs.get('avg_capacity_liters', 0):,} liters",
-            f"- Tare Weight: {tt_specs.get('tare_weight', 0)/1000:.1f}T (empty vehicle)",
-            f"- Product Weight: {tt_specs.get('product_weight', 0)/1000:.1f}T (petroleum cargo)",
-            f"- Gross Weight: {tt_specs.get('gross_weight', 0)/1000:.1f}T (fully loaded)",
-            f"- Axle Load: {tt_specs.get('axle_load', 0):.1f}T per axle",
-            f"- Maximum Speed: {tt_specs.get('max_speed', 50)} km/h",
-            f"- Turn Sensitivity: {tt_specs.get('turn_sensitivity', 1.0)}x (rollover risk multiplier)",
-            f"- Risk Multiplier: {tt_specs.get('risk_multiplier', 1.0)}x",
-            f""
-        ]
-        
-        # Add route analysis data if available
-        if route_report:
-            context_parts.extend([
-                f"=== CURRENT ROUTE ANALYSIS ===",
-                f"- Total Distance: {route_report.get('total_distance', 'Unknown')}",
-                f"- Estimated Duration: {route_report.get('total_duration', 'Unknown')}",
-                f"- Route Points Analyzed: {len(coords)} GPS coordinates",
-                f""
-            ])
-            
-            route_analysis = route_report.get('route_analysis', {})
-            if route_analysis:
-                context_parts.extend([
-                    f"=== HAZARD BREAKDOWN ===",
-                    f"- Critical Risk Zones: {route_analysis.get('critical_risk_zones', 0)}",
-                    f"- High Risk Zones: {route_analysis.get('high_risk_zones', 0)}",
-                    f"- Medium Risk Zones: {route_analysis.get('medium_risk_zones', 0)}",
-                    f"- Total Hazard Points: {route_analysis.get('critical_risk_zones', 0) + route_analysis.get('high_risk_zones', 0) + route_analysis.get('medium_risk_zones', 0)}",
-                    f""
-                ])
-        
-        # Add detailed turn analysis
-        if sharp_turns:
-            critical_turns = [t for t in sharp_turns if t.get('severity') == 'critical']
-            high_turns = [t for t in sharp_turns if t.get('severity') == 'high']
-            
-            context_parts.extend([
-                f"=== SHARP TURN ANALYSIS ===",
-                f"- Total Sharp Turns (90°+): {len(sharp_turns)}",
-                f"- Critical Severity: {len(critical_turns)} turns",
-                f"- High Severity: {len(high_turns)} turns",
-                f""
-            ])
-            
-            # Add specific turn details (first 5 most critical)
-            critical_turns_sorted = sorted(critical_turns, key=lambda x: x.get('turn_angle', 0), reverse=True)
-            if critical_turns_sorted:
-                context_parts.append("=== MOST CRITICAL TURNS ===")
-                for i, turn in enumerate(critical_turns_sorted[:5]):
-                    context_parts.append(f"Turn {i+1}: {turn.get('turn_angle', 0):.1f}° {turn.get('direction', 'unknown')} turn (CRITICAL)")
-                context_parts.append("")
-        
-        # Add curve analysis
-        if curves:
-            context_parts.extend([
-                f"=== CURVE ANALYSIS ===",
-                f"- Moderate Curves (45-90°): {len(curves)}",
-                f"- Average curve angle: {sum(c.get('turn_angle', 0) for c in curves) / len(curves):.1f}°",
-                f""
-            ])
-        
-        # Add emergency infrastructure
-        if all_pois:
-            hospitals = [p for p in all_pois if p['type'] == 'hospital']
-            police = [p for p in all_pois if p['type'] == 'police']
-            fuel_stations = [p for p in all_pois if p['type'] == 'fuel']
-            
-            context_parts.extend([
-                f"=== EMERGENCY INFRASTRUCTURE ===",
-                f"- Hospitals: {len(hospitals)} ({', '.join([h['name'] for h in hospitals[:3]])}{'...' if len(hospitals) > 3 else ''})",
-                f"- Police Stations: {len(police)} ({', '.join([p['name'] for p in police[:3]])}{'...' if len(police) > 3 else ''})",
-                f"- Fuel Stations: {len(fuel_stations)} ({', '.join([f['name'] for f in fuel_stations[:3]])}{'...' if len(fuel_stations) > 3 else ''})",
-                f""
-            ])
-        
-        # Add safety recommendations from analysis
-        if route_report and 'safety_recommendations' in route_report:
-            context_parts.extend([
-                f"=== CURRENT SAFETY RECOMMENDATIONS ===",
-                f"- " + f"\n- ".join(route_report['safety_recommendations'][:5]),
-                f""
-            ])
-        
-        # Final context assembly
-        context_parts.extend([
-            f"=== DRIVER QUESTION ===",
-            f"The driver operating this {tt_specs.get('capacity_range', 'Unknown')} tanker asks:",
-            f'"{user_question}"',
-            f"",
-            f"=== INSTRUCTIONS ===",
-            f"Based on ALL the route analysis data above, provide a detailed, practical answer.",
-            f"Reference specific hazards, turn angles, distances, and safety measures when relevant.",
-            f"Consider the vehicle's {tt_specs.get('gross_weight', 0)/1000:.1f}T weight and {tt_specs.get('turn_sensitivity', 1.0)}x turn sensitivity.",
-            f"If the question relates to specific route hazards, reference the actual turn data and POI locations.",
-            f"Provide actionable safety advice based on the current route conditions."
-        ])
-        
-        # Combine all context
-        full_context = "\n".join(context_parts)
-        
-        response = model.generate_content(full_context)
-        return response.text
-        
-    except Exception as e:
-        print(f"Gemini chat error: {e}")
-        return f"AI assistant temporarily unavailable. For immediate safety concerns, contact your dispatcher. (Error: {str(e)})"
+    """Main AI chat function - replace your existing one"""
+    return ai_chat_gemini_complete(user_question, tt_specs)
+
+def analyze_route_with_ai(coords, sharp_turns, curves, tt_specs, pois):
+    """Main AI analysis function - replace your existing one"""
+    return analyze_route_with_complete_ai(coords, sharp_turns, curves, tt_specs, pois)
+
 
 def interpolate_route_for_accuracy(coords, target_points_per_km=300):
     """Interpolate route to achieve target point density"""
@@ -1825,6 +2040,52 @@ def safety_briefing():
     except Exception as e:
         return {"error": str(e), "status": "failed"}
 
+
+# Test function to verify complete data access
+@app.route('/test_complete_ai')
+@login_required
+def test_complete_ai():
+    """Test complete AI functionality with full route data"""
+    try:
+        # Check if route data exists
+        coords = session.get('coords', [])
+        sharp_turns = session.get('sharp_turns', [])
+        tt_specs = session.get('tt_specs', {})
+        
+        if not coords or not tt_specs:
+            return {
+                "status": "no_data",
+                "message": "No route data found. Please analyze a route first.",
+                "data_available": {
+                    "coords": len(coords),
+                    "sharp_turns": len(sharp_turns),
+                    "tt_specs": bool(tt_specs)
+                }
+            }
+        
+        # Test AI with sample question
+        test_question = "Based on my route analysis, what are the top 3 safety concerns?"
+        
+        response = ai_chat_gemini_complete(test_question, tt_specs)
+        
+        return {
+            "status": "success", 
+            "message": "AI has complete access to route data",
+            "test_response": response[:200] + "..." if len(response) > 200 else response,
+            "data_summary": {
+                "gps_points": len(coords),
+                "hazard_turns": len(sharp_turns),
+                "vehicle_type": tt_specs.get('capacity_range', 'Unknown'),
+                "total_weight": f"{tt_specs.get('gross_weight', 0)/1000:.1f}T"
+            }
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"AI test failed: {str(e)}"
+        }
+
 @app.route('/ai_chat', methods=['POST'])
 @login_required
 def ai_chat():
@@ -2731,6 +2992,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
