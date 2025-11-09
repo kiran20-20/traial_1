@@ -26,7 +26,7 @@ Session(app)
 # Replace OpenAI imports with:
 try:
     import google.generativeai as genai
-    GEMINI_API_KEY = os.environ.get("OPENAI_API_KEY")
+    GEMINI_API_KEY = os.environ.get("GOOGLE_API_KEY")
     if GEMINI_API_KEY:
         genai.configure(api_key=GEMINI_API_KEY)
         ai_client = True
@@ -2731,6 +2731,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
