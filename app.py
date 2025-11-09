@@ -25,7 +25,7 @@ Session(app)
 
 try:
     if GEMINI_API_KEY:
-        genai.configure(api_key=GEMINI_API_KEY)
+        genai.configure(api_key=GOOGLE_API_KEY)
         print(f"✅ Google Gemini API configured with key: {GEMINI_API_KEY[:8]}...")
         ai_client = True
     else:
@@ -2992,6 +2992,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
