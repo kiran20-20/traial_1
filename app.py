@@ -259,20 +259,15 @@ Facility #{i+1}: {facility.get('id', 'Unknown')}
     print(f"✅ Complete context built: {len(context)} characters")
     return context
 
+# GROQ AI IMPLEMENTATION - PASTE THIS INTO YOUR app.py
+# Replace your existing Gemini functions with these
+
+import requests
+
 def ai_chat_gemini_complete(user_question, tt_specs):
-    """Complete AI chat with full route analysis context"""
-    
-    if not ai_client:
-        return "AI assistant unavailable. Please check your GEMINI_API_KEY configuration."
-    
+    """Complete AI chat using Groq API - keeps same function name"""
     try:
-        print("📡 Initializing Google Gemini with complete route context...")
-        model = get_working_gemini_model()
-        
-        if not model:
-            return "Gemini model unavailable. Please try again or check your API configuration."
-        
-        # Build complete route context
+        # Build complete route context (your existing function)
         complete_context = build_complete_route_context()
         
         # Build comprehensive system prompt
@@ -294,7 +289,7 @@ Guidelines:
 - Give location-specific warnings and advice
 - Be practical and implementable for truck drivers"""
 
-        # Build the final prompt with user question
+        # Build the final prompt
         final_prompt = f"""{system_prompt}
 
 {complete_context}
@@ -313,40 +308,38 @@ Based on ALL the route analysis data provided above, give a detailed, specific a
 
 Provide a comprehensive answer using the actual route data."""
 
-        print(f"🚀 Sending {len(final_prompt)} character prompt to Gemini...")
+        # Groq API call
+        url = "https://api.groq.com/openai/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {os.environ.get('GROQ_API_KEY')}",
+            "Content-Type": "application/json"
+        }
         
-        # Generate response with appropriate settings
-        response = model.generate_content(
-            final_prompt,
-            generation_config=genai.types.GenerationConfig(
-                max_output_tokens=1200,
-                temperature=0.3,  # Lower temperature for more factual responses
-                top_p=0.8,
-                top_k=40
-            )
-        )
+        payload = {
+            "model": "llama3-8b-8192",
+            "messages": [{"role": "user", "content": final_prompt}],
+            "max_tokens": 1200,
+            "temperature": 0.3
+        }
         
-        if response and hasattr(response, 'text') and response.text:
-            print(f"✅ Gemini responded with {len(response.text)} characters")
-            return response.text
+        response = requests.post(url, headers=headers, json=payload, timeout=30)
+        
+        if response.status_code == 200:
+            result = response.json()
+            ai_response = result['choices'][0]['message']['content']
+            print(f"✅ Groq AI responded with {len(ai_response)} characters")
+            return ai_response
         else:
-            return "I couldn't generate a response. Please try rephrasing your question."
+            print(f"❌ Groq API error: {response.status_code}")
+            return "AI assistant temporarily unavailable. Please try again."
             
     except Exception as e:
-        print(f"❌ Gemini complete chat error: {e}")
-        return f"I encountered an error while analyzing your route data. Please try again. (Error: {str(e)[:100]})"
+        print(f"❌ Groq AI error: {e}")
+        return "I encountered an error while analyzing your route data. Please try again."
 
 def analyze_route_with_complete_ai(coords, sharp_turns, curves, tt_specs, pois):
-    """Generate comprehensive AI analysis with complete route data"""
-    
-    if not ai_client:
-        return generate_comprehensive_fallback(sharp_turns, curves, tt_specs, pois, session.get('route_report', {}))
-    
+    """Generate comprehensive AI analysis using Groq - keeps same function name"""
     try:
-        model = get_working_gemini_model()
-        if not model:
-            return generate_comprehensive_fallback(sharp_turns, curves, tt_specs, pois, session.get('route_report', {}))
-        
         # Build complete analysis context
         route_context = build_complete_route_context()
         
@@ -367,26 +360,30 @@ Based on the complete route data above, provide:
 
 Make your analysis specific, practical, and reference the actual data points provided."""
 
-        response = model.generate_content(
-            analysis_prompt,
-            generation_config=genai.types.GenerationConfig(
-                max_output_tokens=1500,
-                temperature=0.2,
-                top_p=0.9
-            )
-        )
+        url = "https://api.groq.com/openai/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {os.environ.get('GROQ_API_KEY')}",
+            "Content-Type": "application/json"
+        }
         
-        if response and hasattr(response, 'text') and response.text:
-            return response.text
+        payload = {
+            "model": "llama3-8b-8192",
+            "messages": [{"role": "user", "content": analysis_prompt}],
+            "max_tokens": 1500,
+            "temperature": 0.2
+        }
+        
+        response = requests.post(url, headers=headers, json=payload, timeout=30)
+        
+        if response.status_code == 200:
+            result = response.json()
+            return result['choices'][0]['message']['content']
         else:
             return generate_comprehensive_fallback(sharp_turns, curves, tt_specs, pois, session.get('route_report', {}))
             
     except Exception as e:
-        print(f"Complete AI analysis error: {e}")
+        print(f"Groq analysis error: {e}")
         return generate_comprehensive_fallback(sharp_turns, curves, tt_specs, pois, session.get('route_report', {}))
-
-
-    
 
 API_KEY = os.environ.get("API_KEY")  # Secure access
 gmaps = googlemaps.Client(key=API_KEY)
@@ -3005,6 +3002,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
