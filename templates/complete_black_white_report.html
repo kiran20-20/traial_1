@@ -501,15 +501,15 @@
                         <div class="summary-label">Total Distance Mapped</div>
                     </div>
                     <div class="summary-card">
-                        <div class="summary-value">{{ len(location_mapping.danger_zones) if location_mapping else (critical_turns|default(0)) + (high_turns|default(0)) + (moderate_turns|default(0)) }}</div>
+                        <div class="summary-value">{{ location_mapping.danger_zones|length if location_mapping else (critical_turns|default(0)) + (high_turns|default(0)) + (moderate_turns|default(0)) }}</div>
                         <div class="summary-label">GPS-Mapped Danger Zones</div>
                     </div>
                     <div class="summary-card">
-                        <div class="summary-value">{{ len(location_mapping.safety_facilities) if location_mapping else len(all_pois) }}</div>
+                        <div class="summary-value">{{ location_mapping.safety_facilities|length if location_mapping else all_pois|length }}</div>
                         <div class="summary-label">Emergency Facilities Mapped</div>
                     </div>
                     <div class="summary-card">
-                        <div class="summary-value">{{ len(location_mapping.navigation_waypoints) if location_mapping else 'N/A' }}</div>
+                        <div class="summary-value">{{ location_mapping.navigation_waypoints|length if location_mapping else 'N/A' }}</div>
                         <div class="summary-label">Navigation Waypoints</div>
                     </div>
                 </div>
@@ -518,7 +518,7 @@
                     <div class="info-title">Interactive GPS Map with Location Indicators</div>
                     Enhanced map with precise GPS coordinates, clickable location markers, and real-time navigation support.
                     <br><br>
-                    <strong>Map Features:</strong> {{ len(location_mapping.danger_zones) if location_mapping else (critical_turns|default(0)) + (high_turns|default(0)) + (moderate_turns|default(0)) }} danger zone markers • {{ len(location_mapping.safety_facilities) if location_mapping else len(all_pois) }} facility markers • {{ len(location_mapping.navigation_waypoints) if location_mapping else 'Multiple' }} navigation waypoints • Interactive coordinate display
+                    <strong>Map Features:</strong> {{ location_mapping.danger_zones|length if location_mapping else (critical_turns|default(0)) + (high_turns|default(0)) + (moderate_turns|default(0)) }} danger zone markers • {{ location_mapping.safety_facilities|length if location_mapping else all_pois|length }} facility markers • {{ location_mapping.navigation_waypoints|length if location_mapping else 'Multiple' }} navigation waypoints • Interactive coordinate display
                 </div>
             </div>
 
@@ -569,11 +569,11 @@
 
                 <div class="metrics-grid">
                     <div class="metric-card">
-                        <div class="metric-value">{{ len(coords) if coords else 'N/A' }}</div>
+                        <div class="metric-value">{{ coords|length if coords else 'N/A' }}</div>
                         <div class="metric-label">GPS Coordinates Analyzed</div>
                     </div>
                     <div class="metric-card">
-                        <div class="metric-value">{{ "%.1f"|format((len(coords) / (route_report.total_distance.split()[0]|float if route_report.total_distance and 'km' in route_report.total_distance else 1))) if coords else '1.1' }}</div>
+                        <div class="metric-value">{{ "%.1f"|format((coords|length / (route_report.total_distance.split()[0]|float if route_report.total_distance and 'km' in route_report.total_distance else 1))) if coords else '1.1' }}</div>
                         <div class="metric-label">Analysis Points per KM</div>
                     </div>
                     <div class="metric-card">
@@ -605,7 +605,7 @@
                 
                 <div class="info-box">
                     <div class="info-title">Precision GPS Mapping</div>
-                    {{ len(location_mapping.danger_zones) if location_mapping else (critical_turns|default(0)) + (high_turns|default(0)) + (moderate_turns|default(0)) }} critical danger zones mapped with 6-decimal precision GPS coordinates (±1 meter accuracy). All coordinates verified against Google Maps API.
+                    {{ location_mapping.danger_zones|length if location_mapping else (critical_turns|default(0)) + (high_turns|default(0)) + (moderate_turns|default(0)) }} critical danger zones mapped with 6-decimal precision GPS coordinates (±1 meter accuracy). All coordinates verified against Google Maps API.
                 </div>
 
                 <table class="data-table">
@@ -711,7 +711,7 @@
 
                 <div class="info-box">
                     <div class="info-title">Emergency Infrastructure Coverage</div>
-                    {{ len(all_pois) }} verified emergency facilities mapped within 1km of route with complete service information and GPS coordinates. Response time estimated at 6-15 minutes for most route segments.
+                    {{ all_pois|length }} verified emergency facilities mapped within 1km of route with complete service information and GPS coordinates. Response time estimated at 6-15 minutes for most route segments.
                 </div>
 
                 <table class="data-table">
@@ -772,7 +772,7 @@
                 
                 <div class="info-box">
                     <div class="info-title">Navigation System Programming</div>
-                    {{ len(location_mapping.navigation_waypoints) if location_mapping else 'Multiple' }} critical waypoints identified for GPS system programming. Pre-load coordinates for enhanced safety awareness.
+                    {{ location_mapping.navigation_waypoints|length if location_mapping else 'Multiple' }} critical waypoints identified for GPS system programming. Pre-load coordinates for enhanced safety awareness.
                 </div>
 
                 <table class="data-table">
@@ -927,9 +927,9 @@
                     <div class="column-box">
                         <div class="column-title">Pre-Departure GPS Programming Checklist</div>
                         <div class="column-content">
-                            <strong>1.</strong> Load danger zone coordinates - {{ len(location_mapping.danger_zones) if location_mapping else (critical_turns|default(0)) + (high_turns|default(0)) + (moderate_turns|default(0)) }} critical GPS points<br><br>
-                            <strong>2.</strong> Program emergency facility locations - {{ len(location_mapping.safety_facilities) if location_mapping else len(all_pois) }} verified coordinates<br><br>
-                            <strong>3.</strong> Set navigation waypoints - {{ len(location_mapping.navigation_waypoints) if location_mapping else 'Multiple' }} route-critical points<br><br>
+                            <strong>1.</strong> Load danger zone coordinates - {{ location_mapping.danger_zones|length if location_mapping else (critical_turns|default(0)) + (high_turns|default(0)) + (moderate_turns|default(0)) }} critical GPS points<br><br>
+                            <strong>2.</strong> Program emergency facility locations - {{ location_mapping.safety_facilities|length if location_mapping else all_pois|length }} verified coordinates<br><br>
+                            <strong>3.</strong> Set navigation waypoints - {{ location_mapping.navigation_waypoints|length if location_mapping else 'Multiple' }} route-critical points<br><br>
                             <strong>4.</strong> Verify GPS accuracy - Ensure ±1 meter precision<br><br>
                             <strong>5.</strong> Test emergency communication - Confirm GPS transmission ability
                         </div>
@@ -945,7 +945,7 @@
                             <li>Use engine braking on all curves and descents</li>
                             <li>Monitor liquid surge indicators continuously</li>
                             <li>Emergency communication check every 30 minutes</li>
-                            <li>Total curves requiring reduced speed: {{ len(sharp_turns) + len(curves) }}</li>
+                            <li>Total curves requiring reduced speed: {{ sharp_turns|length + curves|length }}</li>
                             <li>Maximum safe speed: {{ tt_specs.get('max_speed', 50) }} kmph for {{ tt_specs.capacity_range|default('20-24 KL') }} TT</li>
                             <li>Check bridge weight limits - Gross weight {{ "%.1f"|format(tt_specs.get('gross_weight', 30300)/1000) }}T</li>
                         </ul>
@@ -998,7 +998,7 @@
                 <div style="text-align: center; margin-bottom: 5px;">
                     <strong>GPS Accuracy:</strong> ±1 meter precision | <strong>Enhanced Features:</strong> GPS precision mapping | Interactive coordinate display | Emergency response matrix | Real-time navigation support
                 </div>
-                This enhanced GPS-enabled route analysis report has been generated using advanced location mapping technology with {{ (len(location_mapping.danger_zones) if location_mapping else 0) + (len(location_mapping.safety_facilities) if location_mapping else len(all_pois)) + (len(location_mapping.navigation_waypoints) if location_mapping else 0) }} precisely mapped locations. All GPS coordinates verified against Google Maps API and comply with WGS84 international standards. Driver discretion and adherence to real-time safety assessments remain paramount.
+                This enhanced GPS-enabled route analysis report has been generated using advanced location mapping technology with {{ (location_mapping.danger_zones|length if location_mapping else 0) + (location_mapping.safety_facilities|length if location_mapping else all_pois|length) + (location_mapping.navigation_waypoints|length if location_mapping else 0) }} precisely mapped locations. All GPS coordinates verified against Google Maps API and comply with WGS84 international standards. Driver discretion and adherence to real-time safety assessments remain paramount.
             </div>
         </div>
     </div>
