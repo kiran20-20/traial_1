@@ -23,6 +23,8 @@ app.secret_key = 'your_secret_key_here'
 app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
 
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+
 try:
     if GEMINI_API_KEY:
         genai.configure(api_key=GEMINI_API_KEY)
@@ -2992,6 +2994,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
