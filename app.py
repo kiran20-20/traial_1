@@ -206,13 +206,12 @@ Facility #{i+1}: {facility.get('id', 'Unknown')}
     print(f"✅ Complete context built: {len(context)} characters")
     return context
 
-# GROQ AI IMPLEMENTATION - PASTE THIS INTO YOUR app.py
-# Replace your existing Gemini functions with these
-
+# OPENAI IMPLEMENTATION - PASTE THIS INTO YOUR app.py
 import requests
+import json
 
 def ai_chat_gemini_complete(user_question, tt_specs):
-    """Complete AI chat using Groq API - keeps same function name"""
+    """Complete AI chat using OpenAI API - keeps same function name"""
     try:
         # Build complete route context (your existing function)
         complete_context = build_complete_route_context()
@@ -255,16 +254,19 @@ Based on ALL the route analysis data provided above, give a detailed, specific a
 
 Provide a comprehensive answer using the actual route data."""
 
-        # Groq API call
-        url = "https://api.groq.com/openai/v1/chat/completions"
+        # OpenAI API call
+        url = "https://api.openai.com/v1/chat/completions"
         headers = {
-            "Authorization": f"Bearer {os.environ.get('GROQ_API_KEY')}",
+            "Authorization": f"Bearer {os.environ.get('OPENAI_API_KEY')}",
             "Content-Type": "application/json"
         }
         
         payload = {
-            "model": "llama3-8b-8192",
-            "messages": [{"role": "user", "content": final_prompt}],
+            "model": "gpt-3.5-turbo",
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"{complete_context}\n\nQuestion: {user_question}"}
+            ],
             "max_tokens": 1200,
             "temperature": 0.3
         }
@@ -274,18 +276,18 @@ Provide a comprehensive answer using the actual route data."""
         if response.status_code == 200:
             result = response.json()
             ai_response = result['choices'][0]['message']['content']
-            print(f"✅ Groq AI responded with {len(ai_response)} characters")
+            print(f"✅ OpenAI responded with {len(ai_response)} characters")
             return ai_response
         else:
-            print(f"❌ Groq API error: {response.status_code}")
+            print(f"❌ OpenAI API error: {response.status_code}")
             return "AI assistant temporarily unavailable. Please try again."
             
     except Exception as e:
-        print(f"❌ Groq AI error: {e}")
+        print(f"❌ OpenAI error: {e}")
         return "I encountered an error while analyzing your route data. Please try again."
 
 def analyze_route_with_complete_ai(coords, sharp_turns, curves, tt_specs, pois):
-    """Generate comprehensive AI analysis using Groq - keeps same function name"""
+    """Generate comprehensive AI analysis using OpenAI - keeps same function name"""
     try:
         # Build complete analysis context
         route_context = build_complete_route_context()
@@ -307,15 +309,17 @@ Based on the complete route data above, provide:
 
 Make your analysis specific, practical, and reference the actual data points provided."""
 
-        url = "https://api.groq.com/openai/v1/chat/completions"
+        url = "https://api.openai.com/v1/chat/completions"
         headers = {
-            "Authorization": f"Bearer {os.environ.get('GROQ_API_KEY')}",
+            "Authorization": f"Bearer {os.environ.get('OPENAI_API_KEY')}",
             "Content-Type": "application/json"
         }
         
         payload = {
-            "model": "llama3-8b-8192",
-            "messages": [{"role": "user", "content": analysis_prompt}],
+            "model": "gpt-3.5-turbo",
+            "messages": [
+                {"role": "user", "content": analysis_prompt}
+            ],
             "max_tokens": 1500,
             "temperature": 0.2
         }
@@ -329,8 +333,53 @@ Make your analysis specific, practical, and reference the actual data points pro
             return generate_comprehensive_fallback(sharp_turns, curves, tt_specs, pois, session.get('route_report', {}))
             
     except Exception as e:
-        print(f"Groq analysis error: {e}")
+        print(f"OpenAI analysis error: {e}")
         return generate_comprehensive_fallback(sharp_turns, curves, tt_specs, pois, session.get('route_report', {}))
+
+def generate_safety_briefing(tt_specs, weather_condition="clear"):
+    """Generate AI-powered safety briefing using OpenAI"""
+    try:
+        prompt = f"""Generate a pre-trip safety checklist for this specific vehicle. Do not ask for more information.
+
+VEHICLE SPECIFICATIONS PROVIDED:
+- Tanker type: {tt_specs['capacity_range']}
+- Cargo: {tt_specs['avg_capacity_liters']:,} liters petroleum products
+- Gross weight: {tt_specs['gross_weight']/1000:.1f} tonnes
+- Axle load: {tt_specs['axle_load']:.1f}T per axle
+- Max speed: {tt_specs['max_speed']} km/h
+
+CREATE CHECKLIST WITH:
+1. 5 critical pre-departure checks
+2. 3 speed/driving rules
+3. 2 emergency procedures
+4. Regulatory requirements
+
+Format as numbered list. Keep concise and actionable."""
+
+        url = "https://api.openai.com/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {os.environ.get('OPENAI_API_KEY')}",
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "model": "gpt-3.5-turbo",
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": 800,
+            "temperature": 0.3
+        }
+        
+        response = requests.post(url, headers=headers, json=payload, timeout=30)
+        
+        if response.status_code == 200:
+            result = response.json()
+            return result['choices'][0]['message']['content']
+        else:
+            return generate_fallback_briefing(tt_specs, weather_condition)
+            
+    except Exception as e:
+        print(f"OpenAI briefing error: {e}")
+        return generate_fallback_briefing(tt_specs, weather_condition)
 
 API_KEY = os.environ.get("API_KEY")  # Secure access
 gmaps = googlemaps.Client(key=API_KEY)
@@ -2949,6 +2998,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
