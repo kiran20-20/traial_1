@@ -640,7 +640,7 @@
                         {% else %}
                             {% for turn in sharp_turns[:15] %}
                             <tr>
-                                <td class="zone-id">DZ-{{ loop.index0 + 1:02d }}</td>
+                                <td class="zone-id">DZ-{{ "%02d"|format(loop.index0 + 1) }}</td>
                                 <td class="coordinates">{{ "%.6f, %.6f"|format(turn.location[0], turn.location[1]) }}</td>
                                 <td>{{ turn.get('risk_category', 'Sharp Turn') }}<br><small>{{ turn.get('warning', 'Caution required') }}</small></td>
                                 <td>
@@ -729,7 +729,7 @@
                     <tbody>
                         {% for poi in all_pois[:12] %}
                         <tr>
-                            <td class="zone-id">SF-{{ loop.index0 + 1:02d }}</td>
+                            <td class="zone-id">SF-{{ "%02d"|format(loop.index0 + 1) }}</td>
                             <td>
                                 {% if 'hospital' in poi.type %}
                                     <span class="risk-badge risk-critical">🏥 MEDICAL</span>
@@ -822,7 +822,7 @@
                             {% for turn in sharp_turns[:8] %}
                             {% if turn.get('turn_angle', 0) >= 60 %}
                             <tr>
-                                <td class="zone-id">⚠️ WP-HAZ{{ loop.index0 + 1:02d }}</td>
+                                <td class="zone-id">⚠️ WP-HAZ{{ "%02d"|format(loop.index0 + 1) }}</td>
                                 <td class="coordinates">{{ "%.6f, %.6f"|format(turn.location[0], turn.location[1]) }}</td>
                                 <td><strong>{{ turn.get('risk_category', 'Critical Hazard Zone') }}</strong><br><small>{{ turn.get('turn_angle', 0)|round(1) }}° {{ turn.get('direction', 'turn') }}</small></td>
                                 <td style="font-size: 6pt;">
