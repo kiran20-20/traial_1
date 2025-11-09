@@ -473,38 +473,6 @@ SAFE_TURN_ANGLE = 130  # degrees
 DANGEROUS_TURN_ANGLE = 30  # degrees
 
 
-def get_working_gemini_model():
-    """Try different model names until one works"""
-    model_attempts = [
-        'gemini-1.5-flash-latest',
-        'gemini-1.5-flash',
-        'gemini-1.5-flash-001',
-        'gemini-1.5-pro-latest',
-        'gemini-1.5-pro',
-        'gemini-pro',
-        'models/gemini-1.5-flash-latest',
-        'models/gemini-1.5-flash',
-        'models/gemini-1.5-pro',
-        'models/gemini-pro'
-    ]
-    
-    for model_name in model_attempts:
-        try:
-            model = genai.GenerativeModel(model_name)
-            # Quick test to see if it works
-            test = model.generate_content("Hi")
-            if test.text:
-                print(f"✅ Successfully using model: {model_name}")
-                return model
-        except Exception as e:
-            print(f"❌ {model_name} failed: {str(e)[:50]}")
-            continue
-    
-    print("⚠️ All models failed, using fallback")
-    return None
-
-
-
 def login_required(f):
     """Decorator to require login for protected routes"""
     @wraps(f)
@@ -2992,6 +2960,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
