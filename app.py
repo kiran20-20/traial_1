@@ -45,11 +45,11 @@ def get_working_gemini_model():
     # Fresh API compatible models - simplified and current
     model_attempts = [
         'gemini-1.5-flash',
+        'gemini-1.5-flash-latest',
+        'gemini-1.5-pro-latest', 
+        'gemini-1.5-flash',
         'gemini-1.5-pro',
-        'gemini-1.0-pro',
-        'models/gemini-1.5-flash',
-        'models/gemini-1.5-pro',
-        'models/gemini-1.0-pro'
+        'gemini-pro'
     ]
     
     for model_name in model_attempts:
@@ -3006,6 +3006,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
