@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IOCL Official Route Analysis Report - IndianOil Corporation Limited</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @page {
             margin: 1.5cm;
@@ -19,11 +20,12 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-            background: white;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             color: #2c3e50;
-            line-height: 1.5;
+            line-height: 1.6;
             font-size: 11pt;
             padding: 20px;
+            min-height: 100vh;
         }
 
         .container {
@@ -31,164 +33,371 @@
             margin: 0 auto;
             background: white;
             position: relative;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
         }
 
         /* Header Section */
         .header-section {
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             color: white;
-            padding: 30px;
+            padding: 40px;
             text-align: center;
-            margin-bottom: 30px;
-            border-radius: 12px;
             position: relative;
             overflow: hidden;
         }
 
+        .header-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>') repeat;
+            animation: float 20s linear infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(-10px) translateX(5px); }
+            100% { transform: translateY(0px) translateX(0px); }
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .iocl-brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .iocl-logo-large {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            color: #1e3c72;
+            font-size: 24px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .brand-text {
+            text-align: left;
+        }
+
         .header-title {
-            font-size: 24pt;
-            font-weight: 700;
+            font-size: 28pt;
+            font-weight: 900;
             margin-bottom: 8px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+            letter-spacing: 1px;
         }
 
         .header-subtitle {
-            font-size: 16pt;
-            margin-bottom: 20px;
+            font-size: 18pt;
+            margin-bottom: 25px;
             opacity: 0.95;
+            font-weight: 300;
         }
 
         .header-meta {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 20px;
-            margin-top: 25px;
+            margin-top: 30px;
         }
 
         .meta-item {
             background: rgba(255,255,255,0.15);
-            padding: 15px;
-            border-radius: 8px;
-            backdrop-filter: blur(10px);
+            padding: 18px;
+            border-radius: 12px;
+            backdrop-filter: blur(15px);
             border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .meta-item:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
         }
 
         .meta-label {
             font-size: 10pt;
             opacity: 0.8;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
+            font-weight: 500;
         }
 
         .meta-value {
-            font-size: 14pt;
+            font-size: 16pt;
             font-weight: 700;
+        }
+
+        /* Navigation Bar */
+        .nav-bar {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            padding: 0 20px;
+        }
+
+        .nav-item {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(255,255,255,0.1);
+            color: #ffd700;
+            transform: translateY(-2px);
         }
 
         /* Executive Summary */
         .executive-summary {
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border: 2px solid #1e3c72;
-            border-radius: 12px;
-            padding: 30px;
-            margin-bottom: 30px;
+            border: 3px solid #1e3c72;
+            border-radius: 15px;
+            padding: 35px;
+            margin: 30px;
             position: relative;
+            overflow: hidden;
+        }
+
+        .executive-summary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #1e3c72, #ffd700, #1e3c72);
         }
 
         .section-header {
-            background: #1e3c72;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             color: white;
-            padding: 15px 20px;
-            margin: -30px -30px 25px -30px;
-            border-radius: 10px 10px 0 0;
-            font-size: 16pt;
+            padding: 18px 25px;
+            margin: -35px -35px 30px -35px;
+            border-radius: 12px 12px 0 0;
+            font-size: 18pt;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.2px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
         .summary-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin-bottom: 25px;
+            gap: 25px;
+            margin-bottom: 30px;
         }
 
         .summary-card {
             background: white;
-            border: 2px solid #e9ecef;
-            border-radius: 12px;
-            padding: 20px;
+            border: 3px solid #e9ecef;
+            border-radius: 15px;
+            padding: 25px;
             text-align: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(30,60,114,0.1), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .summary-card:hover::before {
+            left: 100%;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-8px);
+            border-color: #1e3c72;
+            box-shadow: 0 15px 40px rgba(30,60,114,0.2);
         }
 
         .summary-value {
-            font-size: 28pt;
+            font-size: 32pt;
             font-weight: 900;
             color: #1e3c72;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             line-height: 1;
         }
 
         .summary-label {
-            font-size: 10pt;
+            font-size: 11pt;
             color: #6c757d;
             text-transform: uppercase;
             font-weight: 600;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
         }
 
         /* Content Sections */
         .content-section {
             background: white;
-            border: 1px solid #e9ecef;
-            border-radius: 12px;
-            margin-bottom: 25px;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            margin: 25px 30px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
         }
 
         .content-body {
-            padding: 25px;
+            padding: 30px;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin: 30px;
+        }
+
+        .action-btn {
+            padding: 18px 25px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: white;
+            text-align: center;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .action-btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            box-shadow: 0 6px 20px rgba(39, 174, 96, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.3);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.2);
         }
 
         /* Specifications Table */
         .spec-table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             margin: 20px 0;
             background: white;
-            border-radius: 8px;
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
         }
 
         .spec-table th {
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             color: white;
-            padding: 15px 12px;
+            padding: 18px 15px;
             text-align: left;
             font-weight: 700;
-            font-size: 10pt;
+            font-size: 11pt;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
         }
 
         .spec-table td {
-            padding: 12px;
+            padding: 15px;
             border-bottom: 1px solid #f1f3f4;
             vertical-align: top;
-            font-size: 10pt;
+            font-size: 11pt;
+            transition: background 0.3s ease;
+        }
+
+        .spec-table tr:hover td {
+            background: #f8f9fa;
         }
 
         .spec-table tr:nth-child(even) {
             background: #f8f9fa;
+        }
+
+        .spec-table tr:nth-child(even):hover {
+            background: #e9ecef;
         }
 
         .spec-value {
@@ -197,9 +406,9 @@
         }
 
         .compliance-status {
-            padding: 4px 12px;
+            padding: 6px 12px;
             border-radius: 20px;
-            font-size: 9pt;
+            font-size: 10pt;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -208,29 +417,37 @@
         .status-compliant {
             background: #d4edda;
             color: #155724;
+            border: 1px solid #c3e6cb;
         }
 
         .status-warning {
             background: #fff3cd;
             color: #856404;
+            border: 1px solid #ffeaa7;
         }
 
         /* Risk Assessment */
         .risk-matrix {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin: 20px 0;
+            gap: 20px;
+            margin: 25px 0;
         }
 
         .risk-card {
             text-align: center;
-            padding: 20px;
-            border-radius: 12px;
+            padding: 25px;
+            border-radius: 15px;
             color: white;
             font-weight: 700;
             position: relative;
             overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .risk-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
         }
 
         .risk-critical {
@@ -247,138 +464,108 @@
         }
 
         .risk-number {
-            font-size: 32pt;
+            font-size: 40pt;
             font-weight: 900;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             line-height: 1;
         }
 
         .risk-label {
-            font-size: 10pt;
+            font-size: 11pt;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.2px;
         }
 
         /* Alert Boxes */
         .alert {
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 8px;
-            border-left: 5px solid;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 12px;
+            border-left: 6px solid;
             font-weight: 600;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .alert::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, transparent, rgba(255,255,255,0.5), transparent);
+            animation: alertShine 2s ease-in-out infinite;
+        }
+
+        @keyframes alertShine {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
         }
 
         .alert-info {
-            background: #e3f2fd;
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
             border-left-color: #2196f3;
             color: #0d47a1;
         }
 
         .alert-warning {
-            background: #fff3e0;
+            background: linear-gradient(135deg, #fff3e0, #ffcc02);
             border-left-color: #ff9800;
             color: #e65100;
         }
 
         .alert-danger {
-            background: #ffebee;
+            background: linear-gradient(135deg, #ffebee, #ffcdd2);
             border-left-color: #f44336;
             color: #b71c1c;
         }
 
         .alert-success {
-            background: #e8f5e8;
+            background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
             border-left-color: #4caf50;
             color: #2e7d32;
         }
 
         .alert-icon {
-            font-size: 18pt;
-            margin-right: 10px;
-        }
-
-        /* Progress Bars */
-        .progress-container {
-            margin: 15px 0;
-        }
-
-        .progress-label {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 10pt;
-            font-weight: 600;
-            color: #495057;
-        }
-
-        .progress-bar {
-            background: #e9ecef;
-            height: 12px;
-            border-radius: 6px;
-            overflow: hidden;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
-        }
-
-        .progress-fill {
-            height: 100%;
-            border-radius: 6px;
-            transition: width 0.8s ease;
-        }
-
-        .progress-success { background: linear-gradient(90deg, #28a745, #20c997); }
-        .progress-warning { background: linear-gradient(90deg, #ffc107, #fd7e14); }
-        .progress-danger { background: linear-gradient(90deg, #dc3545, #e83e8c); }
-
-        /* Emergency Contacts */
-        .emergency-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin: 20px 0;
-        }
-
-        .emergency-card {
-            background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
-            border: 2px solid #e9ecef;
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-
-        .emergency-icon {
-            font-size: 36pt;
-            margin-bottom: 10px;
-        }
-
-        .emergency-number {
-            font-size: 18pt;
-            font-weight: 900;
-            color: #dc3545;
-            margin-bottom: 5px;
-        }
-
-        .emergency-service {
-            font-size: 11pt;
-            color: #6c757d;
-            font-weight: 600;
+            font-size: 20pt;
+            margin-right: 12px;
+            vertical-align: middle;
         }
 
         /* Footer */
         .document-footer {
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             color: white;
-            padding: 25px;
+            padding: 30px;
             margin-top: 40px;
-            border-radius: 12px;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .document-footer::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            animation: float 30s linear infinite;
+        }
+
+        .footer-content {
+            position: relative;
+            z-index: 1;
         }
 
         .footer-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-bottom: 20px;
+            gap: 25px;
+            margin-bottom: 25px;
         }
 
         .footer-section {
@@ -386,26 +573,57 @@
         }
 
         .footer-label {
-            font-size: 10pt;
+            font-size: 11pt;
             opacity: 0.8;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
+            font-weight: 500;
         }
 
         .footer-value {
-            font-size: 11pt;
+            font-size: 13pt;
             font-weight: 700;
         }
 
         .disclaimer {
             background: rgba(255,255,255,0.1);
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-            font-size: 9pt;
-            line-height: 1.6;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 25px;
+            font-size: 10pt;
+            line-height: 1.8;
             border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        /* Scroll to Top Button */
+        .scroll-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            box-shadow: 0 8px 25px rgba(30, 60, 114, 0.3);
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .scroll-top.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .scroll-top:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 35px rgba(30, 60, 114, 0.4);
         }
 
         /* Print Styles */
@@ -413,54 +631,147 @@
             body { 
                 padding: 0; 
                 font-size: 10pt;
+                background: white;
             }
             .container { 
                 max-width: 100%; 
                 box-shadow: none;
+                border-radius: 0;
+            }
+            .nav-bar, .action-buttons, .scroll-top {
+                display: none;
             }
             .content-section { 
                 box-shadow: none; 
                 border: 1px solid #ddd;
                 page-break-inside: avoid;
+                margin: 15px 0;
             }
             .summary-card {
                 box-shadow: none;
                 border: 1px solid #ddd;
             }
         }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header-meta {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .summary-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .risk-matrix {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+            
+            .footer-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .spec-table {
+                font-size: 10pt;
+            }
+            
+            .spec-table th, .spec-table td {
+                padding: 10px;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- Scroll to Top Button -->
+    <button class="scroll-top" onclick="scrollToTop()">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
     <div class="container">
         <!-- Header Section -->
         <div class="header-section">
-            <div class="header-title">IOCL OFFICIAL ROUTE ANALYSIS REPORT</div>
-            <div class="header-subtitle">IndianOil Corporation Limited - Tank Truck Safety Assessment</div>
-            
-            <div class="header-meta">
-                <div class="meta-item">
-                    <div class="meta-label">Terminal</div>
-                    <div class="meta-value">{{ username|default('Vadinar') }}</div>
+            <div class="header-content">
+                <div class="iocl-brand">
+                    <div class="iocl-logo-large">IOCL</div>
+                    <div class="brand-text">
+                        <div class="header-title">ROUTE ANALYSIS REPORT</div>
+                        <div class="header-subtitle">IndianOil Corporation Limited</div>
+                    </div>
                 </div>
-                <div class="meta-item">
-                    <div class="meta-label">Tank Truck Type</div>
-                    <div class="meta-value">{{ tt_specs.capacity_range|default('20-24 KL') }} TT</div>
-                </div>
-                <div class="meta-item">
-                    <div class="meta-label">Report Generated</div>
-                    <div class="meta-value" id="report-timestamp">{{ current_timestamp }}</div>
-                </div>
-                <div class="meta-item">
-                    <div class="meta-label">Route Distance</div>
-                    <div class="meta-value">{{ route_report.total_distance|default('N/A') }}</div>
+                
+                <div class="header-meta">
+                    <div class="meta-item">
+                        <div class="meta-label">Terminal</div>
+                        <div class="meta-value">{{ username|default('Vadinar') }}</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Tank Truck Type</div>
+                        <div class="meta-value">{{ tt_specs.capacity_range|default('20-24 KL') }}</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Report Generated</div>
+                        <div class="meta-value" id="report-timestamp">{{ current_timestamp|default('Loading...') }}</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Route Distance</div>
+                        <div class="meta-value">{{ route_report.total_distance|default('N/A') }}</div>
+                    </div>
                 </div>
             </div>
         </div>
 
+        <!-- Navigation Bar -->
+        <div class="nav-bar">
+            <div class="nav-container">
+                <a href="#executive" class="nav-item active">
+                    <i class="fas fa-chart-bar"></i>
+                    Executive Summary
+                </a>
+                <a href="#specifications" class="nav-item">
+                    <i class="fas fa-truck"></i>
+                    Vehicle Specs
+                </a>
+                <a href="#risk-assessment" class="nav-item">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Risk Assessment
+                </a>
+                <a href="#safety" class="nav-item">
+                    <i class="fas fa-shield-alt"></i>
+                    Safety Protocols
+                </a>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button onclick="window.print()" class="action-btn btn-primary">
+                <i class="fas fa-print"></i>
+                Print Report
+            </button>
+            <button onclick="exportToPDF()" class="action-btn btn-secondary">
+                <i class="fas fa-file-pdf"></i>
+                Export PDF
+            </button>
+            <a href="{{ url_for('home') }}" class="action-btn btn-danger">
+                <i class="fas fa-home"></i>
+                Back to Dashboard
+            </a>
+        </div>
+
         <!-- Executive Summary -->
-        <div class="executive-summary">
+        <div id="executive" class="executive-summary">
             <div class="section-header">
-                <span>📊</span> EXECUTIVE SUMMARY
+                <i class="fas fa-chart-bar"></i>
+                EXECUTIVE SUMMARY
             </div>
             
             <div class="summary-grid">
@@ -478,8 +789,7 @@
                 </div>
                 <div class="summary-card">
                     <div class="summary-value">{{ tt_specs.max_speed|default(50) }}</div>
-                    <div class="summary-label">Max Speed</div>
-                    <div style="font-size: 8pt; color: #adb5bd; margin-top: 2px;">km/h</div>
+                    <div class="summary-label">Max Speed (km/h)</div>
                 </div>
             </div>
 
@@ -490,20 +800,20 @@
             
             {% if hazard_density > 2.0 or critical_count > 5 %}
             <div class="alert alert-danger">
-                <span class="alert-icon">⚠️</span>
+                <i class="alert-icon fas fa-exclamation-triangle"></i>
                 <strong>CRITICAL: HIGH RISK ROUTE CLASSIFICATION</strong><br>
                 This route contains {{ total_hazards }} identified risk zones. Mandatory safety briefing required. 
                 Consider alternative routing or enhanced safety protocols for {{ tt_specs.capacity_range|default('tanker') }} petroleum transport operations.
             </div>
             {% elif hazard_density > 1.0 or critical_count > 2 %}
             <div class="alert alert-warning">
-                <span class="alert-icon">🔶</span>
+                <i class="alert-icon fas fa-exclamation"></i>
                 <strong>MODERATE RISK ROUTE CLASSIFICATION</strong><br>
                 Enhanced awareness required. Speed reduction mandatory at {{ critical_count + (high_turns|default(0)) }} marked zones.
             </div>
             {% else %}
             <div class="alert alert-success">
-                <span class="alert-icon">✅</span>
+                <i class="alert-icon fas fa-check-circle"></i>
                 <strong>LOW RISK ROUTE CLASSIFICATION</strong><br>
                 Standard safety protocols applicable. Route suitable for {{ tt_specs.capacity_range|default('tanker') }} petroleum operations.
             </div>
@@ -511,19 +821,20 @@
         </div>
 
         <!-- Tank Truck Technical Specifications -->
-        <div class="content-section">
+        <div id="specifications" class="content-section">
             <div class="section-header">
-                <span>🚛</span> TANK TRUCK TECHNICAL SPECIFICATIONS
+                <i class="fas fa-truck"></i>
+                TANK TRUCK TECHNICAL SPECIFICATIONS
             </div>
             <div class="content-body">
                 <table class="spec-table">
                     <thead>
                         <tr>
-                            <th style="width: 25%;">Parameter</th>
-                            <th style="width: 20%;">Value</th>
-                            <th style="width: 20%;">Unit</th>
-                            <th style="width: 20%;">Regulatory Status</th>
-                            <th style="width: 15%;">Classification</th>
+                            <th>Parameter</th>
+                            <th>Value</th>
+                            <th>Unit</th>
+                            <th>Regulatory Status</th>
+                            <th>Classification</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -540,13 +851,6 @@
                             <td>T</td>
                             <td><span class="compliance-status status-compliant">✓ VERIFIED</span></td>
                             <td>Petroleum</td>
-                        </tr>
-                        <tr>
-                            <td><strong>TARE WEIGHT</strong></td>
-                            <td class="spec-value">{{ "%.1f"|format(tt_specs.tare_weight|default(10500)/1000) }}</td>
-                            <td>T</td>
-                            <td><span class="compliance-status status-compliant">✓ CERTIFIED</span></td>
-                            <td>Vehicle Empty</td>
                         </tr>
                         <tr>
                             <td><strong>GROSS VEHICLE WEIGHT</strong></td>
@@ -573,95 +877,21 @@
                             <td><span class="compliance-status status-compliant">✓ ENFORCED</span></td>
                             <td>Regulated</td>
                         </tr>
-                        <tr>
-                            <td><strong>SAFETY RISK MULTIPLIER</strong></td>
-                            <td class="spec-value">{{ tt_specs.risk_multiplier|default(1.4) }}x</td>
-                            <td>Factor</td>
-                            <td><span class="compliance-status {% if tt_specs.risk_multiplier|default(1.4) > 1.5 %}status-warning{% else %}status-compliant{% endif %}">
-                                {% if tt_specs.risk_multiplier|default(1.4) > 1.5 %}⚠ ENHANCED{% else %}✓ STANDARD{% endif %}
-                            </span></td>
-                            <td>Risk Assessment</td>
-                        </tr>
-                        <tr>
-                            <td><strong>VEHICLE CLASSIFICATION</strong></td>
-                            <td class="spec-value">{{ tt_specs.capacity_range|default('20-24 KL') }}</td>
-                            <td>Category</td>
-                            <td><span class="compliance-status status-compliant">✓ CERTIFIED</span></td>
-                            <td>Hazmat Transport</td>
-                        </tr>
                     </tbody>
                 </table>
 
                 <div class="alert alert-info">
-                    <span class="alert-icon">ℹ️</span>
+                    <i class="alert-icon fas fa-info-circle"></i>
                     <strong>REGULATORY COMPLIANCE:</strong> This analysis is specifically designed for {{ tt_specs.capacity_range|default('20-24 KL') }} petroleum tanker trucks carrying hazardous materials under Indian Motor Vehicle Rules, ADR regulations, and PESO guidelines.
                 </div>
-
-                <div class="progress-container">
-                    <div class="progress-label">
-                        <span><strong>Load Distribution Analysis</strong></span>
-                        <span>Axle Load vs Legal Limit {{ "%.1f"|format(tt_specs.axle_load|default(15.15)) }}T / 18.5T</span>
-                    </div>
-                    <div class="progress-bar">
-                        {% set axle_percentage = (tt_specs.axle_load|default(15.15) / 18.5 * 100) %}
-                        <div class="progress-fill {% if axle_percentage > 90 %}progress-danger{% elif axle_percentage > 75 %}progress-warning{% else %}progress-success{% endif %}" 
-                             style="width: {{ axle_percentage|int }}%;"></div>
-                    </div>
-                </div>
             </div>
         </div>
 
-        <!-- Comprehensive Route Analysis -->
-        <div class="content-section">
+        <!-- Risk Assessment -->
+        <div id="risk-assessment" class="content-section">
             <div class="section-header">
-                <span>📈</span> COMPREHENSIVE ROUTE ANALYSIS
-            </div>
-            <div class="content-body">
-                <div class="summary-grid">
-                    <div class="summary-card">
-                        <div class="summary-value">{{ route_report.route_analysis.total_points|default(266) if route_report and route_report.get('route_analysis') else 266 }}</div>
-                        <div class="summary-label">GPS Coordinates Analyzed</div>
-                    </div>
-                    <div class="summary-card">
-                        <div class="summary-value">{{ "%.1f"|format(route_report.route_analysis.points_per_km|default(1.1)) if route_report and route_report.get('route_analysis') else '1.1' }}</div>
-                        <div class="summary-label">Analysis Points Per KM</div>
-                    </div>
-                    <div class="summary-card">
-                        <div class="summary-value">{{ route_report.route_analysis.fuel_stations|default(11) if route_report and route_report.get('route_analysis') else 11 }}</div>
-                        <div class="summary-label">Fuel Stations Available</div>
-                    </div>
-                    <div class="summary-card">
-                        <div class="summary-value">{{ (route_report.route_analysis.hospitals_along_route|default(5)) + (route_report.route_analysis.police_stations|default(4)) if route_report and route_report.get('route_analysis') else 9 }}</div>
-                        <div class="summary-label">Emergency Response Points</div>
-                    </div>
-                </div>
-
-                <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #e9ecef;">
-                    <h4 style="color: #1e3c72; margin-bottom: 15px; font-size: 12pt;">Route Quality Assessment</h4>
-                    
-                    <div class="progress-container">
-                        <div class="progress-label">
-                            <span><strong>Route Analysis Granularity</strong></span>
-                            <span>{{ "%.1f"|format(route_report.route_analysis.points_per_km|default(1.1)) if route_report and route_report.get('route_analysis') else '1.1' }} analysis points/km</span>
-                        </div>
-                        <div class="progress-bar">
-                            {% set granularity_percentage = ((route_report.route_analysis.points_per_km|default(1.1)) / 5 * 100)|int if route_report and route_report.get('route_analysis') else 22 %}
-                            <div class="progress-fill progress-success" style="width: {{ granularity_percentage }}%;"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="alert alert-info">
-                    <span class="alert-icon">ℹ️</span>
-                    <strong>ANALYSIS DEPTH:</strong> Route examined with {{ "%.1f"|format(route_report.route_analysis.points_per_km|default(1.1)) if route_report and route_report.get('route_analysis') else '1.1' }} GPS points per kilometer for comprehensive hazard detection and safety assessment.
-                </div>
-            </div>
-        </div>
-
-        <!-- Comprehensive Risk Assessment -->
-        <div class="content-section">
-            <div class="section-header">
-                <span>⚠️</span> COMPREHENSIVE RISK ASSESSMENT
+                <i class="fas fa-exclamation-triangle"></i>
+                COMPREHENSIVE RISK ASSESSMENT
             </div>
             <div class="content-body">
                 <div class="risk-matrix">
@@ -679,254 +909,115 @@
                     </div>
                 </div>
 
-                <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #e9ecef;">
-                    <h4 style="color: #1e3c72; margin-bottom: 15px; font-size: 12pt;">Risk Assessment Matrix for {{ tt_specs.capacity_range|default('20-24 KL') }} Petroleum Tanker</h4>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        <div>
-                            <div style="margin-bottom: 10px;"><strong>Overall Risk Classification:</strong> 
-                                {% if hazard_density > 2.0 %}
-                                    <span style="color: #dc3545; font-weight: 700;">High</span> {{ hazard_density }} hazards per kilometer
-                                {% elif hazard_density > 1.0 %}
-                                    <span style="color: #fd7e14; font-weight: 700;">Moderate</span> {{ hazard_density }} hazards per kilometer
-                                {% else %}
-                                    <span style="color: #28a745; font-weight: 700;">Low</span> {{ "%.2f"|format(0.12) }} hazards per kilometer
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div>
-                            <div style="margin-bottom: 10px;"><strong>Route Distance:</strong> {{ route_report.total_distance|default('251 km') }}</div>
-                            <div style="margin-bottom: 10px;"><strong>Total Hazards:</strong> {{ total_hazards if total_hazards > 0 else 29 }} identified zones</div>
-                            <div style="margin-bottom: 10px;"><strong>TT Risk Amplification:</strong> {{ tt_specs.risk_multiplier|default(1.4) }}x factor</div>
-                            <div style="margin-bottom: 10px;"><strong>Vehicle Weight Impact:</strong> {{ "%.1f"|format(tt_specs.gross_weight|default(30300)/1000) }}T classification</div>
-                            <div><strong>Speed Restriction Zones:</strong> {{ critical_turns|default(0) + (high_turns|default(0)) if (critical_turns|default(0) + (high_turns|default(0))) > 0 else 0 }} locations</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #4caf50;">
-                    <h5 style="margin-bottom: 10px; color: #2e7d32;">Risk Classification Standards (Petroleum Transport)</h5>
-                    <div style="font-size: 9pt; line-height: 1.6; color: #2e7d32;">
-                        <strong>Risk Levels by Hazard Density:</strong><br>
-                        • <strong>Low (&lt; 0.5 hazards/km):</strong> Standard protocols sufficient<br>
-                        • <strong>Low-Moderate (0.5-1.0/km):</strong> Enhanced awareness required<br>
-                        • <strong>Moderate (1.0-2.0/km):</strong> Speed reduction mandatory<br>
-                        • <strong>High (2.0-3.0/km):</strong> Alternative route recommended<br>
-                        • <strong>Very High (&gt; 3.0/km):</strong> Route unsuitable for standard operations
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Traffic Flow Analysis -->
-        <div class="content-section">
-            <div class="section-header">
-                <span>🚦</span> TRAFFIC FLOW ANALYSIS
-            </div>
-            <div class="content-body">
-                <div class="summary-grid">
-                    <div class="summary-card">
-                        <div class="summary-value">{{ route_report.traffic_analysis.light_traffic_segments|default(237) if route_report and route_report.get('traffic_analysis') else 237 }}</div>
-                        <div class="summary-label">Free Flow Segments</div>
-                    </div>
-                    <div class="summary-card">
-                        <div class="summary-value">{{ route_report.traffic_analysis.moderate_traffic_segments|default(29) if route_report and route_report.get('traffic_analysis') else 29 }}</div>
-                        <div class="summary-label">Moderate Traffic Zones</div>
-                    </div>
-                    <div class="summary-card">
-                        <div class="summary-value">{{ route_report.traffic_analysis.heavy_traffic_segments|default(0) if route_report and route_report.get('traffic_analysis') else 0 }}</div>
-                        <div class="summary-label">Congested Areas</div>
-                    </div>
-                    <div class="summary-card">
-                        <div class="summary-value">{{ "%.1f"|format(route_report.traffic_analysis.average_delay_factor|default(1.0)) if route_report and route_report.get('traffic_analysis') else '1.0' }}x</div>
-                        <div class="summary-label">Expected Delay Factor</div>
-                        <div style="font-size: 8pt; color: #adb5bd; margin-top: 2px;">standard travel time</div>
-                    </div>
-                </div>
-
-                <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin: 20px 0;">
-                    <h4 style="color: #1e3c72; margin-bottom: 15px;">Traffic Impact Assessment for Hazmat Transport</h4>
+                <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); padding: 25px; border-radius: 15px; margin: 25px 0; border: 2px solid #e9ecef;">
+                    <h4 style="color: #1e3c72; margin-bottom: 20px; font-size: 14pt; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-calculator"></i>
+                        Risk Assessment Matrix for {{ tt_specs.capacity_range|default('20-24 KL') }} Petroleum Tanker
+                    </h4>
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
-                        <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; border: 1px solid #c3e6cb;">
-                            <h5 style="color: #155724; margin-bottom: 10px;">📅 OPTIMAL HOURS</h5>
-                            <div style="font-weight: 700; color: #155724; margin-bottom: 8px;">22:00 - 06:00: Minimal traffic, enhanced safety for hazmat transport</div>
-                            <div style="font-size: 10pt; color: #155724;">
-                                <strong>Benefits:</strong> Reduced congestion, better emergency access, fewer civilian vehicles
+                        <div>
+                            <div style="margin-bottom: 12px;"><strong>Overall Risk Classification:</strong> 
+                                {% if hazard_density > 2.0 %}
+                                    <span style="color: #dc3545; font-weight: 700;">High</span> - {{ hazard_density }} hazards per kilometer
+                                {% elif hazard_density > 1.0 %}
+                                    <span style="color: #fd7e14; font-weight: 700;">Moderate</span> - {{ hazard_density }} hazards per kilometer
+                                {% else %}
+                                    <span style="color: #28a745; font-weight: 700;">Low</span> - {{ "%.2f"|format(0.12) }} hazards per kilometer
+                                {% endif %}
                             </div>
+                            <div style="margin-bottom: 12px;"><strong>Route Distance:</strong> {{ route_report.total_distance|default('251 km') }}</div>
+                            <div style="margin-bottom: 12px;"><strong>Total Hazards:</strong> {{ total_hazards if total_hazards > 0 else 29 }} identified zones</div>
                         </div>
-                        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border: 1px solid #fdd663;">
-                            <h5 style="color: #856404; margin-bottom: 10px;">⚠️ AVOID PEAK HOURS</h5>
-                            <div style="font-weight: 700; color: #856404; margin-bottom: 8px;">07:00 - 10:00, 17:00 - 20:00: Heavy congestion periods</div>
-                            <div style="font-size: 10pt; color: #856404;">
-                                <strong>Risks:</strong> Extended exposure time, limited maneuverability, emergency access issues
-                            </div>
+                        <div>
+                            <div style="margin-bottom: 12px;"><strong>TT Risk Amplification:</strong> {{ tt_specs.risk_multiplier|default(1.4) }}x factor</div>
+                            <div style="margin-bottom: 12px;"><strong>Vehicle Weight Impact:</strong> {{ "%.1f"|format(tt_specs.gross_weight|default(30300)/1000) }}T classification</div>
+                            <div style="margin-bottom: 12px;"><strong>Speed Restriction Zones:</strong> {{ critical_turns|default(0) + (high_turns|default(0)) if (critical_turns|default(0) + (high_turns|default(0))) > 0 else 0 }} locations</div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Emergency Infrastructure Assessment -->
-        <div class="content-section">
+        <!-- Safety Protocols -->
+        <div id="safety" class="content-section">
             <div class="section-header">
-                <span>🏥</span> EMERGENCY INFRASTRUCTURE ASSESSMENT
+                <i class="fas fa-shield-alt"></i>
+                COMPREHENSIVE SAFETY PROTOCOLS
             </div>
             <div class="content-body">
-                <div class="summary-grid">
-                    <div class="summary-card">
-                        <div class="summary-value">{{ route_report.route_analysis.hospitals_along_route|default(5) if route_report and route_report.get('route_analysis') else 5 }}</div>
-                        <div class="summary-label">Medical Facilities</div>
-                    </div>
-                    <div class="summary-card">
-                        <div class="summary-value">{{ route_report.route_analysis.police_stations|default(4) if route_report and route_report.get('route_analysis') else 4 }}</div>
-                        <div class="summary-label">Law Enforcement</div>
-                    </div>
-                    <div class="summary-card">
-                        <div class="summary-value">{{ route_report.route_analysis.fuel_stations|default(11) if route_report and route_report.get('route_analysis') else 11 }}</div>
-                        <div class="summary-label">Fuel Stations</div>
-                    </div>
-                    <div class="summary-card">
-                        <div class="summary-value">{{ ((route_report.route_analysis.hospitals_along_route|default(5)) + (route_report.route_analysis.police_stations|default(4)) + (route_report.route_analysis.fuel_stations|default(11))) if route_report and route_report.get('route_analysis') else 20 }}</div>
-                        <div class="summary-label">Total Support Points</div>
-                    </div>
-                </div>
-
-                {% set emergency_facilities = (route_report.route_analysis.hospitals_along_route|default(5)) + (route_report.route_analysis.police_stations|default(4)) if route_report and route_report.get('route_analysis') else 9 %}
-                
-                <div class="alert alert-success">
-                    <span class="alert-icon">ℹ️</span>
-                    <strong>ADEQUATE EMERGENCY COVERAGE:</strong> {{ emergency_facilities }} emergency response facilities identified along the route. Response time estimated at 8-15 minutes for most route segments.
-                </div>
-            </div>
-        </div>
-
-        <!-- Comprehensive Safety Protocols -->
-        <div class="content-section">
-            <div class="section-header">
-                <span>🛡️</span> COMPREHENSIVE SAFETY PROTOCOLS
-            </div>
-            <div class="content-body">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 25px;">
-                    <div style="background: #ffebee; padding: 20px; border-radius: 12px; border: 2px solid #f44336;">
-                        <h4 style="color: #b71c1c; margin-bottom: 15px;">🚨 CRITICAL ACTION POINTS</h4>
-                        <div style="font-size: 10pt; line-height: 1.8; color: #b71c1c;">
-                            <div style="margin-bottom: 8px;"><strong>1</strong> CRITICAL: {{ critical_turns|default(0) }} sharp turns detected (90°+) requiring extreme caution</div>
-                            <div style="margin-bottom: 8px;"><strong>2</strong> Reduce speed to 10-15 km/h at sharp turns to prevent rollover</div>
-                            <div style="margin-bottom: 8px;"><strong>3</strong> Watch for blind spots at turns - {{ tt_specs.capacity_range|default('20-24 KL') }} TT has large blind zones</div>
-                            <div style="margin-bottom: 8px;"><strong>4</strong> Total curves requiring reduced speed: {{ (sharp_turns|length|default(0)) + (curves|length|default(0)) if (sharp_turns|length|default(0)) + (curves|length|default(0)) > 0 else 29 }}</div>
-                            <div style="margin-bottom: 8px;"><strong>5</strong> Use lower gears for engine braking on turns and steep grades</div>
-                            <div style="margin-bottom: 8px;"><strong>6</strong> Maximum safe speed: {{ tt_specs.max_speed|default(50) }} kmph for {{ tt_specs.capacity_range|default('20-24 KL') }} TT</div>
-                            <div style="margin-bottom: 8px;"><strong>7</strong> Gross weight {{ "%.1f"|format(tt_specs.gross_weight|default(30300)/1000) }}T - Check bridge weight limits</div>
-                            <div style="margin-bottom: 8px;"><strong>8</strong> Plan fuel stops considering tanker capacity and weight distribution</div>
-                            <div><strong>9</strong> Emergency contacts ready - carrying hazardous petroleum products</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+                    <div style="background: linear-gradient(135deg, #ffebee 0%, #f8bbd9 100%); padding: 25px; border-radius: 15px; border: 3px solid #f44336;">
+                        <h4 style="color: #b71c1c; margin-bottom: 20px; font-size: 14pt; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            CRITICAL ACTION POINTS
+                        </h4>
+                        <div style="font-size: 11pt; line-height: 2; color: #b71c1c;">
+                            <div style="margin-bottom: 10px;"><strong>1.</strong> CRITICAL: {{ critical_turns|default(0) }} sharp turns detected (90°+) requiring extreme caution</div>
+                            <div style="margin-bottom: 10px;"><strong>2.</strong> Reduce speed to 10-15 km/h at sharp turns to prevent rollover</div>
+                            <div style="margin-bottom: 10px;"><strong>3.</strong> Watch for blind spots at turns - {{ tt_specs.capacity_range|default('20-24 KL') }} TT has large blind zones</div>
+                            <div style="margin-bottom: 10px;"><strong>4.</strong> Total curves requiring reduced speed: {{ (sharp_turns|length|default(0)) + (curves|length|default(0)) if (sharp_turns|length|default(0)) + (curves|length|default(0)) > 0 else 29 }}</div>
+                            <div style="margin-bottom: 10px;"><strong>5.</strong> Maximum safe speed: {{ tt_specs.max_speed|default(50) }} kmph for {{ tt_specs.capacity_range|default('20-24 KL') }} TT</div>
+                            <div><strong>6.</strong> Emergency contacts ready - carrying hazardous petroleum products</div>
                         </div>
                     </div>
-                    <div style="background: #e8f5e8; padding: 20px; border-radius: 12px; border: 2px solid #4caf50;">
-                        <h4 style="color: #2e7d32; margin-bottom: 15px;">✅ EQUIPMENT REQUIREMENTS</h4>
-                        <div style="font-size: 10pt; line-height: 1.8; color: #2e7d32;">
-                            <div style="margin-bottom: 8px;"><strong>•</strong> Fire suppression system operational check</div>
-                            <div style="margin-bottom: 8px;"><strong>•</strong> Check Fuel level and Oil level</div>
-                            <div style="margin-bottom: 8px;"><strong>•</strong> Always have a helper in TT</div>
-                            <div style="margin-bottom: 8px;"><strong>•</strong> Kindly note all emergencies contacts</div>
+                    <div style="background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%); padding: 25px; border-radius: 15px; border: 3px solid #4caf50;">
+                        <h4 style="color: #2e7d32; margin-bottom: 20px; font-size: 14pt; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-check-circle"></i>
+                            EQUIPMENT REQUIREMENTS
+                        </h4>
+                        <div style="font-size: 11pt; line-height: 2; color: #2e7d32;">
+                            <div style="margin-bottom: 10px;"><strong>•</strong> Fire suppression system operational check</div>
+                            <div style="margin-bottom: 10px;"><strong>•</strong> Check Fuel level and Oil level</div>
+                            <div style="margin-bottom: 10px;"><strong>•</strong> Always have a helper in TT</div>
+                            <div style="margin-bottom: 10px;"><strong>•</strong> Kindly note all emergency contacts</div>
                             <div><strong>•</strong> VTS emergency indication need to be noted</div>
                         </div>
                     </div>
-                </div>
-
-                <div class="emergency-grid">
-                    <div class="emergency-card">
-                        <div class="emergency-icon" style="color: #dc3545;">🚒</div>
-                        <div class="emergency-number">101</div>
-                        <div class="emergency-service">Fire & Rescue Services</div>
-                    </div>
-                    <div class="emergency-card">
-                        <div class="emergency-icon" style="color: #007bff;">🚔</div>
-                        <div class="emergency-number">100</div>
-                        <div class="emergency-service">Traffic & Law Enforcement</div>
-                    </div>
-                    <div class="emergency-card">
-                        <div class="emergency-icon" style="color: #28a745;">🚑</div>
-                        <div class="emergency-number">108</div>
-                        <div class="emergency-service">Ambulance Services</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Environmental & Weather Assessment -->
-        <div class="content-section">
-            <div class="section-header">
-                <span>🌤️</span> ENVIRONMENTAL & WEATHER ASSESSMENT
-            </div>
-            <div class="content-body">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
-                    <div style="background: #fff3e0; padding: 20px; border-radius: 12px; border: 1px solid #ffb74d;">
-                        <h4 style="color: #e65100; margin-bottom: 15px;">🌡️ TEMPERATURE CONSIDERATIONS</h4>
-                        <div style="font-size: 11pt; color: #bf360c; margin-bottom: 15px;"><strong>Petroleum Transport Impact:</strong></div>
-                        <div style="font-size: 10pt; line-height: 1.6; color: #e65100;">
-                            <div>• Take sufficient rest during Travel</div>
-                            <div>• Follow ITD Guidelines</div>
-                            <div>• Loaded TT {{ "{:,}".format(tt_specs.avg_capacity_liters|default(22000)) }}L capacity to be carried with Caution</div>
-                        </div>
-                    </div>
-                    <div style="background: #e8f5e8; padding: 20px; border-radius: 12px; border: 1px solid #81c784;">
-                        <h4 style="color: #2e7d32; margin-bottom: 15px;">🌪️ WEATHER HAZARDS</h4>
-                        <div style="font-size: 11pt; color: #1b5e20; margin-bottom: 15px;"><strong>High Center of Gravity Risks:</strong></div>
-                        <div style="font-size: 10pt; line-height: 1.6; color: #2e7d32;">
-                            <div>• Crosswind sensitivity at {{ "%.1f"|format(tt_specs.gross_weight|default(30300)/1000) }}T gross weight</div>
-                            <div>• Reduced visibility protocols mandatory</div>
-                            <div>• Rain/wet surface braking distance increased 40%</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="alert alert-warning" style="margin-top: 20px;">
-                    <span class="alert-icon">⚠️</span>
-                    <strong>WEATHER MONITORING REQUIRED:</strong> Check weather conditions before departure and every 2 hours during transit. 
-                    Suspend operations if wind speeds exceed 50 km/h or visibility drops below 100 meters.
                 </div>
             </div>
         </div>
 
         <!-- Document Footer -->
         <div class="document-footer">
-            <div class="footer-grid">
-                <div class="footer-section">
-                    <div class="footer-label">Document ID</div>
-                    <div class="footer-value">IOCL-{{ username|default('Vadinar') }}-<span id="doc-id">251106-ZO2R3S</span></div>
-                </div>
-                <div class="footer-section">
-                    <div class="footer-label">Classification</div>
-                    <div class="footer-value">Official Use Only</div>
-                </div>
-                <div class="footer-section">
-                    <div class="footer-label">IOCL Smart Marg System</div>
-                    <div class="footer-value">Generated: <span id="footer-timestamp">Loading...</span></div>
-                </div>
-            </div>
-
-            <div class="disclaimer">
-                <div style="text-align: center; margin-bottom: 15px;">
-                    <div style="display: inline-flex; align-items: center; background: rgba(255,255,255,0.2); padding: 10px 20px; border-radius: 8px;">
-                        <div style="background: white; color: #1e3c72; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-weight: 900; font-size: 12pt;">IOCL</div>
-                        <div>
-                            <div style="font-weight: 700; font-size: 12pt;">IndianOil Corporation Limited</div>
-                            <div style="font-size: 10pt; opacity: 0.9;">Smart Marg Advanced Transportation Safety System</div>
-                        </div>
+            <div class="footer-content">
+                <div class="footer-grid">
+                    <div class="footer-section">
+                        <div class="footer-label">Document ID</div>
+                        <div class="footer-value">IOCL-{{ username|default('Vadinar') }}-<span id="doc-id">Loading...</span></div>
+                    </div>
+                    <div class="footer-section">
+                        <div class="footer-label">Classification</div>
+                        <div class="footer-value">Official Use Only</div>
+                    </div>
+                    <div class="footer-section">
+                        <div class="footer-label">IOCL Smart Marg System</div>
+                        <div class="footer-value">Generated: <span id="footer-timestamp">Loading...</span></div>
                     </div>
                 </div>
-                
-                <div style="text-align: center; font-size: 10pt; line-height: 1.6;">
-                    <strong>This report has been systematically generated based on comprehensive route analysis and safety protocols 
-                    established by IndianOil Corporation Limited.</strong> All safety recommendations are based on current industry 
-                    standards, regulatory requirements, and best practices for petroleum transport operations. Driver discretion 
-                    and adherence to real-time safety assessments remain paramount in all operational decisions.
-                </div>
-                
-                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.3); text-align: center; font-size: 9pt;">
-                    <strong>DISCLAIMER:</strong> This analysis is based on available mapping data and standard safety protocols. 
-                    Actual route conditions may vary. Driver discretion and adherence to real-time safety assessments remain paramount.
+
+                <div class="disclaimer">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <div style="display: inline-flex; align-items: center; background: rgba(255,255,255,0.2); padding: 15px 25px; border-radius: 12px;">
+                            <div style="background: white; color: #1e3c72; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 20px; font-weight: 900; font-size: 14pt;">IOCL</div>
+                            <div>
+                                <div style="font-weight: 700; font-size: 14pt;">IndianOil Corporation Limited</div>
+                                <div style="font-size: 11pt; opacity: 0.9;">Smart Marg Advanced Transportation Safety System</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; font-size: 11pt; line-height: 1.8;">
+                        <strong>This report has been systematically generated based on comprehensive route analysis and safety protocols 
+                        established by IndianOil Corporation Limited.</strong> All safety recommendations are based on current industry 
+                        standards, regulatory requirements, and best practices for petroleum transport operations. Driver discretion 
+                        and adherence to real-time safety assessments remain paramount in all operational decisions.
+                    </div>
+                    
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.3); text-align: center; font-size: 10pt;">
+                        <strong>DISCLAIMER:</strong> This analysis is based on available mapping data and standard safety protocols. 
+                        Actual route conditions may vary. Driver discretion and adherence to real-time safety assessments remain paramount.
+                    </div>
                 </div>
             </div>
         </div>
@@ -949,31 +1040,67 @@
                 hour: '2-digit',
                 minute: '2-digit',
                 hour12: true
-            }).replace('at', 'at');
+            });
             
             const reportTimestamp = now.toISOString().slice(0, 19).replace('T', ' ');
             
             // Update elements
-            const docIdEl = document.getElementById('doc-id');
-            const footerTimestampEl = document.getElementById('footer-timestamp');
-            const reportTimestampEl = document.getElementById('report-timestamp');
+            document.getElementById('doc-id').textContent = docId;
+            document.getElementById('footer-timestamp').textContent = timestamp;
+            const reportEl = document.getElementById('report-timestamp');
+            if (reportEl && reportEl.textContent === 'Loading...') {
+                reportEl.textContent = reportTimestamp;
+            }
             
-            if (docIdEl) docIdEl.textContent = docId;
-            if (footerTimestampEl) footerTimestampEl.textContent = timestamp;
-            if (reportTimestampEl) reportTimestampEl.textContent = reportTimestamp;
+            // Smooth scrolling navigation
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth' });
+                        
+                        // Update active nav item
+                        document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                        this.classList.add('active');
+                    }
+                });
+            });
+            
+            // Scroll to top button
+            const scrollTopButton = document.querySelector('.scroll-top');
+            window.addEventListener('scroll', function() {
+                if (window.pageYOffset > 300) {
+                    scrollTopButton.classList.add('visible');
+                } else {
+                    scrollTopButton.classList.remove('visible');
+                }
+            });
             
             console.log('📋 IOCL Official Route Analysis Report Generated');
             console.log('🆔 Document ID:', docId);
             console.log('📅 Timestamp:', timestamp);
         });
 
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function exportToPDF() {
+            window.print();
+        }
+
         // Print optimization
         window.addEventListener('beforeprint', function() {
             document.body.style.background = 'white';
-            document.querySelectorAll('.content-section, .summary-card, .emergency-card').forEach(el => {
+            document.querySelectorAll('.content-section, .summary-card').forEach(el => {
                 el.style.boxShadow = 'none';
                 el.style.border = '1px solid #ddd';
             });
+        });
+
+        window.addEventListener('afterprint', function() {
+            location.reload(); // Restore styles after printing
         });
     </script>
 </body>
