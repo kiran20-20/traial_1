@@ -37,60 +37,7 @@ except Exception as e:
     print(f"❌ Gemini initialization error: {e}")
     ai_client = False
 
-def get_working_gemini_model():
-    """Get working Gemini model - UPDATED FOR FRESH API (November 2024)"""
-    if not ai_client:
-        return None
-    
-    # Fresh API compatible models - simplified and current
-    model_attempts = [
-        'gemini-1.5-flash-8b',           # NEW - lighter, faster
-        'gemini-1.5-flash-8b-001',      # NEW - versioned  
-        'gemini-1.5-flash-002',         # NEW - latest version
-        'gemini-1.5-flash',             # Still works sometimes
-        'gemini-1.0-pro-latest'
-    ]
-    
-    for model_name in model_attempts:
-        try:
-            print(f"🔄 Trying Gemini model: {model_name}")
-            
-            # Simplified safety settings for fresh API
-            safety_settings = [
-                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
-            ]
-            
-            model = genai.GenerativeModel(
-                model_name=model_name,
-                safety_settings=safety_settings
-            )
-            
-            # Simple test to verify model works
-            test_response = model.generate_content("Say 'OK'")
-            
-            if test_response and hasattr(test_response, 'text') and test_response.text:
-                print(f"✅ Successfully using Gemini model: {model_name}")
-                return model
-                
-        except Exception as e:
-            error_msg = str(e)
-            print(f"❌ {model_name} failed: {error_msg[:100]}")
-            
-            # Additional debug info for fresh API troubleshooting
-            if "404" in error_msg:
-                print(f"   → Model not found - trying next option")
-            elif "403" in error_msg:
-                print(f"   → Permission denied - check API key permissions")
-            elif "429" in error_msg:
-                print(f"   → Rate limited - API key may need billing setup")
-            
-            continue
-    
-    print("⚠️ All Gemini models failed - check API key and billing status")
-    return None
+
 def build_complete_route_context():
     """Build comprehensive route context with ALL available data"""
     
@@ -3002,6 +2949,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
