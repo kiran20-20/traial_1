@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IOCL Complete Route Analysis Report - IndianOil Corporation Limited</title>
+    <title>Route Analysis Report - IndianOil Corporation Limited</title>
     <style>
         @page {
             margin: 1.5cm;
@@ -458,8 +458,8 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>IOCL Enhanced Route Analysis Report with GPS Mapping</h1>
-            <p>IndianOil Corporation Limited - Advanced Location-Based Tank Truck Safety Assessment</p>
+            <h1>Route Analysis Report</h1>
+            <p>IndianOil Corporation Limited -Tank Truck Safety Assessment</p>
             
             <div class="header-meta">
                 <div class="meta-item">
@@ -493,20 +493,20 @@
         <div class="content">
             <!-- Enhanced Executive Summary -->
             <div class="section">
-                <div class="section-title">Enhanced Executive Summary with GPS Mapping</div>
+                <div class="section-title">Executive Summary</div>
                 
                 <div class="summary-grid">
                     <div class="summary-card">
                         <div class="summary-value">{{ route_report.total_distance|default('N/A') }}</div>
-                        <div class="summary-label">Total Distance Mapped</div>
+                        <div class="summary-label">Total Distance</div>
                     </div>
                     <div class="summary-card">
                         <div class="summary-value">{{ location_mapping.danger_zones|length if location_mapping else (critical_turns|default(0)) + (high_turns|default(0)) + (moderate_turns|default(0)) }}</div>
-                        <div class="summary-label">GPS-Mapped Danger Zones</div>
+                        <div class="summary-label">Danger Zones</div>
                     </div>
                     <div class="summary-card">
                         <div class="summary-value">{{ location_mapping.safety_facilities|length if location_mapping else all_pois|length }}</div>
-                        <div class="summary-label">Emergency Facilities Mapped</div>
+                        <div class="summary-label">Emergency Facilities </div>
                     </div>
                     <div class="summary-card">
                         <div class="summary-value">{{ location_mapping.navigation_waypoints|length if location_mapping else 'N/A' }}</div>
@@ -516,7 +516,7 @@
 
                 <div class="info-box">
                     <div class="info-title">Interactive GPS Map with Location Indicators</div>
-                    Enhanced map with precise GPS coordinates, clickable location markers, and real-time navigation support.
+                    Enhanced map with precise GPS coordinates.
                     <br><br>
                     <strong>Map Features:</strong> {{ location_mapping.danger_zones|length if location_mapping else (critical_turns|default(0)) + (high_turns|default(0)) + (moderate_turns|default(0)) }} danger zone markers • {{ location_mapping.safety_facilities|length if location_mapping else all_pois|length }} facility markers • {{ location_mapping.navigation_waypoints|length if location_mapping else 'Multiple' }} navigation waypoints • Interactive coordinate display
                 </div>
@@ -524,7 +524,7 @@
 
             <!-- Comprehensive Risk Assessment with Bar Indicators -->
             <div class="section">
-                <div class="section-title">🔴 Comprehensive Risk Assessment</div>
+                <div class="section-title">🔴 Risk Assessment</div>
                 
                 <div class="bar-section">
                     {% set total_risks = (critical_turns|default(0)) + (high_turns|default(0)) + (moderate_turns|default(0)) %}
@@ -664,7 +664,7 @@
 
             <!-- Emergency Infrastructure Assessment with Bar Indicators -->
             <div class="section">
-                <div class="section-title">🟢 Emergency Infrastructure Assessment</div>
+                <div class="section-title">🟢 Emergency POI</div>
                 
                 <div class="bar-section">
                     {% set hospitals = 0 %}
@@ -777,10 +777,10 @@
 
             <!-- Critical Navigation Waypoints & GPS Programming -->
             <div class="section">
-                <div class="section-title">🗺 Critical Navigation Waypoints & GPS Programming</div>
+                <div class="section-title">🗺 Critical Navigation Waypoints & GPS coordinates</div>
                 
                 <div class="info-box">
-                    <div class="info-title">Navigation System Programming</div>
+                    <div class="info-title">Navigation</div>
                     {{ location_mapping.navigation_waypoints|length if location_mapping else 'Multiple' }} critical waypoints identified for GPS system programming. Pre-load coordinates for enhanced safety awareness.
                 </div>
 
@@ -927,7 +927,7 @@
                         <div class="column-content">
                             <strong>Speed:</strong> Maximum 8-12 km/h<br><br>
                             <strong>Action:</strong> Activate hazard lights 500m before GPS coordinate<br><br>
-                            <strong>Communication:</strong> Radio position using exact GPS coordinates<br><br>
+                            <strong>Communication:</strong> VTS position using exact GPS coordinates<br><br>
                             <strong>Emergency:</strong> If ANY instability - STOP and call 100+101<br><br>
                             <strong>GPS Zones:</strong> {{ critical_turns|default(0) }} critical locations mapped
                         </div>
@@ -972,14 +972,14 @@
                         
                         <div style="margin-top: 10px; font-weight: bold;">
                             <div class="emergency-contact">101 Fire & Rescue Services</div>
-                            <div class="emergency-contact">100 Traffic & Law Enforcement</div>
+                            <div class="emergency-contact">100 Traffic & Police</div>
                             <div class="emergency-contact">108 Ambulance Services</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="info-box">
-                    <div class="info-title">Environmental & Weather Assessment</div>
+                    <div class="info-title">Weather Assessment</div>
                     <strong>Temperature Considerations:</strong> Take sufficient rest during travel. Follow ITD Guidelines. Loaded TT {{ "{:,}".format(tt_specs.get('avg_capacity_liters', 22000)) }}L capacity to be carried with caution.<br><br>
                     <strong>Weather Hazards:</strong> High center of gravity risks - crosswind sensitivity at {{ "%.1f"|format(tt_specs.get('gross_weight', 30300)/1000) }}T gross weight. Rain/wet surface braking distance increased 40%. Check weather conditions before departure and every 2 hours. Suspend operations if wind speeds exceed 50 km/h.
                 </div>
@@ -995,10 +995,10 @@
                 </div>
                 <div class="footer-section">
                     <div class="footer-label">Classification</div>
-                    <div class="footer-value">Enhanced Location Mapping Report</div>
+                    <div class="footer-value">Route Analysis Report</div>
                 </div>
                 <div class="footer-section">
-                    <div class="footer-label">IOCL Smart Marg GPS System</div>
+                    <div class="footer-label">IOCL Smart Marg</div>
                     <div class="footer-value">Generated: <span id="footer-timestamp">Loading...</span></div>
                 </div>
             </div>
@@ -1007,7 +1007,7 @@
                 <div style="text-align: center; margin-bottom: 5px;">
                     <strong>GPS Accuracy:</strong> ±1 meter precision | <strong>Enhanced Features:</strong> GPS precision mapping | Interactive coordinate display | Emergency response matrix | Real-time navigation support
                 </div>
-                This enhanced GPS-enabled route analysis report has been generated using advanced location mapping technology with {{ (location_mapping.danger_zones|length if location_mapping else 0) + (location_mapping.safety_facilities|length if location_mapping else all_pois|length) + (location_mapping.navigation_waypoints|length if location_mapping else 0) }} precisely mapped locations. All GPS coordinates verified against Google Maps API and comply with WGS84 international standards. Driver discretion and adherence to real-time safety assessments remain paramount.
+                This enhanced GPS-enabled route analysis report  {{ (location_mapping.danger_zones|length if location_mapping else 0) + (location_mapping.safety_facilities|length if location_mapping else all_pois|length) + (location_mapping.navigation_waypoints|length if location_mapping else 0) }} precisely mapped locations. All GPS coordinates verified against Google Maps API and comply with WGS84 international standards. Driver discretion and adherence to real-time safety assessments remain paramount.
             </div>
         </div>
     </div>
