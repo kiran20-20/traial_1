@@ -195,10 +195,12 @@
             display: flex;
             gap: 2rem;
             margin-top: 2rem;
+            flex-wrap: wrap;
         }
 
         .hero-stat {
             text-align: left;
+            position: relative;
         }
 
         .hero-stat-value {
@@ -211,6 +213,69 @@
             font-size: 0.875rem;
             color: #64748b;
             font-weight: 500;
+        }
+
+        /* Overall Risk Bar */
+        .risk-bar-container {
+            margin-left: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 200px;
+        }
+
+        .overall-risk-title {
+            font-size: 0.875rem;
+            color: #64748b;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .risk-bar {
+            width: 180px;
+            height: 28px;
+            background: #e5e7eb;
+            border-radius: 14px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .risk-bar-fill {
+            height: 100%;
+            border-radius: 14px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .risk-bar-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .risk-level-low { 
+            background: linear-gradient(90deg, #10b981, #059669); 
+        }
+        .risk-level-moderate { 
+            background: linear-gradient(90deg, #f59e0b, #d97706); 
+        }
+        .risk-level-high { 
+            background: linear-gradient(90deg, #ef4444, #dc2626); 
+        }
+        .risk-level-critical { 
+            background: linear-gradient(90deg, #dc2626, #991b1b); 
+            animation: pulse-critical 2s infinite;
+        }
+
+        @keyframes pulse-critical {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
         }
 
         /* Content Grid */
@@ -730,6 +795,11 @@
                 flex-direction: column;
                 gap: 1rem;
             }
+
+            .risk-bar-container {
+                margin-left: 0;
+                margin-top: 1rem;
+            }
         }
 
         @media (max-width: 768px) {
@@ -761,10 +831,6 @@
             .spec-grid {
                 grid-template-columns: 1fr;
             }
-
-            .map-controls, .analysis-tabs {
-                flex-direction: column;
-            }
         }
     </style>
 </head>
@@ -775,8 +841,8 @@
             <div class="nav-brand">
                 <div class="brand-logo">IOCL</div>
                 <div class="brand-text">
-                    <h1>Route Analyisis</h1>
-                    <p>OpenAi Chat Assiatance</p>
+                    <h1>Route Analysis</h1>
+                    <p>AI Chat Assistance</p>
                 </div>
             </div>
             <div class="nav-actions">
@@ -817,19 +883,46 @@
                 <div class="hero-stats">
                     <div class="hero-stat">
                         <div class="hero-stat-value">{{ route_report.total_distance|default('N/A') }}</div>
-                        <div class="hero-stat-label">Route Distance(km)</div>
+                        <div class="hero-stat-label">Route Distance</div>
                     </div>
                     <div class="hero-stat">
-                        <div class="hero-stat-value">{{ (critical_turns|default(0)) + (high_turns|default(0)) + (moderate_turns|default(0)) }}</div>
+                        <div class="hero-stat-value">{{ ((critical_turns or 0) + (high_turns or 0) + (moderate_turns or 0)) }}</div>
                         <div class="hero-stat-label">Hazard Zones</div>
                     </div>
                     <div class="hero-stat">
-                        <div class="hero-stat-value">{{ all_pois|length|default(0) }}</div>
+                        <div class="hero-stat-value">{{ all_pois|length if all_pois else 0 }}</div>
                         <div class="hero-stat-label">Emergency Facilities</div>
                     </div>
                     <div class="hero-stat">
                         <div class="hero-stat-value">{{ tt_specs.max_speed|default(50) }} km/h</div>
                         <div class="hero-stat-label">Maximum Safe Speed</div>
+                    </div>
+                    <!-- Overall Risk Bar -->
+                    <div class="risk-bar-container">
+                        <div class="overall-risk-title">Overall Route Risk</div>
+                        <div class="risk-bar">
+                            {% set total_hazards = (critical_turns or 0) + (high_turns or 0) + (moderate_turns or 0) %}
+                            {% if total_hazards == 0 %}
+                                {% set risk_level = 'low' %}
+                                {% set risk_percentage = 25 %}
+                                {% set risk_text = 'LOW RISK' %}
+                            {% elif total_hazards <= 3 %}
+                                {% set risk_level = 'moderate' %}
+                                {% set risk_percentage = 50 %}
+                                {% set risk_text = 'MODERATE' %}
+                            {% elif total_hazards <= 8 %}
+                                {% set risk_level = 'high' %}
+                                {% set risk_percentage = 75 %}
+                                {% set risk_text = 'HIGH RISK' %}
+                            {% else %}
+                                {% set risk_level = 'critical' %}
+                                {% set risk_percentage = 95 %}
+                                {% set risk_text = 'CRITICAL' %}
+                            {% endif %}
+                            <div class="risk-bar-fill risk-level-{{ risk_level }}" style="width: {{ risk_percentage }}%">
+                                <div class="risk-bar-text">{{ risk_text }}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -846,15 +939,15 @@
                             Route Visualization
                         </div>
                         <div class="map-controls">
-                            <button class="map-control-btn active" onclick="toggleMapView('route')">
+                            <button class="map-control-btn active">
                                 <i class="fas fa-route"></i>
                                 Route
                             </button>
-                            <button class="map-control-btn" onclick="toggleMapView('hazards')">
+                            <button class="map-control-btn">
                                 <i class="fas fa-exclamation-triangle"></i>
                                 Hazards
                             </button>
-                            <button class="map-control-btn" onclick="toggleMapView('facilities')">
+                            <button class="map-control-btn">
                                 <i class="fas fa-hospital"></i>
                                 Facilities
                             </button>
@@ -882,19 +975,19 @@
                         <div style="display: grid; gap: 0.5rem; font-size: 0.75rem;">
                             <div style="display: flex; justify-content: space-between;">
                                 <span>Critical Zones:</span>
-                                <strong style="color: #dc2626;">{{ critical_turns|default(0) }}</strong>
+                                <strong style="color: #dc2626;">{{ critical_turns or 0 }}</strong>
                             </div>
                             <div style="display: flex; justify-content: space-between;">
                                 <span>High Risk:</span>
-                                <strong style="color: #ea580c;">{{ high_turns|default(0) }}</strong>
+                                <strong style="color: #ea580c;">{{ high_turns or 0 }}</strong>
                             </div>
                             <div style="display: flex; justify-content: space-between;">
                                 <span>Facilities:</span>
-                                <strong>{{ all_pois|length|default(0) }}</strong>
+                                <strong>{{ all_pois|length if all_pois else 0 }}</strong>
                             </div>
                             <div style="display: flex; justify-content: space-between;">
                                 <span>Coverage:</span>
-                                <strong style="color: #10b981;">{{ 'Good' if all_pois|length >= 3 else 'Limited' }}</strong>
+                                <strong style="color: #10b981;">{{ 'Good' if (all_pois and all_pois|length >= 3) else 'Limited' }}</strong>
                             </div>
                         </div>
                     </div>
@@ -917,18 +1010,18 @@
                         <div class="metrics-grid">
                             <div class="metric-card">
                                 <div class="metric-value">{{ route_report.total_distance|default('N/A') }}</div>
-                                <div class="metric-label">Route Distance(km)</div>
+                                <div class="metric-label">Route Distance</div>
                             </div>
                             <div class="metric-card">
                                 <div class="metric-value">{{ route_report.total_duration|default('N/A') }}</div>
                                 <div class="metric-label">Est. Duration</div>
                             </div>
                             <div class="metric-card">
-                                <div class="metric-value">{{ critical_turns|default(0) }}</div>
+                                <div class="metric-value">{{ critical_turns or 0 }}</div>
                                 <div class="metric-label">Critical Zones</div>
                             </div>
                             <div class="metric-card">
-                                <div class="metric-value">{{ "{:,}".format(tt_specs.avg_capacity_liters|default(0)) }}</div>
+                                <div class="metric-value">{{ "{:,}".format(tt_specs.avg_capacity_liters) if tt_specs.avg_capacity_liters else '0' }}</div>
                                 <div class="metric-label">Tank Capacity (L)</div>
                             </div>
                         </div>
@@ -945,7 +1038,7 @@
                                         <div class="risk-title">Critical Risk Zones</div>
                                         <div class="risk-description">Liquid surge danger - extreme caution required</div>
                                     </div>
-                                    <div class="risk-count">{{ critical_turns|default(0) }}</div>
+                                    <div class="risk-count">{{ critical_turns or 0 }}</div>
                                 </div>
                                 <div class="risk-item">
                                     <div class="risk-indicator risk-high"></div>
@@ -953,7 +1046,7 @@
                                         <div class="risk-title">High Risk Zones</div>
                                         <div class="risk-description">Rollover risk - significant speed reduction</div>
                                     </div>
-                                    <div class="risk-count">{{ high_turns|default(0) }}</div>
+                                    <div class="risk-count">{{ high_turns or 0 }}</div>
                                 </div>
                                 <div class="risk-item">
                                     <div class="risk-indicator risk-moderate"></div>
@@ -961,7 +1054,7 @@
                                         <div class="risk-title">Moderate Risk Zones</div>
                                         <div class="risk-description">Standard intersection speed required</div>
                                     </div>
-                                    <div class="risk-count">{{ moderate_turns|default(0) }}</div>
+                                    <div class="risk-count">{{ moderate_turns or 0 }}</div>
                                 </div>
                             </div>
                         </div>
@@ -994,15 +1087,17 @@
                             {% set hospitals = 0 %}
                             {% set police = 0 %}
                             {% set fuel = 0 %}
-                            {% for poi in all_pois %}
-                                {% if 'hospital' in poi.type %}
-                                    {% set hospitals = hospitals + 1 %}
-                                {% elif 'police' in poi.type %}
-                                    {% set police = police + 1 %}
-                                {% elif 'fuel' in poi.type %}
-                                    {% set fuel = fuel + 1 %}
-                                {% endif %}
-                            {% endfor %}
+                            {% if all_pois %}
+                                {% for poi in all_pois %}
+                                    {% if 'hospital' in poi.type %}
+                                        {% set hospitals = hospitals + 1 %}
+                                    {% elif 'police' in poi.type %}
+                                        {% set police = police + 1 %}
+                                    {% elif 'fuel' in poi.type %}
+                                        {% set fuel = fuel + 1 %}
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
                             
                             <div class="metric-card">
                                 <div class="metric-value">{{ hospitals }}</div>
@@ -1017,7 +1112,7 @@
                                 <div class="metric-label">Fuel Stations</div>
                             </div>
                             <div class="metric-card">
-                                <div class="metric-value">{{ 'Good' if all_pois|length >= 3 else 'Limited' }}</div>
+                                <div class="metric-value">{{ 'Good' if (all_pois and all_pois|length >= 3) else 'Limited' }}</div>
                                 <div class="metric-label">Coverage Status</div>
                             </div>
                         </div>
@@ -1030,22 +1125,53 @@
                             <div style="display: grid; gap: 0.75rem; font-size: 0.875rem;">
                                 <div style="display: flex; justify-content: space-between;">
                                     <span style="color: #64748b;">GPS Points Analyzed:</span>
-                                    <strong>{{ route_report.route_analysis.total_points|default(0) if route_report and route_report.get('route_analysis') else 0 }}</strong>
+                                    <strong>{{ route_report.route_analysis.total_points if route_report and route_report.get('route_analysis') and route_report.route_analysis.total_points else coords|length if coords else 0 }}</strong>
                                 </div>
                                 <div style="display: flex; justify-content: space-between;">
                                     <span style="color: #64748b;">Analysis Density:</span>
-                                    <strong>{{ "%.1f"|format(route_report.route_analysis.points_per_km|default(1.0)) if route_report and route_report.get('route_analysis') else '1.0' }} points/km</strong>
+                                    <strong>{{ "%.1f"|format(route_report.route_analysis.points_per_km) if route_report and route_report.get('route_analysis') and route_report.route_analysis.points_per_km else '1.0' }} points/km</strong>
                                 </div>
                                 <div style="display: flex; justify-content: space-between;">
                                     <span style="color: #64748b;">Total Hazard Zones:</span>
-                                    <strong>{{ (critical_turns|default(0)) + (high_turns|default(0)) + (moderate_turns|default(0)) }}</strong>
+                                    <strong>{{ ((critical_turns or 0) + (high_turns or 0) + (moderate_turns or 0)) }}</strong>
                                 </div>
                                 <div style="display: flex; justify-content: space-between;">
                                     <span style="color: #64748b;">Risk Amplification:</span>
-                                    <strong style="color: #dc2626;">{{ tt_specs.risk_multiplier|default(1.4) }}x factor</strong>
+                                    <strong style="color: #dc2626;">{{ tt_specs.risk_multiplier if tt_specs.risk_multiplier else '1.4' }}x factor</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #64748b;">Vehicle Weight:</span>
+                                    <strong>{{ "%.1f"|format(tt_specs.gross_weight/1000) if tt_specs.gross_weight else '0' }} T</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #64748b;">Emergency Response:</span>
+                                    <strong style="color: {{ '#10b981' if (all_pois and all_pois|length >= 2) else '#dc2626' }};">{{ 'Available' if (all_pois and all_pois|length >= 2) else 'Limited' }}</strong>
                                 </div>
                             </div>
                         </div>
+
+                        {% if sharp_turns and sharp_turns|length > 0 %}
+                        <div class="section-title" style="margin-top: 1.5rem;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Critical Hazard Details
+                        </div>
+                        <div style="max-height: 200px; overflow-y: auto; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem;">
+                            {% for turn in sharp_turns[:5] %}
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #e2e8f0;">
+                                <div>
+                                    <div style="font-weight: 600; font-size: 0.875rem;">Hazard Zone {{ loop.index }}</div>
+                                    <div style="font-size: 0.75rem; color: #64748b;">{{ "%.1f"|format(turn.turn_angle) if turn.turn_angle else '0' }}° {{ turn.direction if turn.direction else 'turn' }}</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-weight: 600; font-size: 0.75rem; color: {{ '#dc2626' if turn.turn_angle and turn.turn_angle >= 90 else '#ea580c' if turn.turn_angle and turn.turn_angle >= 65 else '#d97706' }};">
+                                        {{ 'CRITICAL' if turn.turn_angle and turn.turn_angle >= 90 else 'HIGH' if turn.turn_angle and turn.turn_angle >= 65 else 'MODERATE' }}
+                                    </div>
+                                    <div style="font-size: 0.75rem; color: #64748b;">{{ "%.6f, %.6f"|format(turn.location[0], turn.location[1]) if turn.location else 'Unknown coordinates' }}</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                     </div>
 
                     <!-- AI Chat Tab -->
@@ -1069,7 +1195,7 @@
                             <div class="chat-messages" id="chat-messages">
                                 <div class="message ai">
                                     <div class="message-content">
-                                        👋 Hello! I'm your AI assistant (OpenAI powered) with complete access to your {{ tt_specs.capacity_range|default('tank truck') }} route analysis. I can help with:
+                                        👋 Hello! I'm your AI assistant with complete access to your {{ tt_specs.capacity_range if tt_specs.capacity_range else 'tank truck' }} route analysis. I can help with:
                                         <br><br>
                                         • Route hazards and safety protocols<br>
                                         • Speed recommendations for different zones<br>
@@ -1105,33 +1231,33 @@
                 <div>
                     <div class="section-title">
                         <i class="fas fa-truck"></i>
-                        {{ tt_specs.capacity_range|default('Tank Truck') }} Technical Specifications
+                        {{ tt_specs.capacity_range if tt_specs.capacity_range else 'Tank Truck' }} Technical Specifications
                     </div>
                     <div class="specifications-card">
                         <div class="spec-grid">
                             <div class="spec-item">
                                 <span class="spec-label">Tank Capacity</span>
-                                <span class="spec-value">{{ "{:,}".format(tt_specs.avg_capacity_liters|default(0)) }} L</span>
+                                <span class="spec-value">{{ "{:,}".format(tt_specs.avg_capacity_liters) if tt_specs.avg_capacity_liters else '0' }} L</span>
                             </div>
                             <div class="spec-item">
                                 <span class="spec-label">Gross Weight</span>
-                                <span class="spec-value">{{ "%.1f"|format(tt_specs.gross_weight|default(0)/1000) }} T</span>
+                                <span class="spec-value">{{ "%.1f"|format(tt_specs.gross_weight/1000) if tt_specs.gross_weight else '0' }} T</span>
                             </div>
                             <div class="spec-item">
                                 <span class="spec-label">Axle Load</span>
-                                <span class="spec-value">{{ "%.1f"|format(tt_specs.axle_load|default(0)) }} T</span>
+                                <span class="spec-value">{{ "%.1f"|format(tt_specs.axle_load) if tt_specs.axle_load else '0' }} T</span>
                             </div>
                             <div class="spec-item">
                                 <span class="spec-label">Max Legal Speed</span>
-                                <span class="spec-value">{{ tt_specs.max_speed|default(50) }} km/h</span>
+                                <span class="spec-value">{{ tt_specs.max_speed if tt_specs.max_speed else '50' }} km/h</span>
                             </div>
                             <div class="spec-item">
                                 <span class="spec-label">Risk Multiplier</span>
-                                <span class="spec-value">{{ tt_specs.risk_multiplier|default(1.4) }}x</span>
+                                <span class="spec-value">{{ tt_specs.risk_multiplier if tt_specs.risk_multiplier else '1.4' }}x</span>
                             </div>
                             <div class="spec-item">
                                 <span class="spec-label">Vehicle Class</span>
-                                <span class="spec-value">{{ tt_specs.capacity_range|default('N/A') }}</span>
+                                <span class="spec-value">{{ tt_specs.capacity_range if tt_specs.capacity_range else 'Standard TT' }}</span>
                             </div>
                         </div>
                     </div>
@@ -1145,11 +1271,11 @@
                         <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.875rem; line-height: 1.8;">
                             <li style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
                                 <i class="fas fa-check-circle" style="color: #10b981;"></i>
-                                <span>ITDG guidelines are followed</span>
+                                <span>ITDG guidelines compliance verified</span>
                             </li>
                             <li style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
                                 <i class="fas fa-check-circle" style="color: #10b981;"></i>
-                                <span>PESO guidelines compliance verified</span>
+                                <span>PESO safety standards followed</span>
                             </li>
                             <li style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
                                 <i class="fas fa-check-circle" style="color: #10b981;"></i>
@@ -1157,7 +1283,7 @@
                             </li>
                             <li style="display: flex; align-items: center; gap: 0.75rem;">
                                 <i class="fas fa-check-circle" style="color: #10b981;"></i>
-                                <span>Route analysis is based on Google maps data</span>
+                                <span>Route analysis based on GPS data</span>
                             </li>
                         </ul>
                     </div>
@@ -1174,7 +1300,7 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚛 IOCL Modern Dashboard Initialized');
+            console.log('🚛 IOCL Route Analysis Dashboard Initialized');
             initializeChat();
         });
 
@@ -1199,15 +1325,6 @@
                     document.getElementById('chat-input-field').focus();
                 }, 100);
             }
-        }
-
-        // Map controls
-        function toggleMapView(viewType) {
-            document.querySelectorAll('.map-control-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            console.log('Map view changed to:', viewType);
         }
 
         // Map handlers
