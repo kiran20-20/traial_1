@@ -321,7 +321,11 @@
         </div>
     </div>
 
+    <!-- Pass data from Flask to JavaScript -->
     <script>
+        // Get route data from Flask template (converted to JSON in the route)
+        const routeData = {{ route_data_json | safe }};
+        
         let map;
         let routeLayer;
         let markers = [];
@@ -330,11 +334,11 @@
         
         // Initialize with route data
         const originalRoute = {
-            coords: {{ coords | tojsonfilter }},
-            source: {{ source | tojsonfilter }},
-            destination: {{ destination | tojsonfilter }},
-            distance: "{{ route.distance }}",
-            duration: "{{ route.duration }}"
+            coords: routeData.coords,
+            source: routeData.source,
+            destination: routeData.destination,
+            distance: routeData.distance,
+            duration: routeData.duration
         };
 
         function initMap() {
