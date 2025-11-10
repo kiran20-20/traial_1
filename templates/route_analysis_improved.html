@@ -775,8 +775,8 @@
             <div class="nav-brand">
                 <div class="brand-logo">IOCL</div>
                 <div class="brand-text">
-                    <h1>Route Intelligence</h1>
-                    <p>Advanced Safety Assessment Platform</p>
+                    <h1>Route Analyisis</h1>
+                    <p>OpenAi Chat Assiatance</p>
                 </div>
             </div>
             <div class="nav-actions">
@@ -804,24 +804,24 @@
             <div class="hero-content">
                 <div class="hero-badge">
                     <i class="fas fa-shield-alt"></i>
-                    Route Analysis Complete
+                    Route Analysis
                 </div>
                 <h1 class="hero-title">
-                    Advanced Safety Assessment for
+                    Safety Assessment for
                     <span style="color: #3b82f6;">{{ tt_specs.capacity_range|default('Tank Truck') }}</span>
                 </h1>
                 <p class="hero-description">
                     Comprehensive GPS-based route analysis with real-time hazard detection, emergency facility mapping, 
-                    and AI-powered safety recommendations for petroleum transport operations.
+                    and AI-powered recommendations for petroleum transport operations.
                 </p>
                 <div class="hero-stats">
                     <div class="hero-stat">
                         <div class="hero-stat-value">{{ route_report.total_distance|default('N/A') }}</div>
-                        <div class="hero-stat-label">Route Distance</div>
+                        <div class="hero-stat-label">Route Distance(km)</div>
                     </div>
                     <div class="hero-stat">
                         <div class="hero-stat-value">{{ (critical_turns|default(0)) + (high_turns|default(0)) + (moderate_turns|default(0)) }}</div>
-                        <div class="hero-stat-label">Hazard Zones Detected</div>
+                        <div class="hero-stat-label">Hazard Zones</div>
                     </div>
                     <div class="hero-stat">
                         <div class="hero-stat-value">{{ all_pois|length|default(0) }}</div>
@@ -843,7 +843,7 @@
                     <div class="map-header-top">
                         <div class="map-title">
                             <i class="fas fa-map-marked-alt"></i>
-                            Interactive Route Visualization
+                            Route Visualization
                         </div>
                         <div class="map-controls">
                             <button class="map-control-btn active" onclick="toggleMapView('route')">
@@ -917,7 +917,7 @@
                         <div class="metrics-grid">
                             <div class="metric-card">
                                 <div class="metric-value">{{ route_report.total_distance|default('N/A') }}</div>
-                                <div class="metric-label">Route Distance</div>
+                                <div class="metric-label">Route Distance(km)</div>
                             </div>
                             <div class="metric-card">
                                 <div class="metric-value">{{ route_report.total_duration|default('N/A') }}</div>
@@ -1069,7 +1069,7 @@
                             <div class="chat-messages" id="chat-messages">
                                 <div class="message ai">
                                     <div class="message-content">
-                                        👋 Hello! I'm your AI safety assistant with complete access to your {{ tt_specs.capacity_range|default('tank truck') }} route analysis. I can help with:
+                                        👋 Hello! I'm your AI assistant (OpenAI powered) with complete access to your {{ tt_specs.capacity_range|default('tank truck') }} route analysis. I can help with:
                                         <br><br>
                                         • Route hazards and safety protocols<br>
                                         • Speed recommendations for different zones<br>
@@ -1145,7 +1145,7 @@
                         <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.875rem; line-height: 1.8;">
                             <li style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
                                 <i class="fas fa-check-circle" style="color: #10b981;"></i>
-                                <span>ADR certified for petroleum transport</span>
+                                <span>ITDG guidelines are followed</span>
                             </li>
                             <li style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
                                 <i class="fas fa-check-circle" style="color: #10b981;"></i>
@@ -1157,7 +1157,7 @@
                             </li>
                             <li style="display: flex; align-items: center; gap: 0.75rem;">
                                 <i class="fas fa-check-circle" style="color: #10b981;"></i>
-                                <span>Route analysis meets safety standards</span>
+                                <span>Route analysis is based on Google maps data</span>
                             </li>
                         </ul>
                     </div>
