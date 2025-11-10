@@ -1665,6 +1665,137 @@ def home():
         </body></html>
         """
 
+@app.route('/edit_route/<int:route_index>')
+@login_required
+def edit_route(route_index):
+    """Route editor interface for manual adjustments"""
+    try:
+        directions = session.get('directions')
+        username = session.get('username', 'User')
+        
+        if not directions or route_index >= len(directions):
+            return "Invalid route selected or session data expired. Please start over."
+        
+        selected_route = directions[route_index]
+        coords = polyline.decode(selected_route['overview_polyline']['points'])
+        source = session['source']
+        destination = session['destination']
+        
+        route_data = {
+            'index': route_index,
+            'summary': selected_route.get('summary', f'Route {route_index + 1}'),
+            'distance': selected_route['legs'][0]['distance']['text'],
+            'duration': selected_route['legs'][0]['duration']['text'],
+            'coords': coords
+        }
+        
+        return render_template('route_editor.html',
+                             route=route_data,
+                             coords=coords,
+                             source=source,
+                             destination=destination,
+                             username=username)
+        
+    except Exception as e:
+        print(f"Error in route editor: {e}")
+        return f"Error loading route editor: {str(e)}"
+
+@app.route('/analyze_edited_route', methods=['POST'])
+@login_required  
+def analyze_edited_route():
+    """Analyze manually edited route with custom waypoints"""
+    import json
+    from uuid import uuid4
+    
+    try:
+        # Get edited route data
+        edited_data = json.loads(request.form['edited_route_data'])
+        waypoints = edited_data['waypoints']
+        custom_waypoints = edited_data['customWaypoints']
+        
+        # Get session data
+        tt_specs = session.get('tt_specs')
+        username = session.get('username', 'User')
+        
+        if not tt_specs:
+            return "No truck specifications found. Please start over."
+        
+        # Generate new route through all waypoints using Google Maps
+        if len(waypoints) >= 2:
+            # Prepare waypoints for Google Maps
+            google_waypoints = []
+            for wp in waypoints[1:-1]:  # Skip first and last
+                google_waypoints.append({'location': f"{wp['lat']},{wp['lng']}", 'stopover': True})
+            
+            start_location = f"{waypoints[0]['lat']},{waypoints[0]['lng']}"
+            end_location = f"{waypoints[-1]['lat']},{waypoints[-1]['lng']}"
+            
+            try:
+                if google_waypoints:
+                    new_directions = gmaps.directions(
+                        start_location, end_location,
+                        waypoints=google_waypoints,
+                        mode="driving",
+                        departure_time=datetime.now(),
+                        avoid=["tolls"] if tt_specs["gross_weight"] > 35000 else []
+                    )
+                else:
+                    new_directions = gmaps.directions(
+                        start_location, end_location,
+                        mode="driving",
+                        departure_time=datetime.now(),
+                        avoid=["tolls"] if tt_specs["gross_weight"] > 35000 else []
+                    )
+                
+                if new_directions:
+                    selected = new_directions[0]
+                    coords = polyline.decode(selected['overview_polyline']['points'])
+                    total_distance = selected['legs'][0]['distance']['text']
+                    total_duration = selected['legs'][0]['duration']['text']
+                else:
+                    coords = [(wp['lat'], wp['lng']) for wp in waypoints]
+                    total_distance = "Custom route"
+                    total_duration = "Manual calculation"
+                    
+            except Exception as routing_error:
+                print(f"Routing error: {routing_error}")
+                coords = [(wp['lat'], wp['lng']) for wp in waypoints]
+                total_distance = "Custom route"
+                total_duration = "Manual calculation"
+        else:
+            return "Invalid waypoint data. Please try again."
+        
+        # Store updated route data
+        session['coords'] = coords
+        session['source'] = [waypoints[0]['lat'], waypoints[0]['lng']]
+        session['destination'] = [waypoints[-1]['lat'], waypoints[-1]['lng']]
+        session['custom_waypoints'] = custom_waypoints
+        session['is_edited_route'] = True
+        session.modified = True
+        
+        # Perform analysis (use your existing analysis functions)
+        sharp_turns, curves = detect_practical_hazards(coords, min_turn_angle=25, sample_distance=2, tt_specs=tt_specs)
+        
+        # Create map and analysis (same as your existing analyze_route function)
+        # [Rest of your existing analysis code...]
+        
+        # Render results
+        return render_template("route_analysis_improved.html",
+                               mode="Manually Edited Route Analysis",
+                               html_file=html_name,
+                               route_report={'total_distance': total_distance, 'total_duration': total_duration, 'route_type': 'EDITED'},
+                               sharp_turns=sharp_turns,
+                               curves=curves,
+                               all_pois=all_pois,
+                               tt_specs=tt_specs,
+                               username=username,
+                               custom_waypoints=custom_waypoints,
+                               is_edited_route=True)
+
+    except Exception as e:
+        print(f"Error in edited route analysis: {e}")
+        return f"Error analyzing edited route: {str(e)}. Please try again."
+
 @app.route('/fetch_routes', methods=['POST'])
 @login_required
 def fetch_routes():
@@ -1763,7 +1894,7 @@ def fetch_routes():
                 print(f"Error processing route {i}: {e}")
                 continue
 
-        return render_template("route_select.html", routes=routes, tt_specs=tt_specs, username=username)
+        return render_template("route_select_with_edit.html", routes=routes, tt_specs=tt_specs, username=username)  # chaged code
     
     except Exception as e:
         print(f"Error in fetch_routes: {e}")
@@ -2960,6 +3091,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
