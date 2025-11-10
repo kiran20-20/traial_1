@@ -1665,10 +1665,17 @@ def home():
         </body></html>
         """
 
+# ============================================================================
+# CORRECTED FLASK ROUTES FOR ROUTE EDITING
+# Add these to your app.py file (replace the previous versions)
+# ============================================================================
+
+import json
+
 @app.route('/edit_route/<int:route_index>')
 @login_required
 def edit_route(route_index):
-    """Route editor interface for manual adjustments"""
+    """Route editor interface for manual adjustments - CORRECTED VERSION"""
     try:
         directions = session.get('directions')
         username = session.get('username', 'User')
@@ -1689,22 +1696,33 @@ def edit_route(route_index):
             'coords': coords
         }
         
-        return render_template('route_editor.html',
+        # Prepare data for JavaScript (FIXED: Convert to JSON properly)
+        route_data_for_js = {
+            'coords': coords,
+            'source': list(source),
+            'destination': list(destination),
+            'distance': route_data['distance'],
+            'duration': route_data['duration']
+        }
+        
+        # Convert to JSON string for safe injection into template
+        route_data_json = json.dumps(route_data_for_js)
+        
+        return render_template('route_editor_fixed.html',
                              route=route_data,
-                             coords=coords,
-                             source=source,
-                             destination=destination,
+                             route_data_json=route_data_json,  # Pass JSON string
                              username=username)
         
     except Exception as e:
         print(f"Error in route editor: {e}")
+        import traceback
+        traceback.print_exc()
         return f"Error loading route editor: {str(e)}"
 
 @app.route('/analyze_edited_route', methods=['POST'])
 @login_required  
 def analyze_edited_route():
-    """Analyze manually edited route with custom waypoints"""
-    import json
+    """Analyze manually edited route with custom waypoints - CORRECTED VERSION"""
     from uuid import uuid4
     
     try:
@@ -1720,13 +1738,16 @@ def analyze_edited_route():
         if not tt_specs:
             return "No truck specifications found. Please start over."
         
+        print(f"📍 Analyzing edited route with {len(waypoints)} waypoints ({len(custom_waypoints)} custom)")
+        
         # Generate new route through all waypoints using Google Maps
         if len(waypoints) >= 2:
-            # Prepare waypoints for Google Maps
+            # Prepare waypoints for Google Maps (exclude start/end from waypoints)
             google_waypoints = []
-            for wp in waypoints[1:-1]:  # Skip first and last
+            for wp in waypoints[1:-1]:  # Skip first and last (start/destination)
                 google_waypoints.append({'location': f"{wp['lat']},{wp['lng']}", 'stopover': True})
             
+            # Get new directions with waypoints
             start_location = f"{waypoints[0]['lat']},{waypoints[0]['lng']}"
             end_location = f"{waypoints[-1]['lat']},{waypoints[-1]['lng']}"
             
@@ -1740,6 +1761,7 @@ def analyze_edited_route():
                         avoid=["tolls"] if tt_specs["gross_weight"] > 35000 else []
                     )
                 else:
+                    # No custom waypoints, direct route
                     new_directions = gmaps.directions(
                         start_location, end_location,
                         mode="driving",
@@ -1748,24 +1770,28 @@ def analyze_edited_route():
                     )
                 
                 if new_directions:
-                    selected = new_directions[0]
+                    selected = new_directions[0]  # Use first result
                     coords = polyline.decode(selected['overview_polyline']['points'])
                     total_distance = selected['legs'][0]['distance']['text']
                     total_duration = selected['legs'][0]['duration']['text']
+                    
+                    print(f"✅ New route calculated: {total_distance}, {total_duration}")
                 else:
+                    # Fallback: use simple coordinates
                     coords = [(wp['lat'], wp['lng']) for wp in waypoints]
-                    total_distance = "Custom route"
-                    total_duration = "Manual calculation"
+                    total_distance = "Distance calculating..."
+                    total_duration = "Duration calculating..."
                     
             except Exception as routing_error:
-                print(f"Routing error: {routing_error}")
+                print(f"Google routing error: {routing_error}")
+                # Fallback: use simple line between waypoints
                 coords = [(wp['lat'], wp['lng']) for wp in waypoints]
                 total_distance = "Custom route"
                 total_duration = "Manual calculation"
         else:
             return "Invalid waypoint data. Please try again."
         
-        # Store updated route data
+        # Store updated route data in session
         session['coords'] = coords
         session['source'] = [waypoints[0]['lat'], waypoints[0]['lng']]
         session['destination'] = [waypoints[-1]['lat'], waypoints[-1]['lng']]
@@ -1773,28 +1799,257 @@ def analyze_edited_route():
         session['is_edited_route'] = True
         session.modified = True
         
-        # Perform analysis (use your existing analysis functions)
+        print(f"🔍 Starting hazard analysis for edited route with {len(coords)} coordinates...")
+        
+        # Perform same analysis as original route
         sharp_turns, curves = detect_practical_hazards(coords, min_turn_angle=25, sample_distance=2, tt_specs=tt_specs)
         
-        # Create map and analysis (same as your existing analyze_route function)
-        # [Rest of your existing analysis code...]
+        # Get POIs along route (same function as original)
+        def get_safe_pois(keyword):
+            pois = []
+            try:
+                sample_coords = coords[::25] if len(coords) > 25 else coords[:3]
+                for lat, lng in sample_coords:
+                    try:
+                        places = gmaps.places_nearby(location=(lat, lng), radius=1500, keyword=keyword)
+                        for place in places.get('results', [])[:2]:
+                            poi_data = {
+                                'name': place.get('name', 'Unknown'),
+                                'location': (place['geometry']['location']['lat'], place['geometry']['location']['lng']),
+                                'type': keyword,
+                                'rating': place.get('rating', 'N/A'),
+                                'vicinity': place.get('vicinity', '')
+                            }
+                            pois.append(poi_data)
+                    except Exception as e:
+                        print(f"Error getting places for {keyword}: {e}")
+                        continue
+            except Exception as e:
+                print(f"Error in get_safe_pois for {keyword}: {e}")
+            return pois
+
+        all_pois = []
+        for keyword in ['hospital', 'police', 'fuel']:
+            all_pois.extend(get_safe_pois(keyword))
+
+        # Remove duplicate POIs
+        unique_pois = []
+        for poi in all_pois:
+            is_duplicate = False
+            for existing in unique_pois:
+                lat_diff = abs(poi['location'][0] - existing['location'][0])
+                lng_diff = abs(poi['location'][1] - existing['location'][1])
+                if lat_diff < 0.002 and lng_diff < 0.002:
+                    is_duplicate = True
+                    break
+            if not is_duplicate:
+                unique_pois.append(poi)
         
-        # Render results
+        all_pois = unique_pois[:15]
+        
+        # Create enhanced location mapping for edited route
+        location_mapping = {'danger_zones': [], 'safety_facilities': [], 'navigation_waypoints': []}
+
+        # Process danger zones with enhanced info
+        tanker_type_str = str(tt_specs.get('capacity_range', '16-20KL')).strip()
+        try:
+            safe_speed_matrix = PRACTICAL_SPEED_MATRIX.get(tanker_type_str, PRACTICAL_SPEED_MATRIX['16-20KL'])
+        except:
+            safe_speed_matrix = {'critical': 10, 'high': 18, 'moderate': 25, 'low': 35}
+
+        for i, turn in enumerate(sharp_turns):
+            turn_angle = turn.get('turn_angle', 0)
+            if turn_angle >= 90:
+                risk_level, recommended_speed = 'CRITICAL', safe_speed_matrix['critical']
+            elif turn_angle >= 65:
+                risk_level, recommended_speed = 'HIGH', safe_speed_matrix['high'] 
+            elif turn_angle >= 45:
+                risk_level, recommended_speed = 'MODERATE', safe_speed_matrix['moderate']
+            else:
+                risk_level, recommended_speed = 'LOW', safe_speed_matrix['low']
+
+            danger_zone = {
+                'id': f'EDZ-{i+1:02d}',  # EDZ = Edited Danger Zone
+                'coordinates': {
+                    'latitude': turn['location'][0],
+                    'longitude': turn['location'][1], 
+                    'formatted': f"{turn['location'][0]:.6f}, {turn['location'][1]:.6f}"
+                },
+                'hazard_type': turn.get('risk_category', 'Sharp Turn'),
+                'turn_angle': turn_angle,
+                'direction': turn.get('direction', 'unknown'),
+                'severity': risk_level,
+                'recommended_speed': recommended_speed,
+                'safety_actions': ['Engine braking mandatory', 'Liquid surge monitoring', 'Emergency flashers ON', f'Reduce to {recommended_speed} km/h'],
+                'warning_message': f'{risk_level} risk zone - Exercise extreme caution'
+            }
+            location_mapping['danger_zones'].append(danger_zone)
+
+        # Create interactive map
+        center_lat = sum(coord[0] for coord in coords) / len(coords)
+        center_lng = sum(coord[1] for coord in coords) / len(coords)
+        
+        m = folium.Map(location=(center_lat, center_lng), zoom_start=12, tiles='OpenStreetMap')
+
+        # Draw main route (highlight that it's edited)
+        folium.PolyLine(coords, color='#ff6b35', weight=6, opacity=0.8, 
+                       popup=f"EDITED ROUTE - {total_distance} via {len(custom_waypoints)} custom waypoints").add_to(m)
+
+        # Add custom waypoint markers (distinct styling)
+        for i, wp in enumerate(custom_waypoints):
+            folium.Marker(
+                location=(wp['lat'], wp['lng']),
+                popup=f"<b>Custom Waypoint {i+1}</b><br>{wp['name']}<br>{wp['lat']:.6f}, {wp['lng']:.6f}",
+                icon=folium.Icon(color='purple', icon='star', prefix='fa'),
+                tooltip=f"Custom: {wp['name']}"
+            ).add_to(m)
+
+        # Add danger zone markers
+        for i, turn in enumerate(sharp_turns):
+            lat, lng = turn['location']
+            turn_angle = turn['turn_angle']
+            
+            if turn_angle >= 90:
+                marker_color, severity = 'darkred', 'CRITICAL'
+            elif turn_angle >= 65:
+                marker_color, severity = 'red', 'HIGH RISK'
+            elif turn_angle >= 45:
+                marker_color, severity = 'orange', 'MODERATE'
+            else:
+                marker_color, severity = 'yellow', 'LOW RISK'
+
+            popup_html = f"""<div style='font-family: Arial; width: 250px;'>
+                <h4 style='color: red; margin: 5px 0;'>⚠️ EDITED ROUTE HAZARD {i+1:02d}</h4>
+                <p><strong>Angle:</strong> {turn_angle:.1f}° {turn.get('direction', 'turn')}</p>
+                <p><strong>Risk:</strong> {severity}</p>
+                <p><strong>GPS:</strong> {lat:.6f}, {lng:.6f}</p>
+                <p><strong>Recommended Speed:</strong> {safe_speed_matrix['critical'] if turn_angle >= 90 else safe_speed_matrix['high'] if turn_angle >= 65 else safe_speed_matrix['moderate']} km/h</p>
+            </div>"""
+
+            folium.Marker(location=(lat, lng), popup=folium.Popup(popup_html, max_width=250), 
+                         icon=folium.Icon(color=marker_color, icon='exclamation-triangle', prefix='fa'), 
+                         tooltip=f"EDZ-{i+1:02d}: {severity}").add_to(m)
+
+        # Add facility markers
+        for i, poi in enumerate(all_pois):
+            lat, lng = poi['location']
+            
+            if 'hospital' in poi['type']:
+                icon_props = {'color': 'red', 'icon': 'plus', 'prefix': 'fa'}
+                category = 'MEDICAL'
+            elif 'police' in poi['type']:
+                icon_props = {'color': 'blue', 'icon': 'shield', 'prefix': 'fa'}
+                category = 'POLICE'
+            elif 'fuel' in poi['type']:
+                icon_props = {'color': 'orange', 'icon': 'gas-pump', 'prefix': 'fa'}
+                category = 'FUEL'
+            else:
+                icon_props = {'color': 'green', 'icon': 'info-circle', 'prefix': 'fa'}
+                category = 'OTHER'
+
+            facility_popup = f"""<div style='font-family: Arial; width: 200px;'>
+                <h4 style='margin: 5px 0;'>🏥 FACILITY {i+1:02d} (Edited Route)</h4>
+                <p><strong>Name:</strong> {poi['name']}</p>
+                <p><strong>Type:</strong> {category}</p>
+                <p><strong>GPS:</strong> {lat:.6f}, {lng:.6f}</p>
+            </div>"""
+
+            folium.Marker(location=(lat, lng), popup=folium.Popup(facility_popup, max_width=200), 
+                         icon=folium.Icon(**icon_props), tooltip=f"ESF-{i+1:02d}: {poi['name']}").add_to(m)
+
+        # Add start and end markers
+        start_coords = [waypoints[0]['lat'], waypoints[0]['lng']]
+        end_coords = [waypoints[-1]['lat'], waypoints[-1]['lng']]
+        folium.Marker(start_coords, popup='START - Edited Route Origin', 
+                     icon=folium.Icon(color='green', icon='play', prefix='fa')).add_to(m)
+        folium.Marker(end_coords, popup='END - Edited Route Destination', 
+                     icon=folium.Icon(color='blue', icon='stop', prefix='fa')).add_to(m)
+
+        # Save map
+        unique_map_id = uuid4().hex
+        html_name = f"edited_route_map_{unique_map_id}.html"
+        m.save(f"templates/{html_name}")
+
+        # Create route report with edited route information
+        try:
+            distance_value = float(total_distance.split()[0]) if total_distance and 'km' in total_distance else 1
+        except:
+            distance_value = 1
+
+        route_report = {
+            'total_distance': total_distance,
+            'total_duration': total_duration,
+            'route_type': 'MANUALLY_EDITED',
+            'custom_waypoints_count': len(custom_waypoints),
+            'waypoints_details': custom_waypoints,
+            'tt_specifications': {
+                'capacity_range': tanker_type_str,
+                'fuel_capacity': f"{tt_specs['avg_capacity_liters']:,} L",
+                'product_weight': f"{tt_specs['product_weight']/1000:.1f} T",
+                'tare_weight': f"{tt_specs['tare_weight']/1000:.1f} T",
+                'gross_weight': f"{tt_specs['gross_weight']/1000:.1f} T",
+                'axle_load': f"{tt_specs['axle_load']:.1f} T per axle",
+                'max_speed': f"{tt_specs['max_speed']} kmph",
+                'risk_multiplier': f"{tt_specs['risk_multiplier']}x"
+            },
+            'route_analysis': {
+                'total_points': len(coords),
+                'points_per_km': len(coords) / distance_value,
+                'critical_risk_zones': len([t for t in sharp_turns if t.get('turn_angle', 0) >= 90]),
+                'high_risk_zones': len([t for t in sharp_turns if 65 <= t.get('turn_angle', 0) < 90]),
+                'medium_risk_zones': len([t for t in sharp_turns if 45 <= t.get('turn_angle', 0) < 65]),
+                'hospitals_along_route': len([p for p in all_pois if 'hospital' in p['type']]),
+                'fuel_stations': len([p for p in all_pois if 'fuel' in p['type']]),
+                'police_stations': len([p for p in all_pois if 'police' in p['type']])
+            },
+            'location_mapping': location_mapping
+        }
+
+        # Store all data in session
+        session['sharp_turns'] = sharp_turns
+        session['curves'] = curves
+        session['all_pois'] = all_pois
+        session['location_mapping'] = location_mapping
+        session['route_report'] = route_report
+        session.modified = True
+
+        # Calculate statistics
+        critical_turns = len([t for t in sharp_turns if t.get('turn_angle', 0) >= 90])
+        high_turns = len([t for t in sharp_turns if 65 <= t.get('turn_angle', 0) < 90])
+        moderate_turns = len([t for t in sharp_turns if 45 <= t.get('turn_angle', 0) < 65])
+
+        print(f"✅ Edited route analysis completed: {len(sharp_turns)} danger zones, {len(all_pois)} facilities")
+        print(f"   Custom waypoints: {len(custom_waypoints)}")
+        print(f"   Route type: Manually edited with diversions")
+
+        # Use the same template as regular analysis, but with edited route data
         return render_template("route_analysis_improved.html",
                                mode="Manually Edited Route Analysis",
                                html_file=html_name,
-                               route_report={'total_distance': total_distance, 'total_duration': total_duration, 'route_type': 'EDITED'},
+                               route_report=route_report,
                                sharp_turns=sharp_turns,
                                curves=curves,
                                all_pois=all_pois,
+                               critical_turns=critical_turns,
+                               high_turns=high_turns,
+                               moderate_turns=moderate_turns,
                                tt_specs=tt_specs,
                                username=username,
+                               location_mapping=location_mapping,
+                               source=start_coords,
+                               destination=end_coords,
                                custom_waypoints=custom_waypoints,
                                is_edited_route=True)
 
     except Exception as e:
         print(f"Error in edited route analysis: {e}")
+        import traceback
+        traceback.print_exc()
         return f"Error analyzing edited route: {str(e)}. Please try again."
+
+# ============================================================================
+# Also update your fetch_routes function to use the new template:
+
 
 @app.route('/fetch_routes', methods=['POST'])
 @login_required
@@ -3091,6 +3346,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
