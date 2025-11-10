@@ -759,6 +759,11 @@
                         this.form.dispatchEvent(new Event('submit'));
                     }
                 });
+
+                // Handle page unload/beforeunload to reset loading state if needed
+                window.addEventListener('beforeunload', () => {
+                    this.setLoadingState(false);
+                });
             }
 
             togglePasswordVisibility() {
@@ -792,13 +797,9 @@
                     return;
                 }
 
-                // Keep loading state active - will be reset after page redirect or timeout
-                setTimeout(() => {
-                    if (this.loginButton.disabled) {
-                        this.setLoadingState(false);
-                        this.showAlert('Connection timeout. Please try again.', 'error');
-                    }
-                }, 10000);
+                // Keep loading state active until page redirects
+                // The form will submit normally and the server will handle the response
+                // Loading state will be cleared when the new page loads or if there's an error response
             }
 
             setLoadingState(loading) {
