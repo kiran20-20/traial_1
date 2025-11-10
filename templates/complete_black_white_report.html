@@ -101,6 +101,21 @@
             margin-bottom: 12px;
         }
 
+        /* Map Section - Simple */
+        .map-container {
+            width: 100%;
+            height: 400px;
+            border: 2px solid #000;
+            margin: 10px 0;
+            background: #f5f5f5;
+        }
+
+        .map-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
         /* Executive Summary Cards */
         .summary-grid {
             display: grid;
@@ -269,40 +284,6 @@
             font-weight: bold;
         }
 
-        /* Progress Indicators */
-        .progress-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 8px;
-            font-size: 8pt;
-        }
-
-        .progress-label {
-            width: 120px;
-            font-weight: bold;
-        }
-
-        .progress-bar {
-            flex: 1;
-            height: 16px;
-            background: #f0f0f0;
-            margin: 0 8px;
-            border: 1px solid #000;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: #000;
-        }
-
-        .progress-value {
-            width: 60px;
-            text-align: right;
-            font-weight: bold;
-            font-size: 7pt;
-        }
-
         /* Two Column Layout */
         .two-column {
             display: grid;
@@ -350,6 +331,7 @@
             font-size: 8pt;
             font-weight: bold;
             text-transform: uppercase;
+            cursor: pointer;
         }
 
         .btn:hover {
@@ -409,14 +391,40 @@
             .data-table th, .data-table td { padding: 3px 2px; }
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .header-meta, .summary-grid, .metrics-grid { grid-template-columns: repeat(2, 1fr); }
-            .two-column { grid-template-columns: 1fr; }
-            .data-table { font-size: 7pt; }
+        /* Progress Indicators */
+        .progress-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 8pt;
         }
 
-        /* Special Elements */
+        .progress-label {
+            width: 120px;
+            font-weight: bold;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 16px;
+            background: #f0f0f0;
+            margin: 0 8px;
+            border: 1px solid #000;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #000;
+        }
+
+        .progress-value {
+            width: 60px;
+            text-align: right;
+            font-weight: bold;
+            font-size: 7pt;
+        }
+
         .highlight-box {
             background: #f0f0f0;
             border: 2px solid #000;
@@ -452,6 +460,13 @@
             display: inline-block;
             margin: 2px;
         }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-meta, .summary-grid, .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+            .two-column { grid-template-columns: 1fr; }
+            .data-table { font-size: 7pt; }
+        }
     </style>
 </head>
 <body>
@@ -459,7 +474,7 @@
         <!-- Header -->
         <div class="header">
             <h1>Route Analysis Report</h1>
-            <p>IndianOil Corporation Limited -Tank Truck Safety Assessment</p>
+            <p>IndianOil Corporation Limited - Tank Truck Safety Assessment</p>
             
             <div class="header-meta">
                 <div class="meta-item">
@@ -491,7 +506,7 @@
         </div>
 
         <div class="content">
-            <!-- Enhanced Executive Summary -->
+            <!-- Executive Summary -->
             <div class="section">
                 <div class="section-title">Executive Summary</div>
                 
@@ -501,28 +516,51 @@
                         <div class="summary-label">Total Distance</div>
                     </div>
                     <div class="summary-card">
-                        <div class="summary-value">{{ location_mapping.danger_zones|length if location_mapping else (critical_turns|default(0)) + (high_turns|default(0)) + (moderate_turns|default(0)) }}</div>
+                        <div class="summary-value">{{ (critical_turns|default(0)) + (high_turns|default(0)) + (moderate_turns|default(0)) }}</div>
                         <div class="summary-label">Danger Zones</div>
                     </div>
                     <div class="summary-card">
-                        <div class="summary-value">{{ location_mapping.safety_facilities|length if location_mapping else all_pois|length }}</div>
-                        <div class="summary-label">Emergency Facilities </div>
+                        <div class="summary-value">{{ all_pois|length if all_pois else 0 }}</div>
+                        <div class="summary-label">Emergency Facilities</div>
                     </div>
                     <div class="summary-card">
-                        <div class="summary-value">{{ location_mapping.navigation_waypoints|length if location_mapping else 'N/A' }}</div>
-                        <div class="summary-label">Navigation Waypoints</div>
+                        <div class="summary-value">{{ coords|length if coords else 0 }}</div>
+                        <div class="summary-label">GPS Points</div>
                     </div>
                 </div>
 
                 <div class="info-box">
-                    <div class="info-title">Interactive GPS Map with Location Indicators</div>
-                    Enhanced map with precise GPS coordinates.
-                    <br><br>
-                    <strong>Map Features:</strong> {{ location_mapping.danger_zones|length if location_mapping else (critical_turns|default(0)) + (high_turns|default(0)) + (moderate_turns|default(0)) }} danger zone markers • {{ location_mapping.safety_facilities|length if location_mapping else all_pois|length }} facility markers • {{ location_mapping.navigation_waypoints|length if location_mapping else 'Multiple' }} navigation waypoints • Interactive coordinate display
+                    <div class="info-title">Route Overview</div>
+                    GPS-based route analysis with {{ (critical_turns|default(0)) + (high_turns|default(0)) + (moderate_turns|default(0)) }} danger zones and {{ all_pois|length if all_pois else 0 }} emergency facilities mapped for {{ tt_specs.capacity_range|default('Tank Truck') }} operations.
                 </div>
             </div>
 
-            <!-- Comprehensive Risk Assessment with Bar Indicators -->
+            <!-- Route Map -->
+            <div class="section">
+                <div class="section-title">🗺 Interactive Route Map</div>
+                
+                {% if html_file and html_file != 'None' %}
+                <div class="map-container">
+                    <iframe src="{{ url_for('view_map', filename=html_file) }}" class="map-iframe"></iframe>
+                </div>
+                <div class="info-box">
+                    <div class="info-title">Map Details</div>
+                    Start: {{ "%.6f, %.6f"|format(source[0], source[1]) if source else 'N/A' }} | 
+                    End: {{ "%.6f, %.6f"|format(destination[0], destination[1]) if destination else 'N/A' }} | 
+                    Distance: {{ route_report.total_distance|default('N/A') }}
+                </div>
+                {% else %}
+                <div style="height: 400px; border: 2px solid #000; display: flex; align-items: center; justify-content: center; background: #f0f0f0;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 24pt; margin-bottom: 10px;">🗺</div>
+                        <div><strong>Processing Route Map...</strong></div>
+                        <div style="font-size: 8pt;">{{ coords|length if coords else 0 }} GPS coordinates</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Risk Assessment -->
             <div class="section">
                 <div class="section-title">🔴 Risk Assessment</div>
                 
@@ -537,7 +575,7 @@
                         </div>
                         <div class="bar-container">
                             <div class="bar-fill bar-critical" style="width: {{ (critical_turns|default(0) / max_risks * 100)|round(1) }}%">
-                                LIQUID SURGE DANGER - Use extreme caution
+                                EXTREME CAUTION - Liquid surge danger
                             </div>
                         </div>
                     </div>
@@ -549,7 +587,7 @@
                         </div>
                         <div class="bar-container">
                             <div class="bar-fill bar-high" style="width: {{ (high_turns|default(0) / max_risks * 100)|round(1) }}%">
-                                HIGH ROLLOVER RISK - Reduce speed significantly
+                                HIGH RISK - Significant speed reduction
                             </div>
                         </div>
                     </div>
@@ -561,7 +599,7 @@
                         </div>
                         <div class="bar-container">
                             <div class="bar-fill bar-moderate" style="width: {{ (moderate_turns|default(0) / max_risks * 100)|round(1) }}%">
-                                CAUTION REQUIRED - Standard intersection speed
+                                CAUTION - Standard safety protocols
                             </div>
                         </div>
                     </div>
@@ -570,101 +608,58 @@
                 <div class="metrics-grid">
                     <div class="metric-card">
                         <div class="metric-value">{{ coords|length if coords else 'N/A' }}</div>
-                        <div class="metric-label">GPS Coordinates Analyzed</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-value">{{ "%.1f"|format((coords|length / (route_report.total_distance.split()[0]|float if route_report.total_distance and 'km' in route_report.total_distance else 1))) if coords else '1.1' }}</div>
-                        <div class="metric-label">Analysis Points per KM</div>
+                        <div class="metric-label">GPS Points Analyzed</div>
                     </div>
                     <div class="metric-card">
                         {% set risk_score = (critical_turns|default(0) * 3) + (high_turns|default(0) * 2) + (moderate_turns|default(0) * 1) %}
-                        <div class="metric-value">{{ "%.2f"|format(risk_score / (route_report.total_distance.split()[0]|float if route_report.total_distance and 'km' in route_report.total_distance else 1)) }}</div>
-                        <div class="metric-label">Hazard Density per KM</div>
+                        <div class="metric-value">{{ risk_score }}</div>
+                        <div class="metric-label">Total Risk Score</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">{{ "%.1f"|format((coords|length / (route_report.total_distance.split()[0]|float if route_report.total_distance and 'km' in route_report.total_distance else 1))) if coords else '1.0' }}</div>
+                        <div class="metric-label">Points per KM</div>
                     </div>
                 </div>
-
-                <!-- Risk Classification -->
-                {% if risk_score <= 5 %}
-                <div class="highlight-box" style="background: #f0f0f0;">
-                    ✓ LOW RISK ROUTE CLASSIFICATION - Standard protocols sufficient
-                </div>
-                {% elif risk_score <= 15 %}
-                <div class="highlight-box" style="background: #e0e0e0;">
-                    ⚠ MODERATE RISK ROUTE CLASSIFICATION - Enhanced safety measures required
-                </div>
-                {% else %}
-                <div class="highlight-box" style="background: #d0d0d0;">
-                    ⚠ HIGH RISK ROUTE CLASSIFICATION - Extreme caution and enhanced protocols mandatory
-                </div>
-                {% endif %}
             </div>
 
-            <!-- GPS-Mapped Danger Zones & Coordinates -->
+            <!-- Danger Zones Table -->
             <div class="section">
-                <div class="section-title">🔴 GPS-Mapped Danger Zones & Coordinates</div>
+                <div class="section-title">🔴 GPS Danger Zones</div>
                 
-                <div class="info-box">
-                    <div class="info-title">Precision GPS Mapping</div>
-                    {{ location_mapping.danger_zones|length if location_mapping else (critical_turns|default(0)) + (high_turns|default(0)) + (moderate_turns|default(0)) }} critical danger zones mapped with 6-decimal precision GPS coordinates (±1 meter accuracy). All coordinates verified against Google Maps API.
-                </div>
-
                 <table class="data-table">
                     <thead>
                         <tr>
                             <th>Zone ID</th>
                             <th>GPS Coordinates</th>
-                            <th>Hazard Type</th>
                             <th>Risk Level</th>
-                            <th>Turn Details</th>
-                            <th>Speed Limit</th>
-                            <th>Action</th>
+                            <th>Turn Angle</th>
+                            <th>Max Speed</th>
+                            <th>Safety Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% if location_mapping and location_mapping.danger_zones %}
-                            {% for zone in location_mapping.danger_zones[:15] %}
-                            <tr>
-                                <td class="zone-id">{{ zone.id }}</td>
-                                <td class="coordinates">{{ zone.coordinates.formatted }}</td>
-                                <td>{{ zone.hazard_type }}<br><small>{{ zone.warning_message[:40] }}...</small></td>
-                                <td><span class="risk-badge risk-{{ zone.severity.lower() }}">{{ zone.severity }}</span></td>
-                                <td>{{ zone.turn_angle|round(1) }}° {{ zone.direction|upper }}</td>
-                                <td><strong>{{ zone.recommended_speed }} km/h</strong></td>
-                                <td>
-                                    {% for action in zone.safety_actions[:2] %}
-                                    • {{ action }}<br>
-                                    {% endfor %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        {% else %}
-                            {% for turn in sharp_turns[:15] %}
-                            <tr>
-                                <td class="zone-id">DZ-{{ "%02d"|format(loop.index0 + 1) }}</td>
-                                <td class="coordinates">{{ "%.6f, %.6f"|format(turn.location[0], turn.location[1]) }}</td>
-                                <td>{{ turn.get('risk_category', 'Sharp Turn') }}<br><small>{{ turn.get('warning', 'Caution required') }}</small></td>
-                                <td>
-                                    {% set angle = turn.get('turn_angle', 0) %}
-                                    <span class="risk-badge {% if angle >= 90 %}risk-critical{% elif angle >= 65 %}risk-high{% elif angle >= 45 %}risk-moderate{% else %}risk-low{% endif %}">
-                                        {% if angle >= 90 %}CRITICAL{% elif angle >= 65 %}HIGH{% elif angle >= 45 %}MODERATE{% else %}LOW{% endif %}
-                                    </span>
-                                </td>
-                                <td>{{ angle|round(1) }}° {{ turn.get('direction', 'turn')|upper }}</td>
-                                <td><strong>{% if angle >= 90 %}10{% elif angle >= 65 %}18{% elif angle >= 45 %}25{% else %}35{% endif %} km/h</strong></td>
-                                <td>
-                                    • Engine braking<br>
-                                    • Monitor surge
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        {% endif %}
+                        {% for turn in sharp_turns[:10] %}
+                        <tr>
+                            <td class="zone-id">DZ-{{ "%02d"|format(loop.index) }}</td>
+                            <td class="coordinates">{{ "%.6f, %.6f"|format(turn.location[0], turn.location[1]) }}</td>
+                            <td>
+                                {% set angle = turn.get('turn_angle', 0) %}
+                                <span class="risk-badge {% if angle >= 90 %}risk-critical{% elif angle >= 65 %}risk-high{% elif angle >= 45 %}risk-moderate{% else %}risk-low{% endif %}">
+                                    {% if angle >= 90 %}CRITICAL{% elif angle >= 65 %}HIGH{% elif angle >= 45 %}MODERATE{% else %}LOW{% endif %}
+                                </span>
+                            </td>
+                            <td>{{ angle|round(1) }}°</td>
+                            <td><strong>{% if angle >= 90 %}10{% elif angle >= 65 %}18{% else %}25{% endif %} km/h</strong></td>
+                            <td style="font-size: 6pt;">Engine braking • Monitor surge</td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
 
-            <!-- Emergency Infrastructure Assessment with Bar Indicators -->
+            <!-- Emergency Facilities -->
             <div class="section">
-                <div class="section-title">🟢 Emergency POI</div>
+                <div class="section-title">🟢 Emergency Facilities</div>
                 
                 <div class="bar-section">
                     {% set hospitals = 0 %}
@@ -688,7 +683,7 @@
                         </div>
                         <div class="bar-container">
                             <div class="bar-fill bar-critical" style="width: {{ (hospitals / max_facilities * 100)|round(1) }}%">
-                                Emergency Medical Care • Trauma Response • Hazmat Treatment
+                                Emergency Medical Care Available
                             </div>
                         </div>
                     </div>
@@ -700,7 +695,7 @@
                         </div>
                         <div class="bar-container">
                             <div class="bar-fill bar-info" style="width: {{ (police / max_facilities * 100)|round(1) }}%">
-                                Traffic Control • Emergency Coordination • Route Assistance
+                                Emergency Response Available
                             </div>
                         </div>
                     </div>
@@ -712,15 +707,10 @@
                         </div>
                         <div class="bar-container">
                             <div class="bar-fill bar-low" style="width: {{ (fuel / max_facilities * 100)|round(1) }}%">
-                                Fuel Services • Vehicle Maintenance • Rest Facilities
+                                Fuel Services Available
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="info-box">
-                    <div class="info-title">Emergency Infrastructure Coverage</div>
-                    {{ all_pois|length }} verified emergency facilities mapped within 1km of route with complete service information and GPS coordinates. Response time estimated at 6-15 minutes for most route segments.
                 </div>
 
                 <table class="data-table">
@@ -728,260 +718,71 @@
                         <tr>
                             <th>ID</th>
                             <th>Type</th>
-                            <th>Facility Name</th>
+                            <th>Name</th>
                             <th>GPS Coordinates</th>
-                            <th>Services Available</th>
-                            <th>Emergency Contact</th>
-                            <th>Rating</th>
+                            <th>Contact</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for poi in all_pois[:12] %}
+                        {% for poi in all_pois[:8] %}
                         <tr>
-                            <td class="zone-id">SF-{{ "%02d"|format(loop.index0 + 1) }}</td>
+                            <td class="zone-id">F-{{ "%02d"|format(loop.index) }}</td>
                             <td>
                                 {% if 'hospital' in poi.type %}
                                     <span class="risk-badge risk-critical">🏥 MEDICAL</span>
                                 {% elif 'police' in poi.type %}
                                     <span class="risk-badge risk-info">🚔 POLICE</span>
-                                {% elif 'fuel' in poi.type %}
+                                {% else %}
                                     <span class="risk-badge risk-low">⛽ FUEL</span>
-                                {% else %}
-                                    <span class="risk-badge risk-moderate">📍 OTHER</span>
                                 {% endif %}
                             </td>
-                            <td><strong>{{ poi.name }}</strong><br><small>{{ poi.vicinity[:25] }}...</small></td>
+                            <td><strong>{{ poi.name[:20] }}...</strong></td>
                             <td class="coordinates">{{ "%.6f, %.6f"|format(poi.location[0], poi.location[1]) }}</td>
-                            <td style="font-size: 6pt;">
-                                {% if 'hospital' in poi.type %}
-                                • Emergency Medical Care<br>• Trauma Response<br>• Hazmat Treatment
-                                {% elif 'police' in poi.type %}
-                                • Traffic Control<br>• Emergency Response<br>• Route Assistance
-                                {% elif 'fuel' in poi.type %}
-                                • Fuel Services<br>• Vehicle Maintenance<br>• Rest Facilities
-                                {% else %}
-                                • General Services<br>• Information<br>• Support
-                                {% endif %}
-                            </td>
                             <td>
                                 <span class="emergency-contact">
                                 {% if 'hospital' in poi.type %}108{% elif 'police' in poi.type %}100{% else %}Local{% endif %}
                                 </span>
                             </td>
-                            <td>{{ poi.rating }} ⭐</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
 
-            <!-- Critical Navigation Waypoints & GPS Programming -->
+            <!-- Safety Protocols -->
             <div class="section">
-                <div class="section-title">🗺 Critical Navigation Waypoints & GPS coordinates</div>
-                
-                <div class="info-box">
-                    <div class="info-title">Navigation</div>
-                    {{ location_mapping.navigation_waypoints|length if location_mapping else 'Multiple' }} critical waypoints identified for GPS system programming. Pre-load coordinates for enhanced safety awareness.
-                </div>
-
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Waypoint ID</th>
-                            <th>GPS Coordinates</th>
-                            <th>Description</th>
-                            <th>Required Actions</th>
-                            <th>Navigation Notes</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% if location_mapping and location_mapping.navigation_waypoints %}
-                            {% for waypoint in location_mapping.navigation_waypoints[:12] %}
-                            <tr>
-                                <td class="zone-id">{{ waypoint.icon }} {{ waypoint.id }}</td>
-                                <td class="coordinates">{{ waypoint.coordinates.formatted }}</td>
-                                <td><strong>{{ waypoint.description }}</strong>
-                                    {% if waypoint.get('turn_details') %}<br><small>{{ waypoint.turn_details }}</small>{% endif %}
-                                </td>
-                                <td style="font-size: 6pt;">
-                                    {% for action in waypoint.actions[:3] %}
-                                    • {{ action }}<br>
-                                    {% endfor %}
-                                </td>
-                                <td>
-                                    {% if waypoint.type == 'START' %}<strong>DEPARTURE</strong><br>Begin monitoring
-                                    {% elif 'HAZARD' in waypoint.type %}<strong>{{ waypoint.get('severity', 'CRITICAL') }}</strong><br>danger zone
-                                    {% elif waypoint.type == 'DESTINATION' %}<strong>ARRIVAL</strong><br>Complete protocols
-                                    {% else %}CHECKPOINT<br>Monitor status{% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        {% else %}
-                            <tr>
-                                <td class="zone-id">🚛 WP-START</td>
-                                <td class="coordinates">{{ "%.6f, %.6f"|format(source[0], source[1]) if source else 'N/A' }}</td>
-                                <td><strong>Route Departure Point - {{ tt_specs.capacity_range|default('Tank Truck') }}</strong></td>
-                                <td style="font-size: 6pt;">
-                                    • Complete pre-departure checklist<br>
-                                    • Verify load securement<br>
-                                    • Test emergency equipment
-                                </td>
-                                <td><strong>DEPARTURE</strong><br>Begin monitoring</td>
-                            </tr>
-                            {% for turn in sharp_turns[:8] %}
-                            {% if turn.get('turn_angle', 0) >= 60 %}
-                            <tr>
-                                <td class="zone-id">⚠️ WP-HAZ{{ "%02d"|format(loop.index0 + 1) }}</td>
-                                <td class="coordinates">{{ "%.6f, %.6f"|format(turn.location[0], turn.location[1]) }}</td>
-                                <td><strong>{{ turn.get('risk_category', 'Critical Hazard Zone') }}</strong><br><small>{{ turn.get('turn_angle', 0)|round(1) }}° {{ turn.get('direction', 'turn') }}</small></td>
-                                <td style="font-size: 6pt;">
-                                    • Reduce to {% if turn.get('turn_angle', 0) >= 90 %}10{% else %}18{% endif %} km/h<br>
-                                    • Monitor liquid surge<br>
-                                    • Use engine braking
-                                </td>
-                                <td><strong>{% if turn.get('turn_angle', 0) >= 90 %}CRITICAL{% else %}HIGH{% endif %}</strong><br>danger zone</td>
-                            </tr>
-                            {% endif %}
-                            {% endfor %}
-                            <tr>
-                                <td class="zone-id">🏁 WP-END</td>
-                                <td class="coordinates">{{ "%.6f, %.6f"|format(destination[0], destination[1]) if destination else 'N/A' }}</td>
-                                <td><strong>Route Destination Point - {{ tt_specs.capacity_range|default('Tank Truck') }}</strong></td>
-                                <td style="font-size: 6pt;">
-                                    • Complete delivery checklist<br>
-                                    • Verify cargo discharge<br>
-                                    • Submit safety report
-                                </td>
-                                <td><strong>ARRIVAL</strong><br>Complete protocols</td>
-                            </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Tank Truck Technical Specifications -->
-            <div class="section">
-                <div class="section-title">Tank Truck Technical Specifications</div>
-                
-                <div class="summary-grid">
-                    <div class="summary-card">
-                        <div class="summary-value">{{ "{:,}".format(tt_specs.avg_capacity_liters|default(22000)) }}</div>
-                        <div class="summary-label">Liters Capacity</div>
-                    </div>
-                    <div class="summary-card">
-                        <div class="summary-value">{{ "%.1f"|format(tt_specs.gross_weight|default(30300)/1000) }}</div>
-                        <div class="summary-label">Gross Weight (T)</div>
-                    </div>
-                    <div class="summary-card">
-                        <div class="summary-value">{{ tt_specs.max_speed|default(50) }}</div>
-                        <div class="summary-label">Max Speed (km/h)</div>
-                    </div>
-                    <div class="summary-card">
-                        <div class="summary-value">{{ tt_specs.risk_multiplier|default(1.4) }}</div>
-                        <div class="summary-label">Risk Factor</div>
-                    </div>
-                </div>
-
-                <!-- Load Distribution Analysis -->
-                <div class="info-box">
-                    <div class="info-title">Load Distribution Analysis</div>
-                    
-                    <div class="progress-item">
-                        <div class="progress-label">Axle Load:</div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: {{ (tt_specs.get('axle_load', 15.2) / 18.5 * 100)|round(1) }}%"></div>
-                        </div>
-                        <div class="progress-value">{{ "%.1f"|format(tt_specs.get('axle_load', 15.2)) }}/18.5 T</div>
-                    </div>
-
-                    <div class="progress-item">
-                        <div class="progress-label">Weight Ratio:</div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: {{ (tt_specs.get('gross_weight', 30300) / 40000 * 100)|round(1) }}%"></div>
-                        </div>
-                        <div class="progress-value">{{ "%.1f"|format(tt_specs.get('gross_weight', 30300)/1000) }}/40.0 T</div>
-                    </div>
-
-                    <div class="progress-item">
-                        <div class="progress-label">Speed Limit:</div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: {{ (tt_specs.get('max_speed', 50) / 80 * 100)|round(1) }}%"></div>
-                        </div>
-                        <div class="progress-value">{{ tt_specs.get('max_speed', 50) }}/80 km/h</div>
-                    </div>
-                </div>
-
-                <div class="info-box">
-                    <div class="info-title">Regulatory Compliance</div>
-                    This analysis is specifically designed for {{ tt_specs.capacity_range|default('20-24 KL') }} petroleum tanker trucks carrying hazardous materials under Indian Motor Vehicle Rules, ADR regulations, and PESO guidelines.
-                </div>
-            </div>
-
-            <!-- GPS-Based Safety Protocols & Comprehensive Safety Measures -->
-            <div class="section">
-                <div class="section-title">🛡 GPS-Based Safety Protocols & Comprehensive Safety Measures</div>
+                <div class="section-title">🛡 Safety Protocols</div>
                 
                 <div class="two-column">
                     <div class="column-box">
-                        <div class="column-title">Critical Zone Protocols (90°+ turns)</div>
+                        <div class="column-title">Critical Zone Protocols</div>
                         <div class="column-content">
                             <strong>Speed:</strong> Maximum 8-12 km/h<br><br>
-                            <strong>Action:</strong> Activate hazard lights 500m before GPS coordinate<br><br>
-                            <strong>Communication:</strong> VTS position using exact GPS coordinates<br><br>
-                            <strong>Emergency:</strong> If ANY instability - STOP and call 100+101<br><br>
-                            <strong>GPS Zones:</strong> {{ critical_turns|default(0) }} critical locations mapped
+                            <strong>Action:</strong> Activate hazard lights 500m before<br><br>
+                            <strong>Communication:</strong> Report GPS position<br><br>
+                            <strong>Emergency:</strong> Stop and call 100+101 if unstable<br><br>
+                            <strong>GPS Zones:</strong> {{ critical_turns|default(0) }} critical locations
                         </div>
                     </div>
                     
                     <div class="column-box">
-                        <div class="column-title">Pre-Departure GPS Programming Checklist</div>
+                        <div class="column-title">Vehicle Specifications</div>
                         <div class="column-content">
-                            <strong>1.</strong> Load danger zone coordinates - {{ location_mapping.danger_zones|length if location_mapping else (critical_turns|default(0)) + (high_turns|default(0)) + (moderate_turns|default(0)) }} critical GPS points<br><br>
-                            <strong>2.</strong> Program emergency facility locations - {{ location_mapping.safety_facilities|length if location_mapping else all_pois|length }} verified coordinates<br><br>
-                            <strong>3.</strong> Set navigation waypoints - {{ location_mapping.navigation_waypoints|length if location_mapping else 'Multiple' }} route-critical points<br><br>
-                            <strong>4.</strong> Verify GPS accuracy - Ensure ±1 meter precision<br><br>
-                            <strong>5.</strong> Test emergency communication - Confirm GPS transmission ability
-                        </div>
-                    </div>
-                </div>
-
-                <div class="two-column">
-                    <div class="column-box">
-                        <div class="column-title">Route-Specific Safety Measures</div>
-                        <ul class="checklist">
-                            <li>Reduce speed to 10-15 km/h at {{ critical_turns|default(0) }} identified critical hazard zones</li>
-                            <li>Maintain 6-second following distance due to {{ "%.1f"|format(tt_specs.get('gross_weight', 30300)/1000) }}T vehicle weight</li>
-                            <li>Use engine braking on all curves and descents</li>
-                            <li>Monitor liquid surge indicators continuously</li>
-                            <li>Emergency communication check every 30 minutes</li>
-                            <li>Total curves requiring reduced speed: {{ sharp_turns|length + curves|length }}</li>
-                            <li>Maximum safe speed: {{ tt_specs.get('max_speed', 50) }} kmph for {{ tt_specs.capacity_range|default('20-24 KL') }} TT</li>
-                            <li>Check bridge weight limits - Gross weight {{ "%.1f"|format(tt_specs.get('gross_weight', 30300)/1000) }}T</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="column-box">
-                        <div class="column-title">Equipment Requirements & Emergency Contacts</div>
-                        <ul class="checklist">
-                            <li>Fire suppression system operational check</li>
-                            <li>Check fuel level and oil level</li>
-                            <li>Always have a helper in TT</li>
-                            <li>Note all emergency contacts</li>
-                            <li>VTS emergency indication to be noted</li>
-                        </ul>
-                        
-                        <div style="margin-top: 10px; font-weight: bold;">
-                            <div class="emergency-contact">101 Fire & Rescue Services</div>
-                            <div class="emergency-contact">100 Traffic & Police</div>
-                            <div class="emergency-contact">108 Ambulance Services</div>
+                            <strong>Tank Capacity:</strong> {{ "{:,}".format(tt_specs.avg_capacity_liters|default(22000)) }} L<br><br>
+                            <strong>Gross Weight:</strong> {{ "%.1f"|format(tt_specs.gross_weight|default(30300)/1000) }} T<br><br>
+                            <strong>Max Speed:</strong> {{ tt_specs.max_speed|default(50) }} km/h<br><br>
+                            <strong>Risk Factor:</strong> {{ tt_specs.risk_multiplier|default(1.4) }}x<br><br>
+                            <strong>Vehicle Class:</strong> {{ tt_specs.capacity_range|default('20-24 KL') }}
                         </div>
                     </div>
                 </div>
 
                 <div class="info-box">
-                    <div class="info-title">Weather Assessment</div>
-                    <strong>Temperature Considerations:</strong> Take sufficient rest during travel. Follow ITD Guidelines. Loaded TT {{ "{:,}".format(tt_specs.get('avg_capacity_liters', 22000)) }}L capacity to be carried with caution.<br><br>
-                    <strong>Weather Hazards:</strong> High center of gravity risks - crosswind sensitivity at {{ "%.1f"|format(tt_specs.get('gross_weight', 30300)/1000) }}T gross weight. Rain/wet surface braking distance increased 40%. Check weather conditions before departure and every 2 hours. Suspend operations if wind speeds exceed 50 km/h.
+                    <div class="info-title">Emergency Contacts</div>
+                    <div class="emergency-contact">101 Fire Services</div>
+                    <div class="emergency-contact">100 Police</div>
+                    <div class="emergency-contact">108 Ambulance</div>
+                    <div class="emergency-contact">1033 Traffic Helpline</div>
                 </div>
             </div>
         </div>
@@ -991,44 +792,36 @@
             <div class="footer-grid">
                 <div class="footer-section">
                     <div class="footer-label">Document ID</div>
-                    <div class="footer-value">IOCL-GPS-{{ username|default('Vadinar') }}<span id="doc-id">Loading...</span></div>
+                    <div class="footer-value">IOCL-{{ username|default('Vadinar') }}-<span id="doc-id">Loading...</span></div>
                 </div>
                 <div class="footer-section">
                     <div class="footer-label">Classification</div>
-                    <div class="footer-value">Route Analysis Report</div>
+                    <div class="footer-value">Route Safety Analysis</div>
                 </div>
                 <div class="footer-section">
-                    <div class="footer-label">IOCL Smart Marg</div>
-                    <div class="footer-value">Generated: <span id="footer-timestamp">Loading...</span></div>
+                    <div class="footer-label">Generated</div>
+                    <div class="footer-value"><span id="footer-timestamp">Loading...</span></div>
                 </div>
-            </div>
-
-            <div style="background: rgba(255,255,255,0.1); padding: 8px; margin-top: 8px; font-size: 7pt; text-align: justify;">
-                <div style="text-align: center; margin-bottom: 5px;">
-                    <strong>GPS Accuracy:</strong> ±1 meter precision | <strong>Enhanced Features:</strong> GPS precision mapping | Interactive coordinate display | Emergency response matrix | Real-time navigation support
-                </div>
-                This enhanced GPS-enabled route analysis report  {{ (location_mapping.danger_zones|length if location_mapping else 0) + (location_mapping.safety_facilities|length if location_mapping else all_pois|length) + (location_mapping.navigation_waypoints|length if location_mapping else 0) }} precisely mapped locations. All GPS coordinates verified against Google Maps API and comply with WGS84 international standards. Driver discretion and adherence to real-time safety assessments remain paramount.
             </div>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Generate document ID and timestamp
+            // Generate simple timestamp
             const now = new Date();
             const docId = now.getFullYear().toString().substr(-2) + 
                          (now.getMonth() + 1).toString().padStart(2, '0') + 
-                         now.getDate().toString().padStart(2, '0') + '-' +
-                         Math.random().toString(36).substr(2, 6).toUpperCase();
+                         now.getDate().toString().padStart(2, '0');
             
-            const timestamp = now.toLocaleString('en-IN');
+            const timestamp = now.toLocaleDateString('en-IN') + ' ' + now.toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'});
             
             document.getElementById('doc-id').textContent = docId;
             document.getElementById('footer-timestamp').textContent = timestamp;
             
             const reportEl = document.getElementById('report-timestamp');
             if (reportEl && reportEl.textContent === 'Loading...') {
-                reportEl.textContent = now.toISOString().slice(0, 19).replace('T', ' ');
+                reportEl.textContent = timestamp;
             }
         });
     </script>
