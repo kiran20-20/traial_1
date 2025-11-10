@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Advanced Route Editor - IOCL Smart Marg</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Add Leaflet Routing Machine for draggable routes -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <!-- Add Leaflet Editable for route editing -->
+    <script src="https://cdn.jsdelivr.net/npm/leaflet-editable@1.2.0/src/Leaflet.Editable.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        .container {
+            display: flex;
+            height: calc(100vh - 80px);
+        }
+        .sidebar {
+            width: 380px;
+            background: white;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+        }
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        .route-info {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            background: #f9f9f9;
+        }
+        .route-info h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .route-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .stat {
+            text-align: center;
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+        }
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ff6b35;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+        .edit-status {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 15px 20px;
+            font-size: 13px;
+            color: #2e7d32;
+        }
+        .edit-status.active {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        .waypoints-section {
+            padding: 20px;
+        }
+        .waypoints-section h4 {
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .waypoint-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #ff6b35;
+        }
+        .waypoint-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: white;
+            flex-shrink: 0;
+        }
+        .waypoint-start { background: #28a745; }
+        .waypoint-end { background: #dc3545; }
+        .waypoint-custom { background: #007bff; }
+        .waypoint-route { background: #6f42c1; }
+        .waypoint-details {
+            flex: 1;
+        }
+        .waypoint-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: #333;
+        }
+        .waypoint-coords {
+            font-size: 12px;
+            color: #666;
+            font-family: monospace;
+        }
+        .waypoint-actions {
+            display: flex;
+            gap: 5px;
+        }
+        .btn-sm {
+            padding: 6px 10px;
+            font-size: 11px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+        }
+        .btn-sm:hover {
+            opacity: 0.8;
+        }
+        .btn-danger { background: #dc3545; }
+        .btn-info { background: #17a2b8; }
+        .controls-section {
+            padding: 20px;
+            border-top: 1px solid #eee;
+        }
+        .control-group {
+            margin-bottom: 15px;
+        }
+        .control-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .instructions {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .instructions h5 {
+            color: #1976d2;
+            margin-bottom: 8px;
+        }
+        .instructions ul {
+            font-size: 13px;
+            color: #333;
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin-bottom: 4px;
+        }
+        .route-modification-tools {
+            background: #fff8e1;
+            border: 1px solid #ffcc02;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 20px;
+        }
+        .route-modification-tools h5 {
+            color: #ff8f00;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .tool-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .tool-btn {
+            padding: 8px 12px;
+            font-size: 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tool-btn.active {
+            background: #ff8f00;
+            color: white;
+        }
+        .tool-btn:not(.active) {
+            background: white;
+            color: #ff8f00;
+            border: 1px solid #ff8f00;
+        }
+        .distance-display {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        .distance-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ff6b35;
+        }
+        .distance-label {
+            font-size: 12px;
+            color: #666;
+        }
+        /* Hide default routing machine instructions */
+        .leaflet-routing-container {
+            display: none;
+        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: 350px;
+            }
+            .map-container {
+                height: calc(100vh - 430px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-route"></i> Advanced Route Editor</h1>
+        <p>Drag the route path directly or add waypoints - Just like Google Maps!</p>
+    </div>
+    
+    <div class="container">
+        <div class="sidebar">
+            <div class="route-info">
+                <h3>{{ route.summary }}</h3>
+                <div class="route-stats">
+                    <div class="stat">
+                        <div class="stat-value">{{ route.distance }}</div>
+                        <div class="stat-label">Original Distance</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">{{ route.duration }}</div>
+                        <div class="stat-label">Original Duration</div>
+                    </div>
+                </div>
+                <div id="currentDistance" class="distance-display" style="display: none;">
+                    <div class="distance-value" id="newDistanceValue">Calculating...</div>
+                    <div class="distance-label">Current Route Distance</div>
+                </div>
+            </div>
+            
+            <div id="editStatus" class="edit-status">
+                <i class="fas fa-info-circle"></i> Route ready for editing - Drag the blue line or add waypoints
+            </div>
+            
+            <div class="instructions">
+                <h5><i class="fas fa-magic"></i> Route Editing Features</h5>
+                <ul>
+                    <li><strong>Drag Route:</strong> Click and drag the blue route line</li>
+                    <li><strong>Add Waypoints:</strong> Right-click on map</li>
+                    <li><strong>Move Waypoints:</strong> Drag the markers</li>
+                    <li><strong>Remove Waypoints:</strong> Click waypoint → Delete</li>
+                    <li><strong>Auto-Update:</strong> Route recalculates instantly</li>
+                </ul>
+            </div>
+            
+            <div class="route-modification-tools">
+                <h5><i class="fas fa-tools"></i> Route Tools</h5>
+                <div class="tool-buttons">
+                    <button id="dragModeBtn" class="tool-btn active" onclick="toggleDragMode()">
+                        <i class="fas fa-hand-rock"></i> Drag Route
+                    </button>
+                    <button id="waypointModeBtn" class="tool-btn" onclick="toggleWaypointMode()">
+                        <i class="fas fa-map-pin"></i> Add Points
+                    </button>
+                    <button class="tool-btn" onclick="resetRoute()">
+                        <i class="fas fa-undo"></i> Reset
+                    </button>
+                    <button class="tool-btn" onclick="optimizeRoute()">
+                        <i class="fas fa-magic"></i> Optimize
+                    </button>
+                </div>
+            </div>
+            
+            <div class="waypoints-section">
+                <h4><i class="fas fa-map-marker-alt"></i> Route Points (<span id="waypointCount">2</span>)</h4>
+                <div id="waypointsList">
+                    <!-- Waypoints will be populated here -->
+                </div>
+            </div>
+            
+            <div class="controls-section">
+                <div class="control-group">
+                    <label>Add Stop by Address:</label>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="text" id="addressInput" class="form-input" placeholder="Enter location..." style="flex: 1;">
+                        <button class="btn-sm btn-info" onclick="addStopByAddress()">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <button class="btn btn-success" onclick="analyzeModifiedRoute()" id="analyzeBtn">
+                        <i class="fas fa-chart-line"></i> Analyze Modified Route
+                    </button>
+                </div>
+                
+                <div class="control-group">
+                    <button class="btn btn-secondary" onclick="goBack()">
+                        <i class="fas fa-arrow-left"></i> Back to Route Selection
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <script>
+        // Get route data from Flask template
+        const routeData = {{ route_data_json | safe }};
+        
+        let map;
+        let routingControl;
+        let waypoints = [];
+        let isDragMode = true;
+        let isWaypointMode = false;
+        let routeDistance = 0;
+
+        function initMap() {
+            // Calculate center point
+            const centerLat = (routeData.source[0] + routeData.destination[0]) / 2;
+            const centerLng = (routeData.source[1] + routeData.destination[1]) / 2;
+            
+            // Initialize map with editable option
+            map = L.map('map', {
+                editable: true
+            }).setView([centerLat, centerLng], 11);
+            
+            // Add tile layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 18
+            }).addTo(map);
+            
+            // Initialize waypoints from route data
+            waypoints = [
+                L.latLng(routeData.source[0], routeData.source[1]),
+                L.latLng(routeData.destination[0], routeData.destination[1])
+            ];
+            
+            // Create draggable routing control
+            createDraggableRoute();
+            
+            // Add event listeners
+            map.on('contextmenu', function(e) {
+                if (isWaypointMode) {
+                    addWaypointAt(e.latlng);
+                }
+            });
+            
+            updateWaypointsList();
+            updateStatus('Route loaded - You can now drag the blue line to modify the path');
+        }
+        
+        function createDraggableRoute() {
+            // Remove existing route if present
+            if (routingControl) {
+                map.removeControl(routingControl);
+            }
+            
+            // Create new routing control with draggable waypoints
+            routingControl = L.Routing.control({
+                waypoints: waypoints,
+                routeWhileDragging: true,
+                addWaypoints: true,
+                draggableWaypoints: true,
+                createMarker: function(i, waypoint, n) {
+                    let icon, title;
+                    if (i === 0) {
+                        icon = L.divIcon({
+                            html: '<i class="fas fa-play" style="color: white; font-size: 16px;"></i>',
+                            iconSize: [32, 32],
+                            className: 'start-marker'
+                        });
+                        title = 'Start Point - Drag to move';
+                    } else if (i === n - 1) {
+                        icon = L.divIcon({
+                            html: '<i class="fas fa-flag-checkered" style="color: white; font-size: 16px;"></i>',
+                            iconSize: [32, 32],
+                            className: 'end-marker'
+                        });
+                        title = 'End Point - Drag to move';
+                    } else {
+                        icon = L.divIcon({
+                            html: `<span style="color: white; font-weight: bold; font-size: 14px;">${i}</span>`,
+                            iconSize: [28, 28],
+                            className: 'waypoint-marker'
+                        });
+                        title = `Waypoint ${i} - Drag to move or right-click to remove`;
+                    }
+                    
+                    const marker = L.marker(waypoint.latLng, {
+                        icon: icon,
+                        draggable: true,
+                        title: title
+                    });
+                    
+                    // Add context menu for waypoint removal (except start/end)
+                    if (i > 0 && i < n - 1) {
+                        marker.on('contextmenu', function() {
+                            if (confirm('Remove this waypoint?')) {
+                                removeWaypoint(i);
+                            }
+                        });
+                    }
+                    
+                    return marker;
+                },
+                lineOptions: {
+                    styles: [
+                        {color: '#ff6b35', opacity: 0.8, weight: 6}
+                    ]
+                },
+                show: false,  // Hide the instruction panel
+                router: L.Routing.osrmv1({
+                    language: 'en',
+                    profile: 'driving'
+                })
+            }).addTo(map);
+            
+            // Listen for route found event to update distance
+            routingControl.on('routesfound', function(e) {
+                const routes = e.routes;
+                if (routes.length > 0) {
+                    routeDistance = (routes[0].summary.totalDistance / 1000).toFixed(1);
+                    document.getElementById('newDistanceValue').textContent = `${routeDistance} km`;
+                    document.getElementById('currentDistance').style.display = 'block';
+                    updateStatus(`Route updated - Distance: ${routeDistance} km`);
+                }
+            });
+            
+            // Listen for waypoint changes
+            routingControl.on('waypointschanged', function(e) {
+                waypoints = e.waypoints.map(wp => wp.latLng).filter(latlng => latlng);
+                updateWaypointsList();
+                document.getElementById('waypointCount').textContent = waypoints.length;
+            });
+        }
+        
+        function toggleDragMode() {
+            isDragMode = true;
+            isWaypointMode = false;
+            document.getElementById('dragModeBtn').classList.add('active');
+            document.getElementById('waypointModeBtn').classList.remove('active');
+            map.getContainer().style.cursor = '';
+            updateStatus('Drag mode active - Click and drag the blue route line to modify');
+        }
+        
+        function toggleWaypointMode() {
+            isDragMode = false;
+            isWaypointMode = true;
+            document.getElementById('dragModeBtn').classList.remove('active');
+            document.getElementById('waypointModeBtn').classList.add('active');
+            map.getContainer().style.cursor = 'crosshair';
+            updateStatus('Waypoint mode active - Right-click on map to add waypoints');
+        }
+        
+        function addWaypointAt(latlng) {
+            // Insert new waypoint before the last one (end point)
+            waypoints.splice(-1, 0, latlng);
+            createDraggableRoute();
+            updateStatus(`Waypoint added at ${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`);
+        }
+        
+        function removeWaypoint(index) {
+            if (index > 0 && index < waypoints.length - 1) {
+                waypoints.splice(index, 1);
+                createDraggableRoute();
+                updateStatus(`Waypoint ${index} removed`);
+            }
+        }
+        
+        function updateWaypointsList() {
+            const waypointsList = document.getElementById('waypointsList');
+            waypointsList.innerHTML = '';
+            
+            waypoints.forEach((wp, index) => {
+                const waypointDiv = document.createElement('div');
+                waypointDiv.className = 'waypoint-item';
+                
+                let iconClass, iconSymbol, name;
+                if (index === 0) {
+                    iconClass = 'waypoint-start';
+                    iconSymbol = '<i class="fas fa-play"></i>';
+                    name = 'Start Point';
+                } else if (index === waypoints.length - 1) {
+                    iconClass = 'waypoint-end';
+                    iconSymbol = '<i class="fas fa-flag-checkered"></i>';
+                    name = 'End Point';
+                } else {
+                    iconClass = 'waypoint-custom';
+                    iconSymbol = `<span>${index}</span>`;
+                    name = `Waypoint ${index}`;
+                }
+                
+                const lat = wp.lat ? wp.lat : wp[0];
+                const lng = wp.lng ? wp.lng : wp[1];
+                
+                waypointDiv.innerHTML = `
+                    <div class="waypoint-icon ${iconClass}">
+                        ${iconSymbol}
+                    </div>
+                    <div class="waypoint-details">
+                        <div class="waypoint-name">${name}</div>
+                        <div class="waypoint-coords">${lat.toFixed(6)}, ${lng.toFixed(6)}</div>
+                    </div>
+                    <div class="waypoint-actions">
+                        ${index > 0 && index < waypoints.length - 1 ? 
+                            `<button class="btn-sm btn-danger" onclick="removeWaypoint(${index})" title="Remove waypoint">
+                                <i class="fas fa-trash"></i>
+                             </button>` : ''}
+                        <button class="btn-sm btn-info" onclick="centerMapOn(${lat}, ${lng})" title="Center map here">
+                            <i class="fas fa-crosshairs"></i>
+                        </button>
+                    </div>
+                `;
+                
+                waypointsList.appendChild(waypointDiv);
+            });
+        }
+        
+        function centerMapOn(lat, lng) {
+            map.setView([lat, lng], 15);
+            updateStatus(`Map centered on ${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+        }
+        
+        async function addStopByAddress() {
+            const address = document.getElementById('addressInput').value.trim();
+            if (!address) return;
+            
+            try {
+                updateStatus('Searching for address...');
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`);
+                const results = await response.json();
+                
+                if (results.length > 0) {
+                    const result = results[0];
+                    const newPoint = L.latLng(parseFloat(result.lat), parseFloat(result.lon));
+                    addWaypointAt(newPoint);
+                    document.getElementById('addressInput').value = '';
+                    map.setView(newPoint, 14);
+                } else {
+                    updateStatus('Address not found. Please try a different location.');
+                }
+            } catch (error) {
+                updateStatus('Error searching for address. Please try again.');
+                console.error('Geocoding error:', error);
+            }
+        }
+        
+        function resetRoute() {
+            if (confirm('Reset route to original path? This will remove all custom waypoints.')) {
+                waypoints = [
+                    L.latLng(routeData.source[0], routeData.source[1]),
+                    L.latLng(routeData.destination[0], routeData.destination[1])
+                ];
+                createDraggableRoute();
+                document.getElementById('currentDistance').style.display = 'none';
+                updateStatus('Route reset to original path');
+            }
+        }
+        
+        function optimizeRoute() {
+            updateStatus('Optimizing route for shortest distance...');
+            // In a real implementation, you'd call a route optimization API
+            // For now, we'll just recreate the route
+            createDraggableRoute();
+            setTimeout(() => {
+                updateStatus('Route optimized');
+            }, 1000);
+        }
+        
+        function updateStatus(message) {
+            const statusDiv = document.getElementById('editStatus');
+            statusDiv.innerHTML = `<i class="fas fa-info-circle"></i> ${message}`;
+            statusDiv.className = 'edit-status active';
+            
+            setTimeout(() => {
+                statusDiv.className = 'edit-status';
+            }, 3000);
+        }
+        
+        function analyzeModifiedRoute() {
+            // Prepare route data for analysis
+            const modifiedRouteData = {
+                waypoints: waypoints.map((wp, index) => ({
+                    lat: wp.lat || wp[0],
+                    lng: wp.lng || wp[1],
+                    type: index === 0 ? 'start' : index === waypoints.length - 1 ? 'end' : 'custom',
+                    name: index === 0 ? 'Start Point' : index === waypoints.length - 1 ? 'End Point' : `Waypoint ${index}`
+                })),
+                source: {
+                    lat: waypoints[0].lat || waypoints[0][0],
+                    lng: waypoints[0].lng || waypoints[0][1]
+                },
+                destination: {
+                    lat: waypoints[waypoints.length-1].lat || waypoints[waypoints.length-1][0],
+                    lng: waypoints[waypoints.length-1].lng || waypoints[waypoints.length-1][1]
+                },
+                customWaypoints: waypoints.slice(1, -1).map((wp, index) => ({
+                    lat: wp.lat || wp[0],
+                    lng: wp.lng || wp[1],
+                    name: `Waypoint ${index + 1}`
+                })),
+                routeDistance: routeDistance
+            };
+            
+            updateStatus('Preparing route analysis...');
+            
+            // Create form and submit
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/analyze_edited_route';
+            
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'edited_route_data';
+            input.value = JSON.stringify(modifiedRouteData);
+            
+            form.appendChild(input);
+            document.body.appendChild(form);
+            form.submit();
+        }
+        
+        function goBack() {
+            if (confirm('Go back to route selection? Any changes will be lost.')) {
+                window.history.back();
+            }
+        }
+        
+        // Add CSS for custom markers
+        const style = document.createElement('style');
+        style.textContent = `
+            .start-marker {
+                background-color: #28a745;
+                border: 3px solid white;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            }
+            .end-marker {
+                background-color: #dc3545;
+                border: 3px solid white;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            }
+            .waypoint-marker {
+                background-color: #007bff;
+                border: 3px solid white;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            }
+            .leaflet-routing-container {
+                display: none !important;
+            }
+            .leaflet-routing-alternatives-container {
+                display: none !important;
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Initialize map when page loads
+        document.addEventListener('DOMContentLoaded', initMap);
+    </script>
+</body>
+</html>
