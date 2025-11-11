@@ -387,10 +387,118 @@
             font-size: 12px;
             color: #666;
         }
+        
         /* Hide default routing machine instructions */
         .leaflet-routing-container {
-            display: none;
+            display: none !important;
         }
+        
+        /* ========== ENHANCED CURSOR AND ROUTE LINE STYLES ========== */
+        
+        /* Drag mode cursors with enhanced visual feedback */
+        .drag-mode-cursor {
+            cursor: grab !important;
+        }
+        
+        .drag-mode-cursor:active {
+            cursor: grabbing !important;
+        }
+        
+        .drag-mode-cursor * {
+            cursor: grab !important;
+        }
+        
+        .drag-mode-cursor .leaflet-interactive {
+            cursor: grab !important;
+        }
+        
+        .drag-mode-cursor .leaflet-interactive:hover {
+            cursor: grabbing !important;
+        }
+        
+        /* Specific cursor for route lines in drag mode */
+        .drag-mode-cursor .leaflet-routing-line {
+            cursor: grab !important;
+            stroke-width: 8px !important;
+            stroke-opacity: 0.9 !important;
+            transition: all 0.2s ease !important;
+        }
+        
+        .drag-mode-cursor .leaflet-routing-line:hover {
+            cursor: grabbing !important;
+            stroke-width: 10px !important;
+            stroke-opacity: 1 !important;
+            filter: drop-shadow(0 0 8px rgba(30, 144, 255, 0.6));
+        }
+        
+        /* Waypoint mode cursors */
+        .waypoint-mode-cursor {
+            cursor: crosshair !important;
+        }
+        
+        .waypoint-mode-cursor * {
+            cursor: crosshair !important;
+        }
+        
+        .waypoint-mode-cursor .leaflet-interactive {
+            cursor: crosshair !important;
+        }
+        
+        /* Override all leaflet cursor defaults */
+        .leaflet-container {
+            cursor: inherit !important;
+        }
+        
+        .leaflet-container.leaflet-dragging {
+            cursor: grabbing !important;
+        }
+        
+        /* Force blue color for route line */
+        .leaflet-routing-line {
+            stroke: #1e90ff !important;
+            stroke-width: 6px !important;
+            stroke-opacity: 0.8 !important;
+            cursor: grab !important;
+        }
+        
+        .leaflet-routing-line:hover {
+            stroke: #0066cc !important;
+            stroke-width: 8px !important;
+            stroke-opacity: 1 !important;
+            filter: drop-shadow(0 0 6px rgba(30, 144, 255, 0.5));
+        }
+        
+        /* Additional route line styling */
+        .blue-route-line {
+            stroke: #1e90ff !important;
+            stroke-width: 6px !important;
+            stroke-opacity: 0.8 !important;
+            stroke-linecap: round !important;
+            stroke-linejoin: round !important;
+            transition: all 0.2s ease !important;
+        }
+        
+        .blue-route-line:hover {
+            stroke: #0066cc !important;
+            stroke-width: 8px !important;
+            stroke-opacity: 1 !important;
+        }
+        
+        /* Enhanced marker cursors */
+        .start-marker,
+        .end-marker,
+        .waypoint-marker {
+            cursor: grab !important;
+        }
+        
+        .start-marker:hover,
+        .end-marker:hover,
+        .waypoint-marker:hover {
+            cursor: grabbing !important;
+            transform: scale(1.1) !important;
+            transition: transform 0.2s ease !important;
+        }
+        
         @media (max-width: 768px) {
             .container {
                 flex-direction: column;
@@ -548,6 +656,9 @@
             updateWaypointsList();
             updateStatus('Route loaded - You can now drag the blue line to modify the path');
             showModeIndicator('drag');
+            
+            // Set initial cursor mode
+            toggleDragMode();
         }
         
         function createDraggableRoute() {
@@ -556,7 +667,7 @@
                 map.removeControl(routingControl);
             }
             
-            // Create new routing control with draggable waypoints
+            // Create new routing control with draggable waypoints and BLUE line
             routingControl = L.Routing.control({
                 waypoints: waypoints,
                 routeWhileDragging: true,
@@ -606,7 +717,13 @@
                 },
                 lineOptions: {
                     styles: [
-                        {color: '#ff6b35', opacity: 0.8, weight: 6}
+                        {
+                            color: '#1e90ff', 
+                            opacity: 0.8, 
+                            weight: 6,
+                            className: 'blue-route-line',
+                            bubblingMouseEvents: true
+                        }
                     ]
                 },
                 show: false,  // Hide the instruction panel
@@ -616,14 +733,19 @@
                 })
             }).addTo(map);
             
-            // Listen for route found event to update distance
+            // Listen for route found event
             routingControl.on('routesfound', function(e) {
                 const routes = e.routes;
                 if (routes.length > 0) {
                     routeDistance = (routes[0].summary.totalDistance / 1000).toFixed(1);
                     document.getElementById('newDistanceValue').textContent = `${routeDistance} km`;
                     document.getElementById('currentDistance').style.display = 'block';
-                    updateStatus(`Route updated - Distance: ${routeDistance} km`);
+                    updateStatus(`✅ Route updated - Distance: ${routeDistance} km`);
+                    
+                    // Force blue color and proper cursor on route lines
+                    setTimeout(() => {
+                        forceBlueRouteStyle();
+                    }, 100);
                 }
             });
             
@@ -632,6 +754,38 @@
                 waypoints = e.waypoints.map(wp => wp.latLng).filter(latlng => latlng);
                 updateWaypointsList();
                 document.getElementById('waypointCount').textContent = waypoints.length;
+                
+                // Reapply styles after waypoint changes
+                setTimeout(() => {
+                    forceBlueRouteStyle();
+                }, 100);
+            });
+        }
+        
+        function forceBlueRouteStyle() {
+            // Find and force blue color on all route line elements
+            const routeLines = document.querySelectorAll('.leaflet-routing-line, .leaflet-interactive');
+            routeLines.forEach(line => {
+                if (line.tagName === 'path') {
+                    line.style.stroke = '#1e90ff';
+                    line.style.strokeWidth = '6px';
+                    line.style.strokeOpacity = '0.8';
+                    line.style.strokeLinecap = 'round';
+                    line.style.strokeLinejoin = 'round';
+                    line.style.cursor = 'grab';
+                    line.classList.add('blue-route-line');
+                }
+            });
+            
+            // Also check for polylines
+            const polylines = document.querySelectorAll('.leaflet-overlay-pane path');
+            polylines.forEach(path => {
+                if (path.style.stroke !== '#1e90ff') {
+                    path.style.stroke = '#1e90ff';
+                    path.style.strokeWidth = '6px';
+                    path.style.strokeOpacity = '0.8';
+                    path.style.cursor = 'grab';
+                }
             });
         }
         
@@ -640,9 +794,19 @@
             isWaypointMode = false;
             document.getElementById('dragModeBtn').classList.add('active');
             document.getElementById('waypointModeBtn').classList.remove('active');
-            map.getContainer().style.cursor = '';
+            
+            // Apply drag cursor to map container
+            const mapContainer = map.getContainer();
+            mapContainer.classList.remove('waypoint-mode-cursor');
+            mapContainer.classList.add('drag-mode-cursor');
+            
             updateStatus('🎯 Drag mode ACTIVE - Click and drag the blue route line to modify');
             showModeIndicator('drag');
+            
+            // Force blue route styling
+            setTimeout(() => {
+                forceBlueRouteStyle();
+            }, 100);
         }
         
         function toggleWaypointMode() {
@@ -650,7 +814,12 @@
             isWaypointMode = true;
             document.getElementById('dragModeBtn').classList.remove('active');
             document.getElementById('waypointModeBtn').classList.add('active');
-            map.getContainer().style.cursor = 'crosshair';
+            
+            // Apply waypoint cursor to map container
+            const mapContainer = map.getContainer();
+            mapContainer.classList.remove('drag-mode-cursor');
+            mapContainer.classList.add('waypoint-mode-cursor');
+            
             updateStatus('📍 Waypoint mode ACTIVE - Right-click on map to add waypoints');
             showModeIndicator('waypoint');
         }
@@ -860,6 +1029,11 @@
                 align-items: center;
                 justify-content: center;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                cursor: grab;
+            }
+            .start-marker:hover {
+                cursor: grabbing;
+                transform: scale(1.1);
             }
             .end-marker {
                 background-color: #dc3545;
@@ -869,6 +1043,11 @@
                 align-items: center;
                 justify-content: center;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                cursor: grab;
+            }
+            .end-marker:hover {
+                cursor: grabbing;
+                transform: scale(1.1);
             }
             .waypoint-marker {
                 background-color: #007bff;
@@ -878,6 +1057,11 @@
                 align-items: center;
                 justify-content: center;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                cursor: grab;
+            }
+            .waypoint-marker:hover {
+                cursor: grabbing;
+                transform: scale(1.1);
             }
             .leaflet-routing-container {
                 display: none !important;
@@ -890,6 +1074,13 @@
         
         // Initialize map when page loads
         document.addEventListener('DOMContentLoaded', initMap);
+        
+        // Continuously ensure blue route line styling
+        setInterval(() => {
+            if (isDragMode) {
+                forceBlueRouteStyle();
+            }
+        }, 1000);
     </script>
 </body>
 </html>
