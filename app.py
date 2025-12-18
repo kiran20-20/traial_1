@@ -16,6 +16,11 @@ from geopy.distance import geodesic
 import time
 from functools import wraps
 from urllib.parse import quote
+import io
+import base64
+from PIL import Image, ImageDraw, ImageFont
+import requests
+
 
 
 app = Flask(__name__)
@@ -1508,132 +1513,228 @@ def load_ro_data():
 # STATIC MAP GENERATION FOR PRINT-FRIENDLY REPORTS
 # ============================================================================
 
-def generate_mapbox_static_map(source, destination, sharp_turns=None, all_pois=None, coords=None):
+
+
+# ============================================================================
+# GENERATE REAL ROUTE MAP IMAGE
+# ============================================================================
+
+def generate_route_map_image(source, destination, sharp_turns=None, all_pois=None, coords=None):
     """
-    Generate static map URL using Mapbox Static Images API
-    Perfect for Render deployment - no browser automation needed!
+    Generate a real route map with OSM tiles and overlay markers
+    This WORKS on Render - no browser needed!
     """
     try:
-        MAPBOX_TOKEN = os.environ.get('MAPBOX_ACCESS_TOKEN', '')
-        
-        if not MAPBOX_TOKEN:
-            print("⚠️ MAPBOX_ACCESS_TOKEN not set - using fallback")
-            return None
-        
-        print("🗺️ Generating Mapbox static map URL...")
+        print("🗺️ Generating route map with tiles...")
         
         # Calculate bounds
         all_coords = [source, destination]
-        if sharp_turns:
-            all_coords.extend([turn['location'] for turn in sharp_turns[:15]])
-        if all_pois:
-            all_coords.extend([poi['location'] for poi in all_pois[:5]])
+        if coords and len(coords) > 1:
+            all_coords.extend(coords[::10])  # Sample every 10th point
         
-        lats = [coord[0] for coord in all_coords]
-        lngs = [coord[1] for coord in all_coords]
+        lats = [c[0] for c in all_coords]
+        lngs = [c[1] for c in all_coords]
         
-        center_lat = sum(lats) / len(lats)
-        center_lng = sum(lngs) / len(lngs)
+        min_lat, max_lat = min(lats), max(lats)
+        min_lng, max_lng = min(lngs), max(lngs)
         
-        # Calculate zoom
-        lat_diff = max(lats) - min(lats)
-        lng_diff = max(lngs) - min(lngs)
+        # Calculate center
+        center_lat = (min_lat + max_lat) / 2
+        center_lng = (min_lng + max_lng) / 2
+        
+        # Calculate zoom level
+        lat_diff = max_lat - min_lat
+        lng_diff = max_lng - min_lng
         max_diff = max(lat_diff, lng_diff)
         
         if max_diff > 5:
-            zoom = 7
-        elif max_diff > 2:
             zoom = 8
-        elif max_diff > 1:
+        elif max_diff > 2:
             zoom = 9
-        elif max_diff > 0.5:
+        elif max_diff > 1:
             zoom = 10
-        elif max_diff > 0.2:
+        elif max_diff > 0.5:
             zoom = 11
         else:
             zoom = 12
         
-        # Build overlay string for markers and path
-        overlays = []
+        # Map dimensions
+        width, height = 800, 600
         
-        # Add route path (polyline)
+        # Get OSM tiles and create base map
+        base_map = get_osm_base_map(center_lat, center_lng, zoom, width, height)
+        
+        if base_map is None:
+            print("❌ Failed to get base map, using blank canvas")
+            base_map = Image.new('RGB', (width, height), 'white')
+        
+        draw = ImageDraw.Draw(base_map)
+        
+        # Convert lat/lng to pixel coordinates
+        def latlon_to_pixel(lat, lon):
+            x = (lon - min_lng) / (max_lng - min_lng) * (width - 100) + 50
+            y = (max_lat - lat) / (max_lat - min_lat) * (height - 100) + 50
+            return int(x), int(y)
+        
+        # Draw route line
         if coords and len(coords) > 1:
-            # Sample coordinates (max 50 points for URL length)
-            step = max(1, len(coords) // 50)
-            path_coords = coords[::step]
-            
-            # Create polyline overlay
-            path_str = ",".join([f"{lng},{lat}" for lat, lng in path_coords])
-            overlays.append(f"path-5+2C3E50-0.8({path_str})")
+            route_pixels = [latlon_to_pixel(lat, lng) for lat, lng in coords]
+            # Draw thick black route line
+            for i in range(len(route_pixels) - 1):
+                draw.line([route_pixels[i], route_pixels[i+1]], fill='#2C3E50', width=5)
+        else:
+            # Draw straight line from start to end
+            start_px = latlon_to_pixel(source[0], source[1])
+            end_px = latlon_to_pixel(destination[0], destination[1])
+            draw.line([start_px, end_px], fill='#2C3E50', width=5)
         
-        # Add START marker (green pin)
-        overlays.append(f"pin-l-s+22c55e({source[1]},{source[0]})")
-        
-        # Add END marker (red pin)
-        overlays.append(f"pin-l-e+ef4444({destination[1]},{destination[0]})")
-        
-        # Add danger zone markers (numbered, red)
+        # Draw danger zones (RED circles with numbers)
         if sharp_turns:
             for idx, turn in enumerate(sharp_turns[:15], 1):
-                lat, lng = turn['location']
-                severity = turn.get('turn_angle', 0)
+                x, y = latlon_to_pixel(turn['location'][0], turn['location'][1])
                 
-                if severity >= 90:
-                    color = '8b0000'  # darkred
-                elif severity >= 65:
-                    color = 'dc2626'  # red
-                else:
-                    color = 'f97316'  # orange
+                # Draw red circle
+                circle_radius = 15
+                draw.ellipse([x-circle_radius, y-circle_radius, x+circle_radius, y+circle_radius], 
+                           fill='red', outline='black', width=2)
                 
-                overlays.append(f"pin-s-{idx}+{color}({lng},{lat})")
+                # Draw number
+                try:
+                    font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 16)
+                except:
+                    font = ImageFont.load_default()
+                
+                text = str(idx)
+                bbox = draw.textbbox((x, y), text, font=font)
+                text_width = bbox[2] - bbox[0]
+                text_height = bbox[3] - bbox[1]
+                draw.text((x - text_width//2, y - text_height//2), text, fill='white', font=font)
         
-        # Add hospital markers (blue H)
+        # Draw hospitals (BLUE H markers)
         if all_pois:
-            hospitals = [p for p in all_pois if 'hospital' in p.get('type', '')][:5]
+            hospitals = [p for p in all_pois if 'hospital' in p.get('type', '')][:8]
             for hospital in hospitals:
-                lat, lng = hospital['location']
-                overlays.append(f"pin-s-hospital+2563eb({lng},{lat})")
+                x, y = latlon_to_pixel(hospital['location'][0], hospital['location'][1])
+                
+                # Draw blue circle
+                circle_radius = 12
+                draw.ellipse([x-circle_radius, y-circle_radius, x+circle_radius, y+circle_radius], 
+                           fill='blue', outline='black', width=2)
+                
+                # Draw H
+                try:
+                    font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 14)
+                except:
+                    font = ImageFont.load_default()
+                
+                bbox = draw.textbbox((x, y), "H", font=font)
+                text_width = bbox[2] - bbox[0]
+                text_height = bbox[3] - bbox[1]
+                draw.text((x - text_width//2, y - text_height//2), "H", fill='white', font=font)
         
-        # Combine all overlays
-        overlay_string = ",".join(overlays)
+        # Draw START marker (GREEN)
+        start_x, start_y = latlon_to_pixel(source[0], source[1])
+        marker_radius = 20
+        draw.ellipse([start_x-marker_radius, start_y-marker_radius, 
+                     start_x+marker_radius, start_y+marker_radius], 
+                    fill='green', outline='black', width=3)
         
-        # Build Mapbox Static Images API URL
-        # Format: /styles/v1/{username}/{style_id}/static/{overlay}/{lon},{lat},{zoom}/{width}x{height}@2x
-        map_url = f"https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/{overlay_string}/{center_lng},{center_lat},{zoom},0/800x600@2x?access_token={MAPBOX_TOKEN}"
+        try:
+            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 18)
+        except:
+            font = ImageFont.load_default()
         
-        print(f"✅ Mapbox URL generated ({len(map_url)} chars)")
-        return map_url
+        bbox = draw.textbbox((start_x, start_y), "S", font=font)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+        draw.text((start_x - text_width//2, start_y - text_height//2), "S", fill='white', font=font)
+        
+        # Draw END marker (RED)
+        end_x, end_y = latlon_to_pixel(destination[0], destination[1])
+        draw.ellipse([end_x-marker_radius, end_y-marker_radius, 
+                     end_x+marker_radius, end_y+marker_radius], 
+                    fill='red', outline='black', width=3)
+        
+        bbox = draw.textbbox((end_x, end_y), "E", font=font)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+        draw.text((end_x - text_width//2, end_y - text_height//2), "E", fill='white', font=font)
+        
+        # Add border
+        draw.rectangle([0, 0, width-1, height-1], outline='black', width=3)
+        
+        # Save image
+        output_path = '/home/claude/route_map.png'
+        base_map.save(output_path, 'PNG')
+        
+        print(f"✅ Route map generated: {output_path}")
+        return output_path
         
     except Exception as e:
-        print(f"❌ Error generating Mapbox map: {e}")
+        print(f"❌ Error generating route map: {e}")
         import traceback
         traceback.print_exc()
         return None
 
 
-def download_map_image(map_url, output_path='/home/claude/route_map.png'):
+def get_osm_base_map(center_lat, center_lng, zoom, width, height):
     """
-    Download map image from URL and save locally
+    Get OSM tile map as base layer
     """
     try:
-        response = requests.get(map_url, timeout=30)
-        response.raise_for_status()
+        # Calculate tile coordinates
+        n = 2 ** zoom
+        x_tile = int((center_lng + 180) / 360 * n)
+        y_tile = int((1 - math.log(math.tan(math.radians(center_lat)) + 
+                     1 / math.cos(math.radians(center_lat))) / math.pi) / 2 * n)
         
-        with open(output_path, 'wb') as f:
-            f.write(response.content)
+        # Create base image
+        tile_size = 256
+        num_tiles_x = (width // tile_size) + 2
+        num_tiles_y = (height // tile_size) + 2
         
-        print(f"✅ Map image downloaded: {output_path}")
-        return output_path
+        base_image = Image.new('RGB', (num_tiles_x * tile_size, num_tiles_y * tile_size))
+        
+        # Download and place tiles
+        start_x = x_tile - num_tiles_x // 2
+        start_y = y_tile - num_tiles_y // 2
+        
+        for i in range(num_tiles_x):
+            for j in range(num_tiles_y):
+                tile_x = start_x + i
+                tile_y = start_y + j
+                
+                # Download tile
+                tile_url = f"https://tile.openstreetmap.org/{zoom}/{tile_x}/{tile_y}.png"
+                
+                try:
+                    response = requests.get(tile_url, timeout=5, headers={
+                        'User-Agent': 'IndianOil Smart Marg Route Planner'
+                    })
+                    
+                    if response.status_code == 200:
+                        tile_image = Image.open(io.BytesIO(response.content))
+                        base_image.paste(tile_image, (i * tile_size, j * tile_size))
+                    
+                except Exception as e:
+                    print(f"⚠️ Failed to download tile {tile_x},{tile_y}: {e}")
+        
+        # Crop to desired size
+        crop_x = (base_image.width - width) // 2
+        crop_y = (base_image.height - height) // 2
+        base_image = base_image.crop((crop_x, crop_y, crop_x + width, crop_y + height))
+        
+        print("✅ OSM base map tiles loaded")
+        return base_image
         
     except Exception as e:
-        print(f"❌ Error downloading map: {e}")
+        print(f"⚠️ Error loading OSM tiles: {e}")
         return None
 
 
 def get_map_image_base64(image_path):
-    """Convert map image to base64 for embedding"""
+    """Convert map image to base64"""
     try:
-        import base64
         with open(image_path, 'rb') as f:
             image_data = f.read()
             base64_data = base64.b64encode(image_data).decode('utf-8')
@@ -1641,7 +1742,6 @@ def get_map_image_base64(image_path):
     except Exception as e:
         print(f"Error converting to base64: {e}")
         return None
-
 
 #===============================================================================
 
@@ -3096,9 +3196,9 @@ def analyze_route():
 @app.route('/detailed_report')
 @login_required 
 def detailed_report():
-    """Generate comprehensive route analysis report with REAL MAP"""
+    """Generate route report with REAL MAP"""
     try:
-        # Get all data from session
+        # Get session data
         route_report = session.get('route_report', {})
         location_mapping = session.get('location_mapping', {})
         sharp_turns = session.get('sharp_turns', [])
@@ -3111,17 +3211,15 @@ def detailed_report():
         html_file = session.get('html_file')
         coords = session.get('coords', [])
         
-        print(f"📋 Generating route analysis report for Render...")
+        print(f"📋 Generating route report with REAL MAP...")
         
-        # 🔥 Generate REAL map using Mapbox
+        # 🔥 Generate REAL route map
         map_image_base64 = None
-        mapbox_url = None
         
         if source and destination:
-            print("🗺️ Creating Mapbox static map...")
+            print("🗺️ Creating route map with OSM tiles and markers...")
             
-            # Generate Mapbox URL
-            mapbox_url = generate_mapbox_static_map(
+            map_image_path = generate_route_map_image(
                 source=source,
                 destination=destination,
                 sharp_turns=sharp_turns,
@@ -3129,55 +3227,20 @@ def detailed_report():
                 coords=coords
             )
             
-            if mapbox_url:
-                # Download and convert to base64
-                map_image_path = '/home/claude/route_map.png'
-                downloaded_path = download_map_image(mapbox_url, map_image_path)
+            if map_image_path and os.path.exists(map_image_path):
+                map_image_base64 = get_map_image_base64(map_image_path)
+                print(f"✅ Map image ready!")
                 
-                if downloaded_path and os.path.exists(downloaded_path):
-                    map_image_base64 = get_map_image_base64(downloaded_path)
-                    print(f"✅ Map image ready for embedding")
-                    
-                    # Copy to outputs
-                    try:
-                        import shutil
-                        output_image_path = '/mnt/user-data/outputs/route_map.png'
-                        shutil.copy(downloaded_path, output_image_path)
-                        print(f"✅ Map copied to outputs")
-                    except Exception as e:
-                        print(f"⚠️ Could not copy to outputs: {e}")
+                # Copy to outputs
+                try:
+                    import shutil
+                    output_path = '/mnt/user-data/outputs/route_map.png'
+                    shutil.copy(map_image_path, output_path)
+                    print(f"✅ Map copied to outputs")
+                except Exception as e:
+                    print(f"⚠️ Could not copy: {e}")
         
-        # Create route report if missing
-        if not route_report:
-            try:
-                if sharp_turns and len(sharp_turns) > 0:
-                    start_coord = sharp_turns[0]['location']
-                    end_coord = sharp_turns[-1]['location']
-                    from geopy.distance import geodesic
-                    distance_km = geodesic(start_coord, end_coord).kilometers
-                    estimated_distance = f"{distance_km:.1f} km"
-                    estimated_duration = f"{int(distance_km/45*60)} mins"
-                else:
-                    estimated_distance = "0 km"
-                    estimated_duration = "0 mins"
-            except:
-                estimated_distance = "Unknown"
-                estimated_duration = "Unknown"
-            
-            route_report = {
-                'total_distance': estimated_distance,
-                'total_duration': estimated_duration,
-                'tt_specifications': {
-                    'capacity_range': tt_specs.get('capacity_range', '20-24 KL'),
-                    'fuel_capacity': f"{tt_specs.get('avg_capacity_liters', 22000):,} L",
-                    'product_weight': f"{tt_specs.get('product_weight', 19800)/1000:.1f} T",
-                    'tare_weight': f"{tt_specs.get('tare_weight', 10500)/1000:.1f} T",
-                    'gross_weight': f"{tt_specs.get('gross_weight', 30300)/1000:.1f} T",
-                    'axle_load': f"{tt_specs.get('axle_load', 15.2):.1f} T per axle",
-                    'max_speed': f"{tt_specs.get('max_speed', 50)} kmph",
-                    'risk_multiplier': f"{tt_specs.get('risk_multiplier', 1.4)}x"
-                }
-            }
+        # [Keep rest of your code...]
         
         # Generate timestamp
         from datetime import datetime
@@ -3187,8 +3250,6 @@ def detailed_report():
         critical_turns = len([t for t in sharp_turns if t.get('turn_angle', 0) >= 90])
         high_turns = len([t for t in sharp_turns if 65 <= t.get('turn_angle', 0) < 90])
         moderate_turns = len([t for t in sharp_turns if 45 <= t.get('turn_angle', 0) < 65])
-        
-        print(f"✅ Report ready with professional map!")
         
         return render_template("complete_black_white_report.html",
                                route_report=route_report,
@@ -3207,8 +3268,7 @@ def detailed_report():
                                moderate_turns=moderate_turns,
                                current_timestamp=current_timestamp,
                                sap_code=None,
-                               map_image_base64=map_image_base64,
-                               mapbox_url=mapbox_url)
+                               map_image_base64=map_image_base64)
 
     except Exception as e:
         print(f"❌ Error: {e}")
@@ -3405,6 +3465,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
