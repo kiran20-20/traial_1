@@ -2045,10 +2045,15 @@ def analyze_edited_route():
             folium.Marker(location=(lat, lng), popup=folium.Popup(facility_popup, max_width=200), 
                          icon=folium.Icon(**icon_props), tooltip=f"MSF-{i+1:02d}: {poi['name']}").add_to(m)
 
-        # Save map
         unique_map_id = uuid4().hex
         html_name = f"modified_route_map_{unique_map_id}.html"
         m.save(f"templates/{html_name}")
+        
+        session['html_file'] = html_name
+        session.modified = True
+        print(f"✅ Modified route map saved and stored in session: {html_name}")
+
+        # Create comprehensive route report
 
         # Create comprehensive route report
         try:
@@ -3387,6 +3392,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
