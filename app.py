@@ -3103,7 +3103,6 @@ def analyze_route():
         return f"Error in route analysis: {str(e)}. Please try again."
 
 
-#------------------------------------------------------------------------------------------------
 @app.route('/detailed_report')
 @login_required 
 def detailed_report():
@@ -3126,237 +3125,31 @@ def detailed_report():
         print(f"   Route data available: {'✓' if route_report else '✗'}")
         print(f"   Danger zones: {len(sharp_turns)}")
         print(f"   Emergency facilities: {len(all_pois)}")
+        print(f"   Coordinates: {len(coords)}")
         
-        # 🔥 CREATE PRINT-FRIENDLY MAP
-        map_html_content = None
-        if coords and len(coords) > 0:
-            try:
-                print(f"🗺️ Creating print-friendly map...")
-                
-                # Calculate center
-                center_lat = sum(coord[0] for coord in coords) / len(coords)
-                center_lng = sum(coord[1] for coord in coords) / len(coords)
-                
-                # Create map with specific settings for printing
-                m = folium.Map(
-                    location=(center_lat, center_lng),
-                    zoom_start=11,
-                    tiles='OpenStreetMap',
-                    prefer_canvas=True,  # Better for printing
-                    control_scale=True
-                )
-                
-                # Draw main route with THICK, VISIBLE line
-                folium.PolyLine(
-                    coords,
-                    color='#0066cc',
-                    weight=8,
-                    opacity=1.0,
-                    popup=f"Route: {route_report.get('total_distance', 'N/A')}"
-                ).add_to(m)
-                
-                # Add START marker - BIG and VISIBLE
-                if source:
-                    folium.CircleMarker(
-                        location=source,
-                        radius=15,
-                        color='green',
-                        fill=True,
-                        fillColor='green',
-                        fillOpacity=1.0,
-                        weight=5,
-                        popup='<b>START</b>'
-                    ).add_to(m)
-                    
-                    folium.Marker(
-                        location=source,
-                        popup='<b>START POINT</b>',
-                        icon=folium.Icon(color='green', icon='play', prefix='fa')
-                    ).add_to(m)
-                
-                # Add END marker - BIG and VISIBLE
-                if destination:
-                    folium.CircleMarker(
-                        location=destination,
-                        radius=15,
-                        color='red',
-                        fill=True,
-                        fillColor='red',
-                        fillOpacity=1.0,
-                        weight=5,
-                        popup='<b>END</b>'
-                    ).add_to(m)
-                    
-                    folium.Marker(
-                        location=destination,
-                        popup='<b>END POINT</b>',
-                        icon=folium.Icon(color='red', icon='flag-checkered', prefix='fa')
-                    ).add_to(m)
-                
-                # Add DANGER ZONES with BIG, VISIBLE markers
-                if sharp_turns:
-                    print(f"   Adding {len(sharp_turns)} danger zones...")
-                    for i, turn in enumerate(sharp_turns[:15]):
-                        lat, lng = turn['location']
-                        turn_angle = turn.get('turn_angle', 0)
-                        
-                        # Determine color based on severity
-                        if turn_angle >= 90:
-                            marker_color = 'darkred'
-                            fill_color = '#8B0000'
-                        elif turn_angle >= 65:
-                            marker_color = 'red'
-                            fill_color = '#FF0000'
-                        else:
-                            marker_color = 'orange'
-                            fill_color = '#FFA500'
-                        
-                        # Add BIG circle marker
-                        folium.CircleMarker(
-                            location=(lat, lng),
-                            radius=12,
-                            color=marker_color,
-                            fill=True,
-                            fillColor=fill_color,
-                            fillOpacity=1.0,
-                            weight=4,
-                            popup=f"<b>DANGER ZONE {i+1}</b><br>Angle: {turn_angle:.1f}°"
-                        ).add_to(m)
-                        
-                        # Add icon marker on top
-                        folium.Marker(
-                            location=(lat, lng),
-                            popup=f"<b>⚠️ HAZARD {i+1}</b><br>{turn_angle:.1f}°",
-                            icon=folium.Icon(color=marker_color, icon='exclamation-triangle', prefix='fa')
-                        ).add_to(m)
-                
-                # Add POIs with BIG, VISIBLE markers
-                if all_pois:
-                    print(f"   Adding {len(all_pois)} emergency facilities...")
-                    
-                    hospitals = [p for p in all_pois if 'hospital' in p.get('type', '')]
-                    police = [p for p in all_pois if 'police' in p.get('type', '')]
-                    fuel = [p for p in all_pois if 'fuel' in p.get('type', '')]
-                    
-                    # Hospitals - RED crosses
-                    for i, hospital in enumerate(hospitals[:10]):
-                        lat, lng = hospital['location']
-                        folium.CircleMarker(
-                            location=(lat, lng),
-                            radius=10,
-                            color='red',
-                            fill=True,
-                            fillColor='red',
-                            fillOpacity=1.0,
-                            weight=3,
-                            popup=f"<b>HOSPITAL {i+1}</b><br>{hospital['name']}"
-                        ).add_to(m)
-                        
-                        folium.Marker(
-                            location=(lat, lng),
-                            popup=f"<b>🏥 {hospital['name']}</b>",
-                            icon=folium.Icon(color='red', icon='plus', prefix='fa')
-                        ).add_to(m)
-                    
-                    # Police - BLUE shields
-                    for i, station in enumerate(police[:8]):
-                        lat, lng = station['location']
-                        folium.CircleMarker(
-                            location=(lat, lng),
-                            radius=10,
-                            color='blue',
-                            fill=True,
-                            fillColor='blue',
-                            fillOpacity=1.0,
-                            weight=3,
-                            popup=f"<b>POLICE {i+1}</b><br>{station['name']}"
-                        ).add_to(m)
-                        
-                        folium.Marker(
-                            location=(lat, lng),
-                            popup=f"<b>🚔 {station['name']}</b>",
-                            icon=folium.Icon(color='blue', icon='shield', prefix='fa')
-                        ).add_to(m)
-                    
-                    # Fuel - ORANGE pumps
-                    for i, fuel_station in enumerate(fuel[:8]):
-                        lat, lng = fuel_station['location']
-                        folium.CircleMarker(
-                            location=(lat, lng),
-                            radius=10,
-                            color='orange',
-                            fill=True,
-                            fillColor='orange',
-                            fillOpacity=1.0,
-                            weight=3,
-                            popup=f"<b>FUEL {i+1}</b><br>{fuel_station['name']}"
-                        ).add_to(m)
-                        
-                        folium.Marker(
-                            location=(lat, lng),
-                            popup=f"<b>⛽ {fuel_station['name']}</b>",
-                            icon=folium.Icon(color='orange', icon='gas-pump', prefix='fa')
-                        ).add_to(m)
-                
-                # Save map to HTML string
-                from io import BytesIO
-                map_io = BytesIO()
-                m.save(map_io, close_file=False)
-                map_html_content = map_io.getvalue().decode()
-                
-                # Add PRINT-SPECIFIC CSS to the map HTML
-                print_css = """
-                <style>
-                @media print {
-                    .leaflet-control-zoom,
-                    .leaflet-control-attribution { display: none !important; }
-                    
-                    .leaflet-container,
-                    .leaflet-pane,
-                    .leaflet-tile-pane,
-                    .leaflet-overlay-pane,
-                    .leaflet-marker-pane {
-                        display: block !important;
-                        visibility: visible !important;
-                        opacity: 1 !important;
-                        -webkit-print-color-adjust: exact !important;
-                        print-color-adjust: exact !important;
-                    }
-                    
-                    .leaflet-tile {
-                        display: block !important;
-                        visibility: visible !important;
-                        opacity: 1 !important;
-                    }
-                    
-                    path.leaflet-interactive,
-                    circle {
-                        display: block !important;
-                        visibility: visible !important;
-                        stroke-opacity: 1 !important;
-                        fill-opacity: 1 !important;
-                        -webkit-print-color-adjust: exact !important;
-                        print-color-adjust: exact !important;
-                    }
-                    
-                    svg, svg * {
-                        -webkit-print-color-adjust: exact !important;
-                        print-color-adjust: exact !important;
-                    }
-                }
-                </style>
-                """
-                
-                # Inject CSS into map HTML
-                map_html_content = map_html_content.replace('</head>', print_css + '</head>')
-                
-                print(f"✅ Print-friendly map created: {len(map_html_content)} characters")
-                
-            except Exception as e:
-                print(f"❌ Error creating map: {e}")
-                import traceback
-                traceback.print_exc()
-                map_html_content = None
+        # 🔥 Generate static map URL for printing
+        static_map_url = None
+        simple_svg = None
+        
+        if source and destination:
+            static_map_url = generate_static_map_url(
+                source=source,
+                destination=destination,
+                sharp_turns=sharp_turns,
+                all_pois=all_pois,
+                coords=coords
+            )
+            
+            # Create fallback SVG diagram
+            simple_svg = create_simple_route_svg(
+                source=source,
+                destination=destination,
+                sharp_turns=sharp_turns,
+                all_pois=all_pois
+            )
+            
+            print(f"   Static map URL: {'✓' if static_map_url else '✗'}")
+            print(f"   Fallback SVG: {'✓' if simple_svg else '✗'}")
         
         # Create comprehensive route report if missing
         if not route_report:
@@ -3411,7 +3204,7 @@ def detailed_report():
         print(f"✅ Report generation complete:")
         print(f"   Danger zones: {len(sharp_turns)} (Critical: {critical_turns}, High: {high_turns}, Moderate: {moderate_turns})")
         print(f"   Emergency facilities: {len(all_pois)}")
-        print(f"   Map content: {'✓' if map_html_content else '✗'}")
+        print(f"   Static map: {'✓' if static_map_url else 'Fallback SVG'}")
         
         return render_template("complete_black_white_report.html",
                                route_report=route_report,
@@ -3424,13 +3217,14 @@ def detailed_report():
                                source=source,
                                destination=destination,
                                html_file=html_file,
-                               map_html_content=map_html_content,
                                coords=coords,
                                critical_turns=critical_turns,
                                high_turns=high_turns,
                                moderate_turns=moderate_turns,
                                current_timestamp=current_timestamp,
-                               sap_code=None)
+                               sap_code=None,
+                               static_map_url=static_map_url,
+                               simple_svg=simple_svg)
 
     except Exception as e:
         print(f"❌ Error in detailed report: {e}")
@@ -3636,6 +3430,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
