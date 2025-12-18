@@ -15,6 +15,7 @@
             color: #000;
             line-height: 1.5;
             font-size: 11pt;
+            background: white;
         }
 
         /* Page breaks */
@@ -25,29 +26,32 @@
         /* Header styles */
         .main-header {
             text-align: center;
-            border: 1px solid #000;
+            border: 2px solid #000;
             padding: 15px;
             margin-bottom: 15px;
+            background: #f9f9f9;
         }
 
         .main-header h1 {
             font-size: 18pt;
             margin-bottom: 5px;
+            color: #000;
         }
 
         .main-header .subtitle {
             font-size: 12pt;
+            color: #333;
         }
 
         /* Section headers */
         .section-header {
             background: #d9d9d9;
             color: #000;
-            padding: 8px 10px;
+            padding: 10px 12px;
             margin: 15px 0 10px 0;
             font-size: 13pt;
             font-weight: bold;
-            border: 1px solid #000;
+            border: 2px solid #000;
         }
 
         /* Tables */
@@ -64,46 +68,25 @@
             text-align: left;
             font-size: 11pt;
             border: 1px solid #000;
+            font-weight: bold;
         }
 
         td {
             border: 1px solid #000;
             padding: 8px;
-            font-size: 11pt;
+            font-size: 10pt;
         }
 
         tr:nth-child(even) {
             background: #f5f5f5;
         }
 
-        /* Emergency box */
-        .emergency-box {
-            border: 1px solid #000;
-            padding: 15px;
-            margin: 15px 0;
-            background: #f0f0f0;
-        }
-
-        .emergency-title {
-            font-size: 14pt;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #000;
-            padding-bottom: 5px;
-        }
-
-        .emergency-number {
-            font-size: 16pt;
-            font-weight: bold;
-            font-family: 'Courier New', monospace;
-        }
-
         /* Info box */
         .info-box {
-            border: 1px solid #000;
+            border: 2px solid #000;
             padding: 12px;
             margin: 10px 0;
+            background: #f9f9f9;
         }
 
         .info-row {
@@ -118,68 +101,82 @@
 
         .info-label {
             font-weight: bold;
-            width: 200px;
+            width: 220px;
         }
 
         .info-value {
             flex: 1;
         }
 
-        /* Map container */
-        .map-container {
-            border: 1px solid #000;
+        /* Emergency box */
+        .emergency-box {
+            border: 3px solid #000;
+            padding: 15px;
+            margin: 15px 0;
+            background: #f0f0f0;
+        }
+
+        .emergency-title {
+            font-size: 14pt;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 8px;
+        }
+
+        .emergency-number {
+            font-size: 16pt;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Map container - STATIC VERSION */
+        .map-container-static {
+            border: 2px solid #000;
             padding: 0;
             text-align: center;
             width: 100%;
-            height: 600px;
-            position: relative;
+            min-height: 500px;
             background: #fff;
             page-break-inside: avoid;
-            overflow: hidden;
-        }
-
-        /* Map embedding container */
-        .map-embed-container {
-            width: 100%;
-            height: 600px;
-            border: none;
-            display: block;
-            background: #fff;
             position: relative;
+            margin: 15px 0;
         }
 
-        .map-iframe, .map-embed {
+        .static-route-map {
             width: 100%;
-            height: 600px;
-            border: none;
+            height: auto;
+            max-height: 550px;
+            object-fit: contain;
             display: block;
+            border: none;
         }
 
-        .map-placeholder {
+        /* Simple SVG fallback diagram */
+        .simple-route-diagram {
             width: 100%;
-            height: 600px;
-            border: 1px solid #000;
+            height: 500px;
+            border: 2px solid #000;
+            background: #f9f9f9;
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-direction: column;
-            padding: 20px;
-            background: #f9f9f9;
         }
 
-        /* Symbol legend */
-        .symbol-box {
-            display: inline-block;
-            border: 1px solid #000;
-            padding: 8px;
-            margin: 5px;
+        .simple-route-diagram svg {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        /* Warning box */
+        .warning-box {
+            border: 2px solid #000;
+            padding: 12px;
+            margin: 15px 0;
             text-align: center;
-            width: 45%;
-        }
-
-        .symbol-icon {
-            font-size: 20pt;
-            margin-right: 10px;
+            font-weight: bold;
+            background: #f9f9f9;
         }
 
         /* Instructions list */
@@ -189,16 +186,6 @@
 
         .instruction-list li {
             margin-bottom: 8px;
-        }
-
-        /* Warning box */
-        .warning-box {
-            border: 1px solid #000;
-            padding: 15px;
-            margin: 15px 0;
-            text-align: center;
-            font-weight: bold;
-            background: #f9f9f9;
         }
 
         /* No print elements */
@@ -215,51 +202,15 @@
                 font-size: 10pt;
             }
 
-            /* CRITICAL MAP PRINTING FIXES */
-            .map-container {
+            .map-container-static {
                 page-break-before: always !important;
                 page-break-after: always !important;
                 page-break-inside: avoid !important;
-                height: 600px !important;
                 display: block !important;
                 position: relative !important;
-                overflow: visible !important;
-                border: 1px solid #000 !important;
             }
 
-            /* Print styles for directly embedded map */
-            .map-embed-container {
-                width: 100% !important;
-                height: 550px !important;
-                display: block !important;
-                visibility: visible !important;
-                page-break-inside: avoid !important;
-                page-break-before: always !important;
-                page-break-after: always !important;
-                overflow: visible !important;
-            }
-
-            /* ✅ FORCE ALL LEAFLET LAYERS TO PRINT */
-            .leaflet-container,
-            .leaflet-pane,
-            .leaflet-tile-pane,
-            .leaflet-overlay-pane,
-            .leaflet-shadow-pane,
-            .leaflet-marker-pane,
-            .leaflet-tooltip-pane,
-            .leaflet-popup-pane,
-            .leaflet-map-pane {
-                display: block !important;
-                visibility: visible !important;
-                opacity: 1 !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                color-adjust: exact !important;
-            }
-
-            /* ✅ ENSURE MAP TILES PRINT */
-            .leaflet-tile-container,
-            .leaflet-tile {
+            .static-route-map {
                 display: block !important;
                 visibility: visible !important;
                 opacity: 1 !important;
@@ -268,59 +219,10 @@
                 page-break-inside: avoid !important;
             }
 
-            /* ✅ FORCE POLYLINES (ROUTES) TO PRINT */
-            .leaflet-interactive,
-            path.leaflet-interactive {
-                display: block !important;
-                visibility: visible !important;
-                stroke-opacity: 1 !important;
-                fill-opacity: 1 !important;
-                stroke-width: 4px !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                color-adjust: exact !important;
+            .simple-route-diagram {
+                page-break-inside: avoid !important;
             }
 
-            /* ✅ FORCE SVG ELEMENTS TO PRINT */
-            svg,
-            svg * {
-                display: block !important;
-                visibility: visible !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                color-adjust: exact !important;
-            }
-
-            /* ✅ ENSURE MARKERS PRINT AS VISIBLE ICONS */
-            .leaflet-marker-icon {
-                display: block !important;
-                visibility: visible !important;
-                opacity: 1 !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                color-adjust: exact !important;
-            }
-
-            /* ✅ FORCE CIRCLE MARKERS TO PRINT */
-            circle,
-            .leaflet-interactive circle {
-                display: block !important;
-                visibility: visible !important;
-                opacity: 1 !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                color-adjust: exact !important;
-            }
-
-            /* Hide Leaflet controls when printing */
-            .leaflet-control-zoom,
-            .leaflet-control-attribution,
-            .leaflet-control-layers,
-            .leaflet-bar {
-                display: none !important;
-            }
-
-            /* Prevent breaks in important sections */
             .emergency-box, .info-box, .warning-box {
                 page-break-inside: avoid;
             }
@@ -347,22 +249,53 @@
             padding: 12px 24px;
             background: #000;
             color: white;
-            border: 1px solid #000;
+            border: 2px solid #000;
             font-size: 14pt;
             font-weight: bold;
             cursor: pointer;
-            border-radius: 5px;
+            border-radius: 8px;
             z-index: 1000;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
         .print-button:hover {
             background: white;
             color: #000;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 12px 24px;
+            background: white;
+            color: #000;
+            border: 2px solid #000;
+            font-size: 14pt;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 8px;
+            z-index: 1000;
+            text-decoration: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .back-button:hover {
+            background: #000;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
         }
     </style>
 </head>
 <body>
-    <!-- Print Button (No Print) -->
+    <!-- Navigation Buttons (No Print) -->
+    <a href="javascript:history.back()" class="back-button no-print">
+        ← वापस जाएं / GO BACK
+    </a>
+    
     <button onclick="window.print()" class="print-button no-print">
         📄 छापें / PRINT
     </button>
@@ -408,6 +341,10 @@
                 <div class="info-label">लाइसेंस / License No:</div>
                 <div class="info-value">___________________________</div>
             </div>
+            <div class="info-row">
+                <div class="info-label">दिनांक / Date:</div>
+                <div class="info-value">___________________________</div>
+            </div>
         </div>
 
         <!-- Truck Specifications -->
@@ -429,6 +366,10 @@
                 <div class="info-label">खतरनाक स्थान / Danger Zones:</div>
                 <div class="info-value">{{ sharp_turns|length if sharp_turns else 0 }} स्थान / Locations</div>
             </div>
+            <div class="info-row">
+                <div class="info-label">आपातकालीन सुविधाएं / Emergency Facilities:</div>
+                <div class="info-value">{{ all_pois|length if all_pois else 0 }} सुविधाएं / Facilities</div>
+            </div>
         </div>
 
         <!-- Emergency Contacts -->
@@ -436,30 +377,30 @@
             <div class="emergency-title">⚠️ आपातकालीन नंबर / EMERGENCY NUMBERS ⚠️</div>
             <div style="display: table; width: 100%; border-collapse: collapse;">
                 <div style="display: table-row;">
-                    <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #ccc;">
+                    <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #000;">
                         <strong>आग / Fire:</strong>
                     </div>
-                    <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #ccc;">
+                    <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #000;">
                         <span class="emergency-number">101</span>
                     </div>
-                    <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #ccc;">
+                    <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #000;">
                         <strong>पुलिस / Police:</strong>
                     </div>
-                    <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #ccc;">
+                    <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #000;">
                         <span class="emergency-number">100</span>
                     </div>
                 </div>
                 <div style="display: table-row;">
-                    <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #ccc;">
+                    <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #000;">
                         <strong>एम्बुलेंस / Ambulance:</strong>
                     </div>
-                    <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #ccc;">
+                    <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #000;">
                         <span class="emergency-number">108</span>
                     </div>
-                    <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #ccc;">
+                    <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #000;">
                         <strong>IOCL Helpline:</strong>
                     </div>
-                    <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #ccc;">
+                    <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #000;">
                         <span class="emergency-number">1800-2333-555</span>
                     </div>
                 </div>
@@ -468,19 +409,19 @@
                         <strong>VTS Coordinator:</strong>
                     </div>
                     <div style="display: table-cell; padding: 8px;">
-                        <span style="font-family: 'Courier New', monospace; font-weight: bold; font-size: 11pt;">Mr. Kiran - 6303652707</span>
+                        <span style="font-family: 'Courier New', monospace; font-weight: bold; font-size: 11pt;">6303652707</span>
                     </div>
                     <div style="display: table-cell; padding: 8px;">
-                        <strong>LIC:</strong>
+                        <strong>LIC Officer:</strong>
                     </div>
                     <div style="display: table-cell; padding: 8px;">
-                        <span style="font-family: 'Courier New', monospace; font-weight: bold; font-size: 11pt;">Mr. SV Singh - 9426516001</span>
+                        <span style="font-family: 'Courier New', monospace; font-weight: bold; font-size: 11pt;">9426516001</span>
                     </div>
                 </div>
             </div>
-            <div style="margin-top: 10px; text-align: center; font-size: 10pt;">
+            <div style="margin-top: 12px; text-align: center; font-size: 10pt; border-top: 1px solid #000; padding-top: 10px;">
                 यात्रा शुरू करने से पहले सभी नंबर अपने मोबाइल में सेव करें<br>
-                SAVE ALL NUMBERS IN MOBILE BEFORE DEPARTURE
+                <strong>SAVE ALL NUMBERS IN MOBILE BEFORE DEPARTURE</strong>
             </div>
         </div>
     </div>
@@ -488,55 +429,74 @@
     <div class="page-break"></div>
 
     <!-- ========================================== -->
-    <!-- PAGE 2: ROUTE MAP -->
+    <!-- PAGE 2: ROUTE MAP (PRINT-FRIENDLY) -->
     <!-- ========================================== -->
     <div class="page-2">
         <div class="main-header">
             <h1>मार्ग नक्शा / ROUTE MAP</h1>
         </div>
 
-        <!-- Map Container with Direct Embedding -->
-        <div class="map-container">
-            {% if map_html_content %}
-            <!-- Direct map embedding - This prints correctly! -->
-            <div class="map-embed-container" id="mapEmbedContainer">
-                {{ map_html_content|safe }}
-            </div>
-            {% else %}
-            <div class="map-placeholder">
-                <p style="font-size: 16pt; font-weight: bold; margin-bottom: 20px;">मार्ग नक्शा / Route Map</p>
-                <p style="font-size: 11pt; margin-bottom: 10px;">सभी खतरनाक स्थान और आपातकालीन सुविधाएं दिखाता है</p>
-                <p style="font-size: 11pt;">Shows all danger zones and emergency facilities</p>
-            </div>
+        <!-- Static Map Container -->
+        <div class="map-container-static">
+            {% if static_map_url %}
+            <!-- Static map image from OpenStreetMap -->
+            <img src="{{ static_map_url }}" 
+                 alt="Route Map" 
+                 class="static-route-map"
+                 onerror="this.style.display='none'; document.getElementById('fallback-svg').style.display='block';">
+            
             {% endif %}
+            
+            <!-- Fallback SVG Diagram (always included as backup) -->
+            <div id="fallback-svg" class="simple-route-diagram" style="display: {% if not static_map_url %}block{% else %}none{% endif %};">
+                {% if simple_svg %}
+                {{ simple_svg|safe }}
+                {% else %}
+                <!-- Ultimate fallback: Text-based route info -->
+                <div style="padding: 40px; text-align: center;">
+                    <h3 style="margin-bottom: 20px;">मार्ग सारांश / Route Summary</h3>
+                    <div style="font-size: 12pt; line-height: 2;">
+                        <p><strong>प्रारंभ / START:</strong> {{ "%.4f, %.4f"|format(source[0], source[1]) if source else 'N/A' }}</p>
+                        <p style="font-size: 20pt; margin: 20px 0;">⬇</p>
+                        <p><strong>दूरी / Distance:</strong> {{ route_report.total_distance if route_report else 'N/A' }}</p>
+                        <p><strong>समय / Duration:</strong> {{ route_report.total_duration if route_report else 'N/A' }}</p>
+                        <p><strong>खतरनाक मोड़ / Hazards:</strong> {{ sharp_turns|length if sharp_turns else 0 }}</p>
+                        <p style="font-size: 20pt; margin: 20px 0;">⬇</p>
+                        <p><strong>अंत / END:</strong> {{ "%.4f, %.4f"|format(destination[0], destination[1]) if destination else 'N/A' }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
         </div>
 
-        <!-- Map Symbols -->
-        <div style="margin-top: 15px; text-align: center;">
-            <div class="section-header">नक्शे के चिह्न / MAP SYMBOLS</div>
-            <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
-                <div class="symbol-box">
-                    <span class="symbol-icon">⚠</span>
-                    <span>खतरनाक मोड़ / Danger Zones</span>
+        <!-- Map Legend -->
+        <div style="margin-top: 20px; padding: 15px; border: 2px solid #000; border-radius: 8px; background: #f9f9f9;">
+            <div style="font-weight: bold; margin-bottom: 12px; font-size: 13pt; text-align: center;">
+                नक्शे के चिह्न / MAP LEGEND
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 10pt;">
+                <div style="text-align: center; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    <div style="font-size: 18pt; margin-bottom: 4px;">🚛</div>
+                    <div>शुरू / Start</div>
                 </div>
-                <div class="symbol-box">
-                    <span class="symbol-icon">+</span>
-                    <span>अस्पताल / Hospitals</span>
+                <div style="text-align: center; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    <div style="font-size: 18pt; margin-bottom: 4px;">🏁</div>
+                    <div>अंत / End</div>
                 </div>
-                <div class="symbol-box">
-                    <span class="symbol-icon">★</span>
-                    <span>पुलिस / Police Stations</span>
+                <div style="text-align: center; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    <div style="font-size: 18pt; margin-bottom: 4px;">⚠️</div>
+                    <div>खतरा / Danger</div>
                 </div>
-                <div class="symbol-box">
-                    <span class="symbol-icon">⛽</span>
-                    <span>पेट्रोल पंप / Fuel Stations</span>
+                <div style="text-align: center; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    <div style="font-size: 18pt; margin-bottom: 4px;">🏥</div>
+                    <div>अस्पताल / Hospital</div>
                 </div>
             </div>
         </div>
 
         <div class="warning-box" style="margin-top: 20px;">
-            महत्वपूर्ण: इस नक्शे का उपयोग स्थान पहचानने के लिए करें<br>
-            IMPORTANT: Use this map to identify locations
+            <strong>महत्वपूर्ण / IMPORTANT:</strong> इस नक्शे का उपयोग नेविगेशन के लिए करें<br>
+            Use this map for navigation reference
         </div>
     </div>
 
@@ -562,26 +522,31 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 10%;">क्रमांक<br>No.</th>
-                    <th style="width: 45%;">अस्पताल का नाम<br>Hospital Name</th>
-                    <th style="width: 45%;">स्थान / Location</th>
+                    <th style="width: 8%;">क्रमांक<br>No.</th>
+                    <th style="width: 50%;">अस्पताल का नाम<br>Hospital Name</th>
+                    <th style="width: 42%;">स्थान / Location (GPS)</th>
                 </tr>
             </thead>
             <tbody>
-                {% for hospital in hospitals[:10] %}
+                {% for hospital in hospitals[:12] %}
                 <tr>
-                    <td style="text-align: center; font-weight: bold;">{{ loop.index }}</td>
+                    <td style="text-align: center; font-weight: bold; font-size: 12pt;">{{ loop.index }}</td>
                     <td><strong>{{ hospital.name }}</strong></td>
-                    <td style="font-family: monospace; font-size: 10pt;">
+                    <td style="font-family: 'Courier New', monospace; font-size: 9pt;">
                         {{ "%.6f"|format(hospital.location[0]) }}, {{ "%.6f"|format(hospital.location[1]) }}
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+        
+        <div style="margin-top: 15px; padding: 12px; background: #e8f5e8; border: 2px solid #4caf50; border-radius: 6px;">
+            <strong>📞 आपातकालीन चिकित्सा / Emergency Medical:</strong> 108 (Ambulance) | 102 (Free Ambulance)
+        </div>
         {% else %}
         <div class="warning-box">
-            कोई अस्पताल नहीं मिला / No hospitals found along this route
+            ⚠️ कोई अस्पताल नहीं मिला / No hospitals found along this route<br>
+            निकटतम शहर में चिकित्सा सुविधा खोजें / Seek medical facility in nearest town
         </div>
         {% endif %}
         {% else %}
@@ -597,6 +562,11 @@
     <!-- PAGE 4: POLICE & FUEL STATIONS -->
     <!-- ========================================== -->
     <div class="page-4">
+        <div class="main-header">
+            <h1>पुलिस थाने और पेट्रोल पंप</h1>
+            <div class="subtitle">Police Stations & Fuel Stations</div>
+        </div>
+
         <div class="section-header">पुलिस थाने / POLICE STATIONS</div>
         
         {% if all_pois %}
@@ -611,23 +581,28 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 10%;">क्रमांक<br>No.</th>
-                    <th style="width: 45%;">थाने का नाम<br>Station Name</th>
-                    <th style="width: 45%;">स्थान / Location</th>
+                    <th style="width: 8%;">क्रमांक<br>No.</th>
+                    <th style="width: 50%;">थाने का नाम<br>Station Name</th>
+                    <th style="width: 42%;">स्थान / Location (GPS)</th>
                 </tr>
             </thead>
             <tbody>
-                {% for station in police_stations[:8] %}
+                {% for station in police_stations[:10] %}
                 <tr>
-                    <td style="text-align: center; font-weight: bold;">{{ loop.index }}</td>
+                    <td style="text-align: center; font-weight: bold; font-size: 12pt;">{{ loop.index }}</td>
                     <td><strong>{{ station.name }}</strong></td>
-                    <td style="font-family: monospace; font-size: 10pt;">
+                    <td style="font-family: 'Courier New', monospace; font-size: 9pt;">
                         {{ "%.6f"|format(station.location[0]) }}, {{ "%.6f"|format(station.location[1]) }}
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+        {% else %}
+        <div class="warning-box">
+            ⚠️ इस मार्ग पर कोई पुलिस थाना नहीं मिला<br>
+            No police stations found along this route
+        </div>
         {% endif %}
         {% endif %}
 
@@ -645,25 +620,36 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 10%;">क्रमांक<br>No.</th>
-                    <th style="width: 45%;">पंप का नाम<br>Station Name</th>
-                    <th style="width: 45%;">स्थान / Location</th>
+                    <th style="width: 8%;">क्रमांक<br>No.</th>
+                    <th style="width: 50%;">पंप का नाम<br>Station Name</th>
+                    <th style="width: 42%;">स्थान / Location (GPS)</th>
                 </tr>
             </thead>
             <tbody>
-                {% for station in fuel_stations[:8] %}
+                {% for station in fuel_stations[:10] %}
                 <tr>
-                    <td style="text-align: center; font-weight: bold;">{{ loop.index }}</td>
+                    <td style="text-align: center; font-weight: bold; font-size: 12pt;">{{ loop.index }}</td>
                     <td><strong>{{ station.name }}</strong></td>
-                    <td style="font-family: monospace; font-size: 10pt;">
+                    <td style="font-family: 'Courier New', monospace; font-size: 9pt;">
                         {{ "%.6f"|format(station.location[0]) }}, {{ "%.6f"|format(station.location[1]) }}
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+        {% else %}
+        <div class="warning-box">
+            ⚠️ इस मार्ग पर कोई पेट्रोल पंप नहीं मिला<br>
+            No fuel stations found - Plan refueling accordingly
+        </div>
         {% endif %}
         {% endif %}
+
+        <div style="margin-top: 20px; padding: 12px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 6px;">
+            <strong>⚠️ महत्वपूर्ण / Important:</strong><br>
+            यात्रा से पहले ईंधन की जांच करें और आपातकालीन संपर्क सहेजें<br>
+            Check fuel before journey and save emergency contacts
+        </div>
     </div>
 
     <div class="page-break"></div>
@@ -680,37 +666,48 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 8%;">क्रमांक<br>No.</th>
-                    <th style="width: 15%;">कोण<br>Angle</th>
-                    <th style="width: 15%;">गंभीरता<br>Severity</th>
-                    <th style="width: 17%;">अनुशंसित गति<br>Speed</th>
-                    <th style="width: 45%;">स्थान / Location</th>
+                    <th style="width: 6%;">क्रमांक<br>No.</th>
+                    <th style="width: 14%;">कोण<br>Angle</th>
+                    <th style="width: 14%;">गंभीरता<br>Severity</th>
+                    <th style="width: 16%;">अनुशंसित गति<br>Speed</th>
+                    <th style="width: 50%;">स्थान / Location (GPS)</th>
                 </tr>
             </thead>
             <tbody>
-                {% for turn in sharp_turns[:15] %}
+                {% for turn in sharp_turns[:20] %}
                 <tr>
-                    <td style="text-align: center; font-weight: bold;">{{ loop.index }}</td>
+                    <td style="text-align: center; font-weight: bold; font-size: 11pt;">{{ loop.index }}</td>
                     <td style="text-align: center;">
-                        <strong>{{ "%.1f"|format(turn.turn_angle) if turn.turn_angle else '0' }}°</strong><br>
+                        <strong style="font-size: 11pt;">{{ "%.1f"|format(turn.turn_angle) if turn.turn_angle else '0' }}°</strong><br>
                         <small>{{ turn.direction if turn.direction else 'turn' }}</small>
                     </td>
-                    <td style="text-align: center; color: {{ '#8B0000' if turn.turn_angle and turn.turn_angle >= 90 else '#FF0000' if turn.turn_angle and turn.turn_angle >= 65 else '#FFA500' }}; font-weight: bold;">
+                    <td style="text-align: center; font-weight: bold; color: {{ '#8B0000' if turn.turn_angle and turn.turn_angle >= 90 else '#FF0000' if turn.turn_angle and turn.turn_angle >= 65 else '#FF8C00' }};">
                         {{ 'CRITICAL' if turn.turn_angle and turn.turn_angle >= 90 else 'HIGH' if turn.turn_angle and turn.turn_angle >= 65 else 'MODERATE' }}
                     </td>
-                    <td style="text-align: center; font-weight: bold;">
+                    <td style="text-align: center; font-weight: bold; font-size: 11pt;">
                         {{ turn.practical_speed if turn.practical_speed else '15' }} km/h
                     </td>
-                    <td style="font-family: monospace; font-size: 9pt;">
+                    <td style="font-family: 'Courier New', monospace; font-size: 9pt;">
                         {{ "%.6f"|format(turn.location[0]) if turn.location else '0.000000' }}, {{ "%.6f"|format(turn.location[1]) if turn.location else '0.000000' }}
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+
+        <div style="margin-top: 20px; padding: 15px; background: #ffebee; border: 2px solid #f44336; border-radius: 6px;">
+            <strong style="font-size: 12pt;">⚠️ सुरक्षा चेतावनी / SAFETY WARNING:</strong><br><br>
+            <ul style="margin: 10px 0; padding-left: 20px; line-height: 1.8;">
+                <li>खतरनाक मोड़ों पर गति कम करें / Reduce speed at danger zones</li>
+                <li>तरल पदार्थ के उछाल पर ध्यान दें / Monitor liquid surge</li>
+                <li>अचानक ब्रेक से बचें / Avoid sudden braking</li>
+                <li>इंजन ब्रेकिंग का उपयोग करें / Use engine braking</li>
+            </ul>
+        </div>
         {% else %}
         <div class="warning-box">
-            कोई खतरनाक स्थान नहीं मिला / No danger zones detected on this route
+            ✓ कोई खतरनाक स्थान नहीं मिला / No danger zones detected on this route<br>
+            सामान्य सुरक्षा सावधानियां बरतें / Follow standard safety precautions
         </div>
         {% endif %}
     </div>
@@ -727,159 +724,86 @@
 
         <div class="section-header">यात्रा से पहले / BEFORE JOURNEY</div>
         <ul class="instruction-list">
-            <li>सभी आपातकालीन नंबर अपने मोबाइल में सेव करें / Save all emergency numbers</li>
-            <li>वाहन की पूरी जांच करें - ब्रेक, टायर, लाइट्स / Complete vehicle inspection</li>
-            <li>टैंक और वाल्व की जांच करें / Check tank and valve integrity</li>
-            <li>ADR प्लेकार्ड और दस्तावेज सत्यापित करें / Verify ADR placards and documentation</li>
-            <li>अग्निशामक यंत्र और स्पिल किट की जांच करें / Check fire extinguisher and spill kit</li>
+            <li><strong>वाहन जांच / Vehicle Inspection:</strong> ब्रेक, टायर, लाइट्स की पूरी जांच करें</li>
+            <li><strong>टैंक सत्यापन / Tank Verification:</strong> टैंक और वाल्व की जांच करें</li>
+            <li><strong>दस्तावेज / Documents:</strong> ADR प्लेकार्ड और परमिट सत्यापित करें</li>
+            <li><strong>आपातकालीन उपकरण / Emergency Equipment:</strong> अग्निशामक यंत्र और स्पिल किट जांचें</li>
+            <li><strong>संपर्क नंबर / Contact Numbers:</strong> सभी आपातकालीन नंबर सेव करें</li>
         </ul>
 
         <div class="section-header">यात्रा के दौरान / DURING JOURNEY</div>
         <ul class="instruction-list">
-            <li><strong>अधिकतम गति: {{ tt_specs.max_speed if tt_specs and tt_specs.max_speed else '50' }} किमी/घंटा / Maximum speed limit</strong></li>
-            <li>खतरनाक मोड़ों पर गति कम करें - 10-15 किमी/घंटा / Reduce speed at danger zones</li>
-            <li>6 सेकंड का अनुसरण दूरी बनाए रखें / Maintain 6-second following distance</li>
-            <li>अचानक ब्रेक और तेज़ मोड़ से बचें / Avoid sudden braking and sharp turns</li>
-            <li>हर 2 घंटे में 15 मिनट का विश्राम लें / Take 15-minute break every 2 hours</li>
-            <li>तरल पदार्थ के उछाल पर ध्यान दें / Monitor liquid surge</li>
+            <li><strong>गति सीमा / Speed Limit:</strong> अधिकतम {{ tt_specs.max_speed if tt_specs and tt_specs.max_speed else '50' }} किमी/घंटा</li>
+            <li><strong>मोड़ों पर / At Turns:</strong> गति 10-15 किमी/घंटा तक कम करें</li>
+            <li><strong>दूरी / Following Distance:</strong> 6 सेकंड का अनुसरण दूरी बनाए रखें</li>
+            <li><strong>विश्राम / Rest Breaks:</strong> हर 2 घंटे में 15 मिनट का विश्राम लें</li>
+            <li><strong>तरल निगरानी / Liquid Monitoring:</strong> तरल पदार्थ के उछाल पर ध्यान दें</li>
+            <li><strong>मौसम / Weather:</strong> खराब मौसम में अतिरिक्त सावधानी बरतें</li>
         </ul>
 
         <div class="section-header">आपातकालीन प्रक्रिया / EMERGENCY PROCEDURES</div>
         <ul class="instruction-list">
-            <li><strong>रिसाव / Spill:</strong> क्षेत्र को अलग करें, तुरंत 101 पर कॉल करें / Isolate area, call 101 immediately</li>
-            <li><strong>आग / Fire:</strong> 300 मीटर निकासी त्रिज्या, केवल फोम दमन / 300m evacuation radius, foam suppression only</li>
-            <li><strong>पलटना / Rollover:</strong> इंजन बंद करें, सुरक्षित दूरी बनाए रखें / Switch off engine, maintain safe distance</li>
-            <li><strong>दुर्घटना / Accident:</strong> 108 (एम्बुलेंस), 100 (पुलिस) / Call 108 (Ambulance), 100 (Police)</li>
+            <li><strong>रिसाव / Spill:</strong> क्षेत्र को अलग करें, तुरंत 101 पर कॉल करें</li>
+            <li><strong>आग / Fire:</strong> 300 मीटर निकासी त्रिज्या, केवल फोम दमन, 101 डायल करें</li>
+            <li><strong>पलटना / Rollover:</strong> इंजन बंद करें, सुरक्षित दूरी बनाए रखें</li>
+            <li><strong>दुर्घटना / Accident:</strong> 108 (एम्बुलेंस), 100 (पुलिस) कॉल करें</li>
+            <li><strong>यांत्रिक खराबी / Breakdown:</strong> सुरक्षित स्थान पर रुकें, चेतावनी त्रिकोण लगाएं</li>
         </ul>
 
-        <div class="warning-box" style="margin-top: 20px;">
-            <strong>महत्वपूर्ण चेतावनी / IMPORTANT WARNING</strong><br><br>
-            यह वाहन खतरनाक पेट्रोलियम उत्पाद ले जा रहा है<br>
-            This vehicle is carrying hazardous petroleum products<br><br>
-            सभी सुरक्षा नियमों का कड़ाई से पालन करें<br>
-            Strictly follow all safety regulations
+        <div class="warning-box" style="margin-top: 25px; padding: 18px;">
+            <div style="font-size: 14pt; margin-bottom: 10px;">
+                <strong>⚠️ महत्वपूर्ण चेतावनी / IMPORTANT WARNING ⚠️</strong>
+            </div>
+            <div style="font-size: 11pt; line-height: 1.8;">
+                यह वाहन खतरनाक पेट्रोलियम उत्पाद ले जा रहा है<br>
+                <strong>This vehicle is carrying hazardous petroleum products</strong><br><br>
+                सभी सुरक्षा नियमों का कड़ाई से पालन करें<br>
+                <strong>Strictly follow all safety regulations</strong>
+            </div>
+        </div>
+
+        <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border: 2px solid #2196f3; border-radius: 6px;">
+            <strong style="font-size: 11pt;">📋 यात्रा पूर्ण होने पर / ON COMPLETION OF JOURNEY:</strong><br><br>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+                <li>सुरक्षा रिपोर्ट जमा करें / Submit safety report</li>
+                <li>वाहन की स्थिति रिपोर्ट करें / Report vehicle condition</li>
+                <li>किसी भी घटना की रिपोर्ट करें / Report any incidents</li>
+                <li>अगली यात्रा के लिए तैयारी करें / Prepare for next journey</li>
+            </ul>
         </div>
     </div>
 
     <!-- Footer -->
-    <div style="margin-top: 30px; padding: 15px; border-top: 1px solid #000; text-align: center; font-size: 9pt;">
+    <div style="margin-top: 30px; padding: 15px; border-top: 2px solid #000; text-align: center; font-size: 9pt;">
         <strong>© 2025 IndianOil Corporation Limited</strong><br>
         यह दस्तावेज {{ current_timestamp if current_timestamp else 'आज' }} को बनाया गया है<br>
-        This document was generated on {{ current_timestamp if current_timestamp else 'today' }}
+        This document was generated on {{ current_timestamp if current_timestamp else 'today' }}<br>
+        <strong style="margin-top: 5px; display: block;">सुरक्षित यात्रा / SAFE JOURNEY</strong>
     </div>
 
     <script>
+        // Ensure map loads properly
         document.addEventListener('DOMContentLoaded', function() {
-            const now = new Date();
-            const options = { 
-                year: 'numeric', 
-                month: 'short', 
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            };
-            const timestamp = now.toLocaleString('en-IN', options);
+            console.log('✅ Route report document loaded');
             
-            console.log('✅ Document loaded - Map embedded directly');
-            
-            // Check if map is present
-            const mapContainer = document.querySelector('.map-embed-container');
-            if (mapContainer) {
-                console.log('✅ Map container found');
-                
-                // Check for Leaflet elements
-                const leafletContainer = mapContainer.querySelector('.leaflet-container');
-                if (leafletContainer) {
-                    console.log('✅ Leaflet map detected');
-                    
-                    // Count map elements
-                    const tiles = mapContainer.querySelectorAll('.leaflet-tile');
-                    const markers = mapContainer.querySelectorAll('.leaflet-marker-icon');
-                    const paths = mapContainer.querySelectorAll('path.leaflet-interactive');
-                    
-                    console.log(`📊 Map elements - Tiles: ${tiles.length}, Markers: ${markers.length}, Paths: ${paths.length}`);
-                } else {
-                    console.warn('⚠️ Leaflet container not found');
-                }
-            } else {
-                console.warn('⚠️ Map container not found');
+            // Check if static map failed to load
+            const staticMap = document.querySelector('.static-route-map');
+            if (staticMap) {
+                staticMap.addEventListener('error', function() {
+                    console.warn('⚠️ Static map failed to load, showing fallback');
+                    this.style.display = 'none';
+                    document.getElementById('fallback-svg').style.display = 'block';
+                });
             }
         });
 
-        // Enhanced print preparation
+        // Print preparation
         window.onbeforeprint = function() {
             console.log('📄 Preparing document for printing...');
-            
-            const mapEmbed = document.querySelector('.map-embed-container');
-            
-            if (mapEmbed) {
-                const leafletMaps = mapEmbed.querySelectorAll('.leaflet-container');
-                
-                if (leafletMaps.length > 0) {
-                    leafletMaps.forEach(map => {
-                        // Force display and visibility
-                        map.style.display = 'block';
-                        map.style.visibility = 'visible';
-                        map.style.opacity = '1';
-                        
-                        // Force all panes to be visible
-                        const panes = map.querySelectorAll('.leaflet-pane');
-                        panes.forEach(pane => {
-                            pane.style.display = 'block';
-                            pane.style.visibility = 'visible';
-                            pane.style.opacity = '1';
-                        });
-                        
-                        // Force all tiles to load and be visible
-                        const tiles = map.querySelectorAll('.leaflet-tile');
-                        tiles.forEach(tile => {
-                            tile.style.display = 'block';
-                            tile.style.visibility = 'visible';
-                            tile.style.opacity = '1';
-                        });
-                        
-                        // Force markers to be visible
-                        const markers = map.querySelectorAll('.leaflet-marker-icon');
-                        markers.forEach(marker => {
-                            marker.style.display = 'block';
-                            marker.style.visibility = 'visible';
-                            marker.style.opacity = '1';
-                        });
-                        
-                        // Force paths (routes) to be visible
-                        const paths = map.querySelectorAll('path.leaflet-interactive');
-                        paths.forEach(path => {
-                            path.style.display = 'block';
-                            path.style.visibility = 'visible';
-                            path.style.strokeOpacity = '1';
-                            path.style.fillOpacity = '1';
-                        });
-                        
-                        // Force SVG elements to be visible
-                        const svgs = map.querySelectorAll('svg');
-                        svgs.forEach(svg => {
-                            svg.style.display = 'block';
-                            svg.style.visibility = 'visible';
-                        });
-                        
-                        console.log('✅ Map prepared for printing');
-                        console.log(`   - Tiles: ${tiles.length}`);
-                        console.log(`   - Markers: ${markers.length}`);
-                        console.log(`   - Paths: ${paths.length}`);
-                    });
-                } else {
-                    console.warn('⚠️ No Leaflet maps found');
-                }
-            } else {
-                console.warn('⚠️ Map embed container not found');
-            }
-            
-            console.log('✅ Print preparation complete');
         };
 
-        // After print
         window.onafterprint = function() {
-            console.log('✅ Print completed successfully');
+            console.log('✅ Print completed');
         };
     </script>
 </body>
