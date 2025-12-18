@@ -2951,7 +2951,7 @@ def analyze_route():
 @app.route('/detailed_report')
 @login_required 
 def detailed_report():
-    """Generate comprehensive black and white route analysis report with EMBEDDED MAP"""
+    """Generate comprehensive black and white route analysis report with PRINT-FRIENDLY MAP"""
     try:
         # Get all data from session
         route_report = session.get('route_report', {})
@@ -2966,30 +2966,241 @@ def detailed_report():
         html_file = session.get('html_file')
         coords = session.get('coords', [])
         
-        # 🔥 CRITICAL FIX: Read map HTML content for direct embedding
-        map_html_content = None
-        if html_file:
-            map_file_path = os.path.join('templates', html_file)
-            print(f"📍 Looking for map file: {map_file_path}")
-            
-            if os.path.exists(map_file_path):
-                try:
-                    with open(map_file_path, 'r', encoding='utf-8') as f:
-                        map_html_content = f.read()
-                    print(f"✅ Map HTML loaded successfully: {len(map_html_content)} characters")
-                except Exception as e:
-                    print(f"❌ Error reading map file: {e}")
-                    map_html_content = None
-            else:
-                print(f"⚠️ Map file not found at: {map_file_path}")
-        else:
-            print("⚠️ No html_file in session")
-        
         print(f"📋 Generating comprehensive route analysis report...")
         print(f"   Route data available: {'✓' if route_report else '✗'}")
         print(f"   Danger zones: {len(sharp_turns)}")
         print(f"   Emergency facilities: {len(all_pois)}")
-        print(f"   Map content: {'✓' if map_html_content else '✗'}")
+        
+        # 🔥 CREATE PRINT-FRIENDLY MAP
+        map_html_content = None
+        if coords and len(coords) > 0:
+            try:
+                print(f"🗺️ Creating print-friendly map...")
+                
+                # Calculate center
+                center_lat = sum(coord[0] for coord in coords) / len(coords)
+                center_lng = sum(coord[1] for coord in coords) / len(coords)
+                
+                # Create map with specific settings for printing
+                m = folium.Map(
+                    location=(center_lat, center_lng),
+                    zoom_start=11,
+                    tiles='OpenStreetMap',
+                    prefer_canvas=True,  # Better for printing
+                    control_scale=True
+                )
+                
+                # Draw main route with THICK, VISIBLE line
+                folium.PolyLine(
+                    coords,
+                    color='#0066cc',
+                    weight=8,
+                    opacity=1.0,
+                    popup=f"Route: {route_report.get('total_distance', 'N/A')}"
+                ).add_to(m)
+                
+                # Add START marker - BIG and VISIBLE
+                if source:
+                    folium.CircleMarker(
+                        location=source,
+                        radius=15,
+                        color='green',
+                        fill=True,
+                        fillColor='green',
+                        fillOpacity=1.0,
+                        weight=5,
+                        popup='<b>START</b>'
+                    ).add_to(m)
+                    
+                    folium.Marker(
+                        location=source,
+                        popup='<b>START POINT</b>',
+                        icon=folium.Icon(color='green', icon='play', prefix='fa')
+                    ).add_to(m)
+                
+                # Add END marker - BIG and VISIBLE
+                if destination:
+                    folium.CircleMarker(
+                        location=destination,
+                        radius=15,
+                        color='red',
+                        fill=True,
+                        fillColor='red',
+                        fillOpacity=1.0,
+                        weight=5,
+                        popup='<b>END</b>'
+                    ).add_to(m)
+                    
+                    folium.Marker(
+                        location=destination,
+                        popup='<b>END POINT</b>',
+                        icon=folium.Icon(color='red', icon='flag-checkered', prefix='fa')
+                    ).add_to(m)
+                
+                # Add DANGER ZONES with BIG, VISIBLE markers
+                if sharp_turns:
+                    print(f"   Adding {len(sharp_turns)} danger zones...")
+                    for i, turn in enumerate(sharp_turns[:15]):
+                        lat, lng = turn['location']
+                        turn_angle = turn.get('turn_angle', 0)
+                        
+                        # Determine color based on severity
+                        if turn_angle >= 90:
+                            marker_color = 'darkred'
+                            fill_color = '#8B0000'
+                        elif turn_angle >= 65:
+                            marker_color = 'red'
+                            fill_color = '#FF0000'
+                        else:
+                            marker_color = 'orange'
+                            fill_color = '#FFA500'
+                        
+                        # Add BIG circle marker
+                        folium.CircleMarker(
+                            location=(lat, lng),
+                            radius=12,
+                            color=marker_color,
+                            fill=True,
+                            fillColor=fill_color,
+                            fillOpacity=1.0,
+                            weight=4,
+                            popup=f"<b>DANGER ZONE {i+1}</b><br>Angle: {turn_angle:.1f}°"
+                        ).add_to(m)
+                        
+                        # Add icon marker on top
+                        folium.Marker(
+                            location=(lat, lng),
+                            popup=f"<b>⚠️ HAZARD {i+1}</b><br>{turn_angle:.1f}°",
+                            icon=folium.Icon(color=marker_color, icon='exclamation-triangle', prefix='fa')
+                        ).add_to(m)
+                
+                # Add POIs with BIG, VISIBLE markers
+                if all_pois:
+                    print(f"   Adding {len(all_pois)} emergency facilities...")
+                    
+                    hospitals = [p for p in all_pois if 'hospital' in p.get('type', '')]
+                    police = [p for p in all_pois if 'police' in p.get('type', '')]
+                    fuel = [p for p in all_pois if 'fuel' in p.get('type', '')]
+                    
+                    # Hospitals - RED crosses
+                    for i, hospital in enumerate(hospitals[:10]):
+                        lat, lng = hospital['location']
+                        folium.CircleMarker(
+                            location=(lat, lng),
+                            radius=10,
+                            color='red',
+                            fill=True,
+                            fillColor='red',
+                            fillOpacity=1.0,
+                            weight=3,
+                            popup=f"<b>HOSPITAL {i+1}</b><br>{hospital['name']}"
+                        ).add_to(m)
+                        
+                        folium.Marker(
+                            location=(lat, lng),
+                            popup=f"<b>🏥 {hospital['name']}</b>",
+                            icon=folium.Icon(color='red', icon='plus', prefix='fa')
+                        ).add_to(m)
+                    
+                    # Police - BLUE shields
+                    for i, station in enumerate(police[:8]):
+                        lat, lng = station['location']
+                        folium.CircleMarker(
+                            location=(lat, lng),
+                            radius=10,
+                            color='blue',
+                            fill=True,
+                            fillColor='blue',
+                            fillOpacity=1.0,
+                            weight=3,
+                            popup=f"<b>POLICE {i+1}</b><br>{station['name']}"
+                        ).add_to(m)
+                        
+                        folium.Marker(
+                            location=(lat, lng),
+                            popup=f"<b>🚔 {station['name']}</b>",
+                            icon=folium.Icon(color='blue', icon='shield', prefix='fa')
+                        ).add_to(m)
+                    
+                    # Fuel - ORANGE pumps
+                    for i, fuel_station in enumerate(fuel[:8]):
+                        lat, lng = fuel_station['location']
+                        folium.CircleMarker(
+                            location=(lat, lng),
+                            radius=10,
+                            color='orange',
+                            fill=True,
+                            fillColor='orange',
+                            fillOpacity=1.0,
+                            weight=3,
+                            popup=f"<b>FUEL {i+1}</b><br>{fuel_station['name']}"
+                        ).add_to(m)
+                        
+                        folium.Marker(
+                            location=(lat, lng),
+                            popup=f"<b>⛽ {fuel_station['name']}</b>",
+                            icon=folium.Icon(color='orange', icon='gas-pump', prefix='fa')
+                        ).add_to(m)
+                
+                # Save map to HTML string
+                from io import BytesIO
+                map_io = BytesIO()
+                m.save(map_io, close_file=False)
+                map_html_content = map_io.getvalue().decode()
+                
+                # Add PRINT-SPECIFIC CSS to the map HTML
+                print_css = """
+                <style>
+                @media print {
+                    .leaflet-control-zoom,
+                    .leaflet-control-attribution { display: none !important; }
+                    
+                    .leaflet-container,
+                    .leaflet-pane,
+                    .leaflet-tile-pane,
+                    .leaflet-overlay-pane,
+                    .leaflet-marker-pane {
+                        display: block !important;
+                        visibility: visible !important;
+                        opacity: 1 !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                    
+                    .leaflet-tile {
+                        display: block !important;
+                        visibility: visible !important;
+                        opacity: 1 !important;
+                    }
+                    
+                    path.leaflet-interactive,
+                    circle {
+                        display: block !important;
+                        visibility: visible !important;
+                        stroke-opacity: 1 !important;
+                        fill-opacity: 1 !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                    
+                    svg, svg * {
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                }
+                </style>
+                """
+                
+                # Inject CSS into map HTML
+                map_html_content = map_html_content.replace('</head>', print_css + '</head>')
+                
+                print(f"✅ Print-friendly map created: {len(map_html_content)} characters")
+                
+            except Exception as e:
+                print(f"❌ Error creating map: {e}")
+                import traceback
+                traceback.print_exc()
+                map_html_content = None
         
         # Create comprehensive route report if missing
         if not route_report:
@@ -3029,129 +3240,7 @@ def detailed_report():
                     'hospitals_along_route': len([p for p in all_pois if 'hospital' in p.get('type', '')]),
                     'fuel_stations': len([p for p in all_pois if 'fuel' in p.get('type', '')]),
                     'police_stations': len([p for p in all_pois if 'police' in p.get('type', '')])
-                },
-                'traffic_analysis': {
-                    'light_traffic_segments': max(0, len(coords) - len(sharp_turns)),
-                    'moderate_traffic_segments': len(curves),
-                    'heavy_traffic_segments': len(sharp_turns),
-                    'average_delay_factor': 1.3 if len(sharp_turns) > 5 else 1.1
                 }
-            }
-        
-        # Create comprehensive location mapping if missing
-        if not location_mapping:
-            location_mapping = {
-                'danger_zones': [],
-                'safety_facilities': [],
-                'navigation_waypoints': [],
-                'emergency_distances': []
-            }
-            
-            # Create detailed danger zones from sharp turns
-            if sharp_turns:
-                for i, turn in enumerate(sharp_turns):
-                    turn_angle = turn.get('turn_angle', 0)
-                    
-                    if turn_angle >= 90:
-                        severity, recommended_speed = 'CRITICAL', 10
-                        hazard_type = 'U-Turn/Roundabout/Tight Turn'
-                        warning = 'LIQUID SURGE DANGER - Use extreme caution'
-                    elif turn_angle >= 65:
-                        severity, recommended_speed = 'HIGH', 18
-                        hazard_type = 'Highway Ramp/Sharp Corner'
-                        warning = 'HIGH ROLLOVER RISK - Reduce speed significantly'
-                    elif turn_angle >= 45:
-                        severity, recommended_speed = 'MODERATE', 25
-                        hazard_type = 'Intersection/City Turn'
-                        warning = 'CAUTION REQUIRED - Standard intersection speed'
-                    else:
-                        severity, recommended_speed = 'LOW', 35
-                        hazard_type = 'Highway Curve/Wide Turn'
-                        warning = 'REDUCE SPEED - Monitor liquid movement'
-                    
-                    danger_zone = {
-                        'id': f'DZ-{i+1:02d}',
-                        'coordinates': {
-                            'latitude': turn['location'][0],
-                            'longitude': turn['location'][1],
-                            'formatted': f"{turn['location'][0]:.6f}, {turn['location'][1]:.6f}"
-                        },
-                        'hazard_type': hazard_type,
-                        'turn_angle': turn_angle,
-                        'direction': turn.get('direction', 'unknown'),
-                        'severity': severity,
-                        'recommended_speed': recommended_speed,
-                        'safety_actions': [
-                            'Engine braking mandatory',
-                            'Monitor liquid surge', 
-                            'Emergency flashers ON',
-                            f'Reduce to {recommended_speed} km/h',
-                            'Radio position report',
-                            'Activate hazard lights'
-                        ],
-                        'warning_message': warning
-                    }
-                    location_mapping['danger_zones'].append(danger_zone)
-            
-            # Create detailed safety facilities from POIs
-            if all_pois:
-                for i, poi in enumerate(all_pois):
-                    poi_type = poi.get('type', '').lower()
-                    
-                    if 'hospital' in poi_type:
-                        category, icon, contact = 'MEDICAL', '🏥', '108 (Ambulance)'
-                        services = ['Emergency Medical Care', 'Trauma Response', 'Hazmat Injury Treatment']
-                        priority = 1
-                    elif 'police' in poi_type:
-                        category, icon, contact = 'POLICE', '🚔', '100 (Police Control)'
-                        services = ['Traffic Control', 'Emergency Coordination', 'Route Assistance']
-                        priority = 2
-                    elif 'fuel' in poi_type:
-                        category, icon, contact = 'FUEL', '⛽', 'Local Contact'
-                        services = ['Fuel Services', 'Vehicle Maintenance', 'Rest Facilities']
-                        priority = 3
-                    else:
-                        category, icon, contact = 'OTHER', '📍', 'Local Contact'
-                        services = ['General Support', 'Information', 'Emergency Contact']
-                        priority = 4
-                    
-                    safety_facility = {
-                        'id': f'SF-{i+1:02d}',
-                        'type': poi_type,
-                        'category': category,
-                        'icon': icon,
-                        'name': poi.get('name', 'Unknown Facility'),
-                        'coordinates': {
-                            'latitude': poi['location'][0],
-                            'longitude': poi['location'][1],
-                            'formatted': f"{poi['location'][0]:.6f}, {poi['location'][1]:.6f}"
-                        },
-                        'rating': poi.get('rating', 'N/A'),
-                        'vicinity': poi.get('vicinity', 'Location verified'),
-                        'services': services,
-                        'emergency_contact': contact,
-                        'priority_level': priority
-                    }
-                    location_mapping['safety_facilities'].append(safety_facility)
-            
-            # Update session with comprehensive data
-            session['location_mapping'] = location_mapping
-            session.modified = True
-        
-        # Ensure route_report has location_mapping
-        route_report['location_mapping'] = location_mapping
-        
-        # Ensure tt_specs has all required values
-        if not tt_specs:
-            tt_specs = {
-                'capacity_range': '20-24 KL',
-                'avg_capacity_liters': 22000,
-                'product_weight': 19800,
-                'tare_weight': 10500,
-                'gross_weight': 30300,
-                'axle_load': 15.2,
-                'max_speed': 50,
-                'risk_multiplier': 1.4
             }
         
         # Generate current timestamp
@@ -3164,11 +3253,10 @@ def detailed_report():
         moderate_turns = len([t for t in sharp_turns if 45 <= t.get('turn_angle', 0) < 65])
         
         print(f"✅ Report generation complete:")
-        print(f"   Danger zones: {len(location_mapping.get('danger_zones', []))}")
-        print(f"   Safety facilities: {len(location_mapping.get('safety_facilities', []))}")
-        print(f"   Risk breakdown - Critical: {critical_turns}, High: {high_turns}, Moderate: {moderate_turns}")
+        print(f"   Danger zones: {len(sharp_turns)} (Critical: {critical_turns}, High: {high_turns}, Moderate: {moderate_turns})")
+        print(f"   Emergency facilities: {len(all_pois)}")
+        print(f"   Map content: {'✓' if map_html_content else '✗'}")
         
-        # 🔥 CRITICAL: Pass map_html_content to template
         return render_template("complete_black_white_report.html",
                                route_report=route_report,
                                location_mapping=location_mapping,
@@ -3180,7 +3268,7 @@ def detailed_report():
                                source=source,
                                destination=destination,
                                html_file=html_file,
-                               map_html_content=map_html_content,  # ✅ THE FIX
+                               map_html_content=map_html_content,
                                coords=coords,
                                critical_turns=critical_turns,
                                high_turns=high_turns,
@@ -3392,6 +3480,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
