@@ -78,7 +78,7 @@
 
         /* Emergency box */
         .emergency-box {
-            border: 2px solid #000;
+            border: 1px solid #000;
             padding: 15px;
             margin: 15px 0;
             background: #f0f0f0;
@@ -101,7 +101,7 @@
 
         /* Info box */
         .info-box {
-            border: 2px solid #000;
+            border: 1px solid #000;
             padding: 12px;
             margin: 10px 0;
         }
@@ -131,12 +131,25 @@
             padding: 10px;
             text-align: center;
             min-height: 500px;
+            position: relative;
         }
 
         .map-iframe {
             width: 100%;
             height: 550px;
             border: 1px solid #000;
+            display: block;
+        }
+
+        .map-placeholder {
+            width: 100%;
+            height: 550px;
+            border: 1px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 20px;
         }
 
         /* Symbol legend */
@@ -189,12 +202,40 @@
             
             .map-iframe {
                 min-height: 550px;
+                height: 550px;
                 border: 1px solid #000;
                 page-break-inside: avoid;
+                display: block !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
             
             .map-container {
                 page-break-inside: avoid;
+                page-break-before: always;
+                min-height: 600px;
+            }
+            
+            .map-placeholder {
+                page-break-inside: avoid;
+                display: flex !important;
+            }
+            
+            .page-break {
+                page-break-after: always;
+            }
+            
+            .emergency-box, .info-box, .warning-box {
+                page-break-inside: avoid;
+            }
+            
+            table {
+                page-break-inside: auto;
+            }
+            
+            tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
             }
         }
 
@@ -245,7 +286,7 @@
             </div>
             <div class="info-row">
                 <div class="info-label">कंसाइनी / Consignee:</div>
-                <div class="info-value">{{ destination if destination else '___________________________________________' }}</div>
+                <div class="info-value">{{ sap_code if sap_code else destination if destination else '___________________________' }}</div>
             </div>
             <div class="info-row">
                 <div class="info-label">दूरी / Distance:</div>
@@ -257,15 +298,15 @@
             </div>
             <div class="info-row">
                 <div class="info-label">ड्राइवर / Driver:</div>
-                <div class="info-value" style="border-bottom: 2px solid #000; min-height: 25px;">&#8203;</div>
+                <div class="info-value">___________________________</div>
             </div>
             <div class="info-row">
                 <div class="info-label">गाड़ी नंबर / Vehicle No:</div>
-                <div class="info-value" style="border-bottom: 2px solid #000; min-height: 25px;">&#8203;</div>
+                <div class="info-value">___________________________</div>
             </div>
             <div class="info-row">
                 <div class="info-label">लाइसेंस / License No:</div>
-                <div class="info-value" style="border-bottom: 2px solid #000; min-height: 25px;">&#8203;</div>
+                <div class="info-value">___________________________</div>
             </div>
         </div>
 
@@ -293,26 +334,50 @@
         <!-- Emergency Contacts -->
         <div class="emergency-box">
             <div class="emergency-title">⚠️ आपातकालीन नंबर / EMERGENCY NUMBERS ⚠️</div>
-            <table style="border: none;">
-                <tr>
-                    <td style="border: none; padding: 5px;"><strong>आग / Fire:</strong></td>
-                    <td style="border: none; padding: 5px;" class="emergency-number">101</td>
-                    <td style="border: none; padding: 5px;"><strong>पुलिस / Police:</strong></td>
-                    <td style="border: none; padding: 5px;" class="emergency-number">100</td>
-                </tr>
-                <tr>
-                    <td style="border: none; padding: 5px;"><strong>एम्बुलेंस / Ambulance:</strong></td>
-                    <td style="border: none; padding: 5px;" class="emergency-number">108</td>
-                    <td style="border: none; padding: 5px;"><strong>IOCL Helpline:</strong></td>
-                    <td style="border: none; padding: 5px;" class="emergency-number">1800-2333-555</td>
-                </tr>
-                <tr>
-                    <td style="border: none; padding: 5px;"><strong>VTS Coordinator:</strong></td>
-                    <td style="border: none; padding: 5px;" class="emergency-number">Mr. Kiran - 6303652707</td>
-                    <td style="border: none; padding: 5px;"><strong>LIC:</strong></td>
-                    <td style="border: none; padding: 5px;" class="emergency-number">Mr. SV Singh - 9426516001</td>
-                </tr>
-            </table>
+            <div style="display: table; width: 100%; border-collapse: collapse;">
+                <div style="display: table-row;">
+                    <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #ccc;">
+                        <strong>आग / Fire:</strong>
+                    </div>
+                    <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #ccc;">
+                        <span style="font-family: 'Courier New', monospace; font-weight: bold; font-size: 14pt;">101</span>
+                    </div>
+                    <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #ccc;">
+                        <strong>पुलिस / Police:</strong>
+                    </div>
+                    <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #ccc;">
+                        <span style="font-family: 'Courier New', monospace; font-weight: bold; font-size: 14pt;">100</span>
+                    </div>
+                </div>
+                <div style="display: table-row;">
+                    <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #ccc;">
+                        <strong>एम्बुलेंस / Ambulance:</strong>
+                    </div>
+                    <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #ccc;">
+                        <span style="font-family: 'Courier New', monospace; font-weight: bold; font-size: 14pt;">108</span>
+                    </div>
+                    <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #ccc;">
+                        <strong>IOCL Helpline:</strong>
+                    </div>
+                    <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #ccc;">
+                        <span style="font-family: 'Courier New', monospace; font-weight: bold; font-size: 14pt;">1800-2333-555</span>
+                    </div>
+                </div>
+                <div style="display: table-row;">
+                    <div style="display: table-cell; padding: 8px;">
+                        <strong>VTS Coordinator:</strong>
+                    </div>
+                    <div style="display: table-cell; padding: 8px;">
+                        <span style="font-family: 'Courier New', monospace; font-weight: bold; font-size: 11pt;">Mr. Kiran - 6303652707</span>
+                    </div>
+                    <div style="display: table-cell; padding: 8px;">
+                        <strong>LIC:</strong>
+                    </div>
+                    <div style="display: table-cell; padding: 8px;">
+                        <span style="font-family: 'Courier New', monospace; font-weight: bold; font-size: 11pt;">Mr. SV Singh - 9426516001</span>
+                    </div>
+                </div>
+            </div>
             <div style="margin-top: 10px; text-align: center; font-size: 10pt;">
                 यात्रा शुरू करने से पहले सभी नंबर अपने मोबाइल में सेव करें<br>
                 SAVE ALL NUMBERS IN MOBILE BEFORE DEPARTURE
@@ -332,12 +397,12 @@
 
         <div class="map-container">
             {% if html_file and html_file != 'None' %}
-            <iframe src="{{ url_for('view_map', filename=html_file) }}" class="map-iframe"></iframe>
+            <iframe src="{{ url_for('view_map', filename=html_file) }}" class="map-iframe" title="Route Map"></iframe>
             {% else %}
-            <div style="padding: 200px 20px; border: 1px solid #000; text-align: center;">
-                <p style="font-size: 16pt; font-weight: bold;">मार्ग नक्शा / Route Map</p>
-                <p style="margin-top: 20px;">सभी खतरनाक स्थान और आपातकालीन सुविधाएं दिखाता है</p>
-                <p>Shows all danger zones and emergency facilities</p>
+            <div class="map-placeholder">
+                <p style="font-size: 16pt; font-weight: bold; margin-bottom: 20px;">मार्ग नक्शा / Route Map</p>
+                <p style="font-size: 11pt; margin-bottom: 10px;">सभी खतरनाक स्थान और आपातकालीन सुविधाएं दिखाता है</p>
+                <p style="font-size: 11pt;">Shows all danger zones and emergency facilities</p>
             </div>
             {% endif %}
         </div>
@@ -710,11 +775,11 @@
                 🛡️ Safe Journey, Happy Journey 🛡️
             </div>
             <div style="font-size: 11pt; line-height: 1.8; font-style: italic;">
-                <p style="margin: 10px 0; border-left: 3px solid #000; padding-left: 15px; text-align: left;">
+                <p style="margin: 10px 0; border-left: 2px solid #000; padding-left: 15px; text-align: left;">
                     "सड़क पर सावधानी ही सबसे बड़ी बुद्धिमानी है।<br>
                     तेज गति नहीं, सुरक्षित गति ही आपको और आपके परिवार को घर लौटाएगी।"
                 </p>
-                <p style="margin: 10px 0; border-left: 3px solid #000; padding-left: 15px; text-align: left;">
+                <p style="margin: 10px 0; border-left: 2px solid #000; padding-left: 15px; text-align: left;">
                     "Caution on the road is the greatest wisdom.<br>
                     Not speed, but safe driving will bring you and your family back home."
                 </p>
@@ -751,7 +816,25 @@
             timestampElements.forEach(el => {
                 el.textContent = timestamp;
             });
+
+            // Ensure map iframe loads before printing
+            const mapIframe = document.querySelector('.map-iframe');
+            if (mapIframe) {
+                mapIframe.onload = function() {
+                    // Map is loaded and ready for printing
+                    console.log('Map loaded successfully');
+                };
+            }
         });
+
+        // Before print event to ensure map is visible
+        window.onbeforeprint = function() {
+            const mapIframe = document.querySelector('.map-iframe');
+            if (mapIframe) {
+                mapIframe.style.display = 'block';
+                mapIframe.style.visibility = 'visible';
+            }
+        };
     </script>
 </body>
 </html>
