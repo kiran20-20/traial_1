@@ -1503,18 +1503,24 @@ def load_ro_data():
         print(f"Error loading consignee data: {e}")
         return {}
 
-def generate_static_map_url(source, destination, waypoints=None, sharp_turns=None, all_pois=None):
+# ============================================================================
+# STATIC MAP GENERATION FOR PRINT-FRIENDLY REPORTS
+# ============================================================================
+
+def generate_static_map_url(source, destination, sharp_turns=None, all_pois=None, coords=None):
     """
-    Generate a static map URL for printing
-    Uses OpenStreetMap Static Map API or similar service
+    Generate a static map URL using OpenStreetMap Static Maps
+    This creates a print-friendly 2D map with clear markers
     """
     try:
-        # Calculate bounds
+        # Calculate bounds for all points
         all_coords = [source, destination]
-        if waypoints:
-            all_coords.extend([(wp['lat'], wp['lng']) for wp in waypoints if 'lat' in wp])
+        
         if sharp_turns:
-            all_coords.extend([turn['location'] for turn in sharp_turns[:10]])
+            all_coords.extend([turn['location'] for turn in sharp_turns[:15]])
+        
+        if all_pois:
+            all_coords.extend([poi['location'] for poi in all_pois[:8]])
         
         # Calculate center and zoom
         lats = [coord[0] for coord in all_coords]
@@ -1523,59 +1529,132 @@ def generate_static_map_url(source, destination, waypoints=None, sharp_turns=Non
         center_lat = sum(lats) / len(lats)
         center_lng = sum(lngs) / len(lngs)
         
-        # Calculate zoom level based on bounds
+        # Calculate zoom level based on coordinate spread
         lat_diff = max(lats) - min(lats)
         lng_diff = max(lngs) - min(lngs)
         max_diff = max(lat_diff, lng_diff)
         
+        # Zoom calculation
         if max_diff > 5:
-            zoom = 8
+            zoom = 7
         elif max_diff > 2:
-            zoom = 9
+            zoom = 8
         elif max_diff > 1:
-            zoom = 10
+            zoom = 9
         elif max_diff > 0.5:
+            zoom = 10
+        elif max_diff > 0.2:
             zoom = 11
         else:
             zoom = 12
         
-        # Build static map URL using staticmap.openstreetmap.de
-        # This is a free static map service
+        # Build static map URL
         base_url = "https://staticmap.openstreetmap.de/staticmap.php"
         
-        # Parameters
         params = []
         params.append(f"center={center_lat},{center_lng}")
         params.append(f"zoom={zoom}")
         params.append("size=800x600")
         params.append("maptype=mapnik")
         
-        # Add markers
-        # Start point (green)
-        params.append(f"markers={source[0]},{source[1]},green-marker")
+        # Add START marker (green)
+        params.append(f"markers={source[0]},{source[1]},lightblue1")
         
-        # End point (red)
-        params.append(f"markers={destination[0]},{destination[1]},red-marker")
+        # Add END marker (red)
+        params.append(f"markers={destination[0]},{destination[1]},lightblue2")
         
-        # Danger zones (up to 10, red markers)
+        # Add danger zone markers (red, limit to 15 for URL length)
         if sharp_turns:
-            for i, turn in enumerate(sharp_turns[:10]):
+            for turn in sharp_turns[:15]:
                 lat, lng = turn['location']
-                params.append(f"markers={lat},{lng},red-marker")
+                params.append(f"markers={lat},{lng},red")
         
-        # Emergency facilities (blue markers, up to 5)
+        # Add hospital markers (blue, limit to 5)
         if all_pois:
-            hospitals = [p for p in all_pois if 'hospital' in p.get('type', '')][:3]
+            hospitals = [p for p in all_pois if 'hospital' in p.get('type', '')][:5]
             for poi in hospitals:
                 lat, lng = poi['location']
-                params.append(f"markers={lat},{lng},blue-marker")
+                params.append(f"markers={lat},{lng},lightblue3")
         
         static_map_url = base_url + "?" + "&".join(params)
         
+        print(f"✅ Static map URL generated: {len(static_map_url)} characters")
         return static_map_url
         
     except Exception as e:
-        print(f"Error generating static map: {e}")
+        print(f"❌ Error generating static map: {e}")
+        return None
+
+
+def create_simple_route_svg(source, destination, sharp_turns=None, all_pois=None):
+    """
+    Create a simple SVG diagram as fallback when static map fails
+    Returns SVG string for embedding directly in HTML
+    """
+    try:
+        svg_width = 800
+        svg_height = 600
+        padding = 50
+        
+        # Collect all coordinates
+        all_coords = [source, destination]
+        if sharp_turns:
+            all_coords.extend([turn['location'] for turn in sharp_turns[:10]])
+        
+        # Find bounds
+        lats = [coord[0] for coord in all_coords]
+        lngs = [coord[1] for coord in all_coords]
+        
+        min_lat, max_lat = min(lats), max(lats)
+        min_lng, max_lng = min(lngs), max(lngs)
+        
+        # Scale coordinates to SVG canvas
+        def scale_coord(lat, lng):
+            x = padding + (lng - min_lng) / (max_lng - min_lng) * (svg_width - 2*padding) if max_lng != min_lng else svg_width/2
+            y = svg_height - (padding + (lat - min_lat) / (max_lat - min_lat) * (svg_height - 2*padding)) if max_lat != min_lat else svg_height/2
+            return x, y
+        
+        # Start building SVG
+        svg = f'<svg width="{svg_width}" height="{svg_height}" xmlns="http://www.w3.org/2000/svg" style="background: #f9f9f9; border: 2px solid #000;">'
+        
+        # Draw route line
+        start_x, start_y = scale_coord(source[0], source[1])
+        end_x, end_y = scale_coord(destination[0], destination[1])
+        svg += f'<line x1="{start_x}" y1="{start_y}" x2="{end_x}" y2="{end_y}" stroke="#333" stroke-width="4" stroke-dasharray="10,5"/>'
+        
+        # Draw danger zones
+        if sharp_turns:
+            for i, turn in enumerate(sharp_turns[:10]):
+                x, y = scale_coord(turn['location'][0], turn['location'][1])
+                svg += f'<circle cx="{x}" cy="{y}" r="12" fill="#ff0000" stroke="#000" stroke-width="2"/>'
+                svg += f'<text x="{x}" y="{y+5}" text-anchor="middle" fill="#fff" font-size="12" font-weight="bold">{i+1}</text>'
+        
+        # Draw hospitals
+        if all_pois:
+            hospitals = [p for p in all_pois if 'hospital' in p.get('type', '')][:5]
+            for poi in hospitals:
+                x, y = scale_coord(poi['location'][0], poi['location'][1])
+                svg += f'<circle cx="{x}" cy="{y}" r="10" fill="#2196f3" stroke="#000" stroke-width="2"/>'
+                svg += f'<text x="{x}" y="{y+4}" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">H</text>'
+        
+        # Draw START marker
+        svg += f'<circle cx="{start_x}" cy="{start_y}" r="18" fill="#4caf50" stroke="#000" stroke-width="3"/>'
+        svg += f'<text x="{start_x}" y="{start_y+6}" text-anchor="middle" fill="#fff" font-size="16" font-weight="bold">S</text>'
+        
+        # Draw END marker
+        svg += f'<circle cx="{end_x}" cy="{end_y}" r="18" fill="#f44336" stroke="#000" stroke-width="3"/>'
+        svg += f'<text x="{end_x}" y="{end_y+6}" text-anchor="middle" fill="#fff" font-size="16" font-weight="bold">E</text>'
+        
+        # Add legend
+        legend_y = svg_height - 20
+        svg += f'<text x="20" y="{legend_y}" font-size="12" fill="#333">S=Start | E=End | 1-10=Hazards | H=Hospital</text>'
+        
+        svg += '</svg>'
+        
+        return svg
+        
+    except Exception as e:
+        print(f"Error creating SVG diagram: {e}")
         return None
         
 
@@ -3557,6 +3636,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
