@@ -135,15 +135,17 @@
             position: relative;
             background: #fff;
             page-break-inside: avoid;
+            overflow: hidden;
         }
 
-        /* ✅ CRITICAL FIX: Direct map embedding container */
+        /* Map embedding container */
         .map-embed-container {
             width: 100%;
             height: 600px;
             border: none;
             display: block;
             background: #fff;
+            position: relative;
         }
 
         .map-iframe, .map-embed {
@@ -225,7 +227,7 @@
                 border: 1px solid #000 !important;
             }
 
-            /* ✅ CRITICAL: Print styles for directly embedded map */
+            /* Print styles for directly embedded map */
             .map-embed-container {
                 width: 100% !important;
                 height: 550px !important;
@@ -234,38 +236,88 @@
                 page-break-inside: avoid !important;
                 page-break-before: always !important;
                 page-break-after: always !important;
+                overflow: visible !important;
             }
 
-            /* Hide Leaflet controls when printing */
-            .leaflet-control-zoom,
-            .leaflet-control-attribution {
-                display: none !important;
+            /* ✅ FORCE ALL LEAFLET LAYERS TO PRINT */
+            .leaflet-container,
+            .leaflet-pane,
+            .leaflet-tile-pane,
+            .leaflet-overlay-pane,
+            .leaflet-shadow-pane,
+            .leaflet-marker-pane,
+            .leaflet-tooltip-pane,
+            .leaflet-popup-pane,
+            .leaflet-map-pane {
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
             }
 
-            .map-iframe, .map-embed {
-                width: 100% !important;
-                height: 600px !important;
+            /* ✅ ENSURE MAP TILES PRINT */
+            .leaflet-tile-container,
+            .leaflet-tile {
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                page-break-inside: avoid !important;
+            }
+
+            /* ✅ FORCE POLYLINES (ROUTES) TO PRINT */
+            .leaflet-interactive,
+            path.leaflet-interactive {
+                display: block !important;
+                visibility: visible !important;
+                stroke-opacity: 1 !important;
+                fill-opacity: 1 !important;
+                stroke-width: 4px !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+
+            /* ✅ FORCE SVG ELEMENTS TO PRINT */
+            svg,
+            svg * {
                 display: block !important;
                 visibility: visible !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
                 color-adjust: exact !important;
-                page-break-inside: avoid !important;
-                border: none !important;
             }
 
-            .map-placeholder {
-                page-break-inside: avoid !important;
-                display: flex !important;
-                height: 600px !important;
-                border: 1px solid #000 !important;
-            }
-
-            /* Force all embedded content to print */
-            iframe, object, embed {
+            /* ✅ ENSURE MARKERS PRINT AS VISIBLE ICONS */
+            .leaflet-marker-icon {
                 display: block !important;
                 visibility: visible !important;
-                page-break-inside: avoid !important;
+                opacity: 1 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+
+            /* ✅ FORCE CIRCLE MARKERS TO PRINT */
+            circle,
+            .leaflet-interactive circle {
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+
+            /* Hide Leaflet controls when printing */
+            .leaflet-control-zoom,
+            .leaflet-control-attribution,
+            .leaflet-control-layers,
+            .leaflet-bar {
+                display: none !important;
             }
 
             /* Prevent breaks in important sections */
@@ -388,13 +440,13 @@
                         <strong>आग / Fire:</strong>
                     </div>
                     <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #ccc;">
-                        <span style="font-family: 'Courier New', monospace; font-weight: bold; font-size: 14pt;">101</span>
+                        <span class="emergency-number">101</span>
                     </div>
                     <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #ccc;">
                         <strong>पुलिस / Police:</strong>
                     </div>
                     <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #ccc;">
-                        <span style="font-family: 'Courier New', monospace; font-weight: bold; font-size: 14pt;">100</span>
+                        <span class="emergency-number">100</span>
                     </div>
                 </div>
                 <div style="display: table-row;">
@@ -402,13 +454,13 @@
                         <strong>एम्बुलेंस / Ambulance:</strong>
                     </div>
                     <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #ccc;">
-                        <span style="font-family: 'Courier New', monospace; font-weight: bold; font-size: 14pt;">108</span>
+                        <span class="emergency-number">108</span>
                     </div>
                     <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #ccc;">
                         <strong>IOCL Helpline:</strong>
                     </div>
                     <div style="display: table-cell; padding: 8px; border-bottom: 1px solid #ccc;">
-                        <span style="font-family: 'Courier New', monospace; font-weight: bold; font-size: 14pt;">1800-2333-555</span>
+                        <span class="emergency-number">1800-2333-555</span>
                     </div>
                 </div>
                 <div style="display: table-row;">
@@ -443,11 +495,11 @@
             <h1>मार्ग नक्शा / ROUTE MAP</h1>
         </div>
 
-        <!-- ✅ CRITICAL FIX: Direct map embedding -->
+        <!-- Map Container with Direct Embedding -->
         <div class="map-container">
             {% if map_html_content %}
-            <!-- ✅ DIRECT MAP EMBEDDING - This prints correctly! -->
-            <div class="map-embed-container">
+            <!-- Direct map embedding - This prints correctly! -->
+            <div class="map-embed-container" id="mapEmbedContainer">
                 {{ map_html_content|safe }}
             </div>
             {% else %}
@@ -490,10 +542,224 @@
 
     <div class="page-break"></div>
 
-    <!-- Rest of your pages remain the same (PAGE 3-6) -->
-    <!-- I'm keeping them unchanged for brevity -->
-    
-    <!-- [PAGES 3-6 CONTENT EXACTLY AS YOU HAD IT] -->
+    <!-- ========================================== -->
+    <!-- PAGE 3: HOSPITALS -->
+    <!-- ========================================== -->
+    <div class="page-3">
+        <div class="main-header">
+            <h1>अस्पताल / HOSPITALS ALONG ROUTE</h1>
+        </div>
+
+        {% if all_pois %}
+        {% set hospitals = [] %}
+        {% for poi in all_pois %}
+            {% if 'hospital' in poi.type %}
+                {% set _ = hospitals.append(poi) %}
+            {% endif %}
+        {% endfor %}
+
+        {% if hospitals %}
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 10%;">क्रमांक<br>No.</th>
+                    <th style="width: 45%;">अस्पताल का नाम<br>Hospital Name</th>
+                    <th style="width: 45%;">स्थान / Location</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for hospital in hospitals[:10] %}
+                <tr>
+                    <td style="text-align: center; font-weight: bold;">{{ loop.index }}</td>
+                    <td><strong>{{ hospital.name }}</strong></td>
+                    <td style="font-family: monospace; font-size: 10pt;">
+                        {{ "%.6f"|format(hospital.location[0]) }}, {{ "%.6f"|format(hospital.location[1]) }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="warning-box">
+            कोई अस्पताल नहीं मिला / No hospitals found along this route
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="warning-box">
+            सुविधा डेटा उपलब्ध नहीं है / Facility data not available
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- ========================================== -->
+    <!-- PAGE 4: POLICE & FUEL STATIONS -->
+    <!-- ========================================== -->
+    <div class="page-4">
+        <div class="section-header">पुलिस थाने / POLICE STATIONS</div>
+        
+        {% if all_pois %}
+        {% set police_stations = [] %}
+        {% for poi in all_pois %}
+            {% if 'police' in poi.type %}
+                {% set _ = police_stations.append(poi) %}
+            {% endif %}
+        {% endfor %}
+
+        {% if police_stations %}
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 10%;">क्रमांक<br>No.</th>
+                    <th style="width: 45%;">थाने का नाम<br>Station Name</th>
+                    <th style="width: 45%;">स्थान / Location</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for station in police_stations[:8] %}
+                <tr>
+                    <td style="text-align: center; font-weight: bold;">{{ loop.index }}</td>
+                    <td><strong>{{ station.name }}</strong></td>
+                    <td style="font-family: monospace; font-size: 10pt;">
+                        {{ "%.6f"|format(station.location[0]) }}, {{ "%.6f"|format(station.location[1]) }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+        {% endif %}
+
+        <div class="section-header" style="margin-top: 30px;">पेट्रोल पंप / FUEL STATIONS</div>
+        
+        {% if all_pois %}
+        {% set fuel_stations = [] %}
+        {% for poi in all_pois %}
+            {% if 'fuel' in poi.type %}
+                {% set _ = fuel_stations.append(poi) %}
+            {% endif %}
+        {% endfor %}
+
+        {% if fuel_stations %}
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 10%;">क्रमांक<br>No.</th>
+                    <th style="width: 45%;">पंप का नाम<br>Station Name</th>
+                    <th style="width: 45%;">स्थान / Location</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for station in fuel_stations[:8] %}
+                <tr>
+                    <td style="text-align: center; font-weight: bold;">{{ loop.index }}</td>
+                    <td><strong>{{ station.name }}</strong></td>
+                    <td style="font-family: monospace; font-size: 10pt;">
+                        {{ "%.6f"|format(station.location[0]) }}, {{ "%.6f"|format(station.location[1]) }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+        {% endif %}
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- ========================================== -->
+    <!-- PAGE 5: DANGER ZONES -->
+    <!-- ========================================== -->
+    <div class="page-5">
+        <div class="main-header">
+            <h1>खतरनाक स्थान / DANGER ZONES</h1>
+        </div>
+
+        {% if sharp_turns and sharp_turns|length > 0 %}
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 8%;">क्रमांक<br>No.</th>
+                    <th style="width: 15%;">कोण<br>Angle</th>
+                    <th style="width: 15%;">गंभीरता<br>Severity</th>
+                    <th style="width: 17%;">अनुशंसित गति<br>Speed</th>
+                    <th style="width: 45%;">स्थान / Location</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for turn in sharp_turns[:15] %}
+                <tr>
+                    <td style="text-align: center; font-weight: bold;">{{ loop.index }}</td>
+                    <td style="text-align: center;">
+                        <strong>{{ "%.1f"|format(turn.turn_angle) if turn.turn_angle else '0' }}°</strong><br>
+                        <small>{{ turn.direction if turn.direction else 'turn' }}</small>
+                    </td>
+                    <td style="text-align: center; color: {{ '#8B0000' if turn.turn_angle and turn.turn_angle >= 90 else '#FF0000' if turn.turn_angle and turn.turn_angle >= 65 else '#FFA500' }}; font-weight: bold;">
+                        {{ 'CRITICAL' if turn.turn_angle and turn.turn_angle >= 90 else 'HIGH' if turn.turn_angle and turn.turn_angle >= 65 else 'MODERATE' }}
+                    </td>
+                    <td style="text-align: center; font-weight: bold;">
+                        {{ turn.practical_speed if turn.practical_speed else '15' }} km/h
+                    </td>
+                    <td style="font-family: monospace; font-size: 9pt;">
+                        {{ "%.6f"|format(turn.location[0]) if turn.location else '0.000000' }}, {{ "%.6f"|format(turn.location[1]) if turn.location else '0.000000' }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="warning-box">
+            कोई खतरनाक स्थान नहीं मिला / No danger zones detected on this route
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- ========================================== -->
+    <!-- PAGE 6: SAFETY INSTRUCTIONS -->
+    <!-- ========================================== -->
+    <div class="page-6">
+        <div class="main-header">
+            <h1>सुरक्षा निर्देश / SAFETY INSTRUCTIONS</h1>
+        </div>
+
+        <div class="section-header">यात्रा से पहले / BEFORE JOURNEY</div>
+        <ul class="instruction-list">
+            <li>सभी आपातकालीन नंबर अपने मोबाइल में सेव करें / Save all emergency numbers</li>
+            <li>वाहन की पूरी जांच करें - ब्रेक, टायर, लाइट्स / Complete vehicle inspection</li>
+            <li>टैंक और वाल्व की जांच करें / Check tank and valve integrity</li>
+            <li>ADR प्लेकार्ड और दस्तावेज सत्यापित करें / Verify ADR placards and documentation</li>
+            <li>अग्निशामक यंत्र और स्पिल किट की जांच करें / Check fire extinguisher and spill kit</li>
+        </ul>
+
+        <div class="section-header">यात्रा के दौरान / DURING JOURNEY</div>
+        <ul class="instruction-list">
+            <li><strong>अधिकतम गति: {{ tt_specs.max_speed if tt_specs and tt_specs.max_speed else '50' }} किमी/घंटा / Maximum speed limit</strong></li>
+            <li>खतरनाक मोड़ों पर गति कम करें - 10-15 किमी/घंटा / Reduce speed at danger zones</li>
+            <li>6 सेकंड का अनुसरण दूरी बनाए रखें / Maintain 6-second following distance</li>
+            <li>अचानक ब्रेक और तेज़ मोड़ से बचें / Avoid sudden braking and sharp turns</li>
+            <li>हर 2 घंटे में 15 मिनट का विश्राम लें / Take 15-minute break every 2 hours</li>
+            <li>तरल पदार्थ के उछाल पर ध्यान दें / Monitor liquid surge</li>
+        </ul>
+
+        <div class="section-header">आपातकालीन प्रक्रिया / EMERGENCY PROCEDURES</div>
+        <ul class="instruction-list">
+            <li><strong>रिसाव / Spill:</strong> क्षेत्र को अलग करें, तुरंत 101 पर कॉल करें / Isolate area, call 101 immediately</li>
+            <li><strong>आग / Fire:</strong> 300 मीटर निकासी त्रिज्या, केवल फोम दमन / 300m evacuation radius, foam suppression only</li>
+            <li><strong>पलटना / Rollover:</strong> इंजन बंद करें, सुरक्षित दूरी बनाए रखें / Switch off engine, maintain safe distance</li>
+            <li><strong>दुर्घटना / Accident:</strong> 108 (एम्बुलेंस), 100 (पुलिस) / Call 108 (Ambulance), 100 (Police)</li>
+        </ul>
+
+        <div class="warning-box" style="margin-top: 20px;">
+            <strong>महत्वपूर्ण चेतावनी / IMPORTANT WARNING</strong><br><br>
+            यह वाहन खतरनाक पेट्रोलियम उत्पाद ले जा रहा है<br>
+            This vehicle is carrying hazardous petroleum products<br><br>
+            सभी सुरक्षा नियमों का कड़ाई से पालन करें<br>
+            Strictly follow all safety regulations
+        </div>
+    </div>
 
     <!-- Footer -->
     <div style="margin-top: 30px; padding: 15px; border-top: 1px solid #000; text-align: center; font-size: 9pt;">
@@ -503,7 +769,6 @@
     </div>
 
     <script>
-        // ✅ UPDATED: Simplified JavaScript for direct embedding
         document.addEventListener('DOMContentLoaded', function() {
             const now = new Date();
             const options = { 
@@ -515,35 +780,98 @@
             };
             const timestamp = now.toLocaleString('en-IN', options);
             
-            // Update timestamps
-            const timestampElements = document.querySelectorAll('[id*="timestamp"]');
-            timestampElements.forEach(el => {
-                el.textContent = timestamp;
-            });
-
-            // ✅ Map is now directly embedded - no iframe loading needed
+            console.log('✅ Document loaded - Map embedded directly');
+            
+            // Check if map is present
             const mapContainer = document.querySelector('.map-embed-container');
             if (mapContainer) {
-                console.log('✅ Map embedded directly - ready for printing');
+                console.log('✅ Map container found');
+                
+                // Check for Leaflet elements
+                const leafletContainer = mapContainer.querySelector('.leaflet-container');
+                if (leafletContainer) {
+                    console.log('✅ Leaflet map detected');
+                    
+                    // Count map elements
+                    const tiles = mapContainer.querySelectorAll('.leaflet-tile');
+                    const markers = mapContainer.querySelectorAll('.leaflet-marker-icon');
+                    const paths = mapContainer.querySelectorAll('path.leaflet-interactive');
+                    
+                    console.log(`📊 Map elements - Tiles: ${tiles.length}, Markers: ${markers.length}, Paths: ${paths.length}`);
+                } else {
+                    console.warn('⚠️ Leaflet container not found');
+                }
+            } else {
+                console.warn('⚠️ Map container not found');
             }
         });
 
-        // Before print - ensure map visibility
+        // Enhanced print preparation
         window.onbeforeprint = function() {
             console.log('📄 Preparing document for printing...');
             
-            const mapContainer = document.querySelector('.map-container');
             const mapEmbed = document.querySelector('.map-embed-container');
             
-            if (mapContainer) {
-                mapContainer.style.display = 'block';
-                mapContainer.style.visibility = 'visible';
-                mapContainer.style.pageBreakBefore = 'always';
-            }
-            
             if (mapEmbed) {
-                mapEmbed.style.display = 'block';
-                mapEmbed.style.visibility = 'visible';
+                const leafletMaps = mapEmbed.querySelectorAll('.leaflet-container');
+                
+                if (leafletMaps.length > 0) {
+                    leafletMaps.forEach(map => {
+                        // Force display and visibility
+                        map.style.display = 'block';
+                        map.style.visibility = 'visible';
+                        map.style.opacity = '1';
+                        
+                        // Force all panes to be visible
+                        const panes = map.querySelectorAll('.leaflet-pane');
+                        panes.forEach(pane => {
+                            pane.style.display = 'block';
+                            pane.style.visibility = 'visible';
+                            pane.style.opacity = '1';
+                        });
+                        
+                        // Force all tiles to load and be visible
+                        const tiles = map.querySelectorAll('.leaflet-tile');
+                        tiles.forEach(tile => {
+                            tile.style.display = 'block';
+                            tile.style.visibility = 'visible';
+                            tile.style.opacity = '1';
+                        });
+                        
+                        // Force markers to be visible
+                        const markers = map.querySelectorAll('.leaflet-marker-icon');
+                        markers.forEach(marker => {
+                            marker.style.display = 'block';
+                            marker.style.visibility = 'visible';
+                            marker.style.opacity = '1';
+                        });
+                        
+                        // Force paths (routes) to be visible
+                        const paths = map.querySelectorAll('path.leaflet-interactive');
+                        paths.forEach(path => {
+                            path.style.display = 'block';
+                            path.style.visibility = 'visible';
+                            path.style.strokeOpacity = '1';
+                            path.style.fillOpacity = '1';
+                        });
+                        
+                        // Force SVG elements to be visible
+                        const svgs = map.querySelectorAll('svg');
+                        svgs.forEach(svg => {
+                            svg.style.display = 'block';
+                            svg.style.visibility = 'visible';
+                        });
+                        
+                        console.log('✅ Map prepared for printing');
+                        console.log(`   - Tiles: ${tiles.length}`);
+                        console.log(`   - Markers: ${markers.length}`);
+                        console.log(`   - Paths: ${paths.length}`);
+                    });
+                } else {
+                    console.warn('⚠️ No Leaflet maps found');
+                }
+            } else {
+                console.warn('⚠️ Map embed container not found');
             }
             
             console.log('✅ Print preparation complete');
