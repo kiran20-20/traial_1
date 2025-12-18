@@ -417,27 +417,28 @@
             <h1>मार्ग नक्शा / ROUTE MAP</h1>
         </div>
 
-        <div class="map-container">
-            {% if html_file and html_file != 'None' %}
-            <!-- Using object tag instead of iframe for better printing -->
-            <object data="{{ url_for('view_map', filename=html_file) }}" 
-                    type="text/html" 
-                    class="map-embed"
-                    title="Route Map">
-                <!-- Fallback iframe for browsers that don't support object -->
-                <iframe src="{{ url_for('view_map', filename=html_file) }}" 
-                        class="map-embed"
-                        title="Route Map"
-                        frameborder="0"></iframe>
-            </object>
-            {% else %}
-            <div class="map-placeholder">
-                <p style="font-size: 16pt; font-weight: bold; margin-bottom: 20px;">मार्ग नक्शा / Route Map</p>
-                <p style="font-size: 11pt; margin-bottom: 10px;">सभी खतरनाक स्थान और आपातकालीन सुविधाएं दिखाता है</p>
-                <p style="font-size: 11pt;">Shows all danger zones and emergency facilities</p>
-            </div>
-            {% endif %}
-        </div>
+        /* Map embedding container */
+        .map-embed-container {
+            width: 100%;
+            height: 600px;
+            border: none;
+            display: block;
+            background: #fff;
+        }
+        
+        /* Print styles */
+        @media print {
+            .map-embed-container {
+                height: 550px !important;
+                page-break-before: always;
+                page-break-after: always;
+            }
+            
+            .leaflet-control-zoom,
+            .leaflet-control-attribution {
+                display: none !important;
+            }
+        }
 
         <!-- Map Symbols -->
         <div style="margin-top: 15px; text-align: center;">
