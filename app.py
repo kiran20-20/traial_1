@@ -820,6 +820,7 @@ def calculate_precise_bearing(lat1, lng1, lat2, lng2):
         print(f"Bearing calculation error: {e}")
         return 0
 
+
 def calculate_curvature_metrics(coords, index, sample_distance=3):
     """Calculate curvature metrics using pure Python"""
     if index < sample_distance or index >= len(coords) - sample_distance:
@@ -1501,6 +1502,82 @@ def load_ro_data():
     except Exception as e:
         print(f"Error loading consignee data: {e}")
         return {}
+
+def generate_static_map_url(source, destination, waypoints=None, sharp_turns=None, all_pois=None):
+    """
+    Generate a static map URL for printing
+    Uses OpenStreetMap Static Map API or similar service
+    """
+    try:
+        # Calculate bounds
+        all_coords = [source, destination]
+        if waypoints:
+            all_coords.extend([(wp['lat'], wp['lng']) for wp in waypoints if 'lat' in wp])
+        if sharp_turns:
+            all_coords.extend([turn['location'] for turn in sharp_turns[:10]])
+        
+        # Calculate center and zoom
+        lats = [coord[0] for coord in all_coords]
+        lngs = [coord[1] for coord in all_coords]
+        
+        center_lat = sum(lats) / len(lats)
+        center_lng = sum(lngs) / len(lngs)
+        
+        # Calculate zoom level based on bounds
+        lat_diff = max(lats) - min(lats)
+        lng_diff = max(lngs) - min(lngs)
+        max_diff = max(lat_diff, lng_diff)
+        
+        if max_diff > 5:
+            zoom = 8
+        elif max_diff > 2:
+            zoom = 9
+        elif max_diff > 1:
+            zoom = 10
+        elif max_diff > 0.5:
+            zoom = 11
+        else:
+            zoom = 12
+        
+        # Build static map URL using staticmap.openstreetmap.de
+        # This is a free static map service
+        base_url = "https://staticmap.openstreetmap.de/staticmap.php"
+        
+        # Parameters
+        params = []
+        params.append(f"center={center_lat},{center_lng}")
+        params.append(f"zoom={zoom}")
+        params.append("size=800x600")
+        params.append("maptype=mapnik")
+        
+        # Add markers
+        # Start point (green)
+        params.append(f"markers={source[0]},{source[1]},green-marker")
+        
+        # End point (red)
+        params.append(f"markers={destination[0]},{destination[1]},red-marker")
+        
+        # Danger zones (up to 10, red markers)
+        if sharp_turns:
+            for i, turn in enumerate(sharp_turns[:10]):
+                lat, lng = turn['location']
+                params.append(f"markers={lat},{lng},red-marker")
+        
+        # Emergency facilities (blue markers, up to 5)
+        if all_pois:
+            hospitals = [p for p in all_pois if 'hospital' in p.get('type', '')][:3]
+            for poi in hospitals:
+                lat, lng = poi['location']
+                params.append(f"markers={lat},{lng},blue-marker")
+        
+        static_map_url = base_url + "?" + "&".join(params)
+        
+        return static_map_url
+        
+    except Exception as e:
+        print(f"Error generating static map: {e}")
+        return None
+        
 
 # Session timeout check
 @app.before_request
@@ -3480,6 +3557,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
