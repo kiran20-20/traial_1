@@ -15,6 +15,7 @@ import numpy as np
 from geopy.distance import geodesic
 import time
 from functools import wraps
+from urllib.parse import quote
 
 
 app = Flask(__name__)
@@ -1507,34 +1508,38 @@ def load_ro_data():
 # STATIC MAP GENERATION FOR PRINT-FRIENDLY REPORTS
 # ============================================================================
 
-def generate_static_map_url(source, destination, sharp_turns=None, all_pois=None, coords=None):
+def generate_mapbox_static_map(source, destination, sharp_turns=None, all_pois=None, coords=None):
     """
-    Generate a static map URL using OpenStreetMap Static Maps
-    This creates a print-friendly 2D map with clear markers
+    Generate static map URL using Mapbox Static Images API
+    Perfect for Render deployment - no browser automation needed!
     """
     try:
-        # Calculate bounds for all points
-        all_coords = [source, destination]
+        MAPBOX_TOKEN = os.environ.get('MAPBOX_ACCESS_TOKEN', '')
         
+        if not MAPBOX_TOKEN:
+            print("⚠️ MAPBOX_ACCESS_TOKEN not set - using fallback")
+            return None
+        
+        print("🗺️ Generating Mapbox static map URL...")
+        
+        # Calculate bounds
+        all_coords = [source, destination]
         if sharp_turns:
             all_coords.extend([turn['location'] for turn in sharp_turns[:15]])
-        
         if all_pois:
-            all_coords.extend([poi['location'] for poi in all_pois[:8]])
+            all_coords.extend([poi['location'] for poi in all_pois[:5]])
         
-        # Calculate center and zoom
         lats = [coord[0] for coord in all_coords]
         lngs = [coord[1] for coord in all_coords]
         
         center_lat = sum(lats) / len(lats)
         center_lng = sum(lngs) / len(lngs)
         
-        # Calculate zoom level based on coordinate spread
+        # Calculate zoom
         lat_diff = max(lats) - min(lats)
         lng_diff = max(lngs) - min(lngs)
         max_diff = max(lat_diff, lng_diff)
         
-        # Zoom calculation
         if max_diff > 5:
             zoom = 7
         elif max_diff > 2:
@@ -1548,115 +1553,98 @@ def generate_static_map_url(source, destination, sharp_turns=None, all_pois=None
         else:
             zoom = 12
         
-        # Build static map URL
-        base_url = "https://staticmap.openstreetmap.de/staticmap.php"
+        # Build overlay string for markers and path
+        overlays = []
         
-        params = []
-        params.append(f"center={center_lat},{center_lng}")
-        params.append(f"zoom={zoom}")
-        params.append("size=800x600")
-        params.append("maptype=mapnik")
+        # Add route path (polyline)
+        if coords and len(coords) > 1:
+            # Sample coordinates (max 50 points for URL length)
+            step = max(1, len(coords) // 50)
+            path_coords = coords[::step]
+            
+            # Create polyline overlay
+            path_str = ",".join([f"{lng},{lat}" for lat, lng in path_coords])
+            overlays.append(f"path-5+2C3E50-0.8({path_str})")
         
-        # Add START marker (green)
-        params.append(f"markers={source[0]},{source[1]},lightblue1")
+        # Add START marker (green pin)
+        overlays.append(f"pin-l-s+22c55e({source[1]},{source[0]})")
         
-        # Add END marker (red)
-        params.append(f"markers={destination[0]},{destination[1]},lightblue2")
+        # Add END marker (red pin)
+        overlays.append(f"pin-l-e+ef4444({destination[1]},{destination[0]})")
         
-        # Add danger zone markers (red, limit to 15 for URL length)
+        # Add danger zone markers (numbered, red)
         if sharp_turns:
-            for turn in sharp_turns[:15]:
+            for idx, turn in enumerate(sharp_turns[:15], 1):
                 lat, lng = turn['location']
-                params.append(f"markers={lat},{lng},red")
+                severity = turn.get('turn_angle', 0)
+                
+                if severity >= 90:
+                    color = '8b0000'  # darkred
+                elif severity >= 65:
+                    color = 'dc2626'  # red
+                else:
+                    color = 'f97316'  # orange
+                
+                overlays.append(f"pin-s-{idx}+{color}({lng},{lat})")
         
-        # Add hospital markers (blue, limit to 5)
+        # Add hospital markers (blue H)
         if all_pois:
             hospitals = [p for p in all_pois if 'hospital' in p.get('type', '')][:5]
-            for poi in hospitals:
-                lat, lng = poi['location']
-                params.append(f"markers={lat},{lng},lightblue3")
+            for hospital in hospitals:
+                lat, lng = hospital['location']
+                overlays.append(f"pin-s-hospital+2563eb({lng},{lat})")
         
-        static_map_url = base_url + "?" + "&".join(params)
+        # Combine all overlays
+        overlay_string = ",".join(overlays)
         
-        print(f"✅ Static map URL generated: {len(static_map_url)} characters")
-        return static_map_url
+        # Build Mapbox Static Images API URL
+        # Format: /styles/v1/{username}/{style_id}/static/{overlay}/{lon},{lat},{zoom}/{width}x{height}@2x
+        map_url = f"https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/{overlay_string}/{center_lng},{center_lat},{zoom},0/800x600@2x?access_token={MAPBOX_TOKEN}"
+        
+        print(f"✅ Mapbox URL generated ({len(map_url)} chars)")
+        return map_url
         
     except Exception as e:
-        print(f"❌ Error generating static map: {e}")
+        print(f"❌ Error generating Mapbox map: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 
-def create_simple_route_svg(source, destination, sharp_turns=None, all_pois=None):
+def download_map_image(map_url, output_path='/home/claude/route_map.png'):
     """
-    Create a simple SVG diagram as fallback when static map fails
-    Returns SVG string for embedding directly in HTML
+    Download map image from URL and save locally
     """
     try:
-        svg_width = 800
-        svg_height = 600
-        padding = 50
+        response = requests.get(map_url, timeout=30)
+        response.raise_for_status()
         
-        # Collect all coordinates
-        all_coords = [source, destination]
-        if sharp_turns:
-            all_coords.extend([turn['location'] for turn in sharp_turns[:10]])
+        with open(output_path, 'wb') as f:
+            f.write(response.content)
         
-        # Find bounds
-        lats = [coord[0] for coord in all_coords]
-        lngs = [coord[1] for coord in all_coords]
-        
-        min_lat, max_lat = min(lats), max(lats)
-        min_lng, max_lng = min(lngs), max(lngs)
-        
-        # Scale coordinates to SVG canvas
-        def scale_coord(lat, lng):
-            x = padding + (lng - min_lng) / (max_lng - min_lng) * (svg_width - 2*padding) if max_lng != min_lng else svg_width/2
-            y = svg_height - (padding + (lat - min_lat) / (max_lat - min_lat) * (svg_height - 2*padding)) if max_lat != min_lat else svg_height/2
-            return x, y
-        
-        # Start building SVG
-        svg = f'<svg width="{svg_width}" height="{svg_height}" xmlns="http://www.w3.org/2000/svg" style="background: #f9f9f9; border: 2px solid #000;">'
-        
-        # Draw route line
-        start_x, start_y = scale_coord(source[0], source[1])
-        end_x, end_y = scale_coord(destination[0], destination[1])
-        svg += f'<line x1="{start_x}" y1="{start_y}" x2="{end_x}" y2="{end_y}" stroke="#333" stroke-width="4" stroke-dasharray="10,5"/>'
-        
-        # Draw danger zones
-        if sharp_turns:
-            for i, turn in enumerate(sharp_turns[:10]):
-                x, y = scale_coord(turn['location'][0], turn['location'][1])
-                svg += f'<circle cx="{x}" cy="{y}" r="12" fill="#ff0000" stroke="#000" stroke-width="2"/>'
-                svg += f'<text x="{x}" y="{y+5}" text-anchor="middle" fill="#fff" font-size="12" font-weight="bold">{i+1}</text>'
-        
-        # Draw hospitals
-        if all_pois:
-            hospitals = [p for p in all_pois if 'hospital' in p.get('type', '')][:5]
-            for poi in hospitals:
-                x, y = scale_coord(poi['location'][0], poi['location'][1])
-                svg += f'<circle cx="{x}" cy="{y}" r="10" fill="#2196f3" stroke="#000" stroke-width="2"/>'
-                svg += f'<text x="{x}" y="{y+4}" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">H</text>'
-        
-        # Draw START marker
-        svg += f'<circle cx="{start_x}" cy="{start_y}" r="18" fill="#4caf50" stroke="#000" stroke-width="3"/>'
-        svg += f'<text x="{start_x}" y="{start_y+6}" text-anchor="middle" fill="#fff" font-size="16" font-weight="bold">S</text>'
-        
-        # Draw END marker
-        svg += f'<circle cx="{end_x}" cy="{end_y}" r="18" fill="#f44336" stroke="#000" stroke-width="3"/>'
-        svg += f'<text x="{end_x}" y="{end_y+6}" text-anchor="middle" fill="#fff" font-size="16" font-weight="bold">E</text>'
-        
-        # Add legend
-        legend_y = svg_height - 20
-        svg += f'<text x="20" y="{legend_y}" font-size="12" fill="#333">S=Start | E=End | 1-10=Hazards | H=Hospital</text>'
-        
-        svg += '</svg>'
-        
-        return svg
+        print(f"✅ Map image downloaded: {output_path}")
+        return output_path
         
     except Exception as e:
-        print(f"Error creating SVG diagram: {e}")
+        print(f"❌ Error downloading map: {e}")
         return None
-        
+
+
+def get_map_image_base64(image_path):
+    """Convert map image to base64 for embedding"""
+    try:
+        import base64
+        with open(image_path, 'rb') as f:
+            image_data = f.read()
+            base64_data = base64.b64encode(image_data).decode('utf-8')
+            return f"data:image/png;base64,{base64_data}"
+    except Exception as e:
+        print(f"Error converting to base64: {e}")
+        return None
+
+
+#===============================================================================
+
 
 # Session timeout check
 @app.before_request
@@ -3103,10 +3091,12 @@ def analyze_route():
         return f"Error in route analysis: {str(e)}. Please try again."
 
 
+#===============================================================================
+
 @app.route('/detailed_report')
 @login_required 
 def detailed_report():
-    """Generate comprehensive black and white route analysis report with PRINT-FRIENDLY MAP"""
+    """Generate comprehensive route analysis report with REAL MAP"""
     try:
         # Get all data from session
         route_report = session.get('route_report', {})
@@ -3121,18 +3111,17 @@ def detailed_report():
         html_file = session.get('html_file')
         coords = session.get('coords', [])
         
-        print(f"📋 Generating comprehensive route analysis report...")
-        print(f"   Route data available: {'✓' if route_report else '✗'}")
-        print(f"   Danger zones: {len(sharp_turns)}")
-        print(f"   Emergency facilities: {len(all_pois)}")
-        print(f"   Coordinates: {len(coords)}")
+        print(f"📋 Generating route analysis report for Render...")
         
-        # 🔥 Generate static map URL for printing
-        static_map_url = None
-        simple_svg = None
+        # 🔥 Generate REAL map using Mapbox
+        map_image_base64 = None
+        mapbox_url = None
         
         if source and destination:
-            static_map_url = generate_static_map_url(
+            print("🗺️ Creating Mapbox static map...")
+            
+            # Generate Mapbox URL
+            mapbox_url = generate_mapbox_static_map(
                 source=source,
                 destination=destination,
                 sharp_turns=sharp_turns,
@@ -3140,28 +3129,36 @@ def detailed_report():
                 coords=coords
             )
             
-            # Create fallback SVG diagram
-            simple_svg = create_simple_route_svg(
-                source=source,
-                destination=destination,
-                sharp_turns=sharp_turns,
-                all_pois=all_pois
-            )
-            
-            print(f"   Static map URL: {'✓' if static_map_url else '✗'}")
-            print(f"   Fallback SVG: {'✓' if simple_svg else '✗'}")
+            if mapbox_url:
+                # Download and convert to base64
+                map_image_path = '/home/claude/route_map.png'
+                downloaded_path = download_map_image(mapbox_url, map_image_path)
+                
+                if downloaded_path and os.path.exists(downloaded_path):
+                    map_image_base64 = get_map_image_base64(downloaded_path)
+                    print(f"✅ Map image ready for embedding")
+                    
+                    # Copy to outputs
+                    try:
+                        import shutil
+                        output_image_path = '/mnt/user-data/outputs/route_map.png'
+                        shutil.copy(downloaded_path, output_image_path)
+                        print(f"✅ Map copied to outputs")
+                    except Exception as e:
+                        print(f"⚠️ Could not copy to outputs: {e}")
         
-        # Create comprehensive route report if missing
+        # Create route report if missing
         if not route_report:
             try:
                 if sharp_turns and len(sharp_turns) > 0:
                     start_coord = sharp_turns[0]['location']
                     end_coord = sharp_turns[-1]['location']
+                    from geopy.distance import geodesic
                     distance_km = geodesic(start_coord, end_coord).kilometers
                     estimated_distance = f"{distance_km:.1f} km"
                     estimated_duration = f"{int(distance_km/45*60)} mins"
                 else:
-                    estimated_distance = "0 km" 
+                    estimated_distance = "0 km"
                     estimated_duration = "0 mins"
             except:
                 estimated_distance = "Unknown"
@@ -3179,32 +3176,19 @@ def detailed_report():
                     'axle_load': f"{tt_specs.get('axle_load', 15.2):.1f} T per axle",
                     'max_speed': f"{tt_specs.get('max_speed', 50)} kmph",
                     'risk_multiplier': f"{tt_specs.get('risk_multiplier', 1.4)}x"
-                },
-                'route_analysis': {
-                    'total_points': len(coords),
-                    'points_per_km': len(coords) / (float(estimated_distance.split()[0]) if estimated_distance != "Unknown" else 1),
-                    'critical_scenarios': len([t for t in sharp_turns if t.get('turn_angle', 0) >= 90]),
-                    'high_risk_scenarios': len([t for t in sharp_turns if 65 <= t.get('turn_angle', 0) < 90]),
-                    'moderate_risk_scenarios': len([t for t in sharp_turns if 45 <= t.get('turn_angle', 0) < 65]),
-                    'hospitals_along_route': len([p for p in all_pois if 'hospital' in p.get('type', '')]),
-                    'fuel_stations': len([p for p in all_pois if 'fuel' in p.get('type', '')]),
-                    'police_stations': len([p for p in all_pois if 'police' in p.get('type', '')])
                 }
             }
         
-        # Generate current timestamp
+        # Generate timestamp
         from datetime import datetime
         current_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        # Calculate comprehensive statistics
+        # Calculate statistics
         critical_turns = len([t for t in sharp_turns if t.get('turn_angle', 0) >= 90])
         high_turns = len([t for t in sharp_turns if 65 <= t.get('turn_angle', 0) < 90])
         moderate_turns = len([t for t in sharp_turns if 45 <= t.get('turn_angle', 0) < 65])
         
-        print(f"✅ Report generation complete:")
-        print(f"   Danger zones: {len(sharp_turns)} (Critical: {critical_turns}, High: {high_turns}, Moderate: {moderate_turns})")
-        print(f"   Emergency facilities: {len(all_pois)}")
-        print(f"   Static map: {'✓' if static_map_url else 'Fallback SVG'}")
+        print(f"✅ Report ready with professional map!")
         
         return render_template("complete_black_white_report.html",
                                route_report=route_report,
@@ -3223,23 +3207,14 @@ def detailed_report():
                                moderate_turns=moderate_turns,
                                current_timestamp=current_timestamp,
                                sap_code=None,
-                               static_map_url=static_map_url,
-                               simple_svg=simple_svg)
+                               map_image_base64=map_image_base64,
+                               mapbox_url=mapbox_url)
 
     except Exception as e:
-        print(f"❌ Error in detailed report: {e}")
+        print(f"❌ Error: {e}")
         import traceback
         traceback.print_exc()
-        return f"""
-        <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 30px; border: 2px solid #000; background: white;">
-            <h2 style="color: #000; border-bottom: 2px solid #000; padding-bottom: 10px;">Error Generating Report</h2>
-            <p style="color: #333; margin: 20px 0;">Unable to generate the route analysis report: {str(e)}</p>
-            <div style="margin: 30px 0; text-align: center;">
-                <a href="/" style="padding: 10px 20px; background: #000; color: white; text-decoration: none; border: 2px solid #000; margin-right: 15px; font-weight: bold;">Return to Home</a>
-                <a href="javascript:history.back()" style="padding: 10px 20px; background: white; color: #000; text-decoration: none; border: 2px solid #000; font-weight: bold;">Go Back</a>
-            </div>
-        </div>
-        """
+        return f"Error: {str(e)}"
 
 # ==============================================================================
 # IMPLEMENTATION INSTRUCTIONS:
@@ -3430,6 +3405,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
