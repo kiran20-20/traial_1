@@ -2858,10 +2858,16 @@ def analyze_route():
         folium.Marker(source, popup='START - Route Origin', icon=folium.Icon(color='green', icon='play', prefix='fa')).add_to(m)
         folium.Marker(destination, popup='END - Route Destination', icon=folium.Icon(color='blue', icon='stop', prefix='fa')).add_to(m)
 
-        # Save map with unique ID
+
         unique_map_id = uuid4().hex
         html_name = f"route_map_{unique_map_id}.html"
         m.save(f"templates/{html_name}")
+        
+        session['html_file'] = html_name
+        session.modified = True
+        print(f"✅ Map saved and stored in session: {html_name}")
+
+        
 
         # Create comprehensive route report
         try:
@@ -2936,10 +2942,11 @@ def analyze_route():
         return f"Error in route analysis: {str(e)}. Please try again."
 
 
+#------------------------------------------------------------------------------------------------
 @app.route('/detailed_report')
 @login_required 
 def detailed_report():
-    """Generate comprehensive black and white route analysis report with all information from both PDF examples"""
+    """Generate comprehensive black and white route analysis report with EMBEDDED MAP"""
     try:
         # Get all data from session
         route_report = session.get('route_report', {})
@@ -2954,8 +2961,30 @@ def detailed_report():
         html_file = session.get('html_file')
         coords = session.get('coords', [])
         
-        print(f"📋 Generating comprehensive black & white route analysis report...")
-        print(f"   Data available: route_report={'✓' if route_report else '✗'}, turns={len(sharp_turns)}, pois={len(all_pois)}")
+        # 🔥 CRITICAL FIX: Read map HTML content for direct embedding
+        map_html_content = None
+        if html_file:
+            map_file_path = os.path.join('templates', html_file)
+            print(f"📍 Looking for map file: {map_file_path}")
+            
+            if os.path.exists(map_file_path):
+                try:
+                    with open(map_file_path, 'r', encoding='utf-8') as f:
+                        map_html_content = f.read()
+                    print(f"✅ Map HTML loaded successfully: {len(map_html_content)} characters")
+                except Exception as e:
+                    print(f"❌ Error reading map file: {e}")
+                    map_html_content = None
+            else:
+                print(f"⚠️ Map file not found at: {map_file_path}")
+        else:
+            print("⚠️ No html_file in session")
+        
+        print(f"📋 Generating comprehensive route analysis report...")
+        print(f"   Route data available: {'✓' if route_report else '✗'}")
+        print(f"   Danger zones: {len(sharp_turns)}")
+        print(f"   Emergency facilities: {len(all_pois)}")
+        print(f"   Map content: {'✓' if map_html_content else '✗'}")
         
         # Create comprehensive route report if missing
         if not route_report:
@@ -3018,7 +3047,6 @@ def detailed_report():
                 for i, turn in enumerate(sharp_turns):
                     turn_angle = turn.get('turn_angle', 0)
                     
-                    # Comprehensive risk assessment based on both PDF examples
                     if turn_angle >= 90:
                         severity, recommended_speed = 'CRITICAL', 10
                         hazard_type = 'U-Turn/Roundabout/Tight Turn'
@@ -3060,7 +3088,7 @@ def detailed_report():
                     }
                     location_mapping['danger_zones'].append(danger_zone)
             
-            # Create detailed safety facilities from POIs - matching PDF structure
+            # Create detailed safety facilities from POIs
             if all_pois:
                 for i, poi in enumerate(all_pois):
                     poi_type = poi.get('type', '').lower()
@@ -3101,82 +3129,6 @@ def detailed_report():
                     }
                     location_mapping['safety_facilities'].append(safety_facility)
             
-            # Create comprehensive navigation waypoints - following PDF examples
-            waypoints = []
-            
-            # Start waypoint
-            if source:
-                waypoints.append({
-                    'id': 'WP-START',
-                    'type': 'START',
-                    'icon': '🚛',
-                    'description': f'Route Departure Point - {tt_specs.get("capacity_range", "20-24 KL")} TT',
-                    'coordinates': {
-                        'latitude': source[0],
-                        'longitude': source[1],
-                        'formatted': f"{source[0]:.6f}, {source[1]:.6f}"
-                    },
-                    'actions': [
-                        'Complete pre-departure checklist',
-                        'Verify load securement',
-                        'Test emergency equipment',
-                        'Check weather conditions',
-                        'Confirm emergency contacts'
-                    ]
-                })
-            
-            # Critical hazard waypoints (sorted by turn angle, most dangerous first)
-            critical_hazards = sorted(sharp_turns, key=lambda x: x.get('turn_angle', 0), reverse=True)[:12]
-            for i, turn in enumerate(critical_hazards):
-                if turn.get('turn_angle', 0) >= 45:  # Only significant turns
-                    turn_angle = turn.get('turn_angle', 0)
-                    severity = 'CRITICAL' if turn_angle >= 90 else 'HIGH' if turn_angle >= 65 else 'MODERATE'
-                    speed = 10 if turn_angle >= 90 else 18 if turn_angle >= 65 else 25
-                    
-                    waypoints.append({
-                        'id': f'WP-HAZ-{i+1:02d}',
-                        'type': f'HAZARD-{i+1}',
-                        'icon': '⚠️',
-                        'description': turn.get('risk_category', 'Critical Hazard Zone'),
-                        'coordinates': {
-                            'latitude': turn['location'][0],
-                            'longitude': turn['location'][1],
-                            'formatted': f"{turn['location'][0]:.6f}, {turn['location'][1]:.6f}"
-                        },
-                        'turn_details': f"{turn_angle:.1f}° {turn.get('direction', 'turn')}",
-                        'severity': severity,
-                        'actions': [
-                            f'Reduce to {speed} km/h',
-                            'Monitor liquid surge',
-                            'Use engine braking',
-                            'Activate hazard lights',
-                            'Radio position update'
-                        ]
-                    })
-            
-            # End waypoint
-            if destination:
-                waypoints.append({
-                    'id': 'WP-END',
-                    'type': 'DESTINATION',
-                    'icon': '🏁',
-                    'description': f'Route Destination Point - {tt_specs.get("capacity_range", "20-24 KL")} TT',
-                    'coordinates': {
-                        'latitude': destination[0],
-                        'longitude': destination[1],
-                        'formatted': f"{destination[0]:.6f}, {destination[1]:.6f}"
-                    },
-                    'actions': [
-                        'Complete delivery checklist',
-                        'Verify cargo discharge',
-                        'Submit safety report',
-                        'Confirm vehicle inspection',
-                        'Update route completion status'
-                    ]
-                })
-            
-            location_mapping['navigation_waypoints'] = waypoints
-            
             # Update session with comprehensive data
             session['location_mapping'] = location_mapping
             session.modified = True
@@ -3206,15 +3158,13 @@ def detailed_report():
         high_turns = len([t for t in sharp_turns if 65 <= t.get('turn_angle', 0) < 90])
         moderate_turns = len([t for t in sharp_turns if 45 <= t.get('turn_angle', 0) < 65])
         
-        print(f"✅ Comprehensive black & white report ready:")
+        print(f"✅ Report generation complete:")
         print(f"   Danger zones: {len(location_mapping.get('danger_zones', []))}")
         print(f"   Safety facilities: {len(location_mapping.get('safety_facilities', []))}")
-        print(f"   Navigation waypoints: {len(location_mapping.get('navigation_waypoints', []))}")
         print(f"   Risk breakdown - Critical: {critical_turns}, High: {high_turns}, Moderate: {moderate_turns}")
-        print(f"   Total coordinates: {len(coords)}")
         
-        # CRITICAL: Use the COMPREHENSIVE BLACK & WHITE template
-        return render_template("complete_black_white_report.html",
+        # 🔥 CRITICAL: Pass map_html_content to template
+        return render_template("driver_manual_simple.html",
                                route_report=route_report,
                                location_mapping=location_mapping,
                                sharp_turns=sharp_turns,
@@ -3225,20 +3175,22 @@ def detailed_report():
                                source=source,
                                destination=destination,
                                html_file=html_file,
+                               map_html_content=map_html_content,  # ✅ THE FIX
                                coords=coords,
                                critical_turns=critical_turns,
                                high_turns=high_turns,
                                moderate_turns=moderate_turns,
-                               current_timestamp=current_timestamp)
+                               current_timestamp=current_timestamp,
+                               sap_code=None)
 
     except Exception as e:
-        print(f"❌ Error in comprehensive black & white report: {e}")
+        print(f"❌ Error in detailed report: {e}")
         import traceback
         traceback.print_exc()
         return f"""
         <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 30px; border: 2px solid #000; background: white;">
-            <h2 style="color: #000; border-bottom: 2px solid #000; padding-bottom: 10px;">Error Generating Comprehensive Report</h2>
-            <p style="color: #333; margin: 20px 0;">Unable to generate the comprehensive route analysis report: {str(e)}</p>
+            <h2 style="color: #000; border-bottom: 2px solid #000; padding-bottom: 10px;">Error Generating Report</h2>
+            <p style="color: #333; margin: 20px 0;">Unable to generate the route analysis report: {str(e)}</p>
             <div style="margin: 30px 0; text-align: center;">
                 <a href="/" style="padding: 10px 20px; background: #000; color: white; text-decoration: none; border: 2px solid #000; margin-right: 15px; font-weight: bold;">Return to Home</a>
                 <a href="javascript:history.back()" style="padding: 10px 20px; background: white; color: #000; text-decoration: none; border: 2px solid #000; font-weight: bold;">Go Back</a>
@@ -3435,6 +3387,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
