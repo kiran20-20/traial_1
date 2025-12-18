@@ -3169,7 +3169,7 @@ def detailed_report():
         print(f"   Risk breakdown - Critical: {critical_turns}, High: {high_turns}, Moderate: {moderate_turns}")
         
         # 🔥 CRITICAL: Pass map_html_content to template
-        return render_template("driver_manual_simple.html",
+        return render_template("complete_black_white_report.html",
                                route_report=route_report,
                                location_mapping=location_mapping,
                                sharp_turns=sharp_turns,
@@ -3392,6 +3392,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
