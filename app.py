@@ -13,6 +13,7 @@ import os
 import pandas as pd
 import json
 import glob
+from database import init_database, save_route_map, get_route_map_by_sap, get_all_route_maps
 import math
 from geopy.distance import geodesic
 from functools import wraps
@@ -833,6 +834,54 @@ def detailed_report():
         print(f"❌ Error: {e}")
         return f"Error generating report: {str(e)}"
 
+@app.route('/save_map_to_database', methods=['POST'])
+@login_required
+def save_map_to_database():
+    """Save analyzed route map to database"""
+    try:
+        # Get data from session
+        tt_specs = session.get('tt_specs', {})
+        html_file = session.get('html_file', '')
+        total_distance = session.get('total_distance', 'N/A')
+        total_duration = session.get('total_duration', 'N/A')
+        source = session.get('source', (0, 0))
+        destination = session.get('destination', (0, 0))
+        username = session.get('username', 'Terminal Operator')
+        
+        # Extract data from tt_specs
+        sap_code = tt_specs.get('sap_code', '')
+        terminal_name = tt_specs.get('terminal', '')
+        consignee_name = tt_specs.get('consignee', '')
+        tt_type = tt_specs.get('tt_type', '')
+        tt_capacity = tt_specs.get('capacity', 0)
+        
+        if not sap_code:
+            return jsonify({'success': False, 'message': 'SAP code not found in session'})
+        
+        # Prepare data for database
+        map_data = {
+            'sap_code': sap_code,
+            'terminal_name': terminal_name,
+            'terminal_coords': f"{source[0]},{source[1]}",
+            'consignee_name': consignee_name,
+            'consignee_coords': f"{destination[0]},{destination[1]}",
+            'tt_type': tt_type,
+            'tt_capacity': tt_capacity,
+            'route_distance': total_distance,
+            'route_duration': total_duration,
+            'map_file': html_file,
+            'created_by': username
+        }
+        
+        # Save to database
+        success, message = save_route_map(map_data)
+        
+        return jsonify({'success': success, 'message': message})
+    
+    except Exception as e:
+        print(f"❌ Error saving to database: {e}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
 # ============================================================================
 # TERMINAL ROUTES
 # ============================================================================
@@ -859,10 +908,14 @@ def terminal_dashboard():
         
         ro_data = load_ro_data()
         
+        # Get saved route maps
+        saved_maps = get_all_route_maps(limit=50)
+        
         return render_template('terminal_dashboard.html',
                              landmarks=landmarks,
                              ro_data=ro_data,
-                             tt_specifications=TT_SPECIFICATIONS)
+                             tt_specifications=TT_SPECIFICATIONS,
+                             saved_maps=saved_maps)
     except Exception as e:
         return f"Error: {str(e)}"
 
