@@ -1,277 +1,143 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Route - SAP {{ map_data.sap_code }}</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Route Map - Smart Marg Driver</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: #f0f4f8;
-            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
-
-        .top-bar {
-            background: linear-gradient(135deg, #02164F, #F37022);
-            color: white;
-            padding: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-
-        .top-bar-content {
-            max-width: 1200px;
-            margin: 0 auto;
+        
+        .header {
+            background: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-
-        .sap-badge {
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-
-        .scan-another {
-            background: rgba(255,255,255,0.2);
-            padding: 10px 20px;
-            border-radius: 8px;
-            text-decoration: none;
-            color: white;
-            font-weight: 600;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .info-card {
-            background: white;
-            border-radius: 16px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-        }
-
-        .info-item {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-            border-left: 4px solid #F37022;
-        }
-
-        .info-label {
-            font-size: 0.85rem;
-            color: #666;
-            margin-bottom: 5px;
-        }
-
-        .info-value {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #02164F;
-        }
-
-        .map-container {
-            background: white;
-            border-radius: 16px;
-            padding: 25px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        }
-
-        .map-header {
+        
+        .header-title {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 20px;
+            gap: 10px;
         }
-
-        .map-header i {
-            font-size: 1.5rem;
-            color: #F37022;
+        
+        .header-title h1 {
+            color: #667eea;
+            font-size: 20px;
         }
-
-        .map-header h2 {
-            color: #02164F;
-            font-size: 1.3rem;
+        
+        .route-info {
+            background: white;
+            padding: 15px 20px;
+            margin: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
-
+        
+        .route-detail {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .route-label {
+            color: #666;
+            font-weight: 600;
+        }
+        
+        .route-value {
+            color: #333;
+        }
+        
+        .map-container {
+            flex: 1;
+            margin: 0 20px 20px 20px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
         .map-frame {
             width: 100%;
-            height: 700px;
-            border: 3px solid #e1e5e9;
-            border-radius: 12px;
-        }
-
-        .actions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .btn {
-            padding: 16px 24px;
+            height: 100%;
             border: none;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 600;
+        }
+        
+        .btn-back {
+            padding: 8px 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            font-size: 14px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 10px;
+            gap: 8px;
             text-decoration: none;
         }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #02164F, #F37022);
-            color: white;
-        }
-
-        .btn-success {
-            background: #28a745;
-            color: white;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-        }
-
-        @media (max-width: 768px) {
-            .top-bar-content {
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .map-frame {
-                height: 500px;
-            }
+        
+        .btn-back:hover {
+            background: #5568d3;
         }
     </style>
 </head>
 <body>
-    <div class="top-bar">
-        <div class="top-bar-content">
-            <div class="sap-badge">SAP: {{ map_data.sap_code }}</div>
-            <a href="/driver/scan" class="scan-another">
-                <i class="fas fa-qrcode"></i> Scan Another
-            </a>
+    <div class="header">
+        <div class="header-title">
+            <i class="fas fa-route" style="color: #667eea; font-size: 24px;"></i>
+            <h1>Your Route Map</h1>
+        </div>
+        <a href="/driver/scan" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Back to Scanner
+        </a>
+    </div>
+    
+    <div class="route-info">
+        <div class="route-detail">
+            <span class="route-label"><i class="fas fa-barcode"></i> SAP Code:</span>
+            <span class="route-value">{{ map_data.sap_code }}</span>
+        </div>
+        <div class="route-detail">
+            <span class="route-label"><i class="fas fa-map-marker-alt"></i> Destination:</span>
+            <span class="route-value">{{ map_data.consignee_name }}</span>
+        </div>
+        <div class="route-detail">
+            <span class="route-label"><i class="fas fa-warehouse"></i> From:</span>
+            <span class="route-value">{{ map_data.terminal_name }}</span>
+        </div>
+        <div class="route-detail">
+            <span class="route-label"><i class="fas fa-route"></i> Distance:</span>
+            <span class="route-value">{{ map_data.route_distance }}</span>
+        </div>
+        <div class="route-detail">
+            <span class="route-label"><i class="fas fa-clock"></i> Duration:</span>
+            <span class="route-value">{{ map_data.route_duration }}</span>
+        </div>
+        <div class="route-detail">
+            <span class="route-label"><i class="fas fa-truck"></i> TT Type:</span>
+            <span class="route-value">{{ map_data.tt_type }} ({{ map_data.tt_capacity }} KL)</span>
         </div>
     </div>
-
-    <div class="container">
-        <!-- Invoice Details Card (if scanned from invoice) -->
-        {% if invoice_details %}
-        <div class="info-card" style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); border-left: 5px solid #4caf50;">
-            <h3 style="color: #2e7d32; margin-bottom: 15px;">
-                <i class="fas fa-file-invoice"></i> Invoice Details
-            </h3>
-            <div class="info-grid">
-                <div class="info-item">
-                    <div class="info-label">Invoice Number</div>
-                    <div class="info-value">{{ invoice_details.invoice_number }}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Invoice Date</div>
-                    <div class="info-value">{{ invoice_details.invoice_date }}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Vehicle Number</div>
-                    <div class="info-value">{{ invoice_details.vehicle_number }}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Invoice Value</div>
-                    <div class="info-value">₹{{ invoice_details.invoice_value }}</div>
-                </div>
-            </div>
-            {% if invoice_details.products %}
-            <div style="margin-top: 15px;">
-                <div style="font-weight: 600; color: #2e7d32; margin-bottom: 8px;">Products:</div>
-                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                    {% for product in invoice_details.products %}
-                    <span style="background: white; padding: 8px 15px; border-radius: 20px; font-size: 0.9rem; border: 2px solid #4caf50;">
-                        {{ product.name }}: {{ product.quantity }} KL
-                    </span>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-        </div>
-        {% endif %}
-
-        <div class="info-card">
-            <div class="info-grid">
-                <div class="info-item">
-                    <div class="info-label">Consignee</div>
-                    <div class="info-value">{{ map_data.consignee_name[:30] }}</div>
-                </div>
-
-                <div class="info-item">
-                    <div class="info-label">Terminal</div>
-                    <div class="info-value">{{ map_data.terminal_name[:30] }}</div>
-                </div>
-
-                <div class="info-item">
-                    <div class="info-label">Distance</div>
-                    <div class="info-value">{{ map_data.route_distance }}</div>
-                </div>
-
-                <div class="info-item">
-                    <div class="info-label">Duration</div>
-                    <div class="info-value">{{ map_data.route_duration }}</div>
-                </div>
-
-                <div class="info-item">
-                    <div class="info-label">TT Capacity</div>
-                    <div class="info-value">{{ (map_data.tt_capacity / 1000) | round(1) }} KL</div>
-                </div>
-
-                <div class="info-item">
-                    <div class="info-label">Created</div>
-                    <div class="info-value">{{ map_data.created_date[:10] }}</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="map-container">
-            <div class="map-header">
-                <i class="fas fa-map-marked-alt"></i>
-                <h2>Your Route with Hazard Warnings</h2>
-            </div>
-
-            <iframe src="{{ url_for('view_map', filename=map_data.map_file) }}" 
-                    class="map-frame" frameborder="0"></iframe>
-
-            <div class="actions">
-                <a href="{{ url_for('view_map', filename=map_data.map_file) }}" 
-                   target="_blank" class="btn btn-primary">
-                    <i class="fas fa-expand"></i> Fullscreen Map
-                </a>
-                <button onclick="window.print()" class="btn btn-success">
-                    <i class="fas fa-print"></i> Print Route
-                </button>
-                <a href="/driver/scan" class="btn btn-primary">
-                    <i class="fas fa-qrcode"></i> Scan New QR
-                </a>
-            </div>
-        </div>
+    
+    <div class="map-container">
+        <iframe src="{{ url_for('static', filename=map_data.map_file) }}" class="map-frame"></iframe>
     </div>
 </body>
 </html>
