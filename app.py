@@ -346,7 +346,7 @@ def login():
                 session['login_time'] = datetime.now().isoformat()
                 session.modified = True
                 
-                return redirect(url_for('home'))
+                return redirect(url_for('dashboard'))
             else:
                 return render_template('login.html', error='Invalid credentials')
         except Exception as e:
@@ -359,6 +359,38 @@ def logout():
     """Logout"""
     session.clear()
     return redirect(url_for('login'))
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    """Main dashboard after login"""
+    try:
+        username = session.get('username', 'User')
+        
+        # Get statistics
+        saved_maps = get_all_route_maps(limit=1000)
+        saved_maps_count = len(saved_maps)
+        
+        # Count landmarks
+        landmarks_count = 0
+        try:
+            df_iocl = pd.read_excel("IOCL_Landmark_Details.xlsx")
+            landmarks_count = len(df_iocl)
+        except:
+            landmarks_count = 0
+        
+        # Count consignees
+        ro_data = load_ro_data()
+        consignees_count = sum(len(state_ros) for state_ros in ro_data.values())
+        
+        return render_template('dashboard.html',
+                             username=username,
+                             saved_maps_count=saved_maps_count,
+                             landmarks_count=landmarks_count,
+                             consignees_count=consignees_count)
+    except Exception as e:
+        print(f"❌ Dashboard error: {e}")
+        return f"Error loading dashboard: {str(e)}"
 
 # ============================================================================
 # MAIN ROUTES
@@ -392,7 +424,7 @@ def home():
         ro_data = load_ro_data()
         
         return render_template(
-            "route_form.html",
+            "route_form_professional.html",
             landmarks=landmarks,
             ro_data=ro_data,
             tt_specifications=TT_SPECIFICATIONS,
@@ -946,11 +978,14 @@ def terminal_dashboard():
         # Get saved route maps
         saved_maps = get_all_route_maps(limit=50)
         
-        return render_template('terminal_dashboard.html',
+        username = session.get('username', 'User')
+        
+        return render_template('terminal_dashboard_pro.html',
                              landmarks=landmarks,
                              ro_data=ro_data,
                              tt_specifications=TT_SPECIFICATIONS,
-                             saved_maps=saved_maps)
+                             saved_maps=saved_maps,
+                             username=username)
     except Exception as e:
         return f"Error: {str(e)}"
 
