@@ -410,7 +410,24 @@ def fetch_routes():
         destination = request.form['destination'].strip()
         tt_type = request.form['tt_type']
         
+        # Try to get additional form data (SAP code, terminal, consignee)
+        sap_code = request.form.get('sap_code', '')
+        terminal_name = request.form.get('terminal_name', '')
+        consignee_name = request.form.get('consignee_name', '')
+        
         tt_specs = get_tt_specs(tt_type)
+        
+        # Add additional info to tt_specs for later use
+        tt_specs['sap_code'] = sap_code
+        tt_specs['terminal'] = terminal_name
+        tt_specs['consignee'] = consignee_name
+        tt_specs['tt_type'] = tt_type
+        
+        # Extract capacity from TT_SPECIFICATIONS
+        if tt_type in TT_SPECIFICATIONS:
+            tt_specs['capacity'] = TT_SPECIFICATIONS[tt_type]['avg_capacity_liters'] / 1000  # Convert to KL
+            tt_specs['weight'] = TT_SPECIFICATIONS[tt_type]['gross_weight'] / 1000  # Convert to MT
+            tt_specs['axles'] = '3-4'  # Standard for tankers
         
         # Parse coordinates
         source_coords = tuple(map(float, source.split(',')))
