@@ -9,7 +9,6 @@ import os
 import pandas as pd
 import json
 import glob
-from uuid import uuid4
 import math
 import numpy as np
 from geopy.distance import geodesic
@@ -20,6 +19,8 @@ import io
 import base64
 from PIL import Image, ImageDraw, ImageFont
 import requests
+from database import init_database, save_route_map, get_route_map_by_sap, get_all_route_maps
+from uuid import uuid4
 
 
 
@@ -2385,6 +2386,324 @@ def analyze_edited_route():
         return f"Error analyzing modified route: {str(e)}. Please try again or contact support."
 
 
+
+# ============================================================================
+# TERMINAL OPERATOR ROUTES
+# ============================================================================
+
+@app.route('/terminal')
+def terminal_dashboard():
+    """Terminal operator dashboard"""
+    try:
+        # Load terminals
+        landmarks = []
+        try:
+            df_iocl = pd.read_excel("IOCL_Landmark_Details.xlsx")
+            for _, row in df_iocl.iterrows():
+                try:
+                    lat = float(row['Latitude']) if pd.notna(row['Latitude']) else None
+                    lng = float(row['Longitude']) if pd.notna(row['Longitude']) else None
+                    name = str(row['Landmark Name']).strip() if pd.notna(row['Landmark Name']) else None
+                    
+                    if lat and lng and name:
+                        landmarks.append({'name': name, 'lat': lat, 'lng': lng})
+                except:
+                    continue
+        except:
+            pass
+        
+        ro_data = load_ro_data()
+        
+        return render_template('terminal_dashboard.html',
+                             landmarks=landmarks,
+                             ro_data=ro_data,
+                             tt_specifications=TT_SPECIFICATIONS)
+    except Exception as e:
+        print(f"Error: {e}")
+        return f"Error: {str(e)}"
+
+@app.route('/terminal/create_map', methods=['POST'])
+def terminal_create_map():
+    """Create route map from terminal"""
+    try:
+        # Get form data
+        terminal_name = request.form['terminal']
+        source = request.form['source']
+        destination = request.form['destination']
+        tt_type = request.form['tt_type']
+        sap_code = request.form['sap_code']
+        consignee_name = request.form['consignee_name']
+        
+        # Get TT specifications
+        tt_specs = get_tt_specs(tt_type)
+        
+        # Parse coordinates
+        source_coords = tuple(map(float, source.split(',')))
+        dest_coords = tuple(map(float, destination.split(',')))
+        
+        # Get routes from Google Maps
+        directions = gmaps.directions(
+            source_coords, dest_coords,
+            mode="driving",
+            alternatives=True,
+            departure_time=datetime.now()
+        )
+        
+        if not directions:
+            return "No routes found"
+        
+        # Store in session
+        session['directions'] = directions
+        session['source'] = source_coords
+        session['destination'] = dest_coords
+        session['tt_type'] = tt_type
+        session['tt_specs'] = tt_specs
+        session['terminal_map_data'] = {
+            'sap_code': sap_code,
+            'terminal_name': terminal_name,
+            'consignee_name': consignee_name,
+            'terminal_coords': source,
+            'consignee_coords': destination
+        }
+        session.modified = True
+        
+        # Process routes for preview
+        routes = []
+        for i, route in enumerate(directions):
+            try:
+                coords = polyline.decode(route['overview_polyline']['points'])
+                distance = route['legs'][0]['distance']['text']
+                duration = route['legs'][0]['duration']['text']
+                
+                # Create preview map
+                unique_id = uuid4().hex
+                preview_file = f"preview_{sap_code}_{i}_{unique_id}.html"
+                m = folium.Map(location=coords[len(coords)//2], zoom_start=12)
+                
+                folium.PolyLine(coords, color='blue', weight=5).add_to(m)
+                
+                m.save(f"templates/{preview_file}")
+                
+                routes.append({
+                    'index': i,
+                    'distance': distance,
+                    'duration': duration,
+                    'preview_file': preview_file
+                })
+            except:
+                continue
+        
+        return render_template("terminal_route_select.html",
+                             routes=routes,
+                             sap_code=sap_code,
+                             consignee_name=consignee_name)
+    
+    except Exception as e:
+        print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return f"Error: {str(e)}"
+
+@app.route('/terminal/finalize_map', methods=['POST'])
+def terminal_finalize_map():
+    """Finalize and save the route map"""
+    try:
+        directions = session.get('directions')
+        tt_specs = session.get('tt_specs')
+        map_data = session.get('terminal_map_data')
+        index = int(request.form['route_index'])
+        
+        if not all([directions, tt_specs, map_data]):
+            return "Session expired"
+        
+        # Get selected route
+        selected = directions[index]
+        coords = polyline.decode(selected['overview_polyline']['points'])
+        source = session['source']
+        destination = session['destination']
+        
+        total_distance = selected['legs'][0]['distance']['text']
+        total_duration = selected['legs'][0]['duration']['text']
+        
+        # Detect hazards
+        sharp_turns, curves = detect_practical_hazards(coords, min_turn_angle=25, sample_distance=2, tt_specs=tt_specs)
+        
+        # Get POIs
+        all_pois = []
+        for keyword in ['hospital', 'police', 'fuel']:
+            sample_coords = coords[::25] if len(coords) > 25 else coords[:3]
+            for lat, lng in sample_coords:
+                try:
+                    places = gmaps.places_nearby(location=(lat, lng), radius=1500, keyword=keyword)
+                    for place in places.get('results', [])[:2]:
+                        all_pois.append({
+                            'name': place.get('name', 'Unknown'),
+                            'location': (place['geometry']['location']['lat'], place['geometry']['location']['lng']),
+                            'type': keyword
+                        })
+                except:
+                    continue
+        
+        # Create final map
+        center_lat = sum(coord[0] for coord in coords) / len(coords)
+        center_lng = sum(coord[1] for coord in coords) / len(coords)
+        
+        m = folium.Map(location=(center_lat, center_lng), zoom_start=12)
+        
+        # Draw route
+        folium.PolyLine(coords, color='#ff6b35', weight=6, opacity=0.8,
+                       popup=f"SAP {map_data['sap_code']}").add_to(m)
+        
+        # Add hazards
+        for i, turn in enumerate(sharp_turns):
+            lat, lng = turn['location']
+            color = 'darkred' if turn['turn_angle'] >= 90 else 'red' if turn['turn_angle'] >= 65 else 'orange'
+            folium.Marker(location=(lat, lng),
+                         icon=folium.Icon(color=color, icon='exclamation-triangle', prefix='fa'),
+                         popup=f"Hazard: {turn['turn_angle']:.1f}°").add_to(m)
+        
+        # Add POIs
+        for poi in all_pois[:10]:
+            color = 'red' if 'hospital' in poi['type'] else 'blue' if 'police' in poi['type'] else 'orange'
+            folium.Marker(location=poi['location'],
+                         icon=folium.Icon(color=color, icon='info', prefix='fa'),
+                         popup=poi['name']).add_to(m)
+        
+        # Add start/end markers
+        folium.Marker(source, popup=f"START - {map_data['terminal_name']}",
+                     icon=folium.Icon(color='green', icon='play', prefix='fa')).add_to(m)
+        folium.Marker(destination, popup=f"END - {map_data['consignee_name']}",
+                     icon=folium.Icon(color='blue', icon='stop', prefix='fa')).add_to(m)
+        
+        # Save map
+        map_file = f"map_{map_data['sap_code']}.html"
+        m.save(f"templates/{map_file}")
+        
+        # Save to database
+        db_data = {
+            'sap_code': map_data['sap_code'],
+            'terminal_name': map_data['terminal_name'],
+            'terminal_coords': map_data['terminal_coords'],
+            'consignee_name': map_data['consignee_name'],
+            'consignee_coords': map_data['consignee_coords'],
+            'tt_type': session['tt_type'],
+            'tt_capacity': tt_specs['avg_capacity_liters'],
+            'route_distance': total_distance,
+            'route_duration': total_duration,
+            'map_file': map_file,
+            'created_by': 'Terminal Operator'
+        }
+        
+        success, message = save_route_map(db_data)
+        
+        if success:
+            return render_template("terminal_success.html",
+                                 sap_code=map_data['sap_code'],
+                                 consignee_name=map_data['consignee_name'],
+                                 terminal_name=map_data['terminal_name'],
+                                 map_file=map_file,
+                                 route_distance=total_distance,
+                                 route_duration=total_duration)
+        else:
+            return f"Error: {message}"
+    
+    except Exception as e:
+        print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return f"Error: {str(e)}"
+
+# ============================================================================
+# DRIVER ROUTES
+# ============================================================================
+
+@app.route('/driver/scan')
+def driver_scan():
+    """Driver QR scanner page"""
+    return render_template('driver_scan.html')
+
+@app.route('/driver/get_map', methods=['POST'])
+def driver_get_map():
+    """Driver accesses map by SAP code from invoice QR"""
+    try:
+        sap_code = request.form.get('sap_code', '').strip()
+        invoice_data_raw = request.form.get('invoice_data', '')
+        
+        if not sap_code:
+            return "Invalid SAP code", 400
+        
+        # Parse invoice data if present
+        invoice_details = None
+        if invoice_data_raw:
+            import re
+            invoice_details = {}
+            
+            # Extract invoice number
+            inv_match = re.search(r'Inv:(\d+)', invoice_data_raw)
+            if inv_match:
+                invoice_details['invoice_number'] = inv_match.group(1)
+            
+            # Extract date
+            dt_match = re.search(r'Dt:([\d.]+)', invoice_data_raw)
+            if dt_match:
+                invoice_details['invoice_date'] = dt_match.group(1)
+            
+            # Extract value
+            val_match = re.search(r'Val:([\d.]+)', invoice_data_raw)
+            if val_match:
+                invoice_details['invoice_value'] = val_match.group(1)
+            
+            # Extract vehicle
+            veh_match = re.search(r'Veh:([A-Z0-9]+)', invoice_data_raw)
+            if veh_match:
+                invoice_details['vehicle_number'] = veh_match.group(1)
+            
+            # Extract products
+            prd_match = re.search(r'Prd/Qty:([^Con]+)', invoice_data_raw)
+            if prd_match:
+                products_str = prd_match.group(1).strip()
+                products = []
+                for item in products_str.split(';'):
+                    item = item.strip()
+                    if '/' in item:
+                        parts = item.split('/')
+                        if len(parts) == 2:
+                            name = parts[0].replace('BULK-', '')
+                            quantity = parts[1]
+                            products.append({'name': name, 'quantity': quantity})
+                invoice_details['products'] = products
+        
+        # Retrieve map from database
+        map_data = get_route_map_by_sap(sap_code)
+        
+        if not map_data:
+            return render_template("driver_no_map.html", sap_code=sap_code)
+        
+        # Show map to driver with invoice details
+        return render_template("driver_view_map.html", 
+                             map_data=map_data,
+                             invoice_details=invoice_details)
+    
+    except Exception as e:
+        print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return f"Error: {str(e)}", 500
+
+# ============================================================================
+# UTILITY ROUTES
+# ============================================================================
+
+@app.route('/')
+def index():
+    """Main entry - redirect to driver scan"""
+    return redirect(url_for('driver_scan'))
+
+@app.route('/map/<filename>')
+def view_map(filename):
+    """View map file"""
+    return render_template(filename)
+
 # ============================================================================
 # Also update your fetch_routes function to use the new template:
 
@@ -3465,6 +3784,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
