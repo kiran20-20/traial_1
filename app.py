@@ -461,16 +461,41 @@ def fetch_routes():
             except:
                 continue
         
-        # Prepare route data JSON for advanced editor
-        route_data_json = json.dumps({
-            'source': list(source_coords),
-            'destination': list(dest_coords),
-            'coords': routes[0]['coords'] if routes else [],
-            'distance': routes[0]['distance'] if routes else 'N/A',
-            'duration': routes[0]['duration'] if routes else 'N/A'
-        })
+        # Prepare route data JSON for advanced editor (use first route)
+        if routes:
+            first_route = routes[0]
+            route_data_json = json.dumps({
+                'source': list(source_coords),
+                'destination': list(dest_coords),
+                'coords': first_route['coords'],
+                'distance': first_route['distance'],
+                'duration': first_route['duration']
+            })
+            
+            # Create a route object for the template
+            route = {
+                'summary': first_route['summary'],
+                'distance': first_route['distance'],
+                'duration': first_route['duration'],
+                'index': first_route['index']
+            }
+        else:
+            route_data_json = json.dumps({
+                'source': list(source_coords),
+                'destination': list(dest_coords),
+                'coords': [],
+                'distance': 'N/A',
+                'duration': 'N/A'
+            })
+            route = {
+                'summary': 'Route 1',
+                'distance': 'N/A',
+                'duration': 'N/A',
+                'index': 0
+            }
         
         return render_template("advanced_route_editor.html", 
+                             route=route,
                              routes=routes, 
                              tt_specs=tt_specs, 
                              username=username,
