@@ -3,372 +3,646 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terminal Dashboard - Smart Marg</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Saved Routes - Smart Marg</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f5f7fa;
             min-height: 100vh;
-            padding: 20px;
         }
-        
-        .container {
+
+        /* Top Navigation Bar */
+        .top-nav {
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .nav-container {
             max-width: 1400px;
             margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            height: 60px;
         }
-        
-        .header {
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .nav-brand i {
+            color: #ff6b35;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .nav-link {
+            padding: 8px 16px;
+            color: #666;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.2s;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nav-link:hover {
+            background: #f5f5f5;
+            color: #1a1a1a;
+        }
+
+        .nav-link.active {
+            background: #fff3ed;
+            color: #ff6b35;
+        }
+
+        .nav-user {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-left: 20px;
+            border-left: 1px solid #e0e0e0;
+        }
+
+        .user-name {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        /* Page Header */
+        .page-header {
             background: white;
-            padding: 25px 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
             margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        
-        .header h1 {
-            color: #667eea;
-            font-size: 32px;
-            margin-bottom: 5px;
+
+        .page-header-left h1 {
+            font-size: 24px;
+            color: #1a1a1a;
+            margin-bottom: 8px;
         }
-        
-        .header p {
+
+        .page-header-left p {
             color: #666;
             font-size: 14px;
         }
-        
-        .action-bar {
-            background: white;
-            padding: 15px 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
+
+        .page-header-right {
             display: flex;
-            gap: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            gap: 15px;
+            align-items: center;
         }
-        
-        .btn {
-            padding: 12px 25px;
-            border: none;
+
+        .stat-badge {
+            background: #f0f4ff;
+            padding: 12px 20px;
             border-radius: 8px;
-            cursor: pointer;
+            text-align: center;
+        }
+
+        .stat-badge .number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ff6b35;
+        }
+
+        .stat-badge .label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        /* Search Bar */
+        .search-bar {
+            background: white;
+            padding: 20px 25px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+        }
+
+        .search-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #d0d0d0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #ff6b35;
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        }
+
+        .search-btn {
+            padding: 12px 24px;
+            background: #ff6b35;
+            color: white;
+            border: none;
+            border-radius: 6px;
             font-size: 14px;
             font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s;
-            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
         }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+
+        .search-btn:hover {
+            background: #e55a28;
         }
-        
-        .btn-success {
-            background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
-            color: white;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-        
-        .section {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            margin-bottom: 20px;
-        }
-        
-        .section h2 {
-            color: #667eea;
-            margin-bottom: 20px;
-            font-size: 24px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .search-box {
-            width: 100%;
+
+        .clear-btn {
             padding: 12px 20px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
+            background: #f5f5f5;
+            color: #666;
+            border: none;
+            border-radius: 6px;
             font-size: 14px;
-            margin-bottom: 20px;
-            transition: border-color 0.3s;
+            cursor: pointer;
+            transition: all 0.2s;
         }
-        
-        .search-box:focus {
-            outline: none;
-            border-color: #667eea;
+
+        .clear-btn:hover {
+            background: #e8e8e8;
         }
-        
-        .maps-grid {
+
+        /* Route Cards */
+        .routes-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
             gap: 20px;
+            margin-bottom: 30px;
         }
-        
-        .map-card {
+
+        .route-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .route-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+            transform: translateY(-2px);
+        }
+
+        .route-header {
             background: #f8f9fa;
-            border-radius: 12px;
-            padding: 20px;
-            border: 2px solid #e9ecef;
-            transition: all 0.3s;
+            padding: 18px 20px;
+            border-bottom: 1px solid #e8e8e8;
         }
-        
-        .map-card:hover {
-            border-color: #667eea;
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
-        }
-        
-        .map-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: start;
-            margin-bottom: 15px;
-        }
-        
-        .map-card-title {
-            font-size: 16px;
+
+        .route-sap {
+            font-size: 18px;
             font-weight: 700;
-            color: #333;
+            color: #1a1a1a;
             margin-bottom: 5px;
         }
-        
-        .map-card-sap {
-            font-size: 14px;
-            color: #667eea;
-            font-weight: 600;
-        }
-        
-        .map-card-body {
-            margin-bottom: 15px;
-        }
-        
-        .map-info-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
+
+        .route-consignee {
             font-size: 13px;
             color: #666;
         }
-        
-        .map-info-item i {
-            color: #667eea;
-            width: 16px;
+
+        .route-body {
+            padding: 20px;
         }
-        
-        .map-card-footer {
+
+        .route-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 15px;
-            border-top: 1px solid #dee2e6;
+            align-items: flex-start;
+            gap: 10px;
         }
-        
-        .map-date {
-            font-size: 12px;
-            color: #999;
-        }
-        
-        .map-actions {
-            display: flex;
-            gap: 8px;
-        }
-        
-        .icon-btn {
+
+        .info-icon {
             width: 32px;
             height: 32px;
-            border: none;
+            background: #f0f4ff;
             border-radius: 6px;
-            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s;
+            font-size: 14px;
+            color: #ff6b35;
+            flex-shrink: 0;
         }
-        
-        .icon-btn-view {
-            background: #4facfe;
-            color: white;
+
+        .info-content {
+            flex: 1;
         }
-        
-        .icon-btn-delete {
-            background: #f5576c;
-            color: white;
-        }
-        
-        .icon-btn:hover {
-            transform: scale(1.1);
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #999;
-        }
-        
-        .empty-state i {
-            font-size: 64px;
-            margin-bottom: 20px;
-            color: #ddd;
-        }
-        
-        .empty-state h3 {
-            font-size: 20px;
-            margin-bottom: 10px;
-            color: #666;
-        }
-        
-        .badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 12px;
+
+        .info-label {
             font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+        }
+
+        .info-value {
+            font-size: 13px;
+            color: #1a1a1a;
             font-weight: 600;
         }
-        
-        .badge-success {
-            background: #d4edda;
-            color: #28a745;
+
+        .route-stats {
+            display: flex;
+            gap: 15px;
+            padding: 15px 0;
+            border-top: 1px solid #f0f0f0;
+            border-bottom: 1px solid #f0f0f0;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ff6b35;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #888;
+            margin-top: 3px;
+        }
+
+        .route-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+
+        .btn-view {
+            background: #ff6b35;
+            color: white;
+        }
+
+        .btn-view:hover {
+            background: #e55a28;
+        }
+
+        .btn-delete {
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        .btn-delete:hover {
+            background: #ffebee;
+            color: #d32f2f;
+        }
+
+        /* QR Code Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .modal-content h3 {
+            margin-bottom: 20px;
+            color: #1a1a1a;
+        }
+
+        .modal-content canvas {
+            margin: 20px 0;
+        }
+
+        /* Empty State */
+        .empty-state {
+            background: white;
+            padding: 60px 30px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                height: auto;
+                padding: 15px 20px;
+                gap: 15px;
+            }
+
+            .nav-links {
+                width: 100%;
+                justify-content: space-around;
+            }
+
+            .nav-user {
+                width: 100%;
+                justify-content: center;
+                border-left: none;
+                border-top: 1px solid #e0e0e0;
+                padding: 10px 0 0 0;
+            }
+
+            .page-header {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+
+            .routes-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .search-wrapper {
+                flex-direction: column;
+            }
+
+            .search-input, .search-btn, .clear-btn {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1><i class="fas fa-warehouse"></i> Terminal Dashboard</h1>
-            <p>Manage and view all saved route maps</p>
-        </div>
-        
-        <div class="action-bar">
-            <a href="/" class="btn btn-primary">
-                <i class="fas fa-plus-circle"></i> Create New Route
-            </a>
-            <a href="/logout" class="btn btn-success">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </a>
-        </div>
-        
-        <div class="section">
-            <h2><i class="fas fa-map-marked-alt"></i> Saved Route Maps ({{ saved_maps|length }})</h2>
-            
-            <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search by SAP code, consignee name, terminal...">
-            
-            {% if saved_maps|length > 0 %}
-            <div class="maps-grid" id="mapsGrid">
-                {% for map in saved_maps %}
-                <div class="map-card" data-search="{{ map.sap_code|lower }} {{ map.consignee_name|lower }} {{ map.terminal_name|lower }}">
-                    <div class="map-card-header">
-                        <div>
-                            <div class="map-card-title">{{ map.consignee_name }}</div>
-                            <div class="map-card-sap">
-                                <i class="fas fa-barcode"></i> {{ map.sap_code }}
-                            </div>
-                        </div>
-                        <span class="badge badge-success">Active</span>
-                    </div>
-                    
-                    <div class="map-card-body">
-                        <div class="map-info-item">
-                            <i class="fas fa-warehouse"></i>
-                            <span>{{ map.terminal_name }}</span>
-                        </div>
-                        <div class="map-info-item">
-                            <i class="fas fa-truck"></i>
-                            <span>{{ map.tt_type }} ({{ map.tt_capacity }} KL)</span>
-                        </div>
-                        <div class="map-info-item">
-                            <i class="fas fa-route"></i>
-                            <span>{{ map.route_distance }}</span>
-                        </div>
-                        <div class="map-info-item">
-                            <i class="fas fa-clock"></i>
-                            <span>{{ map.route_duration }}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="map-card-footer">
-                        <div class="map-date">
-                            <i class="fas fa-calendar"></i> {{ map.created_date }}
-                        </div>
-                        <div class="map-actions">
-                            <button class="icon-btn icon-btn-view" onclick="viewMap('{{ map.sap_code }}')" title="View Map">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="icon-btn icon-btn-delete" onclick="deleteMap('{{ map.sap_code }}')" title="Delete Map">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
+    <!-- Top Navigation -->
+    <div class="top-nav">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-route"></i>
+                Smart Marg
             </div>
-            {% else %}
-            <div class="empty-state">
-                <i class="fas fa-map"></i>
-                <h3>No Saved Maps Yet</h3>
-                <p>Create and save your first route map to see it here</p>
-                <br>
-                <a href="/" class="btn btn-primary">
-                    <i class="fas fa-plus-circle"></i> Create First Route
+            
+            <div class="nav-links">
+                <a href="/dashboard" class="nav-link">
+                    <i class="fas fa-th-large"></i> Dashboard
+                </a>
+                <a href="/" class="nav-link">
+                    <i class="fas fa-plus-circle"></i> New Route
+                </a>
+                <a href="/terminal" class="nav-link active">
+                    <i class="fas fa-map"></i> Saved Maps
+                </a>
+                <a href="/driver/scan" class="nav-link">
+                    <i class="fas fa-qrcode"></i> Scanner
                 </a>
             </div>
-            {% endif %}
+
+            <div class="nav-user">
+                <span class="user-name">{{ username }}</span>
+                <a href="/logout" class="nav-link">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
         </div>
     </div>
-    
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-header-left">
+                <h1>Saved Route Maps</h1>
+                <p>View and manage all saved routes with QR codes</p>
+            </div>
+            <div class="page-header-right">
+                <div class="stat-badge">
+                    <div class="number">{{ saved_maps|length }}</div>
+                    <div class="label">Total Routes</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-bar">
+            <div class="search-wrapper">
+                <input type="text" 
+                       id="searchInput" 
+                       class="search-input" 
+                       placeholder="Search by SAP code or consignee name..."
+                       onkeyup="filterRoutes()">
+                <button class="search-btn" onclick="filterRoutes()">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                <button class="clear-btn" onclick="clearSearch()">
+                    <i class="fas fa-times"></i> Clear
+                </button>
+            </div>
+        </div>
+
+        <!-- Routes Grid -->
+        {% if saved_maps %}
+        <div class="routes-grid" id="routesGrid">
+            {% for map in saved_maps %}
+            <div class="route-card" data-sap="{{ map.sap_code }}" data-consignee="{{ map.consignee_name }}">
+                <div class="route-header">
+                    <div class="route-sap">SAP: {{ map.sap_code }}</div>
+                    <div class="route-consignee">{{ map.consignee_name }}</div>
+                </div>
+                
+                <div class="route-body">
+                    <div class="route-info">
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-warehouse"></i>
+                            </div>
+                            <div class="info-content">
+                                <div class="info-label">Terminal</div>
+                                <div class="info-value">{{ map.terminal_name }}</div>
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-truck"></i>
+                            </div>
+                            <div class="info-content">
+                                <div class="info-label">TT Type</div>
+                                <div class="info-value">{{ map.tt_type }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="route-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">{{ map.distance_km }}</div>
+                            <div class="stat-label">KM</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">{{ map.duration_mins }}</div>
+                            <div class="stat-label">MINS</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">{{ map.hazards_count }}</div>
+                            <div class="stat-label">HAZARDS</div>
+                        </div>
+                    </div>
+
+                    <div class="route-actions">
+                        <a href="/route_map/{{ map.sap_code }}" class="btn btn-view">
+                            <i class="fas fa-eye"></i> View Map
+                        </a>
+                        <button class="btn btn-delete" onclick="confirmDelete('{{ map.sap_code }}')">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-map-marked-alt"></i>
+            <h3>No Saved Routes Yet</h3>
+            <p>Create your first route to see it here</p>
+            <a href="/" class="btn btn-view" style="display: inline-flex; text-decoration: none;">
+                <i class="fas fa-plus-circle"></i> Create New Route
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
     <script>
-        // Search functionality
-        document.getElementById('searchBox')?.addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const cards = document.querySelectorAll('.map-card');
-            
+        function filterRoutes() {
+            const input = document.getElementById('searchInput').value.toLowerCase();
+            const cards = document.querySelectorAll('.route-card');
+            let visibleCount = 0;
+
             cards.forEach(card => {
-                const searchText = card.getAttribute('data-search');
-                if (searchText.includes(searchTerm)) {
+                const sap = card.dataset.sap.toLowerCase();
+                const consignee = card.dataset.consignee.toLowerCase();
+                
+                if (sap.includes(input) || consignee.includes(input)) {
                     card.style.display = 'block';
+                    visibleCount++;
                 } else {
                     card.style.display = 'none';
                 }
             });
-        });
-        
-        function viewMap(sapCode) {
-            window.location.href = `/driver/map/${sapCode}`;
+
+            // Show empty message if no results
+            if (visibleCount === 0 && cards.length > 0) {
+                const grid = document.getElementById('routesGrid');
+                if (!document.getElementById('noResults')) {
+                    const msg = document.createElement('div');
+                    msg.id = 'noResults';
+                    msg.className = 'empty-state';
+                    msg.innerHTML = '<i class="fas fa-search"></i><h3>No Routes Found</h3><p>Try a different search term</p>';
+                    grid.parentNode.insertBefore(msg, grid);
+                    grid.style.display = 'none';
+                }
+            } else {
+                const noResults = document.getElementById('noResults');
+                if (noResults) noResults.remove();
+                document.getElementById('routesGrid').style.display = 'grid';
+            }
         }
-        
-        function deleteMap(sapCode) {
-            if (confirm(`Are you sure you want to delete the map for SAP code: ${sapCode}?`)) {
-                fetch(`/api/delete_map/${sapCode}`, {
-                    method: 'DELETE'
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('✅ ' + data.message);
-                        location.reload();
-                    } else {
-                        alert('❌ ' + data.message);
-                    }
-                })
-                .catch(error => {
-                    alert('❌ Error: ' + error);
-                });
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            filterRoutes();
+        }
+
+        function confirmDelete(sapCode) {
+            if (confirm(`Delete route for SAP ${sapCode}?`)) {
+                window.location.href = `/delete_route_map/${sapCode}`;
             }
         }
     </script>
