@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Route Planning - Smart Marg</title>
+    <title>IndianOil Smart Marg</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -14,422 +14,301 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f7fa;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            padding: 20px;
         }
 
-        /* Top Navigation Bar */
-        .top-nav {
-            background: white;
-            border-bottom: 1px solid #e0e0e0;
-            padding: 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-
-        .nav-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 30px;
-            height: 60px;
-        }
-
-        .nav-brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 20px;
-            font-weight: 600;
-            color: #1a1a1a;
-        }
-
-        .nav-brand i {
-            color: #ff6b35;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 5px;
-            align-items: center;
-        }
-
-        .nav-link {
-            padding: 8px 16px;
-            color: #666;
-            text-decoration: none;
-            border-radius: 6px;
-            transition: all 0.2s;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .nav-link:hover {
-            background: #f5f5f5;
-            color: #1a1a1a;
-        }
-
-        .nav-link.active {
-            background: #fff3ed;
-            color: #ff6b35;
-        }
-
-        .nav-user {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding-left: 20px;
-            border-left: 1px solid #e0e0e0;
-        }
-
-        .user-name {
-            font-size: 14px;
-            color: #666;
-        }
-
-        /* Main Container */
         .container {
-            max-width: 900px;
-            margin: 30px auto;
-            padding: 0 20px;
-        }
-
-        /* Page Header */
-        .page-header {
+            max-width: 600px;
+            margin: 0 auto;
             background: white;
             padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .section-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 15px;
             border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-            margin-bottom: 25px;
-        }
-
-        .page-header h1 {
-            font-size: 24px;
-            color: #1a1a1a;
-            margin-bottom: 8px;
-        }
-
-        .page-header p {
-            color: #666;
-            font-size: 14px;
-        }
-
-        /* Form Card */
-        .form-card {
-            background: white;
-            padding: 35px;
-            border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-        }
-
-        .section-header {
+            margin: 25px 0 15px 0;
             font-size: 16px;
             font-weight: 600;
-            color: #1a1a1a;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-
-        .form-row {
-            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         label {
             display: block;
-            font-size: 13px;
+            margin-top: 15px;
+            margin-bottom: 5px;
             font-weight: 600;
-            color: #4a4a4a;
-            margin-bottom: 8px;
-            letter-spacing: 0.2px;
+            color: #555;
+            font-size: 14px;
         }
 
         input, select {
             width: 100%;
-            padding: 11px 14px;
-            border: 1px solid #d0d0d0;
-            border-radius: 6px;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
             font-size: 14px;
-            color: #1a1a1a;
-            background: white;
-            transition: all 0.2s;
+            transition: border-color 0.3s;
         }
 
         input:focus, select:focus {
             outline: none;
-            border-color: #ff6b35;
-            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+            border-color: #667eea;
         }
 
-        input::placeholder {
-            color: #999;
+        .method-toggle {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .toggle-btn {
+            padding: 10px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .toggle-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .panel {
+            display: none;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        .info-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .info-box.show {
+            display: block;
+        }
+
+        .info-item {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .info-value {
+            color: #333;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 25px;
+            transition: transform 0.3s;
+        }
+
+        button[type="submit"]:hover {
+            transform: translateY(-2px);
         }
 
         .helper-text {
             font-size: 12px;
             color: #888;
-            margin-top: 6px;
+            margin-top: 5px;
         }
 
-        /* Info Display Box */
-        .info-display {
-            background: #f8f9fa;
-            border: 1px solid #e0e0e0;
-            border-radius: 6px;
-            padding: 16px;
-            margin-top: 12px;
+        .suggestions {
+            border: 2px solid #ddd;
+            border-top: none;
+            max-height: 200px;
+            overflow-y: auto;
+            background: white;
             display: none;
+            position: absolute;
+            width: calc(100% - 60px);
+            z-index: 100;
         }
 
-        .info-display.show {
-            display: block;
-        }
-
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #e8e8e8;
-        }
-
-        .info-row:last-child {
-            border-bottom: none;
-        }
-
-        .info-label {
-            font-size: 13px;
-            color: #666;
-        }
-
-        .info-value {
-            font-size: 13px;
-            font-weight: 600;
-            color: #1a1a1a;
-        }
-
-        /* Button */
-        .btn-submit {
-            width: 100%;
-            padding: 14px;
-            background: #ff6b35;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 15px;
-            font-weight: 600;
+        .suggestion-item {
+            padding: 10px;
             cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 30px;
+            border-bottom: 1px solid #f0f0f0;
         }
 
-        .btn-submit:hover {
-            background: #e55a28;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+        .suggestion-item:hover {
+            background: #f0f4ff;
         }
 
-        .btn-submit:active {
-            transform: translateY(0);
-        }
-
-        /* Footer */
-        .footer {
-            text-align: center;
-            padding: 30px 20px;
-            color: #888;
-            font-size: 13px;
-        }
-
-        /* Mobile */
-        @media (max-width: 768px) {
-            .nav-container {
-                flex-direction: column;
-                height: auto;
-                padding: 15px 20px;
-                gap: 15px;
-            }
-
-            .nav-links {
-                width: 100%;
-                justify-content: space-around;
-            }
-
-            .nav-user {
-                width: 100%;
-                justify-content: center;
-                border-left: none;
-                border-top: 1px solid #e0e0e0;
-                padding: 10px 0 0 0;
-            }
-
-            .form-card {
-                padding: 25px 20px;
-            }
+        .autocomplete-container {
+            position: relative;
         }
     </style>
 </head>
 <body>
-    <!-- Top Navigation -->
-    <div class="top-nav">
-        <div class="nav-container">
-            <div class="nav-brand">
-                <i class="fas fa-route"></i>
-                Smart Marg
-            </div>
-            
-            <div class="nav-links">
-                <a href="/dashboard" class="nav-link">
-                    <i class="fas fa-th-large"></i> Dashboard
-                </a>
-                <a href="/" class="nav-link active">
-                    <i class="fas fa-plus-circle"></i> New Route
-                </a>
-                <a href="/terminal" class="nav-link">
-                    <i class="fas fa-map"></i> Saved Maps
-                </a>
-                <a href="/driver/scan" class="nav-link">
-                    <i class="fas fa-qrcode"></i> Scanner
-                </a>
-            </div>
-
-            <div class="nav-user">
-                <span class="user-name">{{ username }}</span>
-                <a href="/logout" class="nav-link">
-                    <i class="fas fa-sign-out-alt"></i>
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Content -->
     <div class="container">
-        <!-- Page Header -->
-        <div class="page-header">
-            <h1>Create New Route</h1>
-            <p>Plan a safe and optimized route from terminal to consignee location</p>
+        <div class="header">
+            <h1><i class="fas fa-route"></i> IndianOil Smart Marg</h1>
+            <p style="color: #666;">Route Planning System</p>
         </div>
 
-        <!-- Form -->
         <form method="POST" action="/fetch_routes">
-            <div class="form-card">
-                <!-- Terminal Section -->
-                <div class="section-header">Origin Terminal</div>
-                
-                <div class="form-row">
-                    <label for="landmark_name">Select IOCL Terminal</label>
-                    <input type="text" 
-                           id="landmark_name" 
-                           list="landmarkList" 
-                           placeholder="Start typing terminal name..."
-                           autocomplete="off">
-                    <datalist id="landmarkList">
-                        {% for landmark in landmarks %}
-                        <option value="{{ landmark.name }}" 
-                                data-lat="{{ landmark.lat }}" 
-                                data-lng="{{ landmark.lng }}">
-                        {% endfor %}
-                    </datalist>
+            <!-- Terminal Section -->
+            <div class="section-title">
+                <i class="fas fa-warehouse"></i>
+                <span>Terminal Location</span>
+            </div>
+
+            <label for="landmark_name">IOCL Terminal</label>
+            <input type="text" id="landmark_name" list="landmarkList" placeholder="Start typing terminal name...">
+            <datalist id="landmarkList">
+                {% for landmark in landmarks %}
+                <option value="{{ landmark.name }}" data-lat="{{ landmark.lat }}" data-lng="{{ landmark.lng }}">
+                {% endfor %}
+            </datalist>
+
+            <label for="source">Terminal Coordinates</label>
+            <input type="text" name="source" id="source" placeholder="Auto-filled or enter manually" required>
+            <div class="helper-text">Format: 28.6139, 77.2090</div>
+
+            <!-- Consignee Section -->
+            <div class="section-title">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Consignee Location</span>
+            </div>
+
+            <div class="method-toggle">
+                <div class="toggle-btn active" onclick="switchMethod('sap')">
+                    <i class="fas fa-search"></i> SAP Code
+                </div>
+                <div class="toggle-btn" onclick="switchMethod('manual')">
+                    <i class="fas fa-keyboard"></i> Manual
+                </div>
+            </div>
+
+            <!-- SAP Panel -->
+            <div id="sapPanel" class="panel active">
+                <label for="stateCode">State</label>
+                <select id="stateCode" onchange="loadSAPCodes()">
+                    <option value="">Select State</option>
+                </select>
+
+                <label for="sapCode">SAP Code</label>
+                <div class="autocomplete-container">
+                    <input type="text" id="sapCode" placeholder="Type SAP code..." oninput="filterSAPCodes()">
+                    <div id="sapSuggestions" class="suggestions"></div>
                 </div>
 
-                <div class="form-row">
-                    <label for="source">Terminal Coordinates</label>
-                    <input type="text" 
-                           name="source" 
-                           id="source" 
-                           placeholder="Will auto-fill when terminal is selected" 
-                           required 
-                           readonly
-                           style="background: #f8f9fa;">
-                    <input type="hidden" name="terminal_name" id="hidden_terminal_name">
-                </div>
-
-                <!-- Destination Section -->
-                <div class="section-header" style="margin-top: 35px;">Destination Consignee</div>
-                
-                <div class="form-row">
-                    <label for="stateCode">State</label>
-                    <select id="stateCode" onchange="loadSAPCodes()">
-                        <option value="">Select State</option>
-                    </select>
-                </div>
-
-                <div class="form-row">
-                    <label for="sapCode">SAP Code / Consignee</label>
-                    <input type="text" 
-                           id="sapCode" 
-                           placeholder="Type SAP code or consignee name..." 
-                           oninput="filterSAPCodes()"
-                           autocomplete="off">
-                    <div id="sapSuggestions" style="display: none; border: 1px solid #d0d0d0; border-top: none; border-radius: 0 0 6px 6px; max-height: 200px; overflow-y: auto; background: white; position: absolute; width: calc(100% - 70px); z-index: 100;"></div>
-                </div>
-
-                <div id="sapInfo" class="info-display">
-                    <div class="info-row">
-                        <span class="info-label">Consignee Name</span>
+                <div id="sapInfo" class="info-box">
+                    <div class="info-item">
+                        <span class="info-label">Consignee:</span>
                         <span class="info-value" id="consigneeName">-</span>
                     </div>
-                    <div class="info-row">
-                        <span class="info-label">District</span>
+                    <div class="info-item">
+                        <span class="info-label">District:</span>
                         <span class="info-value" id="consigneeDistrict">-</span>
                     </div>
-                    <div class="info-row">
-                        <span class="info-label">Coordinates</span>
+                    <div class="info-item">
+                        <span class="info-label">Coordinates:</span>
                         <span class="info-value" id="consigneeCoords">-</span>
                     </div>
                 </div>
-
-                <!-- Hidden fields -->
-                <input type="hidden" name="destination" id="destination">
-                <input type="hidden" name="sap_code" id="hidden_sap_code">
-                <input type="hidden" name="consignee_name" id="hidden_consignee_name">
-
-                <!-- TT Specifications -->
-                <div class="section-header" style="margin-top: 35px;">Tank Truck Specifications</div>
-                
-                <div class="form-row">
-                    <label for="tt_type">Select TT Capacity</label>
-                    <select id="tt_type" name="tt_type" required onchange="showTTInfo()">
-                        <option value="">Choose tank truck capacity</option>
-                        {% for tt_key, tt_data in tt_specifications.items() %}
-                        <option value="{{ tt_key }}"
-                                data-capacity="{{ tt_data.avg_capacity_liters }}"
-                                data-weight="{{ tt_data.gross_weight }}"
-                                data-speed="{{ tt_data.max_speed }}">
-                            {{ tt_data.capacity_range }} - {{ (tt_data.gross_weight / 1000) | round(1) }}T Gross Weight
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div id="ttInfo" class="info-display">
-                    <div class="info-row">
-                        <span class="info-label">Tank Capacity</span>
-                        <span class="info-value" id="ttCapacity">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Gross Weight</span>
-                        <span class="info-value" id="ttWeight">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Maximum Speed</span>
-                        <span class="info-value" id="ttSpeed">-</span>
-                    </div>
-                </div>
-
-                <!-- Submit Button -->
-                <button type="submit" class="btn-submit">
-                    <i class="fas fa-route"></i> Generate Route Options
-                </button>
             </div>
-        </form>
-    </div>
 
-    <!-- Footer -->
-    <div class="footer">
-        © 2025 IndianOil Corporation Limited | Smart Marg Route Management System
+            <!-- Manual Panel -->
+            <div id="manualPanel" class="panel">
+                <label for="destination_manual">Consignee Coordinates</label>
+                <input type="text" id="destination_manual" placeholder="Enter coordinates manually">
+                <div class="helper-text">Format: 19.0760, 72.8777</div>
+            </div>
+
+            <!-- Hidden Fields for Backend -->
+            <input type="hidden" name="destination" id="destination">
+            <input type="hidden" name="sap_code" id="hidden_sap_code">
+            <input type="hidden" name="terminal_name" id="hidden_terminal_name">
+            <input type="hidden" name="consignee_name" id="hidden_consignee_name">
+
+            <!-- TT Specifications Section -->
+            <div class="section-title">
+                <i class="fas fa-truck"></i>
+                <span>Tank Truck Specifications</span>
+            </div>
+
+            <label for="tt_type">TT Capacity</label>
+            <select id="tt_type" name="tt_type" required onchange="showTTInfo()">
+                <option value="">Choose TT Capacity</option>
+                {% for tt_key, tt_data in tt_specifications.items() %}
+                <option value="{{ tt_key }}"
+                        data-capacity="{{ tt_data.avg_capacity_liters }}"
+                        data-weight="{{ tt_data.gross_weight }}"
+                        data-speed="{{ tt_data.max_speed }}">
+                    {{ tt_data.capacity_range }} ({{ (tt_data.gross_weight / 1000) | round(1) }}T)
+                </option>
+                {% endfor %}
+            </select>
+
+            <div id="ttInfo" class="info-box">
+                <div class="info-item">
+                    <span class="info-label">Capacity:</span>
+                    <span class="info-value" id="ttCapacity">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Gross Weight:</span>
+                    <span class="info-value" id="ttWeight">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Max Speed:</span>
+                    <span class="info-value" id="ttSpeed">-</span>
+                </div>
+            </div>
+
+            <button type="submit">
+                <i class="fas fa-route"></i> Generate Smart Routes
+            </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 20px; color: #888; font-size: 12px;">
+            © 2025 IndianOil Corporation Ltd.
+        </div>
     </div>
 
     <script>
@@ -438,6 +317,8 @@
         {% else %}
         const roData = {};
         {% endif %}
+
+        let currentMethod = 'sap';
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
@@ -465,6 +346,24 @@
                     }
                 }
             });
+        }
+
+        // Method Switching
+        function switchMethod(method) {
+            currentMethod = method;
+            document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+            
+            if (method === 'sap') {
+                document.querySelectorAll('.toggle-btn')[0].classList.add('active');
+                document.getElementById('sapPanel').classList.add('active');
+                document.getElementById('manualPanel').classList.remove('active');
+            } else {
+                document.querySelectorAll('.toggle-btn')[1].classList.add('active');
+                document.getElementById('sapPanel').classList.remove('active');
+                document.getElementById('manualPanel').classList.add('active');
+            }
+            
+            updateDestination();
         }
 
         // Populate States
@@ -508,10 +407,8 @@
                 suggestionsDiv.innerHTML = '';
                 matches.slice(0, 8).forEach(sap => {
                     const div = document.createElement('div');
-                    div.style.cssText = 'padding: 12px 14px; cursor: pointer; border-bottom: 1px solid #f0f0f0; font-size: 14px;';
-                    div.innerHTML = `<strong>${sap}</strong> - ${roData[state][sap].name}`;
-                    div.onmouseover = () => div.style.background = '#f8f9fa';
-                    div.onmouseout = () => div.style.background = 'white';
+                    div.className = 'suggestion-item';
+                    div.textContent = `${sap} - ${roData[state][sap].name}`;
                     div.onclick = () => selectSAP(sap);
                     suggestionsDiv.appendChild(div);
                 });
@@ -536,7 +433,25 @@
             // Update hidden fields
             document.getElementById('hidden_sap_code').value = sapCode;
             document.getElementById('hidden_consignee_name').value = roInfo.name;
-            document.getElementById('destination').value = `${roInfo.lat},${roInfo.lng}`;
+
+            updateDestination();
+        }
+
+        // Update Destination
+        function updateDestination() {
+            const destField = document.getElementById('destination');
+
+            if (currentMethod === 'sap') {
+                const state = document.getElementById('stateCode').value;
+                const sap = document.getElementById('sapCode').value;
+                
+                if (state && sap && roData[state] && roData[state][sap]) {
+                    const roInfo = roData[state][sap];
+                    destField.value = `${roInfo.lat},${roInfo.lng}`;
+                }
+            } else {
+                destField.value = document.getElementById('destination_manual').value;
+            }
         }
 
         // Show TT Info
@@ -549,16 +464,19 @@
                 const weight = parseInt(option.dataset.weight);
                 const speed = parseInt(option.dataset.speed);
 
-                document.getElementById('ttCapacity').textContent = `${capacity.toLocaleString()} Liters`;
-                document.getElementById('ttWeight').textContent = `${(weight/1000).toFixed(1)} Tonnes`;
+                document.getElementById('ttCapacity').textContent = `${capacity.toLocaleString()} L`;
+                document.getElementById('ttWeight').textContent = `${(weight/1000).toFixed(1)} T`;
                 document.getElementById('ttSpeed').textContent = `${speed} km/h`;
                 document.getElementById('ttInfo').classList.add('show');
             }
         }
 
+        // Update destination on manual input
+        document.getElementById('destination_manual').addEventListener('input', updateDestination);
+
         // Hide suggestions on outside click
         document.addEventListener('click', function(e) {
-            if (!e.target.closest('#sapCode')) {
+            if (!e.target.closest('.autocomplete-container')) {
                 document.getElementById('sapSuggestions').style.display = 'none';
             }
         });
@@ -575,11 +493,17 @@
                 return;
             }
 
-            // Show loading on button
-            const btn = document.querySelector('.btn-submit');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating Routes...';
+            // Show loading
+            const btn = document.querySelector('button[type="submit"]');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
             btn.disabled = true;
         });
+
+        // Make functions global
+        window.switchMethod = switchMethod;
+        window.loadSAPCodes = loadSAPCodes;
+        window.filterSAPCodes = filterSAPCodes;
+        window.showTTInfo = showTTInfo;
     </script>
 </body>
 </html>
