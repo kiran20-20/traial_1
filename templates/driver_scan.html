@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scan Invoice - Smart Marg Driver</title>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -13,331 +14,423 @@
         }
 
         body {
-            font-family: Arial, sans-serif;
-            background: #1a1a1a;
-            color: white;
-            overflow: hidden;
-        }
-
-        /* Full screen scanner */
-        #reader {
-            width: 100vw;
-            height: 100vh;
-            position: relative;
-        }
-
-        /* Overlay with instructions */
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 10;
-        }
-
-        .header {
-            background: rgba(0,0,0,0.8);
-            padding: 20px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 1.5em;
-            margin-bottom: 5px;
-        }
-
-        .header p {
-            color: #aaa;
-            font-size: 0.9em;
-        }
-
-        .scanning-frame {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 280px;
-            height: 280px;
-            border: 3px solid #4CAF50;
-            border-radius: 20px;
-            box-shadow: 0 0 0 99999px rgba(0, 0, 0, 0.5);
-        }
-
-        .corner {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            border: 4px solid #4CAF50;
-        }
-
-        .corner.top-left {
-            top: -3px;
-            left: -3px;
-            border-right: none;
-            border-bottom: none;
-            border-radius: 20px 0 0 0;
-        }
-
-        .corner.top-right {
-            top: -3px;
-            right: -3px;
-            border-left: none;
-            border-bottom: none;
-            border-radius: 0 20px 0 0;
-        }
-
-        .corner.bottom-left {
-            bottom: -3px;
-            left: -3px;
-            border-right: none;
-            border-top: none;
-            border-radius: 0 0 0 20px;
-        }
-
-        .corner.bottom-right {
-            bottom: -3px;
-            right: -3px;
-            border-left: none;
-            border-top: none;
-            border-radius: 0 0 20px 0;
-        }
-
-        .instruction {
-            position: absolute;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.8);
-            padding: 20px 30px;
-            border-radius: 15px;
-            text-align: center;
-            max-width: 90%;
-        }
-
-        .instruction h2 {
-            color: #4CAF50;
-            margin-bottom: 10px;
-            font-size: 1.2em;
-        }
-
-        /* Status message */
-        .status {
-            position: fixed;
-            top: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(76, 175, 80, 0.95);
-            color: white;
-            padding: 15px 30px;
-            border-radius: 10px;
-            font-weight: bold;
-            display: none;
-            z-index: 100;
-            animation: slideDown 0.3s;
-        }
-
-        @keyframes slideDown {
-            from {
-                top: -50px;
-                opacity: 0;
-            }
-            to {
-                top: 100px;
-                opacity: 1;
-            }
-        }
-
-        .status.error {
-            background: rgba(244, 67, 54, 0.95);
-        }
-
-        /* Loading */
-        .loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
-            display: none;
-            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
             align-items: center;
-            z-index: 200;
+            justify-content: center;
+            padding: 20px;
         }
 
-        .spinner {
-            border: 5px solid #333;
-            border-top: 5px solid #4CAF50;
+        .container {
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            color: #667eea;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .logo p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        #qr-reader {
+            border: 3px solid #667eea;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            min-height: 250px;
+            display: none;
+        }
+
+        #qr-reader.active {
+            display: block;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .manual-entry {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #eee;
+        }
+
+        .manual-entry h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .status.active {
+            display: block;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .camera-select {
+            margin-bottom: 15px;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
             border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            animation: spin 1s linear infinite;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            to { transform: rotate(360deg); }
         }
 
-        .loading-text {
-            position: absolute;
-            margin-top: 100px;
-            color: white;
-            font-size: 1.2em;
+        .debug-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 12px;
+            color: #666;
+            font-family: monospace;
+            display: none;
         }
 
-        /* Manual entry button */
-        .manual-btn {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255,255,255,0.2);
-            color: white;
-            padding: 15px 30px;
-            border: 2px solid white;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 1em;
-            font-weight: bold;
-            pointer-events: all;
-            z-index: 50;
-        }
-
-        .manual-btn:active {
-            background: rgba(255,255,255,0.3);
+        .debug-info.show {
+            display: block;
         }
     </style>
 </head>
 <body>
-    <!-- Scanner View -->
-    <div id="reader"></div>
+    <div class="container">
+        <div class="card">
+            <div class="logo">
+                <h1><i class="fas fa-qrcode"></i> Smart Marg</h1>
+                <p>Scan Invoice QR Code to Access Your Route</p>
+            </div>
 
-    <!-- Overlay -->
-    <div class="overlay">
-        <div class="header">
-            <h1>📱 Smart Marg Driver</h1>
-            <p>Point camera at invoice QR code</p>
-        </div>
+            <div id="statusMessage" class="status">
+                <span id="statusText"></span>
+            </div>
 
-        <div class="scanning-frame">
-            <div class="corner top-left"></div>
-            <div class="corner top-right"></div>
-            <div class="corner bottom-left"></div>
-            <div class="corner bottom-right"></div>
-        </div>
+            <!-- Camera Selection -->
+            <div class="camera-select">
+                <label for="cameraSelect" style="font-weight: 600; color: #333; display: block;">
+                    <i class="fas fa-camera"></i> Select Camera
+                </label>
+                <select id="cameraSelect" onchange="switchCamera()">
+                    <option value="">Loading cameras...</option>
+                </select>
+            </div>
 
-        <div class="instruction">
-            <h2>📋 Align QR code within frame</h2>
-            <p>Scanner will detect automatically</p>
+            <!-- QR Reader -->
+            <div id="qr-reader"></div>
+
+            <!-- Control Buttons -->
+            <button id="startScanBtn" class="btn btn-primary" onclick="startScanning()">
+                <i class="fas fa-camera"></i> Start Scanner
+            </button>
+
+            <button id="stopScanBtn" class="btn btn-danger" onclick="stopScanning()" style="display: none;">
+                <i class="fas fa-stop"></i> Stop Scanner
+            </button>
+
+            <!-- Manual Entry -->
+            <div class="manual-entry">
+                <h3><i class="fas fa-keyboard"></i> Manual Entry</h3>
+                <div class="input-group">
+                    <input type="text" id="manualSAPInput" placeholder="Enter SAP Code (e.g., 192355)" maxlength="10">
+                    <button class="btn btn-secondary" onclick="manualSubmit()" style="width: auto; padding: 12px 20px;">
+                        <i class="fas fa-search"></i> Find
+                    </button>
+                </div>
+            </div>
+
+            <!-- Debug Info (for troubleshooting) -->
+            <div id="debugInfo" class="debug-info">
+                <strong>Debug Info:</strong><br>
+                Last scanned: <span id="debugScanned">-</span><br>
+                Extracted SAP: <span id="debugSAP">-</span><br>
+                Server response: <span id="debugResponse">-</span>
+            </div>
         </div>
     </div>
-
-    <!-- Status Message -->
-    <div id="status" class="status"></div>
-
-    <!-- Loading -->
-    <div id="loading" class="loading">
-        <div>
-            <div class="spinner"></div>
-            <div class="loading-text">Loading map...</div>
-        </div>
-    </div>
-
-    <!-- Manual Entry -->
-    <button class="manual-btn" onclick="manualEntry()">✍️ Manual Entry</button>
 
     <script>
-        let html5QrcodeScanner = null;
-        let isProcessing = false;
+        let html5QrCode = null;
+        let currentCameraId = null;
 
-        // Start scanner when page loads
-        window.onload = function() {
-            startScanner();
-        };
+        // Load cameras on page load
+        document.addEventListener('DOMContentLoaded', loadCameras);
 
-        async function startScanner() {
+        async function loadCameras() {
             try {
-                // Get back camera (environment facing)
                 const devices = await Html5Qrcode.getCameras();
+                const selectElement = document.getElementById('cameraSelect');
                 
-                if (!devices || devices.length === 0) {
-                    showStatus('No camera found', 'error');
-                    return;
-                }
-
-                // Find back camera
-                let cameraId = devices[0].id;
-                for (let device of devices) {
-                    if (device.label.toLowerCase().includes('back') || 
-                        device.label.toLowerCase().includes('environment')) {
-                        cameraId = device.id;
-                        break;
+                if (devices && devices.length > 0) {
+                    selectElement.innerHTML = '';
+                    
+                    devices.forEach((device, index) => {
+                        const option = document.createElement('option');
+                        option.value = device.id;
+                        option.text = device.label || `Camera ${index + 1}`;
+                        selectElement.appendChild(option);
+                        
+                        // Auto-select back camera if available
+                        if (device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('rear')) {
+                            currentCameraId = device.id;
+                            selectElement.value = device.id;
+                        }
+                    });
+                    
+                    // If no back camera found, select first camera
+                    if (!currentCameraId && devices.length > 0) {
+                        currentCameraId = devices[0].id;
                     }
+                    
+                    showStatus('✅ Camera ready. Click "Start Scanner"', 'info');
+                } else {
+                    selectElement.innerHTML = '<option value="">No cameras found</option>';
+                    showStatus('❌ No cameras detected', 'error');
                 }
-
-                html5QrcodeScanner = new Html5Qrcode("reader");
-                
-                // Start scanning with back camera
-                await html5QrcodeScanner.start(
-                    cameraId,
-                    {
-                        fps: 10,
-                        qrbox: { width: 280, height: 280 }
-                    },
-                    onScanSuccess,
-                    onScanError
-                );
-
             } catch (err) {
-                console.error('Scanner error:', err);
-                showStatus('Camera access denied', 'error');
+                console.error("Error loading cameras:", err);
+                document.getElementById('cameraSelect').innerHTML = '<option value="">Camera access denied</option>';
+                showStatus('❌ Camera access denied. Use manual entry.', 'error');
             }
         }
 
-        function onScanSuccess(decodedText) {
-            if (isProcessing) return;
-            isProcessing = true;
-
-            // Stop scanner
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.stop().catch(e => console.log(e));
+        function startScanning() {
+            if (!currentCameraId) {
+                showStatus('❌ Please select a camera first', 'error');
+                return;
             }
 
-            showStatus('✅ QR Code detected!', 'success');
+            html5QrCode = new Html5Qrcode("qr-reader");
             
-            // Process QR code
-            processQRCode(decodedText);
+            html5QrCode.start(
+                currentCameraId,
+                {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 }
+                },
+                onScanSuccess,
+                onScanFailure
+            ).then(() => {
+                document.getElementById('qr-reader').classList.add('active');
+                document.getElementById('startScanBtn').style.display = 'none';
+                document.getElementById('stopScanBtn').style.display = 'flex';
+                showStatus('📷 Scanner ready. Point at QR code...', 'success');
+            }).catch(err => {
+                console.error("Error starting scanner:", err);
+                showStatus('❌ Failed to start scanner. Try manual entry.', 'error');
+            });
         }
 
-        function onScanError(errorMessage) {
-            // Ignore scanning errors (too noisy)
+        function stopScanning() {
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    document.getElementById('qr-reader').classList.remove('active');
+                    document.getElementById('startScanBtn').style.display = 'flex';
+                    document.getElementById('stopScanBtn').style.display = 'none';
+                    showStatus('⏸️ Scanner stopped', 'success');
+                }).catch(err => {
+                    console.error("Error stopping scanner:", err);
+                });
+            }
         }
 
-        function processQRCode(qrData) {
-            // Extract SAP code from invoice QR
-            // Format: Con:192355(CONSIGNEE NAME)
-            const sapMatch = qrData.match(/Con:(\d+)\(/);
+        function switchCamera() {
+            currentCameraId = document.getElementById('cameraSelect').value;
+            if (html5QrCode && html5QrCode.isScanning) {
+                stopScanning();
+                setTimeout(startScanning, 500);
+            }
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            console.log(`✅ QR Code detected:`, decodedText);
             
+            // Show debug info
+            document.getElementById('debugScanned').textContent = decodedText;
+            document.getElementById('debugInfo').classList.add('show');
+            
+            // Parse invoice QR to extract SAP code
+            // Multiple formats supported:
+            // Format 1: { Inv:7001431009 ... Con:192355(KAILASH AUTO SERVICE) }
+            // Format 2: Con:192355(...)
+            // Format 3: Just the number 192355
+            
+            let sapCode = null;
+            
+            // Try Pattern 1: Con:NUMBER
+            let sapMatch = decodedText.match(/Con:(\d+)/);
             if (sapMatch && sapMatch[1]) {
-                const sapCode = sapMatch[1];
-                showLoading(true);
+                sapCode = sapMatch[1];
+            }
+            
+            // Try Pattern 2: Pure number (6-10 digits)
+            if (!sapCode) {
+                sapMatch = decodedText.match(/^(\d{6,10})$/);
+                if (sapMatch) {
+                    sapCode = sapMatch[1];
+                }
+            }
+            
+            // Try Pattern 3: SAP:NUMBER
+            if (!sapCode) {
+                sapMatch = decodedText.match(/SAP[:\s]*(\d+)/i);
+                if (sapMatch && sapMatch[1]) {
+                    sapCode = sapMatch[1];
+                }
+            }
+            
+            if (sapCode) {
+                // Clean SAP code - remove any .0
+                if (sapCode.includes('.')) {
+                    sapCode = String(parseInt(parseFloat(sapCode)));
+                }
+                
+                document.getElementById('debugSAP').textContent = sapCode;
+                
+                showStatus(`✅ Invoice scanned! SAP Code: ${sapCode}`, 'success');
+                stopScanning();
+                
+                // Submit SAP code to server
                 submitSAPCode(sapCode);
             } else {
-                showStatus('❌ Invalid QR format', 'error');
-                isProcessing = false;
+                console.error('❌ SAP code not found in QR:', decodedText);
+                document.getElementById('debugSAP').textContent = 'Not found';
+                showStatus('❌ Invalid QR format - No SAP code found', 'error');
+                
+                // Show what was scanned
                 setTimeout(() => {
-                    if (html5QrcodeScanner) {
-                        startScanner();
-                    }
+                    showStatus(`🔍 Scanned: "${decodedText.substring(0, 50)}..." - No SAP code detected`, 'info');
                 }, 2000);
             }
         }
 
+        function onScanFailure(error) {
+            // Silent - scanning failures are normal
+        }
+
         async function submitSAPCode(sapCode) {
             try {
+                showStatus(`🔍 Looking for route map...`, 'info');
+                
                 const response = await fetch('/driver/view-map', {
                     method: 'POST',
                     headers: {
@@ -347,52 +440,94 @@
                 });
 
                 const data = await response.json();
+                document.getElementById('debugResponse').textContent = JSON.stringify(data);
                 
                 if (data.success && data.redirect) {
-                    window.location.href = data.redirect;
+                    showStatus(`✅ Route found! Redirecting...`, 'success');
+                    setTimeout(() => {
+                        window.location.href = data.redirect;
+                    }, 1000);
                 } else {
-                    showStatus('❌ Route not found', 'error');
-                    showLoading(false);
-                    isProcessing = false;
-                    setTimeout(() => startScanner(), 2000);
+                    const errorMsg = data.error || 'Route not found';
+                    showStatus(`❌ ${errorMsg}`, 'error');
+                    
+                    // Show helpful message
+                    setTimeout(() => {
+                        showStatus(`💡 Route for SAP ${sapCode} not saved in database. Please create and save it first.`, 'info');
+                    }, 3000);
+                    
+                    // Restart scanner after error
+                    if (!html5QrCode || !html5QrCode.isScanning) {
+                        setTimeout(() => {
+                            document.getElementById('startScanBtn').style.display = 'flex';
+                        }, 4000);
+                    }
                 }
             } catch (error) {
-                showStatus('❌ Network error', 'error');
-                showLoading(false);
-                isProcessing = false;
-                setTimeout(() => startScanner(), 2000);
+                console.error('❌ Network error:', error);
+                document.getElementById('debugResponse').textContent = error.toString();
+                showStatus('❌ Network error. Please check connection.', 'error');
+                
+                setTimeout(() => {
+                    document.getElementById('startScanBtn').style.display = 'flex';
+                }, 2000);
             }
         }
 
-        function showStatus(message, type) {
-            const statusDiv = document.getElementById('status');
-            statusDiv.textContent = message;
-            statusDiv.className = 'status ' + (type || '');
-            statusDiv.style.display = 'block';
-
-            setTimeout(() => {
-                statusDiv.style.display = 'none';
-            }, 3000);
-        }
-
-        function showLoading(show) {
-            document.getElementById('loading').style.display = show ? 'flex' : 'none';
-        }
-
-        function manualEntry() {
-            const sapCode = prompt('Enter SAP Code:');
-            if (sapCode && sapCode.trim()) {
-                showLoading(true);
-                submitSAPCode(sapCode.trim());
+        function manualSubmit() {
+            let sapCode = document.getElementById('manualSAPInput').value.trim();
+            
+            if (!sapCode) {
+                showStatus('❌ Please enter a SAP code', 'error');
+                return;
             }
+            
+            // Clean SAP code - allow numbers with optional decimal
+            if (!/^\d+\.?\d*$/.test(sapCode)) {
+                showStatus('❌ SAP code must contain only numbers', 'error');
+                return;
+            }
+            
+            // Remove .0 if present
+            if (sapCode.includes('.')) {
+                try {
+                    sapCode = String(parseInt(parseFloat(sapCode)));
+                } catch (e) {
+                    showStatus('❌ Invalid SAP code format', 'error');
+                    return;
+                }
+            }
+            
+            // Update debug info
+            document.getElementById('debugScanned').textContent = `Manual entry: ${sapCode}`;
+            document.getElementById('debugSAP').textContent = sapCode;
+            document.getElementById('debugInfo').classList.add('show');
+            
+            showStatus(`🔍 Searching for SAP ${sapCode}...`, 'info');
+            submitSAPCode(sapCode);
         }
 
-        // Cleanup
-        window.addEventListener('beforeunload', () => {
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.stop().catch(e => console.log(e));
+        // Allow Enter key in manual input
+        document.getElementById('manualSAPInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                manualSubmit();
             }
         });
+
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('statusMessage');
+            const statusText = document.getElementById('statusText');
+            
+            statusText.textContent = message;
+            statusEl.className = 'status active status-' + type;
+            
+            // Auto-hide success messages after 3 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusEl.classList.remove('active');
+                }, 3000);
+            }
+        }
     </script>
 </body>
 </html>
