@@ -3596,21 +3596,7 @@ def detailed_report():
         return f"Error: {str(e)}"
 
 # ==============================================================================
-# IMPLEMENTATION INSTRUCTIONS:
 
-@app.route('/view_map/<filename>')
-@login_required
-def view_map(filename):
-    try:
-        path = os.path.join("templates", filename)
-        if not os.path.exists(path):
-            return "Map file not found", 404
-        response = make_response(render_template(filename))
-        response.headers['Cache-Control'] = 'no-store'
-        return response
-    except Exception as e:
-        print(f"Error viewing map: {e}")
-        return f"Error displaying map: {str(e)}", 500
 
 @app.route('/download/<filename>')
 @login_required
@@ -3784,6 +3770,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
