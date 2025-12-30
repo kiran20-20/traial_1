@@ -3,1467 +3,436 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IOCL Route Analysis - IndianOil Corporation Limited</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Route Analysis - Smart Marg</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
+        
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #f8fafc;
-            color: #0f172a;
-            line-height: 1.6;
-            overflow-x: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
         }
-
-        /* Top Navigation */
-        .top-nav {
-            background: white;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 1rem 2rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .nav-container {
+        
+        .container {
             max-width: 1400px;
             margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
             display: flex;
-            align-items: center;
             justify-content: space-between;
-        }
-
-        .nav-brand {
-            display: flex;
             align-items: center;
-            gap: 1rem;
         }
-
-        .brand-logo {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #3b82f6, #1e40af);
+        
+        .header h1 {
+            color: #667eea;
+            font-size: 28px;
+        }
+        
+        .header .user-info {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .action-buttons {
+            background: white;
+            padding: 15px 20px;
             border-radius: 10px;
+            margin-bottom: 20px;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 700;
-            font-size: 16px;
+            gap: 10px;
+            flex-wrap: wrap;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
-
-        .brand-text h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #0f172a;
-        }
-
-        .brand-text p {
-            font-size: 0.875rem;
-            color: #64748b;
-            margin-top: -2px;
-        }
-
-        .nav-actions {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-        }
-
-        .nav-btn {
-            padding: 0.75rem 1.5rem;
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white;
+        
+        .btn {
+            padding: 12px 25px;
             border: none;
             border-radius: 8px;
-            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: flex;
+            font-size: 14px;
+            font-weight: 600;
+            display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 8px;
+            transition: all 0.3s;
         }
-
-        .nav-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
-        }
-
-        .nav-btn.secondary {
-            background: #f1f5f9;
-            color: #475569;
-        }
-
-        .nav-btn.secondary:hover {
-            background: #e2e8f0;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.5rem 1rem;
-            background: #f8fafc;
-            border-radius: 50px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+            color: white;
+        }
+        
+        .btn-info {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 20px;
+        }
+        
+        .map-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .map-container h2 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .map-frame {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+        }
+        
+        .stats-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .stat-value {
+            color: #333;
             font-weight: 600;
             font-size: 14px;
         }
-
-        /* Main Container */
-        .main-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        /* Hero Section */
-        .hero-section {
-            background: white;
-            border-radius: 16px;
-            padding: 2.5rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            border: 1px solid #e2e8f0;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .hero-bg {
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 400px;
-            height: 200px;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1));
-            border-radius: 0 16px 0 50px;
-        }
-
-        .hero-content {
-            position: relative;
-            z-index: 10;
-            max-width: 600px;
-        }
-
-        .hero-badge {
-            background: #dbeafe;
-            color: #1e40af;
-            padding: 0.5rem 1rem;
-            border-radius: 50px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            display: inline-block;
-            margin-bottom: 1rem;
-        }
-
-        .hero-title {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 1rem;
-            line-height: 1.2;
-        }
-
-        .hero-description {
-            font-size: 1.125rem;
-            color: #64748b;
-            margin-bottom: 2rem;
-            line-height: 1.6;
-        }
-
-        .hero-stats {
-            display: flex;
-            gap: 2rem;
-            margin-top: 2rem;
-            flex-wrap: wrap;
-        }
-
-        .hero-stat {
-            text-align: left;
-            position: relative;
-        }
-
-        .hero-stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #0f172a;
-        }
-
-        .hero-stat-label {
-            font-size: 0.875rem;
-            color: #64748b;
-            font-weight: 500;
-        }
-
-        /* Overall Risk Bar */
-        .risk-bar-container {
-            margin-left: 2rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-width: 200px;
-        }
-
-        .overall-risk-title {
-            font-size: 0.875rem;
-            color: #64748b;
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-        }
-
-        .risk-bar {
-            width: 180px;
-            height: 28px;
-            background: #e5e7eb;
-            border-radius: 14px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        .risk-bar-fill {
-            height: 100%;
-            border-radius: 14px;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .risk-bar-text {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: white;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-        }
-
-        .risk-level-low { 
-            background: linear-gradient(90deg, #10b981, #059669); 
-        }
-        .risk-level-moderate { 
-            background: linear-gradient(90deg, #f59e0b, #d97706); 
-        }
-        .risk-level-high { 
-            background: linear-gradient(90deg, #ef4444, #dc2626); 
-        }
-        .risk-level-critical { 
-            background: linear-gradient(90deg, #dc2626, #991b1b); 
-            animation: pulse-critical 2s infinite;
-        }
-
-        @keyframes pulse-critical {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.8; }
-        }
-
-        /* Content Grid */
-        .content-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        /* Map Section */
-        .map-card {
-            background: white;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            border: 1px solid #e2e8f0;
-            height: 600px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .map-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid #e2e8f0;
-            background: #f8fafc;
-        }
-
-        .map-header-top {
-            display: flex;
-            justify-content: between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-
-        .map-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #0f172a;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            flex: 1;
-        }
-
-        .map-controls {
-            display: flex;
-            gap: 0.5rem;
-            background: #f1f5f9;
-            padding: 0.25rem;
-            border-radius: 8px;
-        }
-
-        .map-control-btn {
-            padding: 0.5rem 1rem;
-            background: transparent;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: #64748b;
-        }
-
-        .map-control-btn.active {
-            background: white;
-            color: #0f172a;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        .map-container {
-            flex: 1;
-            position: relative;
-        }
-
-        .map-iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-
-        .map-loading {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: #64748b;
-            gap: 1rem;
-        }
-
-        .map-overlay {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(10px);
-            padding: 1rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            min-width: 180px;
-        }
-
-        /* Analysis Section */
-        .analysis-card {
-            background: white;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            border: 1px solid #e2e8f0;
-            height: 600px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .analysis-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid #e2e8f0;
-            background: #f8fafc;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .analysis-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #0f172a;
-        }
-
-        .analysis-tabs {
-            display: flex;
-            background: #f1f5f9;
-            border-radius: 8px;
-            padding: 0.25rem;
-        }
-
-        .analysis-tab {
-            padding: 0.5rem 1rem;
-            background: transparent;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: #64748b;
-        }
-
-        .analysis-tab.active {
-            background: white;
-            color: #0f172a;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        .analysis-content {
-            flex: 1;
-            overflow-y: auto;
-        }
-
-        .tab-content {
-            display: none;
-            padding: 1.5rem;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        /* Metrics Grid */
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .metric-card {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 1.25rem;
-            text-align: center;
-            transition: all 0.2s;
-        }
-
-        .metric-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .metric-value {
-            font-size: 1.875rem;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 0.5rem;
-        }
-
-        .metric-label {
-            font-size: 0.875rem;
-            color: #64748b;
-            font-weight: 500;
-        }
-
-        /* Risk Assessment */
-        .risk-section {
-            margin-bottom: 1.5rem;
-        }
-
-        .section-title {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #0f172a;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .risk-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .risk-item {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem;
-            background: #f8fafc;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .risk-indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        .risk-critical { background: #dc2626; }
-        .risk-high { background: #ea580c; }
-        .risk-moderate { background: #d97706; }
-
-        .risk-content {
-            flex: 1;
-        }
-
-        .risk-title {
-            font-weight: 600;
-            font-size: 0.875rem;
-            color: #0f172a;
-        }
-
-        .risk-description {
-            font-size: 0.75rem;
-            color: #64748b;
-            margin-top: 0.25rem;
-        }
-
-        .risk-count {
-            background: #0f172a;
-            color: white;
-            padding: 0.25rem 0.75rem;
-            border-radius: 50px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        /* Action Buttons */
-        .actions-grid {
-            display: grid;
-            gap: 0.75rem;
-        }
-
-        .action-btn {
-            padding: 1rem;
-            border: none;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.75rem;
-            font-size: 0.875rem;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #3b82f6, #1e40af);
-            color: white;
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white;
-        }
-
-        .btn-outline {
-            background: white;
-            color: #374151;
-            border: 1px solid #e5e7eb;
-        }
-
-        .action-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-
-        /* Chat Section */
-        .chat-container {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1rem;
-            background: #f8fafc;
-            border-radius: 8px;
-            margin-bottom: 1rem;
+        
+        .hazard-list {
             max-height: 300px;
+            overflow-y: auto;
         }
-
-        .message {
-            margin-bottom: 1rem;
-            display: flex;
-            flex-direction: column;
+        
+        .hazard-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            font-size: 13px;
         }
-
-        .message.user {
-            align-items: flex-end;
+        
+        .hazard-critical {
+            background: #ffe5e5;
+            border-left: 4px solid #dc3545;
         }
-
-        .message.ai {
-            align-items: flex-start;
+        
+        .hazard-high {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
         }
-
-        .message-content {
-            max-width: 85%;
-            padding: 0.75rem 1rem;
-            border-radius: 12px;
-            font-size: 0.875rem;
-            line-height: 1.5;
+        
+        .hazard-moderate {
+            background: #fff8e1;
+            border-left: 4px solid #ffc107;
         }
-
-        .message.user .message-content {
-            background: #3b82f6;
-            color: white;
-            border-bottom-right-radius: 4px;
+        
+        .poi-list {
+            max-height: 250px;
+            overflow-y: auto;
         }
-
-        .message.ai .message-content {
-            background: white;
-            color: #374151;
-            border: 1px solid #e5e7eb;
-            border-bottom-left-radius: 4px;
-        }
-
-        .message-time {
-            font-size: 0.75rem;
-            color: #9ca3af;
-            margin-top: 0.25rem;
-        }
-
-        .chat-suggestions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .suggestion-chip {
-            padding: 0.5rem 1rem;
-            background: #f1f5f9;
-            border: 1px solid #e2e8f0;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: #475569;
-        }
-
-        .suggestion-chip:hover {
-            background: #e2e8f0;
-        }
-
-        .chat-input-container {
-            display: flex;
-            gap: 0.75rem;
-        }
-
-        .chat-input {
-            flex: 1;
-            padding: 0.875rem 1rem;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            font-size: 0.875rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .chat-input:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        .chat-send {
-            padding: 0.875rem 1.25rem;
-            background: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
+        
+        .poi-item {
+            padding: 8px;
+            margin-bottom: 6px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            font-size: 13px;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 8px;
         }
-
-        .chat-send:hover {
-            background: #2563eb;
+        
+        .poi-icon {
+            font-size: 16px;
         }
-
-        .chat-send:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* Bottom Section */
-        .bottom-section {
-            background: white;
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            border: 1px solid #e2e8f0;
-        }
-
-        .bottom-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 2rem;
-        }
-
-        .specifications-card {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 1.5rem;
-        }
-
-        .spec-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .spec-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.75rem;
-            background: white;
+        
+        .success-message {
+            display: none;
+            background: #d4edda;
+            color: #155724;
+            padding: 15px 20px;
             border-radius: 8px;
-            border: 1px solid #e2e8f0;
+            margin-bottom: 20px;
+            border-left: 4px solid #28a745;
         }
-
-        .spec-label {
-            font-weight: 500;
-            color: #64748b;
+        
+        .success-message.show {
+            display: block;
+            animation: slideIn 0.3s ease;
         }
-
-        .spec-value {
-            font-weight: 600;
-            color: #0f172a;
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-
-        /* Loading and Error States */
-        .loading-spinner {
-            width: 24px;
-            height: 24px;
-            border: 2px solid #e5e7eb;
-            border-top: 2px solid #3b82f6;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+        
+        .error-message {
+            display: none;
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #dc3545;
         }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        
+        .error-message.show {
+            display: block;
+            animation: slideIn 0.3s ease;
         }
-
-        /* Responsive Design */
+        
         @media (max-width: 1024px) {
             .content-grid {
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-            }
-
-            .map-card, .analysis-card {
-                height: 500px;
-            }
-
-            .bottom-grid {
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-            }
-
-            .hero-stats {
-                flex-direction: column;
-                gap: 1rem;
-            }
-
-            .risk-bar-container {
-                margin-left: 0;
-                margin-top: 1rem;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .main-container {
-                padding: 1rem;
-            }
-
-            .nav-container {
-                padding: 0 1rem;
-            }
-
-            .nav-actions {
-                display: none;
-            }
-
-            .hero-section {
-                padding: 1.5rem;
-                text-align: center;
-            }
-
-            .hero-title {
-                font-size: 2rem;
-            }
-
-            .metrics-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .spec-grid {
                 grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Top Navigation -->
-    <nav class="top-nav">
-        <div class="nav-container">
-            <div class="nav-brand">
-                <div class="brand-logo">IOCL</div>
-                <div class="brand-text">
-                    <h1>Route Analysis</h1>
-                    <p>AI Chat Assistance</p>
-                </div>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1><i class="fas fa-route"></i> Route Analysis Results</h1>
+                <p style="color: #666; margin-top: 5px;">{{ route_report.tt_specifications.consignee }}</p>
             </div>
-            <div class="nav-actions">
-                <a href="{{ url_for('home') }}" class="nav-btn secondary">
-                    <i class="fas fa-plus"></i>
-                    New Analysis
-                </a>
-                <a href="{{ url_for('detailed_report') }}" target="_blank" class="nav-btn">
-                    <i class="fas fa-file-alt"></i>
-                    Export Report
-                </a>
-                <div class="user-profile">
-                    <div class="user-avatar">{{ username[0]|upper if username else 'U' }}</div>
-                    <span>{{ username|default('User') }}</span>
-                </div>
+            <div class="user-info">
+                <i class="fas fa-user-circle"></i> {{ username }}
             </div>
         </div>
-    </nav>
-
-    <!-- Main Container -->
-    <div class="main-container">
-        <!-- Hero Section -->
-        <section class="hero-section">
-            <div class="hero-bg"></div>
-            <div class="hero-content">
-                <div class="hero-badge">
-                    <i class="fas fa-shield-alt"></i>
-                    Route Analysis
-                </div>
-                <h1 class="hero-title">
-                    Safety Assessment for
-                    <span style="color: #3b82f6;">{{ tt_specs.capacity_range|default('Tank Truck') }}</span>
-                </h1>
-                <p class="hero-description">
-                    Comprehensive GPS-based route analysis with real-time hazard detection, emergency facility mapping, 
-                    and AI-powered recommendations for petroleum transport operations.
-                </p>
-                <div class="hero-stats">
-                    <div class="hero-stat">
-                        <div class="hero-stat-value">{{ route_report.total_distance|default('N/A') }}</div>
-                        <div class="hero-stat-label">Route Distance</div>
-                    </div>
-                    <div class="hero-stat">
-                        <div class="hero-stat-value">{{ ((critical_turns or 0) + (high_turns or 0) + (moderate_turns or 0)) }}</div>
-                        <div class="hero-stat-label">Hazard Zones</div>
-                    </div>
-                    <div class="hero-stat">
-                        <div class="hero-stat-value">{{ all_pois|length if all_pois else 0 }}</div>
-                        <div class="hero-stat-label">Emergency Facilities</div>
-                    </div>
-                    <div class="hero-stat">
-                        <div class="hero-stat-value">{{ tt_specs.max_speed|default(50) }} km/h</div>
-                        <div class="hero-stat-label">Maximum Safe Speed</div>
-                    </div>
-                    <!-- Overall Risk Bar -->
-                    <div class="risk-bar-container">
-                        <div class="overall-risk-title">Overall Route Risk</div>
-                        <div class="risk-bar">
-                            {% set total_hazards = (critical_turns or 0) + (high_turns or 0) + (moderate_turns or 0) %}
-                            {% if total_hazards == 0 %}
-                                {% set risk_level = 'low' %}
-                                {% set risk_percentage = 25 %}
-                                {% set risk_text = 'LOW RISK' %}
-                            {% elif total_hazards <= 3 %}
-                                {% set risk_level = 'moderate' %}
-                                {% set risk_percentage = 50 %}
-                                {% set risk_text = 'MODERATE' %}
-                            {% elif total_hazards <= 8 %}
-                                {% set risk_level = 'high' %}
-                                {% set risk_percentage = 75 %}
-                                {% set risk_text = 'HIGH RISK' %}
-                            {% else %}
-                                {% set risk_level = 'critical' %}
-                                {% set risk_percentage = 95 %}
-                                {% set risk_text = 'CRITICAL' %}
-                            {% endif %}
-                            <div class="risk-bar-fill risk-level-{{ risk_level }}" style="width: {{ risk_percentage }}%">
-                                <div class="risk-bar-text">{{ risk_text }}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Content Grid -->
+        
+        <div id="successMsg" class="success-message"></div>
+        <div id="errorMsg" class="error-message"></div>
+        
+        <div class="action-buttons">
+            <button class="btn btn-success" onclick="saveToDatabase()">
+                <i class="fas fa-save"></i> Save to Database
+            </button>
+            <button class="btn btn-info" onclick="window.location.href='{{ url_for('detailed_report') }}'">
+                <i class="fas fa-file-pdf"></i> View Complete Report
+            </button>
+            <button class="btn btn-warning" onclick="window.print()">
+                <i class="fas fa-print"></i> Print Analysis
+            </button>
+            <button class="btn btn-primary" onclick="window.location.href='{{ url_for('home') }}'">
+                <i class="fas fa-plus"></i> Plan New Route
+            </button>
+        </div>
+        
         <div class="content-grid">
-            <!-- Interactive Map Card (50%) -->
-            <div class="map-card">
-                <div class="map-header">
-                    <div class="map-header-top">
-                        <div class="map-title">
-                            <i class="fas fa-map-marked-alt"></i>
-                            Route Visualization
-                        </div>
-                        <div class="map-controls">
-                            <button class="map-control-btn active">
-                                <i class="fas fa-route"></i>
-                                Route
-                            </button>
-                            <button class="map-control-btn">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                Hazards
-                            </button>
-                            <button class="map-control-btn">
-                                <i class="fas fa-hospital"></i>
-                                Facilities
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="map-container">
-                    {% if html_file and html_file != 'None' %}
-                        <iframe src="{{ url_for('view_map', filename=html_file) }}" 
-                                class="map-iframe"
-                                onload="handleMapLoad()"
-                                onerror="handleMapError()">
-                        </iframe>
-                    {% else %}
-                        <div class="map-loading">
-                            <div class="loading-spinner"></div>
-                            <p>Loading interactive route visualization...</p>
-                            <small>Processing {{ route_report.route_analysis.total_points|default(0) if route_report and route_report.get('route_analysis') else 0 }} GPS coordinates</small>
-                        </div>
-                    {% endif %}
-
-                    <!-- Map Overlay -->
-                    <div class="map-overlay">
-                        <h4 style="margin-bottom: 0.75rem; font-size: 0.875rem; font-weight: 600;">Quick Stats</h4>
-                        <div style="display: grid; gap: 0.5rem; font-size: 0.75rem;">
-                            <div style="display: flex; justify-content: space-between;">
-                                <span>Critical Zones:</span>
-                                <strong style="color: #dc2626;">{{ critical_turns or 0 }}</strong>
-                            </div>
-                            <div style="display: flex; justify-content: space-between;">
-                                <span>High Risk:</span>
-                                <strong style="color: #ea580c;">{{ high_turns or 0 }}</strong>
-                            </div>
-                            <div style="display: flex; justify-content: space-between;">
-                                <span>Facilities:</span>
-                                <strong>{{ all_pois|length if all_pois else 0 }}</strong>
-                            </div>
-                            <div style="display: flex; justify-content: space-between;">
-                                <span>Coverage:</span>
-                                <strong style="color: #10b981;">{{ 'Good' if (all_pois and all_pois|length >= 3) else 'Limited' }}</strong>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="map-container">
+                <h2><i class="fas fa-map-marked-alt"></i> Route Map</h2>
+                <iframe src="{{ url_for('static', filename=html_file) }}" class="map-frame"></iframe>
             </div>
-
-            <!-- Analysis Panel Card (50%) -->
-            <div class="analysis-card">
-                <div class="analysis-header">
-                    <div class="analysis-title">Safety Analysis & AI Assistant</div>
-                    <div class="analysis-tabs">
-                        <button class="analysis-tab active" onclick="switchAnalysisTab('overview')">Overview</button>
-                        <button class="analysis-tab" onclick="switchAnalysisTab('details')">Details</button>
-                        <button class="analysis-tab" onclick="switchAnalysisTab('chat')">AI Chat</button>
+            
+            <div class="stats-panel">
+                <!-- Route Summary -->
+                <div class="stat-card">
+                    <h3><i class="fas fa-info-circle"></i> Route Summary</h3>
+                    <div class="stat-item">
+                        <span class="stat-label">Total Distance</span>
+                        <span class="stat-value">{{ route_report.total_distance }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Estimated Time</span>
+                        <span class="stat-value">{{ route_report.total_duration }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">SAP Code</span>
+                        <span class="stat-value">{{ route_report.tt_specifications.sap_code }}</span>
                     </div>
                 </div>
-                <div class="analysis-content">
-                    <!-- Overview Tab -->
-                    <div id="overview-content" class="tab-content active">
-                        <div class="metrics-grid">
-                            <div class="metric-card">
-                                <div class="metric-value">{{ route_report.total_distance|default('N/A') }}</div>
-                                <div class="metric-label">Route Distance</div>
-                            </div>
-                            <div class="metric-card">
-                                <div class="metric-value">{{ route_report.total_duration|default('N/A') }}</div>
-                                <div class="metric-label">Est. Duration</div>
-                            </div>
-                            <div class="metric-card">
-                                <div class="metric-value">{{ critical_turns or 0 }}</div>
-                                <div class="metric-label">Critical Zones</div>
-                            </div>
-                            <div class="metric-card">
-                                <div class="metric-value">{{ "{:,}".format(tt_specs.avg_capacity_liters) if tt_specs.avg_capacity_liters else '0' }}</div>
-                                <div class="metric-label">Tank Capacity (L)</div>
-                            </div>
-                        </div>
-
-                        <div class="risk-section">
-                            <div class="section-title">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                Risk Assessment Matrix
-                            </div>
-                            <div class="risk-grid">
-                                <div class="risk-item">
-                                    <div class="risk-indicator risk-critical"></div>
-                                    <div class="risk-content">
-                                        <div class="risk-title">Critical Risk Zones</div>
-                                        <div class="risk-description">Liquid surge danger - extreme caution required</div>
-                                    </div>
-                                    <div class="risk-count">{{ critical_turns or 0 }}</div>
-                                </div>
-                                <div class="risk-item">
-                                    <div class="risk-indicator risk-high"></div>
-                                    <div class="risk-content">
-                                        <div class="risk-title">High Risk Zones</div>
-                                        <div class="risk-description">Rollover risk - significant speed reduction</div>
-                                    </div>
-                                    <div class="risk-count">{{ high_turns or 0 }}</div>
-                                </div>
-                                <div class="risk-item">
-                                    <div class="risk-indicator risk-moderate"></div>
-                                    <div class="risk-content">
-                                        <div class="risk-title">Moderate Risk Zones</div>
-                                        <div class="risk-description">Standard intersection speed required</div>
-                                    </div>
-                                    <div class="risk-count">{{ moderate_turns or 0 }}</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="actions-grid">
-                            <a href="{{ url_for('detailed_report') }}" target="_blank" class="action-btn btn-primary">
-                                <i class="fas fa-file-alt"></i>
-                                View Complete GPS Report
-                            </a>
-                            {% if html_file and html_file != 'None' %}
-                            <a href="{{ url_for('view_map', filename=html_file) }}" target="_blank" class="action-btn btn-success">
-                                <i class="fas fa-expand"></i>
-                                Full Screen Map
-                            </a>
-                            {% endif %}
-                            <a href="{{ url_for('home') }}" class="action-btn btn-outline">
-                                <i class="fas fa-plus"></i>
-                                Analyze New Route
-                            </a>
-                        </div>
+                
+                <!-- TT Specifications -->
+                <div class="stat-card">
+                    <h3><i class="fas fa-truck"></i> Tank Truck Details</h3>
+                    <div class="stat-item">
+                        <span class="stat-label">TT Type</span>
+                        <span class="stat-value">{{ route_report.tt_specifications.tt_type }}</span>
                     </div>
-
-                    <!-- Details Tab -->
-                    <div id="details-content" class="tab-content">
-                        <div class="section-title">
-                            <i class="fas fa-hospital"></i>
-                            Emergency Infrastructure
-                        </div>
-                        <div class="metrics-grid">
-                            {% set hospitals = 0 %}
-                            {% set police = 0 %}
-                            {% set fuel = 0 %}
-                            {% if all_pois %}
-                                {% for poi in all_pois %}
-                                    {% if 'hospital' in poi.type %}
-                                        {% set hospitals = hospitals + 1 %}
-                                    {% elif 'police' in poi.type %}
-                                        {% set police = police + 1 %}
-                                    {% elif 'fuel' in poi.type %}
-                                        {% set fuel = fuel + 1 %}
-                                    {% endif %}
-                                {% endfor %}
-                            {% endif %}
-                            
-                            <div class="metric-card">
-                                <div class="metric-value">{{ hospitals }}</div>
-                                <div class="metric-label">Medical Facilities</div>
-                            </div>
-                            <div class="metric-card">
-                                <div class="metric-value">{{ police }}</div>
-                                <div class="metric-label">Police Stations</div>
-                            </div>
-                            <div class="metric-card">
-                                <div class="metric-value">{{ fuel }}</div>
-                                <div class="metric-label">Fuel Stations</div>
-                            </div>
-                            <div class="metric-card">
-                                <div class="metric-value">{{ 'Good' if (all_pois and all_pois|length >= 3) else 'Limited' }}</div>
-                                <div class="metric-label">Coverage Status</div>
-                            </div>
-                        </div>
-
-                        <div class="section-title" style="margin-top: 1.5rem;">
-                            <i class="fas fa-route"></i>
-                            Route Analysis Details
-                        </div>
-                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem;">
-                            <div style="display: grid; gap: 0.75rem; font-size: 0.875rem;">
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: #64748b;">GPS Points Analyzed:</span>
-                                    <strong>{{ route_report.route_analysis.total_points if route_report and route_report.get('route_analysis') and route_report.route_analysis.total_points else coords|length if coords else 0 }}</strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: #64748b;">Analysis Density:</span>
-                                    <strong>{{ "%.1f"|format(route_report.route_analysis.points_per_km) if route_report and route_report.get('route_analysis') and route_report.route_analysis.points_per_km else '1.0' }} points/km</strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: #64748b;">Total Hazard Zones:</span>
-                                    <strong>{{ ((critical_turns or 0) + (high_turns or 0) + (moderate_turns or 0)) }}</strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: #64748b;">Risk Amplification:</span>
-                                    <strong style="color: #dc2626;">{{ tt_specs.risk_multiplier if tt_specs.risk_multiplier else '1.4' }}x factor</strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: #64748b;">Vehicle Weight:</span>
-                                    <strong>{{ "%.1f"|format(tt_specs.gross_weight/1000) if tt_specs.gross_weight else '0' }} T</strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: #64748b;">Emergency Response:</span>
-                                    <strong style="color: {{ '#10b981' if (all_pois and all_pois|length >= 2) else '#dc2626' }};">{{ 'Available' if (all_pois and all_pois|length >= 2) else 'Limited' }}</strong>
-                                </div>
-                            </div>
-                        </div>
-
-                        {% if sharp_turns and sharp_turns|length > 0 %}
-                        <div class="section-title" style="margin-top: 1.5rem;">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            Critical Hazard Details
-                        </div>
-                        <div style="max-height: 200px; overflow-y: auto; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem;">
-                            {% for turn in sharp_turns[:5] %}
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #e2e8f0;">
-                                <div>
-                                    <div style="font-weight: 600; font-size: 0.875rem;">Hazard Zone {{ loop.index }}</div>
-                                    <div style="font-size: 0.75rem; color: #64748b;">{{ "%.1f"|format(turn.turn_angle) if turn.turn_angle else '0' }}° {{ turn.direction if turn.direction else 'turn' }}</div>
-                                </div>
-                                <div style="text-align: right;">
-                                    <div style="font-weight: 600; font-size: 0.75rem; color: {{ '#dc2626' if turn.turn_angle and turn.turn_angle >= 90 else '#ea580c' if turn.turn_angle and turn.turn_angle >= 65 else '#d97706' }};">
-                                        {{ 'CRITICAL' if turn.turn_angle and turn.turn_angle >= 90 else 'HIGH' if turn.turn_angle and turn.turn_angle >= 65 else 'MODERATE' }}
-                                    </div>
-                                    <div style="font-size: 0.75rem; color: #64748b;">{{ "%.6f, %.6f"|format(turn.location[0], turn.location[1]) if turn.location else 'Unknown coordinates' }}</div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
+                    <div class="stat-item">
+                        <span class="stat-label">Capacity</span>
+                        <span class="stat-value">{{ route_report.tt_specifications.capacity }} KL</span>
                     </div>
-
-                    <!-- AI Chat Tab -->
-                    <div id="chat-content" class="tab-content">
-                        <div class="chat-container">
-                            <div class="chat-suggestions" id="chat-suggestions">
-                                <div class="suggestion-chip" onclick="sendSuggestion('What are the main safety risks on this route?')">
-                                    Route safety risks?
-                                </div>
-                                <div class="suggestion-chip" onclick="sendSuggestion('What speed should I use for sharp turns?')">
-                                    Speed for turns?
-                                </div>
-                                <div class="suggestion-chip" onclick="sendSuggestion('Where are the emergency facilities?')">
-                                    Emergency facilities?
-                                </div>
-                                <div class="suggestion-chip" onclick="sendSuggestion('How should I handle liquid cargo safely?')">
-                                    Liquid cargo safety?
-                                </div>
-                            </div>
-                            
-                            <div class="chat-messages" id="chat-messages">
-                                <div class="message ai">
-                                    <div class="message-content">
-                                        👋 Hello! I'm your AI assistant with complete access to your {{ tt_specs.capacity_range if tt_specs.capacity_range else 'tank truck' }} route analysis. I can help with:
-                                        <br><br>
-                                        • Route hazards and safety protocols<br>
-                                        • Speed recommendations for different zones<br>
-                                        • Emergency procedures and facility locations<br>
-                                        • Vehicle-specific safety guidelines<br>
-                                        • Regulatory compliance requirements
-                                    </div>
-                                    <div class="message-time">AI Safety Assistant</div>
-                                </div>
-                            </div>
-                            
-                            <div class="chat-input-container">
-                                <input type="text" 
-                                       class="chat-input" 
-                                       id="chat-input-field"
-                                       placeholder="Ask about route safety, hazards, emergency procedures..."
-                                       onkeypress="handleChatKeyPress(event)"
-                                       maxlength="500">
-                                <button class="chat-send" id="chat-send-btn" onclick="sendChatMessage()">
-                                    <i class="fas fa-paper-plane"></i>
-                                    Send
-                                </button>
-                            </div>
-                        </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Axles</span>
+                        <span class="stat-value">{{ route_report.tt_specifications.axles }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Gross Weight</span>
+                        <span class="stat-value">{{ route_report.tt_specifications.weight }} MT</span>
                     </div>
                 </div>
+                
+                <!-- Hazards Summary -->
+                <div class="stat-card">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Hazards Detected</h3>
+                    <div class="stat-item">
+                        <span class="stat-label">Critical Turns (≥90°)</span>
+                        <span class="stat-value" style="color: #dc3545;">{{ sharp_turns|selectattr('turn_angle', 'ge', 90)|list|length }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">High Risk (65-89°)</span>
+                        <span class="stat-value" style="color: #ff9800;">{{ sharp_turns|selectattr('turn_angle', 'ge', 65)|selectattr('turn_angle', 'lt', 90)|list|length }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Moderate (45-64°)</span>
+                        <span class="stat-value" style="color: #ffc107;">{{ sharp_turns|selectattr('turn_angle', 'ge', 45)|selectattr('turn_angle', 'lt', 65)|list|length }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Total Sharp Turns</span>
+                        <span class="stat-value">{{ sharp_turns|length }}</span>
+                    </div>
+                </div>
+                
+                <!-- Hazards Detail -->
+                {% if sharp_turns|length > 0 %}
+                <div class="stat-card">
+                    <h3><i class="fas fa-list"></i> Hazard Details</h3>
+                    <div class="hazard-list">
+                        {% for hazard in sharp_turns %}
+                        <div class="hazard-item {% if hazard.turn_angle >= 90 %}hazard-critical{% elif hazard.turn_angle >= 65 %}hazard-high{% else %}hazard-moderate{% endif %}">
+                            <strong>Turn {{ loop.index }}</strong><br>
+                            Angle: {{ "%.1f"|format(hazard.turn_angle) }}° | 
+                            Location: {{ "%.5f"|format(hazard.location[0]) }}, {{ "%.5f"|format(hazard.location[1]) }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Points of Interest -->
+                {% if all_pois|length > 0 %}
+                <div class="stat-card">
+                    <h3><i class="fas fa-map-marker-alt"></i> Points of Interest</h3>
+                    <div class="poi-list">
+                        {% for poi in all_pois %}
+                        <div class="poi-item">
+                            <span class="poi-icon">
+                                {% if poi.type == 'hospital' %}🏥
+                                {% elif poi.type == 'police' %}👮
+                                {% elif poi.type == 'fuel' %}⛽
+                                {% else %}📍
+                                {% endif %}
+                            </span>
+                            <span>{{ poi.name }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
         </div>
-
-        <!-- Bottom Section - Vehicle Specifications -->
-        <section class="bottom-section">
-            <div class="bottom-grid">
-                <div>
-                    <div class="section-title">
-                        <i class="fas fa-truck"></i>
-                        {{ tt_specs.capacity_range if tt_specs.capacity_range else 'Tank Truck' }} Technical Specifications
-                    </div>
-                    <div class="specifications-card">
-                        <div class="spec-grid">
-                            <div class="spec-item">
-                                <span class="spec-label">Tank Capacity</span>
-                                <span class="spec-value">{{ "{:,}".format(tt_specs.avg_capacity_liters) if tt_specs.avg_capacity_liters else '0' }} L</span>
-                            </div>
-                            <div class="spec-item">
-                                <span class="spec-label">Gross Weight</span>
-                                <span class="spec-value">{{ "%.1f"|format(tt_specs.gross_weight/1000) if tt_specs.gross_weight else '0' }} T</span>
-                            </div>
-                            <div class="spec-item">
-                                <span class="spec-label">Axle Load</span>
-                                <span class="spec-value">{{ "%.1f"|format(tt_specs.axle_load) if tt_specs.axle_load else '0' }} T</span>
-                            </div>
-                            <div class="spec-item">
-                                <span class="spec-label">Max Legal Speed</span>
-                                <span class="spec-value">{{ tt_specs.max_speed if tt_specs.max_speed else '50' }} km/h</span>
-                            </div>
-                            <div class="spec-item">
-                                <span class="spec-label">Risk Multiplier</span>
-                                <span class="spec-value">{{ tt_specs.risk_multiplier if tt_specs.risk_multiplier else '1.4' }}x</span>
-                            </div>
-                            <div class="spec-item">
-                                <span class="spec-label">Vehicle Class</span>
-                                <span class="spec-value">{{ tt_specs.capacity_range if tt_specs.capacity_range else 'Standard TT' }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div>
-                    <div class="section-title">
-                        <i class="fas fa-shield-alt"></i>
-                        Safety Compliance
-                    </div>
-                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 1.5rem;">
-                        <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.875rem; line-height: 1.8;">
-                            <li style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-                                <i class="fas fa-check-circle" style="color: #10b981;"></i>
-                                <span>ITDG guidelines compliance verified</span>
-                            </li>
-                            <li style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-                                <i class="fas fa-check-circle" style="color: #10b981;"></i>
-                                <span>PESO safety standards followed</span>
-                            </li>
-                            <li style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-                                <i class="fas fa-check-circle" style="color: #10b981;"></i>
-                                <span>Emergency response protocols active</span>
-                            </li>
-                            <li style="display: flex; align-items: center; gap: 0.75rem;">
-                                <i class="fas fa-check-circle" style="color: #10b981;"></i>
-                                <span>Route analysis based on GPS data</span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </section>
     </div>
-
+    
     <script>
-        // Global state
-        let currentTab = 'overview';
-        let mapLoaded = false;
-        let chatHistory = [];
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚛 IOCL Route Analysis Dashboard Initialized');
-            initializeChat();
-        });
-
-        // Tab switching
-        function switchAnalysisTab(tabName) {
-            // Update tab buttons
-            document.querySelectorAll('.analysis-tab').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-
-            // Update content
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            document.getElementById(tabName + '-content').classList.add('active');
+        function saveToDatabase() {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
             
-            currentTab = tabName;
-            
-            if (tabName === 'chat') {
-                setTimeout(() => {
-                    document.getElementById('chat-input-field').focus();
-                }, 100);
-            }
-        }
-
-        // Map handlers
-        function handleMapLoad() {
-            mapLoaded = true;
-            console.log('✅ Map loaded successfully');
-        }
-
-        function handleMapError() {
-            console.error('❌ Map loading failed');
-            document.querySelector('.map-container').innerHTML = `
-                <div class="map-loading">
-                    <i class="fas fa-exclamation-triangle" style="color: #dc2626; font-size: 2rem;"></i>
-                    <div>
-                        <p style="font-weight: 600;">Map Loading Error</p>
-                        <small>Unable to load interactive visualization</small>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Chat functionality
-        function initializeChat() {
-            const messagesContainer = document.getElementById('chat-messages');
-            if (messagesContainer) {
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            }
-        }
-
-        function sendSuggestion(message) {
-            const input = document.getElementById('chat-input-field');
-            input.value = message;
-            sendChatMessage();
-        }
-
-        function handleChatKeyPress(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                sendChatMessage();
-            }
-        }
-
-        async function sendChatMessage() {
-            const input = document.getElementById('chat-input-field');
-            const message = input.value.trim();
-            
-            if (!message) return;
-            
-            input.value = '';
-            const sendBtn = document.getElementById('chat-send-btn');
-            sendBtn.disabled = true;
-            
-            addChatMessage(message, 'user');
-            
-            // Hide suggestions after first message
-            const suggestions = document.getElementById('chat-suggestions');
-            if (suggestions) {
-                suggestions.style.display = 'none';
-            }
-            
-            try {
-                addTypingIndicator();
-                
-                const response = await fetch('/ai_chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        question: message
-                    })
-                });
-                
-                const data = await response.json();
-                
-                removeTypingIndicator();
-                
-                if (data.status === 'success') {
-                    addChatMessage(data.answer, 'ai');
-                } else {
-                    addChatMessage('Sorry, I encountered an error. Please try again.', 'ai');
+            fetch('/save_map_to_database', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
                 }
-            } catch (error) {
-                console.error('Chat error:', error);
-                removeTypingIndicator();
-                addChatMessage('Sorry, I\'m having trouble connecting. Please try again.', 'ai');
-            } finally {
-                sendBtn.disabled = false;
-            }
-        }
-
-        function addChatMessage(content, sender) {
-            const messagesContainer = document.getElementById('chat-messages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender}`;
-            
-            const now = new Date();
-            const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            
-            messageDiv.innerHTML = `
-                <div class="message-content">${content.replace(/\n/g, '<br>')}</div>
-                <div class="message-time">${sender === 'user' ? 'You' : 'AI Assistant'} • ${timeString}</div>
-            `;
-            
-            messagesContainer.appendChild(messageDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            
-            chatHistory.push({
-                content: content,
-                sender: sender,
-                timestamp: now
+            })
+            .then(response => response.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                
+                if (data.success) {
+                    showMessage('successMsg', '✅ ' + data.message);
+                } else {
+                    showMessage('errorMsg', '❌ ' + data.message);
+                }
+            })
+            .catch(error => {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                showMessage('errorMsg', '❌ Error: ' + error);
             });
         }
-
-        function addTypingIndicator() {
-            const messagesContainer = document.getElementById('chat-messages');
-            const typingDiv = document.createElement('div');
-            typingDiv.className = 'message ai';
-            typingDiv.id = 'typing-indicator';
+        
+        function showMessage(elementId, message) {
+            const msgEl = document.getElementById(elementId);
+            msgEl.textContent = message;
+            msgEl.classList.add('show');
             
-            typingDiv.innerHTML = `
-                <div class="message-content">
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <div class="loading-spinner" style="width: 16px; height: 16px;"></div>
-                        <span>Analyzing your route data...</span>
-                    </div>
-                </div>
-                <div class="message-time">AI Assistant</div>
-            `;
-            
-            messagesContainer.appendChild(typingDiv);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        function removeTypingIndicator() {
-            const indicator = document.getElementById('typing-indicator');
-            if (indicator) {
-                indicator.remove();
-            }
+            setTimeout(() => {
+                msgEl.classList.remove('show');
+            }, 5000);
         }
     </script>
 </body>
