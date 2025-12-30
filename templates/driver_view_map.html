@@ -15,9 +15,12 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            /* FIX: Use 100dvh for mobile browsers so the bottom nav doesn't hide content */
             height: 100vh;
+            height: 100dvh;
             display: flex;
             flex-direction: column;
+            overflow: hidden; /* Prevents body scroll, lets map scroll if needed */
         }
         
         .header {
@@ -27,6 +30,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            /* FIX: Prevent header from shrinking on small screens */
+            flex-shrink: 0;
+            z-index: 10;
         }
         
         .header-title {
@@ -46,6 +52,9 @@
             margin: 15px 20px;
             border-radius: 10px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            /* FIX: Prevent info box from shrinking */
+            flex-shrink: 0;
+            z-index: 10;
         }
         
         .route-detail {
@@ -65,18 +74,24 @@
         }
         
         .map-container {
-            flex: 1;
+            flex: 1; /* Takes up all remaining space */
             margin: 0 20px 20px 20px;
-            background: white;
+            background: #f0f0f0; /* Gray placeholder while loading */
             border-radius: 10px;
-            overflow: hidden;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            /* FIX: Relative positioning allows the iframe to fit perfectly */
+            position: relative; 
+            overflow: hidden;
         }
         
         .map-frame {
             width: 100%;
             height: 100%;
             border: none;
+            /* FIX: Absolute positioning to prevent overflow issues */
+            position: absolute;
+            top: 0;
+            left: 0;
         }
         
         .btn-back {
@@ -91,10 +106,23 @@
             align-items: center;
             gap: 8px;
             text-decoration: none;
+            white-space: nowrap; /* Prevents text wrapping on small screens */
         }
         
         .btn-back:hover {
             background: #5568d3;
+        }
+        
+        /* Mobile adjustment for very small screens */
+        @media (max-height: 600px) {
+            .route-info {
+                padding: 10px;
+                margin: 10px;
+            }
+            .route-detail {
+                margin-bottom: 4px;
+                font-size: 12px;
+            }
         }
     </style>
 </head>
@@ -102,42 +130,57 @@
     <div class="header">
         <div class="header-title">
             <i class="fas fa-route" style="color: #667eea; font-size: 24px;"></i>
-            <h1>Your Route Map</h1>
+            <h1>Your Route</h1>
         </div>
         <a href="/driver/scan" class="btn-back">
-            <i class="fas fa-arrow-left"></i> Back to Scanner
+            <i class="fas fa-arrow-left"></i> Back
         </a>
     </div>
     
     <div class="route-info">
         <div class="route-detail">
             <span class="route-label"><i class="fas fa-barcode"></i> SAP Code:</span>
-            <span class="route-value">{{ map_data.sap_code }}</span>
+            <span class="route-value">{{ map_data.sap_code | default('N/A') }}</span>
         </div>
         <div class="route-detail">
             <span class="route-label"><i class="fas fa-map-marker-alt"></i> Destination:</span>
-            <span class="route-value">{{ map_data.consignee_name }}</span>
+            <span class="route-value">{{ map_data.consignee_name | default('Unknown') }}</span>
         </div>
         <div class="route-detail">
             <span class="route-label"><i class="fas fa-warehouse"></i> From:</span>
-            <span class="route-value">{{ map_data.terminal_name }}</span>
+            <span class="route-value">{{ map_data.terminal_name | default('Unknown') }}</span>
         </div>
         <div class="route-detail">
             <span class="route-label"><i class="fas fa-route"></i> Distance:</span>
-            <span class="route-value">{{ map_data.route_distance }}</span>
+            <span class="route-value">{{ map_data.route_distance | default('--') }}</span>
         </div>
         <div class="route-detail">
             <span class="route-label"><i class="fas fa-clock"></i> Duration:</span>
-            <span class="route-value">{{ map_data.route_duration }}</span>
+            <span class="route-value">{{ map_data.route_duration | default('--') }}</span>
         </div>
         <div class="route-detail">
             <span class="route-label"><i class="fas fa-truck"></i> TT Type:</span>
-            <span class="route-value">{{ map_data.tt_type }} ({{ map_data.tt_capacity }} KL)</span>
+            <span class="route-value">
+                {{ map_data.tt_type | default('Standard') }} 
+                ({{ map_data.tt_capacity | default('0') }} KL)
+            </span>
         </div>
     </div>
     
     <div class="map-container">
-        <iframe src="/map/{{ map_data.map_file }}" class="map-frame"></iframe>
+        {% if map_data.map_file %}
+            <iframe 
+                src="/map/{{ map_data.map_file }}" 
+                class="map-frame" 
+                loading="eager"
+                sandbox="allow-scripts allow-same-origin"
+                allowfullscreen>
+            </iframe>
+        {% else %}
+            <div style="display:flex; justify-content:center; align-items:center; height:100%; color:#666;">
+                <p>No map file available.</p>
+            </div>
+        {% endif %}
     </div>
 </body>
 </html>
