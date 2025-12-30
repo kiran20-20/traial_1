@@ -3,868 +3,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IndianOil Smart Marg - Login Flow</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Login - Smart Marg</title>
     <style>
-        :root {
-            --iocl-primary: #F37022;
-            --iocl-secondary: #E55A00;
-            --iocl-accent: #FF8C42;
-            --iocl-dark: #B8460A;
-            --iocl-light: #FFF4ED;
-            --iocl-white: #FFFFFF;
-            --iocl-gray: #f7f1eb;
-        }
-
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
-            background: linear-gradient(135deg, var(--iocl-light) 0%, #fff9f4 50%, var(--iocl-gray) 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
-            position: relative;
-            overflow-x: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        /* Enhanced Floating Background Elements */
-        .floating-bg-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            z-index: -1;
-            pointer-events: none;
-            background: 
-                radial-gradient(circle at 15% 85%, rgba(243, 112, 34, 0.08) 0%, transparent 40%),
-                radial-gradient(circle at 85% 15%, rgba(255, 140, 66, 0.08) 0%, transparent 40%),
-                radial-gradient(circle at 50% 50%, rgba(243, 112, 34, 0.03) 0%, transparent 60%);
-        }
-
-        .floating-text-bubble {
-            position: absolute;
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: rgba(243, 112, 34, 0.7);
-            padding: 8px 16px;
+        .login-container {
+            background: white;
+            padding: 40px;
             border-radius: 20px;
-            background: rgba(255, 255, 255, 0.4);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(243, 112, 34, 0.2);
-            white-space: nowrap;
-            animation: gentleFloat 20s ease-in-out infinite;
-            opacity: 0.8;
-            box-shadow: 0 4px 20px rgba(243, 112, 34, 0.1);
-        }
-
-        @keyframes gentleFloat {
-            0%, 100% { 
-                transform: translateY(0) translateX(0) rotate(0deg); 
-                opacity: 0.8;
-            }
-            25% { 
-                transform: translateY(-20px) translateX(15px) rotate(1deg); 
-                opacity: 0.9;
-            }
-            50% { 
-                transform: translateY(15px) translateX(-12px) rotate(-1deg); 
-                opacity: 0.7;
-            }
-            75% { 
-                transform: translateY(-10px) translateX(18px) rotate(0.5deg); 
-                opacity: 0.85;
-            }
-        }
-
-        /* Enhanced Bubble positioning with more bubbles */
-        .bubble-1 { top: 8%; left: 5%; animation-delay: 0s; }
-        .bubble-2 { top: 15%; right: 8%; animation-delay: 3s; }
-        .bubble-3 { top: 65%; left: 6%; animation-delay: 6s; }
-        .bubble-4 { bottom: 12%; right: 12%; animation-delay: 9s; }
-        .bubble-5 { top: 35%; left: 10%; animation-delay: 12s; }
-        .bubble-6 { bottom: 35%; left: 15%; animation-delay: 15s; }
-        .bubble-7 { top: 75%; right: 20%; animation-delay: 18s; }
-        .bubble-8 { top: 25%; left: 75%; animation-delay: 21s; }
-        .bubble-9 { top: 55%; right: 25%; animation-delay: 2s; }
-        .bubble-10 { bottom: 20%; left: 70%; animation-delay: 5s; }
-        .bubble-11 { top: 12%; left: 30%; animation-delay: 8s; }
-        .bubble-12 { top: 42%; right: 5%; animation-delay: 11s; }
-        .bubble-13 { bottom: 45%; left: 45%; animation-delay: 14s; }
-        .bubble-14 { top: 68%; left: 25%; animation-delay: 17s; }
-        .bubble-15 { bottom: 8%; left: 35%; animation-delay: 20s; }
-        .bubble-16 { top: 28%; right: 35%; animation-delay: 23s; }
-        .bubble-17 { top: 82%; left: 80%; animation-delay: 1s; }
-        .bubble-18 { bottom: 60%; right: 45%; animation-delay: 4s; }
-        .bubble-19 { top: 5%; left: 60%; animation-delay: 7s; }
-        .bubble-20 { bottom: 25%; right: 70%; animation-delay: 10s; }
-        .bubble-21 { top: 48%; left: 82%; animation-delay: 13s; }
-        .bubble-22 { top: 78%; right: 5%; animation-delay: 16s; }
-        .bubble-23 { bottom: 50%; left: 20%; animation-delay: 19s; }
-        .bubble-24 { top: 32%; left: 55%; animation-delay: 22s; }
-        .bubble-25 { bottom: 75%; right: 30%; animation-delay: 25s; }
-        .bubble-26 { top: 18%; right: 50%; animation-delay: 28s; }
-        .bubble-27 { bottom: 18%; left: 55%; animation-delay: 31s; }
-        .bubble-28 { top: 58%; right: 15%; animation-delay: 34s; }
-        .bubble-29 { top: 88%; left: 40%; animation-delay: 37s; }
-        .bubble-30 { bottom: 38%; right: 60%; animation-delay: 40s; }
-
-        /* Main Flow Container */
-        .flow-container {
-            position: relative;
-            width: 100%;
-            max-width: 480px;
-            padding: 20px;
-        }
-
-        /* Header */
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-            animation: fadeInDown 0.8s ease-out;
-        }
-
-        .truck-icon {
-            font-size: 4rem;
-            margin-bottom: 16px;
-            animation: bounce 3s infinite;
-            filter: drop-shadow(0 4px 20px rgba(243, 112, 34, 0.3));
-        }
-
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% { 
-                transform: translateY(0) scale(1); 
-            }
-            40% { 
-                transform: translateY(-20px) scale(1.1); 
-            }
-            60% { 
-                transform: translateY(-10px) scale(1.05); 
-            }
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--iocl-primary), var(--iocl-accent));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 8px;
-            text-shadow: 0 2px 10px rgba(243, 112, 34, 0.1);
-        }
-
-        .header p {
-            font-size: 1.1rem;
-            color: var(--iocl-dark);
-            font-weight: 500;
-            opacity: 0.9;
-        }
-
-        /* Vertical Flow Layout */
-        .flow-layout {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 24px;
-            padding: 20px 0;
-            position: relative;
-        }
-
-        /* Flow Steps */
-        .flow-step {
-            position: relative;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            animation: slideInUp 0.8s ease-out;
-        }
-
-        .flow-step:nth-child(1) { animation-delay: 0.2s; }
-        .flow-step:nth-child(2) { animation-delay: 0.4s; }
-        .flow-step:nth-child(3) { animation-delay: 0.6s; }
-        .flow-step:nth-child(4) { animation-delay: 0.8s; }
-        .flow-step:nth-child(5) { animation-delay: 1.0s; }
-
-        @keyframes slideInUp {
-            from {
-                opacity: 0;
-                transform: translateY(50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-40px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .input-box {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(15px);
-            border-radius: 24px;
-            padding: 32px;
-            box-shadow: 
-                0 12px 40px rgba(243, 112, 34, 0.15),
-                0 6px 20px rgba(0, 0, 0, 0.1);
-            border: 2px solid rgba(243, 112, 34, 0.1);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             width: 100%;
             max-width: 400px;
         }
 
-        .input-box:hover {
-            transform: translateY(-4px);
-            box-shadow: 
-                0 20px 60px rgba(243, 112, 34, 0.2),
-                0 10px 30px rgba(0, 0, 0, 0.15);
-            border-color: rgba(243, 112, 34, 0.3);
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
         }
 
-        .input-box.active {
-            border-color: var(--iocl-primary);
-            box-shadow: 
-                0 20px 60px rgba(243, 112, 34, 0.25),
-                0 0 0 4px rgba(243, 112, 34, 0.1);
-            transform: translateY(-4px);
+        .logo h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
         }
 
-        .input-box label {
+        .logo p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
             display: block;
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--iocl-dark);
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .input-box label i {
-            color: var(--iocl-primary);
-            font-size: 1.1rem;
-        }
-
-        .input-box input {
-            width: 100%;
-            padding: 16px 20px;
-            border: 2px solid rgba(243, 112, 34, 0.2);
-            border-radius: 16px;
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-            background: rgba(255, 255, 255, 0.8);
+            font-weight: bold;
+            margin-bottom: 8px;
             color: #333;
         }
 
-        .input-box input:focus {
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        input:focus {
             outline: none;
-            border-color: var(--iocl-primary);
-            background: white;
-            box-shadow: 0 0 0 3px rgba(243, 112, 34, 0.1);
-            transform: translateY(-2px);
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-        .input-box input::placeholder {
-            color: rgba(51, 51, 51, 0.5);
-        }
-
-        .step-number {
-            position: absolute;
-            top: -16px;
-            left: 32px;
-            background: linear-gradient(135deg, var(--iocl-primary), var(--iocl-accent));
-            color: white;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.9rem;
-            font-weight: bold;
-            box-shadow: 0 4px 16px rgba(243, 112, 34, 0.4);
-            z-index: 10;
-        }
-
-        /* Vertical Connection with Arrow */
-        .flow-connection {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 40px;
-            position: relative;
+        .btn {
             width: 100%;
-        }
-
-        .arrow-line {
-            width: 6px;
-            height: 30px;
-            background: linear-gradient(180deg, var(--iocl-primary), var(--iocl-accent));
-            border-radius: 3px;
-            position: relative;
-            box-shadow: 0 3px 15px rgba(243, 112, 34, 0.3);
-            animation: flowPulse 2s ease-in-out infinite;
-        }
-
-        .arrow-head {
-            position: absolute;
-            bottom: -8px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 8px solid transparent;
-            border-right: 8px solid transparent;
-            border-top: 12px solid var(--iocl-accent);
-            animation: arrowBounce 2s ease-in-out infinite;
-            filter: drop-shadow(0 3px 8px rgba(243, 112, 34, 0.4));
-        }
-
-        .flow-shine {
-            position: absolute;
-            top: -100%;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(180deg, transparent, rgba(255,255,255,0.4), transparent);
-            border-radius: 3px;
-            animation: shineVertical 3s ease-in-out infinite;
-        }
-
-        @keyframes flowPulse {
-            0%, 100% { 
-                opacity: 0.8;
-                transform: scaleY(1);
-            }
-            50% { 
-                opacity: 1;
-                transform: scaleY(1.05);
-            }
-        }
-
-        @keyframes arrowBounce {
-            0%, 100% { 
-                transform: translateX(-50%) translateY(0);
-            }
-            50% { 
-                transform: translateX(-50%) translateY(3px);
-            }
-        }
-
-        @keyframes shineVertical {
-            0% { top: -100%; }
-            50%, 100% { top: 100%; }
-        }
-
-        /* Enhanced Login Button with Rotation */
-        .login-button {
-            background: linear-gradient(135deg, var(--iocl-primary), var(--iocl-secondary));
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 24px;
-            padding: 20px 40px;
-            font-size: 1.2rem;
-            font-weight: 700;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            box-shadow: 0 12px 40px rgba(243, 112, 34, 0.3);
-            width: 100%;
-            max-width: 400px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            min-height: 64px;
+            transition: all 0.3s;
         }
 
-        .login-button:hover {
-            transform: translateY(-4px) rotate(2deg);
-            box-shadow: 0 20px 60px rgba(243, 112, 34, 0.4);
-            background: linear-gradient(135deg, var(--iocl-accent), var(--iocl-primary));
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
         }
 
-        .login-button:active {
-            transform: translateY(-2px) rotate(1deg);
-        }
-
-        .login-button:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .login-button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-            transition: left 0.8s;
-        }
-
-        .login-button:hover::before {
-            left: 100%;
-        }
-
-        .login-button i {
-            font-size: 1.4rem;
-            transition: transform 0.3s ease;
-        }
-
-        .login-button:hover i {
-            transform: rotate(15deg);
-        }
-
-        /* Password Toggle */
-        .password-toggle {
-            position: absolute;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-            color: var(--iocl-primary);
-            font-size: 1.2rem;
-            transition: all 0.3s ease;
-            padding: 6px;
-            border-radius: 8px;
-        }
-
-        .password-toggle:hover {
-            color: var(--iocl-accent);
-            background: rgba(243, 112, 34, 0.1);
-            transform: translateY(-50%) scale(1.1);
-        }
-
-        .password-container {
-            position: relative;
-        }
-
-        /* Alert System */
         .alert {
-            position: fixed;
-            top: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 16px 28px;
-            border-radius: 16px;
-            font-weight: 600;
-            display: none;
-            z-index: 1000;
-            animation: alertSlide 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            backdrop-filter: blur(10px);
-            min-width: 300px;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
             text-align: center;
         }
 
-        @keyframes alertSlide {
-            from {
-                opacity: 0;
-                transform: translateX(-50%) translateY(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0);
-            }
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
         }
 
         .alert-error {
-            background: linear-gradient(135deg, rgba(255, 107, 107, 0.95), rgba(255, 82, 82, 0.95));
-            color: white;
-            box-shadow: 0 10px 40px rgba(255, 107, 107, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
 
-        .alert-success {
-            background: linear-gradient(135deg, rgba(76, 175, 80, 0.95), rgba(69, 160, 73, 0.95));
-            color: white;
-            box-shadow: 0 10px 40px rgba(76, 175, 80, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+        .credentials {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 0.9em;
         }
 
-        /* Loading State */
-        .loading .login-button {
-            pointer-events: none;
+        .credentials strong {
+            display: block;
+            margin-bottom: 5px;
         }
 
-        .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .header h1 {
-                font-size: 2rem;
-            }
-
-            .truck-icon {
-                font-size: 3.5rem;
-            }
-
-            .flow-container {
-                max-width: 100%;
-                padding: 15px;
-            }
-
-            .input-box,
-            .login-button {
-                padding: 24px;
-            }
-
-            /* Hide some bubbles on smaller screens to reduce clutter */
-            .bubble-11, .bubble-12, .bubble-13, .bubble-14, .bubble-15,
-            .bubble-16, .bubble-17, .bubble-18, .bubble-19, .bubble-20,
-            .bubble-21, .bubble-22, .bubble-23, .bubble-24, .bubble-25,
-            .bubble-26, .bubble-27, .bubble-28, .bubble-29, .bubble-30 {
-                display: none;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .flow-container {
-                padding: 10px;
-            }
-
-            .input-box,
-            .login-button {
-                padding: 20px;
-            }
-
-            .header h1 {
-                font-size: 1.8rem;
-            }
-
-            .truck-icon {
-                font-size: 3rem;
-            }
-
-            .floating-text-bubble {
-                font-size: 0.7rem;
-                padding: 6px 12px;
-            }
-
-            .alert {
-                min-width: calc(100vw - 40px);
-                max-width: calc(100vw - 40px);
-            }
-        }
-
-        /* Enhanced focus states for accessibility */
-        .input-box input:focus-visible,
-        .login-button:focus-visible {
-            outline: 3px solid var(--iocl-primary);
-            outline-offset: 3px;
+        .credentials p {
+            margin: 5px 0;
+            color: #666;
         }
     </style>
 </head>
 <body>
-    <!-- Enhanced Floating Background -->
-    <div class="floating-bg-container">
-        <div class="floating-text-bubble bubble-1">Nation-First</div>
-        <div class="floating-text-bubble bubble-2">Care</div>
-        <div class="floating-text-bubble bubble-3">Innovation</div>
-        <div class="floating-text-bubble bubble-4">Passion</div>
-        <div class="floating-text-bubble bubble-5">Trust</div>
-        <div class="floating-text-bubble bubble-6">IndianOil</div>
-        <div class="floating-text-bubble bubble-7">Energy of India</div>
-        <div class="floating-text-bubble bubble-8">Globally Admired</div>
-        <div class="floating-text-bubble bubble-9">Excellence</div>
-        <div class="floating-text-bubble bubble-10">Sustainability</div>
-        <div class="floating-text-bubble bubble-11">Growth</div>
-        <div class="floating-text-bubble bubble-12">Leadership</div>
-        <div class="floating-text-bubble bubble-13">Pioneering</div>
-        <div class="floating-text-bubble bubble-14">Visionary</div>
-        <div class="floating-text-bubble bubble-15">Future-Ready</div>
-        <div class="floating-text-bubble bubble-16">Refining</div>
-        <div class="floating-text-bubble bubble-17">Pipelines</div>
-        <div class="floating-text-bubble bubble-18">Marketing</div>
-        <div class="floating-text-bubble bubble-19">Retail</div>
-        <div class="floating-text-bubble bubble-20">Exploration</div>
-        <div class="floating-text-bubble bubble-21">Production</div>
-        <div class="floating-text-bubble bubble-22">Petrochemicals</div>
-        <div class="floating-text-bubble bubble-23">Green Energy</div>
-        <div class="floating-text-bubble bubble-24">Biofuels</div>
-        <div class="floating-text-bubble bubble-25">Hydrogen</div>
-        <div class="floating-text-bubble bubble-26">Energy Transition</div>
-        <div class="floating-text-bubble bubble-27">Energy Security</div>
-        <div class="floating-text-bubble bubble-28">Quality</div>
-        <div class="floating-text-bubble bubble-29">Safety</div>
-        <div class="floating-text-bubble bubble-30">Customer-centric</div>
-    </div>
-
-    <!-- Alert System -->
-    <div id="alert" class="alert"></div>
-
-    <!-- Main Flow Container -->
-    <div class="flow-container">
-        <!-- Header -->
-        <div class="header">
-            <div class="truck-icon">🚛</div>
-            <h1>IndianOil Smart Marg</h1>
-            <p>IndianOil- Secure Login</p>
+    <div class="login-container">
+        <div class="logo">
+            <h1>🗺️ Smart Marg</h1>
+            <p>Route Management System</p>
         </div>
 
-        <!-- Login Flow -->
-        <form id="loginForm" method="POST" action="/login">
-            <div class="flow-layout">
-                <!-- Step 1: Username -->
-                <div class="flow-step">
-                    <div class="input-box" id="usernameBox">
-                        <div class="step-number">1</div>
-                        <label for="username">
-                            <i class="fas fa-user"></i> Username
-                        </label>
-                        <input type="text" id="username" name="username" required 
-                               placeholder="Enter username" autocomplete="username">
-                    </div>
-                </div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-                <!-- Vertical Connection Arrow -->
-                <div class="flow-connection">
-                    <div class="arrow-line">
-                        <div class="flow-shine"></div>
-                    </div>
-                    <div class="arrow-head"></div>
-                </div>
-
-                <!-- Step 2: Password -->
-                <div class="flow-step">
-                    <div class="input-box" id="passwordBox">
-                        <div class="step-number">2</div>
-                        <label for="password">
-                            <i class="fas fa-lock"></i> Password
-                        </label>
-                        <div class="password-container">
-                            <input type="password" id="password" name="password" required 
-                                   placeholder="Enter your security code" autocomplete="current-password">
-                            <i class="fas fa-eye password-toggle" id="togglePassword"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Vertical Connection Arrow -->
-                <div class="flow-connection">
-                    <div class="arrow-line">
-                        <div class="flow-shine"></div>
-                    </div>
-                    <div class="arrow-head"></div>
-                </div>
-
-                <!-- Step 3: Login Button -->
-                <div class="flow-step">
-                    <button type="submit" class="login-button" id="loginButton">
-                        <i class="fas fa-route"></i>
-                        <span>Login</span>
-                    </button>
-                </div>
+        <form method="POST">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" name="username" required autofocus>
             </div>
+
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" required>
+            </div>
+
+            <button type="submit" class="btn">🔐 Login</button>
         </form>
+
+        <div class="credentials">
+            <strong>Demo Credentials:</strong>
+            <p>👤 Terminal: <code>terminal / terminal123</code></p>
+            <p>👤 Admin: <code>admin / admin123</code></p>
+        </div>
     </div>
-
-    <script>
-        class SmartMargLoginFlow {
-            constructor() {
-                this.form = document.getElementById('loginForm');
-                this.usernameInput = document.getElementById('username');
-                this.passwordInput = document.getElementById('password');
-                this.usernameBox = document.getElementById('usernameBox');
-                this.passwordBox = document.getElementById('passwordBox');
-                this.togglePassword = document.getElementById('togglePassword');
-                this.loginButton = document.getElementById('loginButton');
-                
-                this.init();
-            }
-
-            init() {
-                this.bindEvents();
-                this.checkUrlParams();
-                this.initializeAnimations();
-                this.focusFirstField();
-            }
-
-            bindEvents() {
-                // Focus effects for input boxes
-                this.usernameInput.addEventListener('focus', () => {
-                    this.usernameBox.classList.add('active');
-                });
-
-                this.usernameInput.addEventListener('blur', () => {
-                    this.usernameBox.classList.remove('active');
-                });
-
-                this.passwordInput.addEventListener('focus', () => {
-                    this.passwordBox.classList.add('active');
-                });
-
-                this.passwordInput.addEventListener('blur', () => {
-                    this.passwordBox.classList.remove('active');
-                });
-
-                // Password visibility toggle
-                this.togglePassword.addEventListener('click', () => {
-                    this.togglePasswordVisibility();
-                });
-
-                // Form submission with enhanced validation
-                this.form.addEventListener('submit', (e) => {
-                    this.handleSubmit(e);
-                });
-
-                // Enhanced keyboard navigation
-                this.usernameInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        this.passwordInput.focus();
-                    }
-                });
-
-                this.passwordInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        this.form.dispatchEvent(new Event('submit'));
-                    }
-                });
-
-                // Handle page unload/beforeunload to reset loading state if needed
-                window.addEventListener('beforeunload', () => {
-                    this.setLoadingState(false);
-                });
-            }
-
-            togglePasswordVisibility() {
-                const type = this.passwordInput.type === 'password' ? 'text' : 'password';
-                this.passwordInput.type = type;
-                
-                this.togglePassword.classList.toggle('fa-eye');
-                this.togglePassword.classList.toggle('fa-eye-slash');
-            }
-
-            handleSubmit(e) {
-                // Show loading state IMMEDIATELY
-                this.setLoadingState(true);
-                
-                const username = this.usernameInput.value.trim();
-                const password = this.passwordInput.value;
-                
-                if (!username) {
-                    e.preventDefault();
-                    this.setLoadingState(false);
-                    this.showAlert('Please enter your Username', 'error');
-                    this.usernameInput.focus();
-                    return;
-                }
-                
-                if (!password) {
-                    e.preventDefault();
-                    this.setLoadingState(false);
-                    this.showAlert('Please enter your Security Code', 'error');
-                    this.passwordInput.focus();
-                    return;
-                }
-
-                // Keep loading state active until page redirects
-                // The form will submit normally and the server will handle the response
-                // Loading state will be cleared when the new page loads or if there's an error response
-            }
-
-            setLoadingState(loading) {
-                const button = this.loginButton;
-                const buttonText = button.querySelector('span');
-                const buttonIcon = button.querySelector('i');
-                
-                if (loading) {
-                    button.disabled = true;
-                    document.body.classList.add('loading');
-                    buttonText.textContent = 'Authenticating...';
-                    buttonIcon.className = 'spinner';
-                } else {
-                    button.disabled = false;
-                    document.body.classList.remove('loading');
-                    buttonText.textContent = 'Login';
-                    buttonIcon.className = 'fas fa-route';
-                }
-            }
-
-            showAlert(message, type) {
-                const alert = document.getElementById('alert');
-                alert.textContent = message;
-                alert.className = `alert alert-${type}`;
-                alert.style.display = 'block';
-                
-                setTimeout(() => {
-                    alert.style.display = 'none';
-                }, 4000);
-            }
-
-            checkUrlParams() {
-                const urlParams = new URLSearchParams(window.location.search);
-                const error = urlParams.get('error');
-                const success = urlParams.get('success');
-                
-                if (error) {
-                    this.showAlert(error, 'error');
-                }
-                
-                if (success) {
-                    this.showAlert(success, 'success');
-                }
-            }
-
-            initializeAnimations() {
-                // Add staggered animation delays
-                const flowSteps = document.querySelectorAll('.flow-step');
-                flowSteps.forEach((step, index) => {
-                    step.style.animationDelay = `${0.2 + (index * 0.2)}s`;
-                });
-            }
-
-            focusFirstField() {
-                // Focus on username field after animations complete
-                setTimeout(() => {
-                    this.usernameInput.focus();
-                }, 1200);
-            }
-        }
-
-        // Initialize the login flow
-        document.addEventListener('DOMContentLoaded', function() {
-            new SmartMargLoginFlow();
-        });
-    </script>
 </body>
 </html>
