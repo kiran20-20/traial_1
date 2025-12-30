@@ -1015,6 +1015,48 @@ def api_delete_map(sap_code):
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
+@app.route('/admin/migrate-sap-codes')
+@login_required
+def migrate_sap_codes():
+    """Admin endpoint to clean SAP codes in database"""
+    try:
+        import sqlite3
+        
+        conn = sqlite3.connect('route_maps.db')
+        cursor = conn.cursor()
+        
+        # Get all records
+        cursor.execute('SELECT id, sap_code FROM route_maps')
+        records = cursor.fetchall()
+        
+        results = []
+        updated = 0
+        
+        for record_id, sap_code in records:
+            # Check if SAP has .0
+            if '.' in str(sap_code):
+                try:
+                    # Convert to int to remove decimal
+                    clean_sap = str(int(float(sap_code)))
+                    
+                    # Update the record
+                    cursor.execute('UPDATE route_maps SET sap_code = ? WHERE id = ?', 
+                                 (clean_sap, record_id))
+                    updated += 1
+                    results.append(f"✅ Updated: {sap_code} → {clean_sap}")
+                except Exception as e:
+                    results.append(f"⚠️ Could not clean {sap_code}: {e}")
+        
+        conn.commit()
+        conn.close()
+        
+        results.append(f"\n✅ Migration complete! Updated {updated} SAP codes.")
+        
+        return "<pre>" + "\n".join(results) + "</pre>"
+        
+    except Exception as e:
+        return f"<pre>❌ Migration failed: {e}</pre>"
+
 # ============================================================================
 # UTILITY ROUTES
 # ============================================================================
