@@ -589,6 +589,8 @@ def analyze_route():
         session['curves'] = curves
         session['all_pois'] = all_pois
         session['html_file'] = html_name
+        session['total_distance'] = total_distance
+        session['total_duration'] = total_duration
         session.modified = True
         
         # Create report
@@ -750,6 +752,8 @@ def analyze_edited_route():
         session['curves'] = curves
         session['all_pois'] = all_pois
         session['html_file'] = html_name
+        session['total_distance'] = total_distance
+        session['total_duration'] = total_duration
         session.modified = True
         
         # Create report
@@ -781,6 +785,53 @@ def analyze_edited_route():
     except Exception as e:
         print(f"❌ Error: {e}")
         return f"Error: {str(e)}"
+
+@app.route('/detailed_report')
+@login_required
+def detailed_report():
+    """Generate detailed PDF-style report"""
+    try:
+        # Get data from session
+        coords = session.get('coords', [])
+        sharp_turns = session.get('sharp_turns', [])
+        curves = session.get('curves', [])
+        all_pois = session.get('all_pois', [])
+        tt_specs = session.get('tt_specs', {})
+        username = session.get('username', 'User')
+        source = session.get('source', (0, 0))
+        destination = session.get('destination', (0, 0))
+        
+        # Calculate totals
+        critical_turns = len([t for t in sharp_turns if t.get('turn_angle', 0) >= 90])
+        high_turns = len([t for t in sharp_turns if 65 <= t.get('turn_angle', 0) < 90])
+        moderate_turns = len([t for t in sharp_turns if 45 <= t.get('turn_angle', 0) < 65])
+        
+        # Create report data
+        route_report = {
+            'total_distance': session.get('total_distance', 'N/A'),
+            'total_duration': session.get('total_duration', 'N/A'),
+            'tt_specifications': tt_specs
+        }
+        
+        # For now, render the same analysis template with a print-friendly flag
+        # In production, you'd create a separate PDF template
+        return render_template("route_analysis_improved.html",
+                             html_file=session.get('html_file', ''),
+                             route_report=route_report,
+                             sharp_turns=sharp_turns,
+                             curves=curves,
+                             all_pois=all_pois,
+                             tt_specs=tt_specs,
+                             username=username,
+                             source=source,
+                             destination=destination,
+                             critical_turns=critical_turns,
+                             high_turns=high_turns,
+                             moderate_turns=moderate_turns,
+                             print_mode=True)
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        return f"Error generating report: {str(e)}"
 
 # ============================================================================
 # TERMINAL ROUTES
