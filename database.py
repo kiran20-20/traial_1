@@ -119,14 +119,23 @@ def delete_route_map(sap_code):
     conn = sqlite3.connect('route_maps.db')
     cursor = conn.cursor()
     
-    cursor.execute('''
-        UPDATE route_maps 
-        SET status = 'deleted' 
-        WHERE sap_code = ?
-    ''', (sap_code,))
-    
-    conn.commit()
-    conn.close()
+    try:
+        cursor.execute('''
+            UPDATE route_maps 
+            SET status = 'deleted' 
+            WHERE sap_code = ?
+        ''', (sap_code,))
+        
+        conn.commit()
+        
+        if cursor.rowcount > 0:
+            return True, "Map deleted successfully"
+        else:
+            return False, "Map not found"
+    except Exception as e:
+        return False, f"Error deleting map: {str(e)}"
+    finally:
+        conn.close()
 
 if __name__ == '__main__':
     init_database()
