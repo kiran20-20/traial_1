@@ -1,11 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Map Created Successfully</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <title>Dashboard - Smart Marg</title>
     <style>
         * {
             margin: 0;
@@ -14,268 +12,415 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f6fa;
         }
 
-        .container {
-            max-width: 700px;
-            width: 100%;
-        }
-
-        .success-card {
+        /* Header */
+        .header {
             background: white;
-            border-radius: 20px;
-            padding: 50px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            text-align: center;
-        }
-
-        .success-icon {
-            width: 100px;
-            height: 100px;
-            background: linear-gradient(135deg, #28a745, #20c997);
-            border-radius: 50%;
+            padding: 20px 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            justify-content: center;
-            margin: 0 auto 30px;
-            animation: scaleIn 0.5s ease;
         }
 
-        .success-icon i {
-            font-size: 50px;
-            color: white;
+        .header h1 {
+            color: #333;
+            font-size: 1.8em;
         }
 
-        @keyframes scaleIn {
-            0% { transform: scale(0); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
+        .header-right {
+            display: flex;
+            gap: 15px;
+            align-items: center;
         }
 
-        h1 {
-            color: #02164F;
-            font-size: 2rem;
-            margin-bottom: 15px;
-        }
-
-        .subtitle {
+        .user-info {
             color: #666;
-            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .btn-logout {
+            padding: 10px 20px;
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
             margin-bottom: 30px;
         }
 
-        .sap-badge {
-            background: #F37022;
-            color: white;
-            padding: 15px 25px;
-            border-radius: 12px;
-            font-size: 1.5rem;
-            font-weight: 700;
-            display: inline-block;
-            margin: 20px 0;
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
         }
 
-        .qr-section {
-            background: #f0f4f8;
-            padding: 30px;
-            border-radius: 16px;
-            margin: 30px 0;
+        .stat-card h2 {
+            font-size: 3em;
+            color: #667eea;
+            margin-bottom: 10px;
         }
 
-        .qr-title {
-            color: #02164F;
-            font-size: 1.3rem;
-            margin-bottom: 20px;
-            font-weight: 700;
-        }
-
-        #qrcode {
-            display: flex;
-            justify-content: center;
-            margin: 20px 0;
-        }
-
-        .qr-note {
-            background: #fff3cd;
-            padding: 15px;
-            border-radius: 8px;
-            color: #856404;
-            margin-top: 20px;
-            font-size: 0.95rem;
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin: 25px 0;
-            text-align: left;
-        }
-
-        .info-item {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-            border-left: 4px solid #F37022;
-        }
-
-        .info-label {
-            font-size: 0.85rem;
+        .stat-card p {
             color: #666;
-            margin-bottom: 5px;
+            font-size: 1.1em;
         }
 
-        .info-value {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #02164F;
-        }
-
+        /* Actions */
         .actions {
-            display: flex;
-            gap: 15px;
-            margin-top: 30px;
-        }
-
-        .btn {
-            flex: 1;
-            padding: 16px 24px;
-            border: none;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            text-decoration: none;
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #02164F, #F37022);
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 10px;
         }
 
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-
-        .btn-success {
-            background: #28a745;
-            color: white;
-        }
-
-        .btn:hover {
+        .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
         }
 
-        @media (max-width: 768px) {
-            .success-card {
-                padding: 30px 20px;
-            }
-
-            .info-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .actions {
-                flex-direction: column;
-            }
+        /* Tabs */
+        .tabs {
+            background: white;
+            border-radius: 15px 15px 0 0;
+            overflow: hidden;
+            display: flex;
         }
 
-        @media print {
-            body {
-                background: white;
-            }
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            background: #f5f6fa;
+            cursor: pointer;
+            font-weight: bold;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
 
-            .actions, .qr-note {
-                display: none;
-            }
+        .tab.active {
+            background: white;
+            border-bottom: 3px solid #667eea;
+            color: #667eea;
+        }
+
+        .tab:hover {
+            background: #e8e9ef;
+        }
+
+        /* Content */
+        .content {
+            background: white;
+            padding: 30px;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Search */
+        .search-box {
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1em;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:hover {
+            background: #f8f9ff;
+        }
+
+        .btn-small {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 0 5px;
+        }
+
+        .btn-view {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-report {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-delete {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-restore {
+            background: #ff9800;
+            color: white;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px;
+            color: #999;
+            font-size: 1.3em;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
         }
     </style>
 </head>
 <body>
+    <!-- Header -->
+    <div class="header">
+        <h1>🗺️ Smart Marg Dashboard</h1>
+        <div class="header-right">
+            <span class="user-info">👤 {{ session.user }}</span>
+            <a href="{{ url_for('logout') }}" class="btn-logout">Logout</a>
+        </div>
+    </div>
+
     <div class="container">
-        <div class="success-card">
-            <div class="success-icon">
-                <i class="fas fa-check"></i>
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h2>{{ stats.total_routes or 0 }}</h2>
+                <p>📊 Total Routes</p>
+            </div>
+            <div class="stat-card">
+                <h2>{{ stats.this_week or 0 }}</h2>
+                <p>📅 This Week</p>
+            </div>
+            <div class="stat-card">
+                <h2>{{ stats.today or 0 }}</h2>
+                <p>🕒 Today</p>
+            </div>
+            <div class="stat-card">
+                <h2>{{ stats.deleted_routes or 0 }}</h2>
+                <p>🗑️ Deleted</p>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions">
+            <a href="{{ url_for('create_route') }}" class="btn-primary">➕ Create New Route</a>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('active')">📋 Active Routes</div>
+            <div class="tab" onclick="switchTab('deleted')">🗑️ Deleted Routes</div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Active Routes Tab -->
+            <div id="activeTab" class="tab-content active">
+                <div class="search-box">
+                    <input type="text" id="searchActive" placeholder="🔍 Search by SAP code, consignee, or terminal..." onkeyup="searchTable('activeTable', 'searchActive')">
+                </div>
+
+                {% if active_routes %}
+                <table id="activeTable">
+                    <thead>
+                        <tr>
+                            <th>SAP Code</th>
+                            <th>Consignee</th>
+                            <th>Terminal</th>
+                            <th>TT Capacity</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for route in active_routes %}
+                        <tr>
+                            <td><strong>{{ route.sap_code }}</strong></td>
+                            <td>{{ route.consignee_name }}</td>
+                            <td>{{ route.terminal_name }}</td>
+                            <td>{{ route.tt_capacity }}L</td>
+                            <td>{{ route.created_date }}</td>
+                            <td>
+                                <a href="{{ url_for('view_map', sap_code=route.sap_code) }}" class="btn-small btn-view">👁️ View</a>
+                                <a href="{{ url_for('generate_report', sap_code=route.sap_code) }}" class="btn-small btn-report">📄 Report</a>
+                                <form method="POST" action="{{ url_for('delete_route', sap_code=route.sap_code) }}" style="display: inline;">
+                                    <button type="submit" class="btn-small btn-delete" onclick="return confirm('Delete this route?')">🗑️ Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="no-data">
+                    📭 No active routes yet. Create your first route!
+                </div>
+                {% endif %}
             </div>
 
-            <h1><i class="fas fa-map-marked-alt"></i> Route Map Created!</h1>
-            <p class="subtitle">QR code generated for driver access</p>
+            <!-- Deleted Routes Tab -->
+            <div id="deletedTab" class="tab-content">
+                <div class="search-box">
+                    <input type="text" id="searchDeleted" placeholder="🔍 Search deleted routes..." onkeyup="searchTable('deletedTable', 'searchDeleted')">
+                </div>
 
-            <div class="sap-badge">SAP: {{ sap_code }}</div>
-
-            <div class="info-grid">
-                <div class="info-item">
-                    <div class="info-label">Consignee</div>
-                    <div class="info-value">{{ consignee_name[:30] }}</div>
+                {% if deleted_routes %}
+                <table id="deletedTable">
+                    <thead>
+                        <tr>
+                            <th>SAP Code</th>
+                            <th>Consignee</th>
+                            <th>Terminal</th>
+                            <th>Deleted Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for route in deleted_routes %}
+                        <tr>
+                            <td><strong>{{ route.sap_code }}</strong></td>
+                            <td>{{ route.consignee_name }}</td>
+                            <td>{{ route.terminal_name }}</td>
+                            <td>{{ route.created_date }}</td>
+                            <td>
+                                <form method="POST" action="{{ url_for('restore_route', sap_code=route.sap_code) }}" style="display: inline;">
+                                    <button type="submit" class="btn-small btn-restore">↩️ Restore</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="no-data">
+                    ✅ No deleted routes
                 </div>
-                <div class="info-item">
-                    <div class="info-label">Terminal</div>
-                    <div class="info-value">{{ terminal_name[:30] }}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Distance</div>
-                    <div class="info-value">{{ route_distance }}</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Duration</div>
-                    <div class="info-value">{{ route_duration }}</div>
-                </div>
-            </div>
-
-            <div class="qr-section">
-                <div class="qr-title">
-                    <i class="fas fa-qrcode"></i> SAP Code QR (For Reference)
-                </div>
-                <p style="color: #666; margin-bottom: 20px;">
-                    Map saved successfully! Driver will scan the <strong>invoice QR code</strong> which contains this SAP code ({{ sap_code }}).
-                </p>
-                <div id="qrcode"></div>
-                <div class="qr-note">
-                    <i class="fas fa-info-circle"></i> 
-                    <strong>Important:</strong> This map is now saved for SAP code {{ sap_code }}. 
-                    When the driver scans the invoice QR code (which contains this SAP code), 
-                    they will automatically get this route map.
-                </div>
-            </div>
-
-            <div class="actions">
-                <a href="{{ url_for('view_map', filename=map_file) }}" target="_blank" 
-                   class="btn btn-success">
-                    <i class="fas fa-eye"></i> Preview Map
-                </a>
-                <button onclick="window.print()" class="btn btn-secondary">
-                    <i class="fas fa-print"></i> Print QR
-                </button>
-                <a href="/terminal" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Create Another
-                </a>
+                {% endif %}
             </div>
         </div>
     </div>
 
     <script>
-        new QRCode(document.getElementById("qrcode"), {
-            text: "{{ sap_code }}",
-            width: 256,
-            height: 256,
-            colorDark: "#02164F",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.H
-        });
+        function switchTab(tab) {
+            // Hide all tabs
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            // Show selected tab
+            if (tab === 'active') {
+                document.querySelectorAll('.tab')[0].classList.add('active');
+                document.getElementById('activeTab').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('deletedTab').classList.add('active');
+            }
+        }
+
+        function searchTable(tableId, searchId) {
+            const input = document.getElementById(searchId);
+            const filter = input.value.toUpperCase();
+            const table = document.getElementById(tableId);
+            const tr = table.getElementsByTagName('tr');
+
+            for (let i = 1; i < tr.length; i++) {
+                const row = tr[i];
+                const text = row.textContent || row.innerText;
+                
+                if (text.toUpperCase().indexOf(filter) > -1) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        }
     </script>
 </body>
 </html>
