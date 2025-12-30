@@ -77,16 +77,46 @@ def save_route_map(data):
         conn.close()
 
 def get_route_map_by_sap(sap_code):
-    """Retrieve route map by SAP code"""
+    """Retrieve route map by SAP code - handles both integer and float formats"""
     conn = sqlite3.connect('route_maps.db')
     cursor = conn.cursor()
     
+    # Clean the SAP code input
+    sap_clean = str(sap_code).strip()
+    if '.' in sap_clean:
+        try:
+            sap_clean = str(int(float(sap_clean)))
+        except:
+            pass
+    
+    # Try exact match first
     cursor.execute('''
         SELECT * FROM route_maps 
         WHERE sap_code = ? AND status = 'active'
-    ''', (sap_code,))
+    ''', (sap_clean,))
     
     row = cursor.fetchone()
+    
+    # If not found and input doesn't have decimal, try with .0
+    if not row and '.' not in sap_code:
+        cursor.execute('''
+            SELECT * FROM route_maps 
+            WHERE sap_code = ? AND status = 'active'
+        ''', (sap_clean + '.0',))
+        row = cursor.fetchone()
+    
+    # If not found and input has decimal, try without decimal
+    if not row and '.' in str(sap_code):
+        try:
+            sap_without_decimal = str(int(float(sap_code)))
+            cursor.execute('''
+                SELECT * FROM route_maps 
+                WHERE sap_code = ? AND status = 'active'
+            ''', (sap_without_decimal,))
+            row = cursor.fetchone()
+        except:
+            pass
+    
     conn.close()
     
     if row:
