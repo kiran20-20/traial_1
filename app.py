@@ -455,15 +455,26 @@ def fetch_routes():
                     'distance': distance,
                     'duration': duration,
                     'summary': route.get('summary', f"Route {i+1}"),
-                    'preview_file': preview_file
+                    'preview_file': preview_file,
+                    'coords': coords  # Add coords for editor
                 })
             except:
                 continue
         
-        return render_template("route_select_with_edit.html", 
+        # Prepare route data JSON for advanced editor
+        route_data_json = json.dumps({
+            'source': list(source_coords),
+            'destination': list(dest_coords),
+            'coords': routes[0]['coords'] if routes else [],
+            'distance': routes[0]['distance'] if routes else 'N/A',
+            'duration': routes[0]['duration'] if routes else 'N/A'
+        })
+        
+        return render_template("advanced_route_editor.html", 
                              routes=routes, 
                              tt_specs=tt_specs, 
-                             username=username)
+                             username=username,
+                             route_data_json=route_data_json)
     except Exception as e:
         print(f"❌ Error: {e}")
         return f"Error: {str(e)}"
@@ -584,6 +595,168 @@ def analyze_route():
         print(f"❌ Error: {e}")
         return f"Error: {str(e)}"
 
+@app.route('/analyze_edited_route', methods=['POST'])
+@login_required
+def analyze_edited_route():
+    """Analyze route with custom waypoints from advanced editor"""
+    try:
+        # Get edited route data from form
+        edited_data = json.loads(request.form.get('edited_route_data', '{}'))
+        
+        tt_specs = session.get('tt_specs')
+        username = session.get('username', 'User')
+        
+        if not edited_data or not tt_specs:
+            return "Session expired or invalid data"
+        
+        # Extract waypoints
+        waypoints = edited_data.get('waypoints', [])
+        if len(waypoints) < 2:
+            return "Invalid route data"
+        
+        # Get route from Google Maps with custom waypoints
+        origin = (waypoints[0]['lat'], waypoints[0]['lng'])
+        destination = (waypoints[-1]['lat'], waypoints[-1]['lng'])
+        
+        # Prepare intermediate waypoints if any
+        via_waypoints = []
+        if len(waypoints) > 2:
+            via_waypoints = [(wp['lat'], wp['lng']) for wp in waypoints[1:-1]]
+        
+        # Get directions with waypoints
+        if via_waypoints:
+            directions = gmaps.directions(
+                origin, destination,
+                waypoints=via_waypoints,
+                mode="driving",
+                optimize_waypoints=False
+            )
+        else:
+            directions = gmaps.directions(origin, destination, mode="driving")
+        
+        if not directions:
+            return "Unable to calculate route with specified waypoints"
+        
+        # Process the route
+        selected = directions[0]
+        coords = polyline.decode(selected['overview_polyline']['points'])
+        
+        total_distance = selected['legs'][0]['distance']['text']
+        total_duration = selected['legs'][0]['duration']['text']
+        
+        # Detect hazards
+        sharp_turns, curves = detect_practical_hazards(coords, min_turn_angle=25, sample_distance=2, tt_specs=tt_specs)
+        
+        # Get POIs
+        all_pois = []
+        sample_coords = coords[::25] if len(coords) > 25 else coords[:3]
+        
+        for keyword in ['hospital', 'police', 'fuel']:
+            for lat, lng in sample_coords:
+                try:
+                    places = gmaps.places_nearby(location=(lat, lng), radius=1500, keyword=keyword)
+                    for place in places.get('results', [])[:2]:
+                        all_pois.append({
+                            'name': place.get('name', 'Unknown'),
+                            'location': (place['geometry']['location']['lat'], place['geometry']['location']['lng']),
+                            'type': keyword
+                        })
+                except:
+                    continue
+        
+        # Create map
+        center_lat = sum(coord[0] for coord in coords) / len(coords)
+        center_lng = sum(coord[1] for coord in coords) / len(coords)
+        
+        m = folium.Map(location=(center_lat, center_lng), zoom_start=12)
+        
+        # Draw route
+        folium.PolyLine(coords, color='#007cba', weight=6, opacity=0.8).add_to(m)
+        
+        # Add custom waypoint markers
+        for i, wp in enumerate(waypoints):
+            if i == 0:
+                folium.Marker(
+                    (wp['lat'], wp['lng']),
+                    popup='START',
+                    icon=folium.Icon(color='green', icon='play', prefix='fa')
+                ).add_to(m)
+            elif i == len(waypoints) - 1:
+                folium.Marker(
+                    (wp['lat'], wp['lng']),
+                    popup='END',
+                    icon=folium.Icon(color='blue', icon='stop', prefix='fa')
+                ).add_to(m)
+            else:
+                folium.Marker(
+                    (wp['lat'], wp['lng']),
+                    popup=f"Waypoint {i}: {wp.get('name', 'Custom Stop')}",
+                    icon=folium.Icon(color='purple', icon='map-pin', prefix='fa')
+                ).add_to(m)
+        
+        # Add hazard markers
+        for i, turn in enumerate(sharp_turns):
+            lat, lng = turn['location']
+            color = 'darkred' if turn['turn_angle'] >= 90 else 'red' if turn['turn_angle'] >= 65 else 'orange'
+            
+            folium.Marker(
+                location=(lat, lng),
+                icon=folium.Icon(color=color, icon='exclamation-triangle', prefix='fa'),
+                popup=f"Hazard {i+1}: {turn['turn_angle']:.1f}° {turn['direction']}"
+            ).add_to(m)
+        
+        # Add POI markers
+        for poi in all_pois:
+            color = 'red' if 'hospital' in poi['type'] else 'blue' if 'police' in poi['type'] else 'orange'
+            folium.Marker(
+                location=poi['location'],
+                icon=folium.Icon(color=color, icon='info', prefix='fa'),
+                popup=poi['name']
+            ).add_to(m)
+        
+        # Save map
+        unique_id = uuid4().hex
+        html_name = f"route_map_edited_{unique_id}.html"
+        m.save(f"templates/{html_name}")
+        
+        # Store in session
+        session['coords'] = coords
+        session['sharp_turns'] = sharp_turns
+        session['curves'] = curves
+        session['all_pois'] = all_pois
+        session['html_file'] = html_name
+        session.modified = True
+        
+        # Create report
+        route_report = {
+            'total_distance': total_distance,
+            'total_duration': total_duration,
+            'tt_specifications': tt_specs,
+            'custom_waypoints': len(waypoints) - 2,
+            'hazards': {
+                'critical': len([t for t in sharp_turns if t['turn_angle'] >= 90]),
+                'high': len([t for t in sharp_turns if 65 <= t['turn_angle'] < 90]),
+                'moderate': len([t for t in sharp_turns if 45 <= t['turn_angle'] < 65])
+            },
+            'facilities': {
+                'hospitals': len([p for p in all_pois if 'hospital' in p['type']]),
+                'police': len([p for p in all_pois if 'police' in p['type']]),
+                'fuel': len([p for p in all_pois if 'fuel' in p['type']])
+            }
+        }
+        
+        return render_template("route_analysis_improved.html",
+                             html_file=html_name,
+                             route_report=route_report,
+                             sharp_turns=sharp_turns,
+                             curves=curves,
+                             all_pois=all_pois,
+                             tt_specs=tt_specs,
+                             username=username)
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        return f"Error: {str(e)}"
+
 # ============================================================================
 # TERMINAL ROUTES
 # ============================================================================
@@ -652,7 +825,7 @@ def driver_map_view(sap_code):
         if not route_map:
             return "Route not found", 404
         
-        return render_template('driver_map_view.html', route_map=route_map)
+        return render_template('driver_view_map.html', map_data=route_map)
     except Exception as e:
         return f"Error: {str(e)}", 500
 
