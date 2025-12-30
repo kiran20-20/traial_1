@@ -167,7 +167,19 @@ def load_ro_data():
         for _, row in df_ro.iterrows():
             try:
                 state_code = str(row['State code']).strip().upper() if pd.notna(row['State code']) else None
-                sap_code = str(row['SAP Code']).strip() if pd.notna(row['SAP Code']) else None
+                # Convert SAP code and remove .0 if it's a float
+                if pd.notna(row['SAP Code']):
+                    sap_raw = row['SAP Code']
+                    # If it's a number (float/int), convert to int first to remove decimals
+                    if isinstance(sap_raw, (int, float)):
+                        sap_code = str(int(sap_raw))
+                    else:
+                        sap_code = str(sap_raw).strip()
+                        # Also handle string "333938.0" cases
+                        if '.' in sap_code and sap_code.replace('.', '').isdigit():
+                            sap_code = str(int(float(sap_code)))
+                else:
+                    sap_code = None
                 consignee = str(row['Consignee']).strip() if pd.notna(row['Consignee']) else None
                 district = str(row['District']).strip() if pd.notna(row.get('District')) else 'Unknown'
                 region = str(row['Region']).strip() if pd.notna(row.get('Region')) else 'Retail'
@@ -411,9 +423,15 @@ def fetch_routes():
         tt_type = request.form['tt_type']
         
         # Try to get additional form data (SAP code, terminal, consignee)
-        sap_code = request.form.get('sap_code', '')
-        terminal_name = request.form.get('terminal_name', '')
-        consignee_name = request.form.get('consignee_name', '')
+        sap_code = request.form.get('sap_code', '').strip()
+        # Clean SAP code - remove .0 if present
+        if sap_code and '.' in sap_code:
+            try:
+                sap_code = str(int(float(sap_code)))
+            except:
+                pass  # Keep original if conversion fails
+        terminal_name = request.form.get('terminal_name', '').strip()
+        consignee_name = request.form.get('consignee_name', '').strip()
         
         tt_specs = get_tt_specs(tt_type)
         
