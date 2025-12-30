@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Created Successfully</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            width: 100%;
+        }
+
+        .success-card {
+            background: white;
+            border-radius: 20px;
+            padding: 50px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            animation: scaleIn 0.5s ease;
+        }
+
+        .success-icon i {
+            font-size: 50px;
+            color: white;
+        }
+
+        @keyframes scaleIn {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        h1 {
+            color: #02164F;
+            font-size: 2rem;
+            margin-bottom: 15px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+        }
+
+        .sap-badge {
+            background: #F37022;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: inline-block;
+            margin: 20px 0;
+        }
+
+        .qr-section {
+            background: #f0f4f8;
+            padding: 30px;
+            border-radius: 16px;
+            margin: 30px 0;
+        }
+
+        .qr-title {
+            color: #02164F;
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        #qrcode {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .qr-note {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            color: #856404;
+            margin-top: 20px;
+            font-size: 0.95rem;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 25px 0;
+            text-align: left;
+        }
+
+        .info-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #F37022;
+        }
+
+        .info-label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #02164F;
+        }
+
+        .actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 16px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #02164F, #F37022);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        @media (max-width: 768px) {
+            .success-card {
+                padding: 30px 20px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .actions, .qr-note {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-card">
+            <div class="success-icon">
+                <i class="fas fa-check"></i>
+            </div>
+
+            <h1><i class="fas fa-map-marked-alt"></i> Route Map Created!</h1>
+            <p class="subtitle">QR code generated for driver access</p>
+
+            <div class="sap-badge">SAP: {{ sap_code }}</div>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Consignee</div>
+                    <div class="info-value">{{ consignee_name[:30] }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Terminal</div>
+                    <div class="info-value">{{ terminal_name[:30] }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Distance</div>
+                    <div class="info-value">{{ route_distance }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Duration</div>
+                    <div class="info-value">{{ route_duration }}</div>
+                </div>
+            </div>
+
+            <div class="qr-section">
+                <div class="qr-title">
+                    <i class="fas fa-qrcode"></i> SAP Code QR (For Reference)
+                </div>
+                <p style="color: #666; margin-bottom: 20px;">
+                    Map saved successfully! Driver will scan the <strong>invoice QR code</strong> which contains this SAP code ({{ sap_code }}).
+                </p>
+                <div id="qrcode"></div>
+                <div class="qr-note">
+                    <i class="fas fa-info-circle"></i> 
+                    <strong>Important:</strong> This map is now saved for SAP code {{ sap_code }}. 
+                    When the driver scans the invoice QR code (which contains this SAP code), 
+                    they will automatically get this route map.
+                </div>
+            </div>
+
+            <div class="actions">
+                <a href="{{ url_for('view_map', filename=map_file) }}" target="_blank" 
+                   class="btn btn-success">
+                    <i class="fas fa-eye"></i> Preview Map
+                </a>
+                <button onclick="window.print()" class="btn btn-secondary">
+                    <i class="fas fa-print"></i> Print QR
+                </button>
+                <a href="/terminal" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Create Another
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        new QRCode(document.getElementById("qrcode"), {
+            text: "{{ sap_code }}",
+            width: 256,
+            height: 256,
+            colorDark: "#02164F",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+    </script>
+</body>
+</html>
