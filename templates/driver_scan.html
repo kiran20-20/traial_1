@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan QR Code - Smart Marg</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            color: #02164F;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .logo p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        #qr-reader {
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 20px 0;
+            display: none;
+        }
+
+        #qr-reader.active {
+            display: block;
+        }
+
+        .manual-input {
+            margin-top: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #F37022;
+            box-shadow: 0 0 0 4px rgba(243, 112, 34, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #02164F, #F37022);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .divider {
+            text-align: center;
+            margin: 25px 0;
+            color: #999;
+            position: relative;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #ddd;
+        }
+
+        .divider span {
+            background: white;
+            padding: 0 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .status.active {
+            display: block;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .camera-select {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="logo">
+                <h1><i class="fas fa-qrcode"></i> Smart Marg</h1>
+                <p>Scan Invoice QR Code to Access Your Route</p>
+            </div>
+
+            <div id="statusMessage" class="status">
+                <span id="statusText"></span>
+            </div>
+
+            <!-- Camera Selection -->
+            <div class="camera-select">
+                <label for="cameraSelect" style="font-weight: 600; color: #333; margin-bottom: 8px; display: block;">
+                    <i class="fas fa-camera"></i> Select Camera
+                </label>
+                <select id="cameraSelect" onchange="switchCamera()" 
+                        style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 1rem;">
+                    <option value="">Loading cameras...</option>
+                </select>
+            </div>
+
+            <!-- QR Scanner -->
+            <div id="qr-reader"></div>
+
+            <button id="startScanBtn" class="btn btn-primary" onclick="startScanning()">
+                <i class="fas fa-camera"></i> Start QR Scanner
+            </button>
+
+            <button id="stopScanBtn" class="btn btn-secondary" onclick="stopScanning()" style="display: none;">
+                <i class="fas fa-stop"></i> Stop Scanner
+            </button>
+
+            <div class="divider"><span>OR</span></div>
+
+            <!-- Manual Input -->
+            <div class="manual-input">
+                <form method="POST" action="/driver/get_map">
+                    <div class="form-group">
+                        <label for="sapInput">
+                            <i class="fas fa-keyboard"></i> Enter SAP Code Manually
+                        </label>
+                        <input type="text" id="sapInput" name="sap_code" 
+                               placeholder="Enter SAP code..." required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Access Route Map
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let html5QrCode;
+        let currentCameraId;
+
+        // Load available cameras
+        async function loadCameras() {
+            try {
+                const devices = await Html5Qrcode.getCameras();
+                const select = document.getElementById('cameraSelect');
+                select.innerHTML = '';
+                
+                if (devices && devices.length > 0) {
+                    devices.forEach((device, index) => {
+                        const option = document.createElement('option');
+                        option.value = device.id;
+                        option.text = device.label || `Camera ${index + 1}`;
+                        select.appendChild(option);
+                    });
+                    currentCameraId = devices[0].id;
+                } else {
+                    select.innerHTML = '<option value="">No cameras found</option>';
+                }
+            } catch (err) {
+                console.error("Error loading cameras:", err);
+                document.getElementById('cameraSelect').innerHTML = '<option value="">Camera access denied</option>';
+            }
+        }
+
+        function startScanning() {
+            if (!currentCameraId) {
+                showStatus('Please select a camera', 'error');
+                return;
+            }
+
+            html5QrCode = new Html5Qrcode("qr-reader");
+            
+            html5QrCode.start(
+                currentCameraId,
+                {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 }
+                },
+                onScanSuccess,
+                onScanFailure
+            ).then(() => {
+                document.getElementById('qr-reader').classList.add('active');
+                document.getElementById('startScanBtn').style.display = 'none';
+                document.getElementById('stopScanBtn').style.display = 'flex';
+                showStatus('Scanner ready. Point at QR code...', 'success');
+            }).catch(err => {
+                console.error("Error starting scanner:", err);
+                showStatus('Failed to start scanner. Try manual entry.', 'error');
+            });
+        }
+
+        function stopScanning() {
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    document.getElementById('qr-reader').classList.remove('active');
+                    document.getElementById('startScanBtn').style.display = 'flex';
+                    document.getElementById('stopScanBtn').style.display = 'none';
+                    showStatus('Scanner stopped', 'success');
+                }).catch(err => {
+                    console.error("Error stopping scanner:", err);
+                });
+            }
+        }
+
+        function switchCamera() {
+            currentCameraId = document.getElementById('cameraSelect').value;
+            if (html5QrCode && html5QrCode.isScanning) {
+                stopScanning();
+                setTimeout(startScanning, 500);
+            }
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            console.log(`QR Code detected: ${decodedText}`);
+            
+            // Parse invoice QR to extract SAP code
+            // Format: Inv:7001431009 Dt:30.12.25 Val:1236300.00 Veh:GJ37T9259 Prd/Qty:BULK-MS/9;BULK-HSD/5 Con:192355(KAILASH AUTO SERVICE)
+            const sapMatch = decodedText.match(/Con:(\d+)\(/);
+            
+            if (sapMatch && sapMatch[1]) {
+                const sapCode = sapMatch[1];
+                showStatus(`Invoice scanned! SAP Code: ${sapCode}`, 'success');
+                
+                stopScanning();
+                
+                // Redirect to map with SAP code
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/driver/get_map';
+                
+                // Add SAP code
+                const sapInput = document.createElement('input');
+                sapInput.type = 'hidden';
+                sapInput.name = 'sap_code';
+                sapInput.value = sapCode;
+                
+                // Add full invoice data for display
+                const invoiceInput = document.createElement('input');
+                invoiceInput.type = 'hidden';
+                invoiceInput.name = 'invoice_data';
+                invoiceInput.value = decodedText;
+                
+                form.appendChild(sapInput);
+                form.appendChild(invoiceInput);
+                document.body.appendChild(form);
+                form.submit();
+            } else {
+                showStatus('Invalid QR code format. Please scan invoice QR code.', 'error');
+                stopScanning();
+            }
+        }
+
+        function onScanFailure(error) {
+            // Ignore scan failures
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            const statusText = document.getElementById('statusText');
+            
+            statusText.textContent = message;
+            statusDiv.className = `status active status-${type}`;
+            
+            setTimeout(() => {
+                statusDiv.classList.remove('active');
+            }, 3000);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', loadCameras);
+    </script>
+</body>
+</html>
