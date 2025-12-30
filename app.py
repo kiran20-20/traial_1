@@ -1,3 +1,8 @@
+"""
+Smart Marg - IndianOil Route Management System
+Clean Production Version - No AI Dependencies
+"""
+
 from flask import Flask, render_template, request, session, redirect, url_for, send_from_directory, make_response, jsonify
 import googlemaps
 import polyline
@@ -163,6 +168,8 @@ def load_ro_data():
                 state_code = str(row['State code']).strip().upper() if pd.notna(row['State code']) else None
                 sap_code = str(row['SAP Code']).strip() if pd.notna(row['SAP Code']) else None
                 consignee = str(row['Consignee']).strip() if pd.notna(row['Consignee']) else None
+                district = str(row['District']).strip() if pd.notna(row.get('District')) else 'Unknown'
+                region = str(row['Region']).strip() if pd.notna(row.get('Region')) else 'Retail'
                 lat = float(row['Latitude']) if pd.notna(row['Latitude']) else None
                 lng = float(row['Longitude']) if pd.notna(row['Longitude']) else None
                 
@@ -172,6 +179,8 @@ def load_ro_data():
                     
                     ro_data[state_code][sap_code] = {
                         'name': consignee,
+                        'district': district,
+                        'region': region,
                         'lat': lat,
                         'lng': lng
                     }
@@ -718,4 +727,3 @@ if __name__ == '__main__':
         app.run(debug=True, host='0.0.0.0', port=5000)
     except Exception as e:
         print(f"❌ Error starting app: {e}")
-
