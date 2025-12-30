@@ -9,3 +9,8 @@ Werkzeug==3.0.1
 gunicorn==21.2.0
 python-dotenv==1.0.0
 cachelib==0.13.0
+geopy==2.4.1
+Pillow==10.4.0
+requests==2.32.3
+numpy==1.26.4
+branca==0.7.2
