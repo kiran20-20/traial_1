@@ -21,6 +21,8 @@ from PIL import Image, ImageDraw, ImageFont
 import requests
 from database import init_database, save_route_map, get_route_map_by_sap, get_all_route_maps
 from uuid import uuid4
+from flask import jsonify
+from database import get_all_route_maps, get_route_map_by_sap, delete_route_map
 
 
 
@@ -2386,6 +2388,79 @@ def analyze_edited_route():
         return f"Error analyzing modified route: {str(e)}. Please try again or contact support."
 
 
+#-------------------------------------------------------------------------------------------------------------
+# Add these routes to your app.py
+
+# API: Get all saved maps
+@app.route('/api/get_saved_maps')
+def api_get_saved_maps():
+    """API endpoint to get all saved route maps"""
+    try:
+        maps = get_all_route_maps(limit=100)
+        return jsonify({
+            'success': True,
+            'maps': maps,
+            'count': len(maps)
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'maps': []
+        })
+
+# API: Delete a map
+@app.route('/api/delete_map/<sap_code>', methods=['DELETE'])
+def api_delete_map(sap_code):
+    """API endpoint to delete a route map"""
+    try:
+        success, message = delete_route_map(sap_code)
+        return jsonify({
+            'success': success,
+            'message': message
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        })
+
+# API: Search consignees (for autocomplete)
+@app.route('/api/search_consignee')
+def api_search_consignee():
+    """API endpoint to search consignees for autocomplete"""
+    query = request.args.get('query', '').lower()
+    
+    try:
+        # Search in your ro_data structure
+        results = []
+        
+        # Example: Search through ro_data
+        # Replace this with your actual data structure
+        for state, consignees in ro_data.items():
+            for sap_code, details in consignees.items():
+                if query in str(sap_code).lower() or query in details.get('name', '').lower():
+                    results.append({
+                        'sap': sap_code,
+                        'name': details.get('name', 'Unknown'),
+                        'state': state
+                    })
+                    
+                    if len(results) >= 10:  # Limit results
+                        break
+            if len(results) >= 10:
+                break
+        
+        return jsonify({
+            'success': True,
+            'results': results
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'results': [],
+            'error': str(e)
+        })
 
 # ============================================================================
 # TERMINAL OPERATOR ROUTES
@@ -3770,6 +3845,7 @@ if __name__ == '__main__':
         print(f"Error starting application: {e}")
         import traceback
         traceback.print_exc()
+
 
 
 
