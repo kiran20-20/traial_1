@@ -587,32 +587,149 @@ def analyze_route():
         
         m = folium.Map(location=(center_lat, center_lng), zoom_start=12)
         
-        # Draw route
-        folium.PolyLine(coords, color='#007cba', weight=6, opacity=0.8).add_to(m)
+        # Draw route with THICK BLUE LINE
+        folium.PolyLine(
+            coords, 
+            color='#0066FF',  # Bright blue
+            weight=8,  # Thicker line
+            opacity=0.9,
+            popup='Route Path'
+        ).add_to(m)
         
-        # Add hazard markers
+        # Add START marker - GREEN FLAG
+        folium.Marker(
+            source, 
+            popup='<b>START</b><br>शुरू',
+            icon=folium.Icon(color='green', icon='play-circle', prefix='fa', icon_size=(40, 40)),
+            tooltip='START / शुरू'
+        ).add_to(m)
+        
+        # Add END marker - RED FLAG  
+        folium.Marker(
+            destination, 
+            popup='<b>END</b><br>अंत', 
+            icon=folium.Icon(color='red', icon='flag-checkered', prefix='fa', icon_size=(40, 40)),
+            tooltip='END / अंत'
+        ).add_to(m)
+        
+        # Add DANGER/HAZARD markers with WARNING TRIANGLE
         for i, turn in enumerate(sharp_turns):
             lat, lng = turn['location']
-            color = 'darkred' if turn['turn_angle'] >= 90 else 'red' if turn['turn_angle'] >= 65 else 'orange'
+            
+            # Different colors for different danger levels
+            if turn['turn_angle'] >= 90:
+                color = 'darkred'
+                danger_level = 'खतरनाक / DANGER'
+            elif turn['turn_angle'] >= 65:
+                color = 'red'
+                danger_level = 'उच्च जोखिम / HIGH RISK'
+            else:
+                color = 'orange'
+                danger_level = 'मध्यम / MODERATE'
             
             folium.Marker(
                 location=(lat, lng),
-                icon=folium.Icon(color=color, icon='exclamation-triangle', prefix='fa'),
-                popup=f"Hazard {i+1}: {turn['turn_angle']:.1f}° {turn['direction']}"
+                popup=f'<b>⚠️ {danger_level}</b><br>खतरा #{i+1}<br>मोड़: {turn["turn_angle"]:.0f}°<br>Hazard #{i+1}<br>Turn: {turn["turn_angle"]:.0f}°',
+                icon=folium.Icon(color=color, icon='exclamation-triangle', prefix='fa', icon_size=(35, 35)),
+                tooltip=f'⚠️ खतरा / Hazard #{i+1}'
             ).add_to(m)
         
-        # Add POI markers
-        for poi in all_pois:
-            color = 'red' if 'hospital' in poi['type'] else 'blue' if 'police' in poi['type'] else 'orange'
+        # Add HOSPITAL markers with HOSPITAL SYMBOL +
+        for poi in [p for p in all_pois if 'hospital' in p['type']]:
             folium.Marker(
                 location=poi['location'],
-                icon=folium.Icon(color=color, icon='info', prefix='fa'),
-                popup=poi['name']
+                popup=f'<b>🏥 अस्पताल / HOSPITAL</b><br>{poi["name"]}',
+                icon=folium.Icon(color='red', icon='plus-square', prefix='fa', icon_size=(35, 35)),
+                tooltip='🏥 अस्पताल / Hospital'
             ).add_to(m)
         
-        # Add start/end
-        folium.Marker(source, popup='START', icon=folium.Icon(color='green', icon='play', prefix='fa')).add_to(m)
-        folium.Marker(destination, popup='END', icon=folium.Icon(color='blue', icon='stop', prefix='fa')).add_to(m)
+        # Add POLICE markers with SHIELD SYMBOL
+        for poi in [p for p in all_pois if 'police' in p['type']]:
+            folium.Marker(
+                location=poi['location'],
+                popup=f'<b>👮 पुलिस / POLICE</b><br>{poi["name"]}',
+                icon=folium.Icon(color='blue', icon='shield', prefix='fa', icon_size=(35, 35)),
+                tooltip='👮 पुलिस / Police'
+            ).add_to(m)
+        
+        # Add FUEL STATION markers with GAS PUMP
+        for poi in [p for p in all_pois if 'fuel' in p['type']]:
+            folium.Marker(
+                location=poi['location'],
+                popup=f'<b>⛽ पेट्रोल / FUEL</b><br>{poi["name"]}',
+                icon=folium.Icon(color='orange', icon='gas-pump', prefix='fa', icon_size=(35, 35)),
+                tooltip='⛽ पेट्रोल / Fuel'
+            ).add_to(m)
+        
+        # ADD SIMPLE LEGEND (Picture-based for easy understanding)
+        legend_html = '''
+        <div style="position: fixed; 
+                    bottom: 50px; 
+                    left: 50px; 
+                    width: 300px; 
+                    background-color: white; 
+                    border: 3px solid black;
+                    border-radius: 10px;
+                    z-index: 9999; 
+                    font-size: 16px;
+                    padding: 15px;
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.3);">
+            
+            <h4 style="margin: 0 0 15px 0; text-align: center; background: #333; color: white; padding: 10px; border-radius: 5px;">
+                नक्शा संकेत / MAP GUIDE
+            </h4>
+            
+            <div style="margin: 10px 0; display: flex; align-items: center;">
+                <div style="width: 40px; height: 40px; background: green; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 10px;">
+                    ▶
+                </div>
+                <span style="font-weight: bold;">शुरू / START</span>
+            </div>
+            
+            <div style="margin: 10px 0; display: flex; align-items: center;">
+                <div style="width: 40px; height: 40px; background: red; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 10px;">
+                    🏁
+                </div>
+                <span style="font-weight: bold;">अंत / END</span>
+            </div>
+            
+            <div style="margin: 10px 0; display: flex; align-items: center;">
+                <div style="width: 40px; height: 40px; background: darkred; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 10px;">
+                    ⚠
+                </div>
+                <span style="font-weight: bold;">खतरा / DANGER</span>
+            </div>
+            
+            <div style="margin: 10px 0; display: flex; align-items: center;">
+                <div style="width: 40px; height: 40px; background: red; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 10px;">
+                    +
+                </div>
+                <span style="font-weight: bold;">अस्पताल / HOSPITAL</span>
+            </div>
+            
+            <div style="margin: 10px 0; display: flex; align-items: center;">
+                <div style="width: 40px; height: 40px; background: blue; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 10px;">
+                    🛡
+                </div>
+                <span style="font-weight: bold;">पुलिस / POLICE</span>
+            </div>
+            
+            <div style="margin: 10px 0; display: flex; align-items: center;">
+                <div style="width: 40px; height: 40px; background: orange; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 10px;">
+                    ⛽
+                </div>
+                <span style="font-weight: bold;">पेट्रोल / FUEL</span>
+            </div>
+            
+            <div style="margin: 15px 0 5px 0; padding-top: 10px; border-top: 2px solid #ddd;">
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 60px; height: 6px; background: #0066FF; margin-right: 10px; border-radius: 3px;"></div>
+                    <span style="font-weight: bold;">मार्ग / ROUTE</span>
+                </div>
+            </div>
+        </div>
+        '''
+        m.get_root().html.add_child(folium.Element(legend_html))
         
         # Save map
         unique_id = uuid4().hex
@@ -733,49 +850,157 @@ def analyze_edited_route():
         
         m = folium.Map(location=(center_lat, center_lng), zoom_start=12)
         
-        # Draw route
-        folium.PolyLine(coords, color='#007cba', weight=6, opacity=0.8).add_to(m)
+        # Draw route with THICK BLUE LINE
+        folium.PolyLine(
+            coords, 
+            color='#0066FF',  # Bright blue
+            weight=8,  # Thicker line
+            opacity=0.9,
+            popup='Route Path'
+        ).add_to(m)
         
         # Add custom waypoint markers
         for i, wp in enumerate(waypoints):
             if i == 0:
                 folium.Marker(
                     (wp['lat'], wp['lng']),
-                    popup='START',
-                    icon=folium.Icon(color='green', icon='play', prefix='fa')
+                    popup='<b>START</b><br>शुरू',
+                    icon=folium.Icon(color='green', icon='play-circle', prefix='fa', icon_size=(40, 40)),
+                    tooltip='START / शुरू'
                 ).add_to(m)
             elif i == len(waypoints) - 1:
                 folium.Marker(
                     (wp['lat'], wp['lng']),
-                    popup='END',
-                    icon=folium.Icon(color='blue', icon='stop', prefix='fa')
+                    popup='<b>END</b><br>अंत',
+                    icon=folium.Icon(color='red', icon='flag-checkered', prefix='fa', icon_size=(40, 40)),
+                    tooltip='END / अंत'
                 ).add_to(m)
             else:
                 folium.Marker(
                     (wp['lat'], wp['lng']),
-                    popup=f"Waypoint {i}: {wp.get('name', 'Custom Stop')}",
-                    icon=folium.Icon(color='purple', icon='map-pin', prefix='fa')
+                    popup=f"<b>रास्ता / Waypoint {i}</b><br>{wp.get('name', 'Custom Stop')}",
+                    icon=folium.Icon(color='purple', icon='map-pin', prefix='fa', icon_size=(35, 35)),
+                    tooltip=f'रास्ता / Waypoint {i}'
                 ).add_to(m)
         
-        # Add hazard markers
+        # Add DANGER/HAZARD markers with WARNING TRIANGLE
         for i, turn in enumerate(sharp_turns):
             lat, lng = turn['location']
-            color = 'darkred' if turn['turn_angle'] >= 90 else 'red' if turn['turn_angle'] >= 65 else 'orange'
+            
+            # Different colors for different danger levels
+            if turn['turn_angle'] >= 90:
+                color = 'darkred'
+                danger_level = 'खतरनाक / DANGER'
+            elif turn['turn_angle'] >= 65:
+                color = 'red'
+                danger_level = 'उच्च जोखिम / HIGH RISK'
+            else:
+                color = 'orange'
+                danger_level = 'मध्यम / MODERATE'
             
             folium.Marker(
                 location=(lat, lng),
-                icon=folium.Icon(color=color, icon='exclamation-triangle', prefix='fa'),
-                popup=f"Hazard {i+1}: {turn['turn_angle']:.1f}° {turn['direction']}"
+                popup=f'<b>⚠️ {danger_level}</b><br>खतरा #{i+1}<br>मोड़: {turn["turn_angle"]:.0f}°<br>Hazard #{i+1}<br>Turn: {turn["turn_angle"]:.0f}°',
+                icon=folium.Icon(color=color, icon='exclamation-triangle', prefix='fa', icon_size=(35, 35)),
+                tooltip=f'⚠️ खतरा / Hazard #{i+1}'
             ).add_to(m)
         
-        # Add POI markers
-        for poi in all_pois:
-            color = 'red' if 'hospital' in poi['type'] else 'blue' if 'police' in poi['type'] else 'orange'
+        # Add HOSPITAL markers with HOSPITAL SYMBOL +
+        for poi in [p for p in all_pois if 'hospital' in p['type']]:
             folium.Marker(
                 location=poi['location'],
-                icon=folium.Icon(color=color, icon='info', prefix='fa'),
-                popup=poi['name']
+                popup=f'<b>🏥 अस्पताल / HOSPITAL</b><br>{poi["name"]}',
+                icon=folium.Icon(color='red', icon='plus-square', prefix='fa', icon_size=(35, 35)),
+                tooltip='🏥 अस्पताल / Hospital'
             ).add_to(m)
+        
+        # Add POLICE markers with SHIELD SYMBOL
+        for poi in [p for p in all_pois if 'police' in p['type']]:
+            folium.Marker(
+                location=poi['location'],
+                popup=f'<b>👮 पुलिस / POLICE</b><br>{poi["name"]}',
+                icon=folium.Icon(color='blue', icon='shield', prefix='fa', icon_size=(35, 35)),
+                tooltip='👮 पुलिस / Police'
+            ).add_to(m)
+        
+        # Add FUEL STATION markers with GAS PUMP
+        for poi in [p for p in all_pois if 'fuel' in p['type']]:
+            folium.Marker(
+                location=poi['location'],
+                popup=f'<b>⛽ पेट्रोल / FUEL</b><br>{poi["name"]}',
+                icon=folium.Icon(color='orange', icon='gas-pump', prefix='fa', icon_size=(35, 35)),
+                tooltip='⛽ पेट्रोल / Fuel'
+            ).add_to(m)
+        
+        # ADD SIMPLE LEGEND (Picture-based for easy understanding)
+        legend_html = '''
+        <div style="position: fixed; 
+                    bottom: 50px; 
+                    left: 50px; 
+                    width: 300px; 
+                    background-color: white; 
+                    border: 3px solid black;
+                    border-radius: 10px;
+                    z-index: 9999; 
+                    font-size: 16px;
+                    padding: 15px;
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.3);">
+            
+            <h4 style="margin: 0 0 15px 0; text-align: center; background: #333; color: white; padding: 10px; border-radius: 5px;">
+                नक्शा संकेत / MAP GUIDE
+            </h4>
+            
+            <div style="margin: 10px 0; display: flex; align-items: center;">
+                <div style="width: 40px; height: 40px; background: green; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 10px;">
+                    ▶
+                </div>
+                <span style="font-weight: bold;">शुरू / START</span>
+            </div>
+            
+            <div style="margin: 10px 0; display: flex; align-items: center;">
+                <div style="width: 40px; height: 40px; background: red; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 10px;">
+                    🏁
+                </div>
+                <span style="font-weight: bold;">अंत / END</span>
+            </div>
+            
+            <div style="margin: 10px 0; display: flex; align-items: center;">
+                <div style="width: 40px; height: 40px; background: darkred; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 10px;">
+                    ⚠
+                </div>
+                <span style="font-weight: bold;">खतरा / DANGER</span>
+            </div>
+            
+            <div style="margin: 10px 0; display: flex; align-items: center;">
+                <div style="width: 40px; height: 40px; background: red; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 10px;">
+                    +
+                </div>
+                <span style="font-weight: bold;">अस्पताल / HOSPITAL</span>
+            </div>
+            
+            <div style="margin: 10px 0; display: flex; align-items: center;">
+                <div style="width: 40px; height: 40px; background: blue; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 10px;">
+                    🛡
+                </div>
+                <span style="font-weight: bold;">पुलिस / POLICE</span>
+            </div>
+            
+            <div style="margin: 10px 0; display: flex; align-items: center;">
+                <div style="width: 40px; height: 40px; background: orange; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 10px;">
+                    ⛽
+                </div>
+                <span style="font-weight: bold;">पेट्रोल / FUEL</span>
+            </div>
+            
+            <div style="margin: 15px 0 5px 0; padding-top: 10px; border-top: 2px solid #ddd;">
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 60px; height: 6px; background: #0066FF; margin-right: 10px; border-radius: 3px;"></div>
+                    <span style="font-weight: bold;">मार्ग / ROUTE</span>
+                </div>
+            </div>
+        </div>
+        '''
+        m.get_root().html.add_child(folium.Element(legend_html))
         
         # Save map
         unique_id = uuid4().hex
