@@ -372,6 +372,12 @@ def main_menu():
 
 @app.route('/')
 @login_required
+def root():
+    """Root route - redirect to main menu"""
+    return redirect(url_for('main_menu'))
+
+@app.route('/create-route')
+@login_required
 def home():
     """Main route form page"""
     try:
