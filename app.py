@@ -363,60 +363,8 @@ def logout():
 @app.route('/main-menu')
 @login_required
 def main_menu():
-    """Main menu page with icon cards for navigation"""
+    """Main menu page with 2 buttons - Terminal Dashboard and Create Route"""
     return render_template('main_menu.html', username=session.get('username', 'User'))
-
-@app.route('/dashboard')
-@login_required
-def dashboard():
-    """Dashboard with statistics and recent activity"""
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        # Get total routes
-        cursor.execute("SELECT COUNT(*) FROM route_maps")
-        total_routes = cursor.fetchone()[0]
-        
-        # Get unique terminals
-        cursor.execute("SELECT COUNT(DISTINCT terminal_name) FROM route_maps")
-        total_terminals = cursor.fetchone()[0]
-        
-        # Get total hazards (rough estimate)
-        total_hazards = total_routes * 3  # Approximate
-        
-        # Get recent 5 routes
-        cursor.execute("""
-            SELECT terminal_name, sap_code, consignee_name, 
-                   datetime(created_at, 'localtime') as created_at
-            FROM route_maps 
-            ORDER BY created_at DESC 
-            LIMIT 5
-        """)
-        recent_routes = []
-        for row in cursor.fetchall():
-            recent_routes.append({
-                'terminal_name': row[0],
-                'sap_code': row[1],
-                'consignee_name': row[2],
-                'created_at': row[3]
-            })
-        
-        conn.close()
-        
-        return render_template('dashboard.html',
-                             username=session.get('username', 'User'),
-                             total_routes=total_routes,
-                             total_terminals=total_terminals,
-                             total_hazards=total_hazards,
-                             recent_routes=recent_routes)
-    except Exception as e:
-        return render_template('dashboard.html',
-                             username=session.get('username', 'User'),
-                             total_routes=0,
-                             total_terminals=0,
-                             total_hazards=0,
-                             recent_routes=[])
 
 # ============================================================================
 # MAIN ROUTES
