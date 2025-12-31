@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IndianOil Smart Marg</title>
+    <title>Create Route - IndianOil Smart Marg</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -14,38 +14,84 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f5f5f5;
             min-height: 100vh;
-            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .top-bar {
+            background: #003d82;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .top-bar .logo {
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-size: 0.95em;
+            transition: opacity 0.3s;
+        }
+
+        .nav-links a:hover {
+            opacity: 0.8;
+        }
+
+        .main-container {
+            flex: 1;
+            padding: 30px 20px;
         }
 
         .container {
-            max-width: 600px;
+            max-width: 700px;
             margin: 0 auto;
             background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 35px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
         }
 
         .header h1 {
-            color: #333;
-            font-size: 28px;
-            margin-bottom: 10px;
+            color: #003d82;
+            font-size: 1.8em;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 0.95em;
         }
 
         .section-title {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #003d82;
             color: white;
-            padding: 12px 15px;
-            border-radius: 8px;
-            margin: 25px 0 15px 0;
-            font-size: 16px;
+            padding: 12px 18px;
+            border-radius: 5px;
+            margin: 30px 0 20px 0;
+            font-size: 1em;
             font-weight: 600;
             display: flex;
             align-items: center;
@@ -54,48 +100,55 @@
 
         label {
             display: block;
-            margin-top: 15px;
-            margin-bottom: 5px;
+            margin-top: 18px;
+            margin-bottom: 6px;
             font-weight: 600;
-            color: #555;
-            font-size: 14px;
+            color: #333;
+            font-size: 0.9em;
         }
 
         input, select {
             width: 100%;
-            padding: 12px;
+            padding: 12px 14px;
             border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 14px;
+            border-radius: 5px;
+            font-size: 0.95em;
             transition: border-color 0.3s;
+            background: white;
         }
 
         input:focus, select:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #003d82;
+            background: #f9f9f9;
         }
 
         .method-toggle {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 15px;
+            gap: 12px;
+            margin-bottom: 20px;
         }
 
         .toggle-btn {
-            padding: 10px;
-            border: 2px solid #667eea;
+            padding: 12px;
+            border: 2px solid #003d82;
             background: white;
-            color: #667eea;
-            border-radius: 8px;
+            color: #003d82;
+            border-radius: 5px;
             cursor: pointer;
             font-weight: 600;
             transition: all 0.3s;
+            font-size: 0.95em;
         }
 
         .toggle-btn.active {
-            background: #667eea;
+            background: #003d82;
             color: white;
+        }
+
+        .toggle-btn:hover:not(.active) {
+            background: #f0f4ff;
         }
 
         .panel {
@@ -107,8 +160,9 @@
         }
 
         .info-box {
-            background: #f0f4ff;
-            border-left: 4px solid #667eea;
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-left: 4px solid #003d82;
             padding: 15px;
             margin-top: 15px;
             border-radius: 5px;
@@ -120,13 +174,17 @@
         }
 
         .info-item {
-            margin-bottom: 8px;
-            font-size: 14px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .info-item:last-child {
+            margin-bottom: 0;
         }
 
         .info-label {
             font-weight: 600;
-            color: #667eea;
+            color: #003d82;
         }
 
         .info-value {
@@ -136,23 +194,24 @@
         button[type="submit"] {
             width: 100%;
             padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #003d82;
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 16px;
+            border-radius: 5px;
+            font-size: 1.05em;
             font-weight: 600;
             cursor: pointer;
-            margin-top: 25px;
-            transition: transform 0.3s;
+            margin-top: 30px;
+            transition: all 0.3s;
         }
 
         button[type="submit"]:hover {
-            transform: translateY(-2px);
+            background: #002a5c;
+            box-shadow: 0 4px 15px rgba(0,61,130,0.3);
         }
 
         .helper-text {
-            font-size: 12px;
+            font-size: 0.85em;
             color: #888;
             margin-top: 5px;
         }
@@ -165,14 +224,16 @@
             background: white;
             display: none;
             position: absolute;
-            width: calc(100% - 60px);
+            width: calc(100% - 80px);
             z-index: 100;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
         .suggestion-item {
-            padding: 10px;
+            padding: 10px 14px;
             cursor: pointer;
             border-bottom: 1px solid #f0f0f0;
+            font-size: 0.9em;
         }
 
         .suggestion-item:hover {
@@ -182,133 +243,170 @@
         .autocomplete-container {
             position: relative;
         }
+
+        .footer {
+            background: #003d82;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px 20px;
+            }
+
+            .top-bar {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1><i class="fas fa-route"></i> IndianOil Smart Marg</h1>
-            <p style="color: #666;">Route Planning System</p>
+    <div class="top-bar">
+        <div class="logo">
+            🗺️ IndianOil Smart Marg
         </div>
+        <div class="nav-links">
+            <a href="/"><i class="fas fa-home"></i> Main Menu</a>
+            <a href="/terminal"><i class="fas fa-map-marked-alt"></i> Saved Routes</a>
+            <a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </div>
 
-        <form method="POST" action="/fetch_routes">
-            <!-- Terminal Section -->
-            <div class="section-title">
-                <i class="fas fa-warehouse"></i>
-                <span>Terminal Location</span>
+    <div class="main-container">
+        <div class="container">
+            <div class="header">
+                <h1>Create New Route</h1>
+                <p>Plan safe route with hazard detection</p>
             </div>
 
-            <label for="landmark_name">IOCL Terminal</label>
-            <input type="text" id="landmark_name" list="landmarkList" placeholder="Start typing terminal name...">
-            <datalist id="landmarkList">
-                {% for landmark in landmarks %}
-                <option value="{{ landmark.name }}" data-lat="{{ landmark.lat }}" data-lng="{{ landmark.lng }}">
-                {% endfor %}
-            </datalist>
-
-            <label for="source">Terminal Coordinates</label>
-            <input type="text" name="source" id="source" placeholder="Auto-filled or enter manually" required>
-            <div class="helper-text">Format: 28.6139, 77.2090</div>
-
-            <!-- Consignee Section -->
-            <div class="section-title">
-                <i class="fas fa-map-marker-alt"></i>
-                <span>Consignee Location</span>
-            </div>
-
-            <div class="method-toggle">
-                <div class="toggle-btn active" onclick="switchMethod('sap')">
-                    <i class="fas fa-search"></i> SAP Code
+            <form method="POST" action="/fetch_routes">
+                <!-- Terminal Section -->
+                <div class="section-title">
+                    <i class="fas fa-warehouse"></i>
+                    <span>Terminal Location</span>
                 </div>
-                <div class="toggle-btn" onclick="switchMethod('manual')">
-                    <i class="fas fa-keyboard"></i> Manual
-                </div>
-            </div>
 
-            <!-- SAP Panel -->
-            <div id="sapPanel" class="panel active">
-                <label for="stateCode">State</label>
-                <select id="stateCode" onchange="loadSAPCodes()">
-                    <option value="">Select State</option>
+                <label for="landmark_name">IOCL Terminal</label>
+                <input type="text" id="landmark_name" list="landmarkList" placeholder="Start typing terminal name...">
+                <datalist id="landmarkList">
+                    {% for landmark in landmarks %}
+                    <option value="{{ landmark.name }}" data-lat="{{ landmark.lat }}" data-lng="{{ landmark.lng }}">
+                    {% endfor %}
+                </datalist>
+
+                <label for="source">Terminal Coordinates</label>
+                <input type="text" name="source" id="source" placeholder="Auto-filled or enter manually" required>
+                <div class="helper-text">Format: 28.6139, 77.2090</div>
+
+                <!-- Consignee Section -->
+                <div class="section-title">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>Consignee Location</span>
+                </div>
+
+                <div class="method-toggle">
+                    <div class="toggle-btn active" onclick="switchMethod('sap')">
+                        <i class="fas fa-search"></i> SAP Code
+                    </div>
+                    <div class="toggle-btn" onclick="switchMethod('manual')">
+                        <i class="fas fa-keyboard"></i> Manual Entry
+                    </div>
+                </div>
+
+                <!-- SAP Panel -->
+                <div id="sapPanel" class="panel active">
+                    <label for="stateCode">State</label>
+                    <select id="stateCode" onchange="loadSAPCodes()">
+                        <option value="">Select State</option>
+                    </select>
+
+                    <label for="sapCode">SAP Code</label>
+                    <div class="autocomplete-container">
+                        <input type="text" id="sapCode" placeholder="Type SAP code or consignee name..." oninput="filterSAPCodes()">
+                        <div id="sapSuggestions" class="suggestions"></div>
+                    </div>
+
+                    <div id="sapInfo" class="info-box">
+                        <div class="info-item">
+                            <span class="info-label">Consignee:</span>
+                            <span class="info-value" id="consigneeName">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">District:</span>
+                            <span class="info-value" id="consigneeDistrict">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Coordinates:</span>
+                            <span class="info-value" id="consigneeCoords">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Manual Panel -->
+                <div id="manualPanel" class="panel">
+                    <label for="destination_manual">Consignee Coordinates</label>
+                    <input type="text" id="destination_manual" placeholder="Enter coordinates manually">
+                    <div class="helper-text">Format: 19.0760, 72.8777</div>
+                </div>
+
+                <!-- Hidden Fields for Backend -->
+                <input type="hidden" name="destination" id="destination">
+                <input type="hidden" name="sap_code" id="hidden_sap_code">
+                <input type="hidden" name="terminal_name" id="hidden_terminal_name">
+                <input type="hidden" name="consignee_name" id="hidden_consignee_name">
+
+                <!-- TT Specifications Section -->
+                <div class="section-title">
+                    <i class="fas fa-truck"></i>
+                    <span>Tank Truck Specifications</span>
+                </div>
+
+                <label for="tt_type">TT Capacity</label>
+                <select id="tt_type" name="tt_type" required onchange="showTTInfo()">
+                    <option value="">Choose TT Capacity</option>
+                    {% for tt_key, tt_data in tt_specifications.items() %}
+                    <option value="{{ tt_key }}"
+                            data-capacity="{{ tt_data.avg_capacity_liters }}"
+                            data-weight="{{ tt_data.gross_weight }}"
+                            data-speed="{{ tt_data.max_speed }}">
+                        {{ tt_data.capacity_range }} ({{ (tt_data.gross_weight / 1000) | round(1) }}T)
+                    </option>
+                    {% endfor %}
                 </select>
 
-                <label for="sapCode">SAP Code</label>
-                <div class="autocomplete-container">
-                    <input type="text" id="sapCode" placeholder="Type SAP code..." oninput="filterSAPCodes()">
-                    <div id="sapSuggestions" class="suggestions"></div>
-                </div>
-
-                <div id="sapInfo" class="info-box">
+                <div id="ttInfo" class="info-box">
                     <div class="info-item">
-                        <span class="info-label">Consignee:</span>
-                        <span class="info-value" id="consigneeName">-</span>
+                        <span class="info-label">Capacity:</span>
+                        <span class="info-value" id="ttCapacity">-</span>
                     </div>
                     <div class="info-item">
-                        <span class="info-label">District:</span>
-                        <span class="info-value" id="consigneeDistrict">-</span>
+                        <span class="info-label">Gross Weight:</span>
+                        <span class="info-value" id="ttWeight">-</span>
                     </div>
                     <div class="info-item">
-                        <span class="info-label">Coordinates:</span>
-                        <span class="info-value" id="consigneeCoords">-</span>
+                        <span class="info-label">Max Speed:</span>
+                        <span class="info-value" id="ttSpeed">-</span>
                     </div>
                 </div>
-            </div>
 
-            <!-- Manual Panel -->
-            <div id="manualPanel" class="panel">
-                <label for="destination_manual">Consignee Coordinates</label>
-                <input type="text" id="destination_manual" placeholder="Enter coordinates manually">
-                <div class="helper-text">Format: 19.0760, 72.8777</div>
-            </div>
-
-            <!-- Hidden Fields for Backend -->
-            <input type="hidden" name="destination" id="destination">
-            <input type="hidden" name="sap_code" id="hidden_sap_code">
-            <input type="hidden" name="terminal_name" id="hidden_terminal_name">
-            <input type="hidden" name="consignee_name" id="hidden_consignee_name">
-
-            <!-- TT Specifications Section -->
-            <div class="section-title">
-                <i class="fas fa-truck"></i>
-                <span>Tank Truck Specifications</span>
-            </div>
-
-            <label for="tt_type">TT Capacity</label>
-            <select id="tt_type" name="tt_type" required onchange="showTTInfo()">
-                <option value="">Choose TT Capacity</option>
-                {% for tt_key, tt_data in tt_specifications.items() %}
-                <option value="{{ tt_key }}"
-                        data-capacity="{{ tt_data.avg_capacity_liters }}"
-                        data-weight="{{ tt_data.gross_weight }}"
-                        data-speed="{{ tt_data.max_speed }}">
-                    {{ tt_data.capacity_range }} ({{ (tt_data.gross_weight / 1000) | round(1) }}T)
-                </option>
-                {% endfor %}
-            </select>
-
-            <div id="ttInfo" class="info-box">
-                <div class="info-item">
-                    <span class="info-label">Capacity:</span>
-                    <span class="info-value" id="ttCapacity">-</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Gross Weight:</span>
-                    <span class="info-value" id="ttWeight">-</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Max Speed:</span>
-                    <span class="info-value" id="ttSpeed">-</span>
-                </div>
-            </div>
-
-            <button type="submit">
-                <i class="fas fa-route"></i> Generate Smart Routes
-            </button>
-        </form>
-
-        <div style="text-align: center; margin-top: 20px; color: #888; font-size: 12px;">
-            © 2025 IndianOil Corporation Ltd.
+                <button type="submit">
+                    <i class="fas fa-route"></i> Generate Route
+                </button>
+            </form>
         </div>
+    </div>
+
+    <div class="footer">
+        Indian Oil Corporation Limited
     </div>
 
     <script>
