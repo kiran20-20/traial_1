@@ -367,8 +367,9 @@
     <div class="container">
         <div class="card">
             <div class="logo">
-                <h1><i class="fas fa-qrcode"></i> Smart Marg</h1>
-                <p>Scan Invoice QR Code to Access Your Route</p>
+                <h1>🗺️ स्मार्ट मार्ग / Smart Marg</h1>
+                <p>अपना मार्ग देखने के लिए इनवॉइस QR कोड स्कैन करें</p>
+                <p style="font-size: 12px; margin-top: 5px;">Scan Invoice QR Code to Access Your Route</p>
             </div>
 
             <!-- Status Message -->
@@ -383,7 +384,7 @@
                 <!-- Initializing Overlay -->
                 <div class="initializing-overlay" id="initOverlay">
                     <div class="spinner"></div>
-                    <p>Initializing camera...</p>
+                    <p>कैमरा शुरू हो रहा है...<br>Initializing camera...</p>
                 </div>
                 
                 <!-- Flashlight Button -->
@@ -401,21 +402,27 @@
 
             <!-- Manual Entry -->
             <div class="manual-entry">
-                <h3><i class="fas fa-keyboard"></i> Manual Entry</h3>
+                <h3>
+                    <i class="fas fa-keyboard"></i> 
+                    हाथ से दर्ज करें / Manual Entry
+                </h3>
                 <div class="input-group">
-                    <input type="text" id="manualInput" placeholder="Enter SAP Code (e.g., 192355)" maxlength="10">
+                    <input type="text" 
+                           id="manualInput" 
+                           placeholder="SAP कोड दर्ज करें / Enter SAP Code (e.g., 192355)" 
+                           maxlength="10">
                     <button class="btn btn-success" onclick="manualSubmit()" style="width: auto; padding: 12px 20px;">
-                        <i class="fas fa-search"></i> Find
+                        <i class="fas fa-search"></i> खोजें / Find
                     </button>
                 </div>
             </div>
 
             <!-- Debug Info -->
             <div id="debugInfo" class="debug-info">
-                <strong>🔍 Debug Info:</strong><br>
-                Last scanned: <span id="debugScanned">-</span><br>
-                Extracted SAP: <span id="debugSAP">-</span><br>
-                Response: <span id="debugResponse">-</span>
+                <strong>🔍 जानकारी / Debug Info:</strong><br>
+                स्कैन किया गया / Last scanned: <span id="debugScanned">-</span><br>
+                SAP कोड / Extracted SAP: <span id="debugSAP">-</span><br>
+                प्रतिक्रिया / Response: <span id="debugResponse">-</span>
             </div>
         </div>
     </div>
@@ -442,7 +449,7 @@
                 const hasCamera = await QrScanner.hasCamera();
                 
                 if (!hasCamera) {
-                    showStatus('❌ No camera found. Use manual entry below.', 'error');
+                    showStatus('❌ कैमरा नहीं मिला। नीचे मैन्युअल एंट्री का उपयोग करें।<br>No camera found. Use manual entry below.', 'error');
                     document.getElementById('videoContainer').classList.add('hidden');
                     return;
                 }
@@ -464,14 +471,14 @@
                         currentCameraId = cameras[0].id;
                     }
                     
-                    showStatus('✅ Camera ready. Starting scanner...', 'info');
+                    showStatus('✅ कैमरा तैयार। स्कैनर शुरू हो रहा है...<br>Camera ready. Starting scanner...', 'info');
                 } else {
-                    showStatus('❌ No cameras detected. Use manual entry below.', 'error');
+                    showStatus('❌ कोई कैमरा नहीं मिला। नीचे मैन्युअल एंट्री का उपयोग करें।<br>No cameras detected. Use manual entry below.', 'error');
                     document.getElementById('videoContainer').classList.add('hidden');
                 }
             } catch (err) {
                 console.error('Camera access error:', err);
-                showStatus('❌ Camera access denied. Use manual entry below.', 'error');
+                showStatus('❌ कैमरा एक्सेस अस्वीकृत। नीचे मैन्युअल एंट्री का उपयोग करें।<br>Camera access denied. Use manual entry below.', 'error');
                 document.getElementById('videoContainer').classList.add('hidden');
             }
         }
@@ -481,7 +488,7 @@
                 const videoElem = document.getElementById('qr-video');
                 
                 if (!currentCameraId) {
-                    showStatus('⏳ Waiting for camera...', 'info');
+                    showStatus('⏳ कैमरे की प्रतीक्षा में...<br>Waiting for camera...', 'info');
                     setTimeout(startScanner, 1000);
                     return;
                 }
@@ -511,11 +518,11 @@
                     document.getElementById('flashlightBtn').classList.remove('hidden');
                 }
                 
-                showStatus('📷 Scanner active. Point at QR code...', 'success');
+                showStatus('📷 स्कैनर सक्रिय। QR कोड पर इशारा करें...<br>Scanner active. Point at QR code...', 'success');
                 
             } catch (err) {
                 console.error('Scanner start error:', err);
-                showStatus('❌ Camera access denied. Use manual entry below.', 'error');
+                showStatus('❌ कैमरा एक्सेस अस्वीकृत। नीचे मैन्युअल एंट्री का उपयोग करें।<br>Camera access denied. Use manual entry below.', 'error');
                 document.getElementById('videoContainer').classList.add('hidden');
             }
         }
@@ -574,7 +581,7 @@
                 }
                 
                 document.getElementById('debugSAP').textContent = sapCode;
-                showStatus(`✅ QR Scanned! SAP Code: ${sapCode}`, 'success');
+                showStatus(`✅ QR स्कैन किया गया! SAP कोड: ${sapCode}<br>QR Scanned! SAP Code: ${sapCode}`, 'success');
                 
                 // Submit to server
                 setTimeout(() => {
@@ -583,10 +590,10 @@
                 
             } else {
                 document.getElementById('debugSAP').textContent = 'Not found';
-                showStatus('❌ No SAP code found in QR', 'error');
+                showStatus('❌ QR में SAP कोड नहीं मिला<br>No SAP code found in QR', 'error');
                 
                 setTimeout(() => {
-                    showStatus(`Scanned: "${qrData.substring(0, 50)}..."`, 'info');
+                    showStatus(`स्कैन किया गया / Scanned: "${qrData.substring(0, 50)}..."`, 'info');
                 }, 2000);
                 
                 // Restart scanner
@@ -598,7 +605,7 @@
 
         async function submitSAPCode(sapCode) {
             try {
-                showStatus('🔍 Looking for route map...', 'info');
+                showStatus('🔍 मार्ग मानचित्र खोज रहे हैं...<br>Looking for route map...', 'info');
                 
                 const response = await fetch('/driver/view-map', {
                     method: 'POST',
@@ -612,7 +619,7 @@
                 document.getElementById('debugResponse').textContent = JSON.stringify(data);
                 
                 if (data.success && data.redirect) {
-                    showStatus('✅ Route found! Redirecting...', 'success');
+                    showStatus('✅ मार्ग मिल गया! पुनर्निर्देशित हो रहा है...<br>Route found! Redirecting...', 'success');
                     setTimeout(() => {
                         window.location.href = data.redirect;
                     }, 1000);
@@ -621,13 +628,13 @@
                     showStatus(`❌ ${errorMsg}`, 'error');
                     
                     setTimeout(() => {
-                        showStatus(`💡 Route for SAP ${sapCode} not saved. Please create it first.`, 'info');
+                        showStatus(`💡 SAP ${sapCode} के लिए मार्ग सहेजा नहीं गया। कृपया पहले इसे बनाएं।<br>Route for SAP ${sapCode} not saved. Please create it first.`, 'info');
                     }, 3000);
                 }
             } catch (error) {
                 console.error('Submit error:', error);
                 document.getElementById('debugResponse').textContent = error.toString();
-                showStatus('❌ Network error. Check connection.', 'error');
+                showStatus('❌ नेटवर्क त्रुटि। कनेक्शन जांचें।<br>Network error. Check connection.', 'error');
             }
         }
 
@@ -635,13 +642,13 @@
             let sapCode = document.getElementById('manualInput').value.trim();
             
             if (!sapCode) {
-                showStatus('❌ Please enter a SAP code', 'error');
+                showStatus('❌ कृपया SAP कोड दर्ज करें<br>Please enter a SAP code', 'error');
                 return;
             }
             
             // Validate and clean
             if (!/^\d+\.?\d*$/.test(sapCode)) {
-                showStatus('❌ SAP code must contain only numbers', 'error');
+                showStatus('❌ SAP कोड में केवल नंबर होने चाहिए<br>SAP code must contain only numbers', 'error');
                 return;
             }
             
