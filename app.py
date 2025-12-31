@@ -661,75 +661,67 @@ def analyze_route():
                 tooltip='⛽ पेट्रोल / Fuel'
             ).add_to(m)
         
-        # ADD SIMPLE LEGEND (Picture-based for easy understanding)
+        # HORIZONTAL LEGEND BAR AT BOTTOM
         legend_html = '''
         <div style="position: fixed; 
-                    bottom: 50px; 
-                    left: 50px; 
-                    width: 300px; 
-                    background-color: white; 
-                    border: 3px solid black;
-                    border-radius: 10px;
+                    bottom: 0px; 
+                    left: 0;
+                    right: 0;
+                    width: 100%;
+                    background-color: rgba(255, 255, 255, 0.95); 
+                    border-top: 3px solid black;
                     z-index: 9999; 
-                    font-size: 16px;
-                    padding: 15px;
-                    box-shadow: 0 4px 8px rgba(0,0,0,0.3);">
+                    font-size: 13px;
+                    padding: 8px 10px;
+                    box-shadow: 0 -2px 8px rgba(0,0,0,0.3);
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    justify-content: center;
+                    flex-wrap: wrap;">
             
-            <h4 style="margin: 0 0 15px 0; text-align: center; background: #333; color: white; padding: 10px; border-radius: 5px;">
-                नक्शा संकेत / MAP GUIDE
-            </h4>
-            
-            <div style="margin: 10px 0; display: flex; align-items: center;">
-                <div style="width: 40px; height: 40px; background: green; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 10px;">
-                    ▶
-                </div>
-                <span style="font-weight: bold;">शुरू / START</span>
+            <div style="font-weight: bold; font-size: 14px; padding: 0 8px; margin-right: 5px;">
+                🗺️ नक्शा संकेत / MAP GUIDE:
             </div>
             
-            <div style="margin: 10px 0; display: flex; align-items: center;">
-                <div style="width: 40px; height: 40px; background: red; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 10px;">
-                    🏁
-                </div>
-                <span style="font-weight: bold;">अंत / END</span>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <div style="width: 28px; height: 28px; background: green; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; border: 2px solid #333;">▶</div>
+                <span style="font-weight: bold; font-size: 12px;">शुरू/START</span>
             </div>
             
-            <div style="margin: 10px 0; display: flex; align-items: center;">
-                <div style="width: 40px; height: 40px; background: darkred; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 10px;">
-                    ⚠
-                </div>
-                <span style="font-weight: bold;">खतरा / DANGER</span>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <div style="width: 28px; height: 28px; background: red; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; border: 2px solid #333;">🏁</div>
+                <span style="font-weight: bold; font-size: 12px;">अंत/END</span>
             </div>
             
-            <div style="margin: 10px 0; display: flex; align-items: center;">
-                <div style="width: 40px; height: 40px; background: red; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 10px;">
-                    +
-                </div>
-                <span style="font-weight: bold;">अस्पताल / HOSPITAL</span>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <div style="width: 28px; height: 28px; background: darkred; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; border: 2px solid #333;">⚠</div>
+                <span style="font-weight: bold; font-size: 12px;">खतरा/DANGER</span>
             </div>
             
-            <div style="margin: 10px 0; display: flex; align-items: center;">
-                <div style="width: 40px; height: 40px; background: blue; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 10px;">
-                    🛡
-                </div>
-                <span style="font-weight: bold;">पुलिस / POLICE</span>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <div style="width: 28px; height: 28px; background: red; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; border: 2px solid #333;">+</div>
+                <span style="font-weight: bold; font-size: 12px;">अस्पताल/HOSPITAL</span>
             </div>
             
-            <div style="margin: 10px 0; display: flex; align-items: center;">
-                <div style="width: 40px; height: 40px; background: orange; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 10px;">
-                    ⛽
-                </div>
-                <span style="font-weight: bold;">पेट्रोल / FUEL</span>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <div style="width: 28px; height: 28px; background: blue; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; border: 2px solid #333;">🛡</div>
+                <span style="font-weight: bold; font-size: 12px;">पुलिस/POLICE</span>
             </div>
             
-            <div style="margin: 15px 0 5px 0; padding-top: 10px; border-top: 2px solid #ddd;">
-                <div style="display: flex; align-items: center;">
-                    <div style="width: 60px; height: 6px; background: #0066FF; margin-right: 10px; border-radius: 3px;"></div>
-                    <span style="font-weight: bold;">मार्ग / ROUTE</span>
-                </div>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <div style="width: 28px; height: 28px; background: orange; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; border: 2px solid #333;">⛽</div>
+                <span style="font-weight: bold; font-size: 12px;">पेट्रोल/FUEL</span>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <div style="width: 40px; height: 4px; background: #0066FF; border-radius: 2px; border: 1px solid #333;"></div>
+                <span style="font-weight: bold; font-size: 12px;">मार्ग/ROUTE</span>
             </div>
         </div>
         '''
         m.get_root().html.add_child(folium.Element(legend_html))
+
         
         # Save map
         unique_id = uuid4().hex
@@ -932,75 +924,67 @@ def analyze_edited_route():
                 tooltip='⛽ पेट्रोल / Fuel'
             ).add_to(m)
         
-        # ADD SIMPLE LEGEND (Picture-based for easy understanding)
+        # HORIZONTAL LEGEND BAR AT BOTTOM
         legend_html = '''
         <div style="position: fixed; 
-                    bottom: 50px; 
-                    left: 50px; 
-                    width: 300px; 
-                    background-color: white; 
-                    border: 3px solid black;
-                    border-radius: 10px;
+                    bottom: 0px; 
+                    left: 0;
+                    right: 0;
+                    width: 100%;
+                    background-color: rgba(255, 255, 255, 0.95); 
+                    border-top: 3px solid black;
                     z-index: 9999; 
-                    font-size: 16px;
-                    padding: 15px;
-                    box-shadow: 0 4px 8px rgba(0,0,0,0.3);">
+                    font-size: 13px;
+                    padding: 8px 10px;
+                    box-shadow: 0 -2px 8px rgba(0,0,0,0.3);
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    justify-content: center;
+                    flex-wrap: wrap;">
             
-            <h4 style="margin: 0 0 15px 0; text-align: center; background: #333; color: white; padding: 10px; border-radius: 5px;">
-                नक्शा संकेत / MAP GUIDE
-            </h4>
-            
-            <div style="margin: 10px 0; display: flex; align-items: center;">
-                <div style="width: 40px; height: 40px; background: green; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 10px;">
-                    ▶
-                </div>
-                <span style="font-weight: bold;">शुरू / START</span>
+            <div style="font-weight: bold; font-size: 14px; padding: 0 8px; margin-right: 5px;">
+                🗺️ नक्शा संकेत / MAP GUIDE:
             </div>
             
-            <div style="margin: 10px 0; display: flex; align-items: center;">
-                <div style="width: 40px; height: 40px; background: red; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 10px;">
-                    🏁
-                </div>
-                <span style="font-weight: bold;">अंत / END</span>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <div style="width: 28px; height: 28px; background: green; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; border: 2px solid #333;">▶</div>
+                <span style="font-weight: bold; font-size: 12px;">शुरू/START</span>
             </div>
             
-            <div style="margin: 10px 0; display: flex; align-items: center;">
-                <div style="width: 40px; height: 40px; background: darkred; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 10px;">
-                    ⚠
-                </div>
-                <span style="font-weight: bold;">खतरा / DANGER</span>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <div style="width: 28px; height: 28px; background: red; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; border: 2px solid #333;">🏁</div>
+                <span style="font-weight: bold; font-size: 12px;">अंत/END</span>
             </div>
             
-            <div style="margin: 10px 0; display: flex; align-items: center;">
-                <div style="width: 40px; height: 40px; background: red; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 10px;">
-                    +
-                </div>
-                <span style="font-weight: bold;">अस्पताल / HOSPITAL</span>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <div style="width: 28px; height: 28px; background: darkred; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; border: 2px solid #333;">⚠</div>
+                <span style="font-weight: bold; font-size: 12px;">खतरा/DANGER</span>
             </div>
             
-            <div style="margin: 10px 0; display: flex; align-items: center;">
-                <div style="width: 40px; height: 40px; background: blue; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 10px;">
-                    🛡
-                </div>
-                <span style="font-weight: bold;">पुलिस / POLICE</span>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <div style="width: 28px; height: 28px; background: red; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; border: 2px solid #333;">+</div>
+                <span style="font-weight: bold; font-size: 12px;">अस्पताल/HOSPITAL</span>
             </div>
             
-            <div style="margin: 10px 0; display: flex; align-items: center;">
-                <div style="width: 40px; height: 40px; background: orange; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; margin-right: 10px;">
-                    ⛽
-                </div>
-                <span style="font-weight: bold;">पेट्रोल / FUEL</span>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <div style="width: 28px; height: 28px; background: blue; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; border: 2px solid #333;">🛡</div>
+                <span style="font-weight: bold; font-size: 12px;">पुलिस/POLICE</span>
             </div>
             
-            <div style="margin: 15px 0 5px 0; padding-top: 10px; border-top: 2px solid #ddd;">
-                <div style="display: flex; align-items: center;">
-                    <div style="width: 60px; height: 6px; background: #0066FF; margin-right: 10px; border-radius: 3px;"></div>
-                    <span style="font-weight: bold;">मार्ग / ROUTE</span>
-                </div>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <div style="width: 28px; height: 28px; background: orange; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; border: 2px solid #333;">⛽</div>
+                <span style="font-weight: bold; font-size: 12px;">पेट्रोल/FUEL</span>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <div style="width: 40px; height: 4px; background: #0066FF; border-radius: 2px; border: 1px solid #333;"></div>
+                <span style="font-weight: bold; font-size: 12px;">मार्ग/ROUTE</span>
             </div>
         </div>
         '''
         m.get_root().html.add_child(folium.Element(legend_html))
+
         
         # Save map
         unique_id = uuid4().hex
