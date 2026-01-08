@@ -1,6 +1,6 @@
 """
 Smart Marg - IndianOil Route Management System
-Clean Production Version - No AI Dependencies
+FIXED VERSION - Works with Render persistent disk
 """
 
 from flask import Flask, render_template, request, session, redirect, url_for, send_from_directory, make_response, jsonify
@@ -13,20 +13,11 @@ import os
 import pandas as pd
 import json
 import glob
-from database import init_database, save_route_map, get_route_map_by_sap, get_all_route_maps
+from database import init_database, save_route_map, get_route_map_by_sap, get_all_route_maps, delete_route_map, get_database_stats
 import math
 from geopy.distance import geodesic
 from functools import wraps
 from uuid import uuid4
-
-# Database imports
-from database import (
-    init_database, 
-    save_route_map, 
-    get_route_map_by_sap, 
-    get_all_route_maps, 
-    delete_route_map
-)
 
 # ============================================================================
 # FLASK APP CONFIGURATION
@@ -37,14 +28,22 @@ app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-product
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)
+
+# Ensure session directory exists (important for Render)
+session_dir = 'flask_session'
+if not os.path.exists(session_dir):
+    os.makedirs(session_dir, exist_ok=True)
+
 Session(app)
 
-# Initialize database
+# Initialize database (will use persistent disk on Render)
 init_database()
 
 # Google Maps API
 API_KEY = os.environ.get("API_KEY")
-gmaps = googlemaps.Client(key=API_KEY)
+if not API_KEY:
+    print("⚠️  WARNING: API_KEY not set! Set it in Render environment variables.")
+gmaps = googlemaps.Client(key=API_KEY) if API_KEY else None
 
 # ============================================================================
 # LOGIN CREDENTIALS
@@ -419,6 +418,9 @@ def home():
 def fetch_routes():
     """Generate routes from form input"""
     try:
+        if not gmaps:
+            return "Google Maps API key not configured. Please set API_KEY in environment variables."
+        
         # Clear old session data
         username = session.get('username')
         login_time = session.get('login_time')
@@ -557,6 +559,9 @@ def fetch_routes():
 def analyze_route():
     """Analyze selected route"""
     try:
+        if not gmaps:
+            return "Google Maps API key not configured."
+        
         directions = session.get('directions')
         tt_specs = session.get('tt_specs')
         username = session.get('username', 'User')
@@ -602,8 +607,8 @@ def analyze_route():
         # Draw route with THICK BLUE LINE
         folium.PolyLine(
             coords, 
-            color='#0066FF',  # Bright blue
-            weight=8,  # Thicker line
+            color='#0066FF',
+            weight=8,
             opacity=0.9,
             popup='Route Path'
         ).add_to(m)
@@ -624,11 +629,10 @@ def analyze_route():
             tooltip='END / अंत'
         ).add_to(m)
         
-        # Add DANGER/HAZARD markers with WARNING TRIANGLE
+        # Add DANGER/HAZARD markers
         for i, turn in enumerate(sharp_turns):
             lat, lng = turn['location']
             
-            # Different colors for different danger levels
             if turn['turn_angle'] >= 90:
                 color = 'darkred'
                 danger_level = 'खतरनाक / DANGER'
@@ -646,7 +650,7 @@ def analyze_route():
                 tooltip=f'⚠️ खतरा / Hazard #{i+1}'
             ).add_to(m)
         
-        # Add HOSPITAL markers with HOSPITAL SYMBOL +
+        # Add POI markers
         for poi in [p for p in all_pois if 'hospital' in p['type']]:
             folium.Marker(
                 location=poi['location'],
@@ -655,7 +659,6 @@ def analyze_route():
                 tooltip='🏥 अस्पताल / Hospital'
             ).add_to(m)
         
-        # Add POLICE markers with SHIELD SYMBOL
         for poi in [p for p in all_pois if 'police' in p['type']]:
             folium.Marker(
                 location=poi['location'],
@@ -664,7 +667,6 @@ def analyze_route():
                 tooltip='👮 पुलिस / Police'
             ).add_to(m)
         
-        # Add FUEL STATION markers with GAS PUMP
         for poi in [p for p in all_pois if 'fuel' in p['type']]:
             folium.Marker(
                 location=poi['location'],
@@ -673,7 +675,7 @@ def analyze_route():
                 tooltip='⛽ पेट्रोल / Fuel'
             ).add_to(m)
         
-        # HORIZONTAL LEGEND BAR AT BOTTOM
+        # Add legend
         legend_html = '''
         <div style="position: fixed; 
                     bottom: 0px; 
@@ -733,7 +735,6 @@ def analyze_route():
         </div>
         '''
         m.get_root().html.add_child(folium.Element(legend_html))
-
         
         # Save map
         unique_id = uuid4().hex
@@ -784,6 +785,9 @@ def analyze_route():
 def analyze_edited_route():
     """Analyze route with custom waypoints from advanced editor"""
     try:
+        if not gmaps:
+            return "Google Maps API key not configured."
+        
         # Get edited route data from form
         edited_data = json.loads(request.form.get('edited_route_data', '{}'))
         
@@ -821,7 +825,7 @@ def analyze_edited_route():
         if not directions:
             return "Unable to calculate route with specified waypoints"
         
-        # Process the route
+        # Process the route (similar to analyze_route)
         selected = directions[0]
         coords = polyline.decode(selected['overview_polyline']['points'])
         
@@ -848,20 +852,14 @@ def analyze_edited_route():
                 except:
                     continue
         
-        # Create map
+        # Create map (similar to analyze_route but with custom waypoints)
         center_lat = sum(coord[0] for coord in coords) / len(coords)
         center_lng = sum(coord[1] for coord in coords) / len(coords)
         
         m = folium.Map(location=(center_lat, center_lng), zoom_start=12)
         
-        # Draw route with THICK BLUE LINE
-        folium.PolyLine(
-            coords, 
-            color='#0066FF',  # Bright blue
-            weight=8,  # Thicker line
-            opacity=0.9,
-            popup='Route Path'
-        ).add_to(m)
+        # Draw route
+        folium.PolyLine(coords, color='#0066FF', weight=8, opacity=0.9, popup='Route Path').add_to(m)
         
         # Add custom waypoint markers
         for i, wp in enumerate(waypoints):
@@ -887,116 +885,29 @@ def analyze_edited_route():
                     tooltip=f'रास्ता / Waypoint {i}'
                 ).add_to(m)
         
-        # Add DANGER/HAZARD markers with WARNING TRIANGLE
+        # Add hazard markers
         for i, turn in enumerate(sharp_turns):
             lat, lng = turn['location']
-            
-            # Different colors for different danger levels
-            if turn['turn_angle'] >= 90:
-                color = 'darkred'
-                danger_level = 'खतरनाक / DANGER'
-            elif turn['turn_angle'] >= 65:
-                color = 'red'
-                danger_level = 'उच्च जोखिम / HIGH RISK'
-            else:
-                color = 'orange'
-                danger_level = 'मध्यम / MODERATE'
-            
+            color = 'darkred' if turn['turn_angle'] >= 90 else 'red' if turn['turn_angle'] >= 65 else 'orange'
             folium.Marker(
                 location=(lat, lng),
-                popup=f'<b>⚠️ {danger_level}</b><br>खतरा #{i+1}<br>मोड़: {turn["turn_angle"]:.0f}°<br>Hazard #{i+1}<br>Turn: {turn["turn_angle"]:.0f}°',
+                popup=f'<b>⚠️ HAZARD #{i+1}</b><br>Turn: {turn["turn_angle"]:.0f}°',
                 icon=folium.Icon(color=color, icon='exclamation-triangle', prefix='fa', icon_size=(35, 35)),
-                tooltip=f'⚠️ खतरा / Hazard #{i+1}'
+                tooltip=f'⚠️ Hazard #{i+1}'
             ).add_to(m)
         
-        # Add HOSPITAL markers with HOSPITAL SYMBOL +
+        # Add POI markers (hospitals, police, fuel)
         for poi in [p for p in all_pois if 'hospital' in p['type']]:
-            folium.Marker(
-                location=poi['location'],
-                popup=f'<b>🏥 अस्पताल / HOSPITAL</b><br>{poi["name"]}',
-                icon=folium.Icon(color='red', icon='plus-square', prefix='fa', icon_size=(35, 35)),
-                tooltip='🏥 अस्पताल / Hospital'
-            ).add_to(m)
+            folium.Marker(poi['location'], popup=f'🏥 {poi["name"]}', 
+                         icon=folium.Icon(color='red', icon='plus-square', prefix='fa')).add_to(m)
         
-        # Add POLICE markers with SHIELD SYMBOL
         for poi in [p for p in all_pois if 'police' in p['type']]:
-            folium.Marker(
-                location=poi['location'],
-                popup=f'<b>👮 पुलिस / POLICE</b><br>{poi["name"]}',
-                icon=folium.Icon(color='blue', icon='shield', prefix='fa', icon_size=(35, 35)),
-                tooltip='👮 पुलिस / Police'
-            ).add_to(m)
+            folium.Marker(poi['location'], popup=f'👮 {poi["name"]}',
+                         icon=folium.Icon(color='blue', icon='shield', prefix='fa')).add_to(m)
         
-        # Add FUEL STATION markers with GAS PUMP
         for poi in [p for p in all_pois if 'fuel' in p['type']]:
-            folium.Marker(
-                location=poi['location'],
-                popup=f'<b>⛽ पेट्रोल / FUEL</b><br>{poi["name"]}',
-                icon=folium.Icon(color='orange', icon='gas-pump', prefix='fa', icon_size=(35, 35)),
-                tooltip='⛽ पेट्रोल / Fuel'
-            ).add_to(m)
-        
-        # HORIZONTAL LEGEND BAR AT BOTTOM
-        legend_html = '''
-        <div style="position: fixed; 
-                    bottom: 0px; 
-                    left: 0;
-                    right: 0;
-                    width: 100%;
-                    background-color: rgba(255, 255, 255, 0.95); 
-                    border-top: 3px solid black;
-                    z-index: 9999; 
-                    font-size: 13px;
-                    padding: 8px 10px;
-                    box-shadow: 0 -2px 8px rgba(0,0,0,0.3);
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                    justify-content: center;
-                    flex-wrap: wrap;">
-            
-            <div style="font-weight: bold; font-size: 14px; padding: 0 8px; margin-right: 5px;">
-                🗺️ नक्शा संकेत / MAP GUIDE:
-            </div>
-            
-            <div style="display: flex; align-items: center; gap: 5px;">
-                <div style="width: 28px; height: 28px; background: green; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; border: 2px solid #333;">▶</div>
-                <span style="font-weight: bold; font-size: 12px;">शुरू/START</span>
-            </div>
-            
-            <div style="display: flex; align-items: center; gap: 5px;">
-                <div style="width: 28px; height: 28px; background: red; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; border: 2px solid #333;">🏁</div>
-                <span style="font-weight: bold; font-size: 12px;">अंत/END</span>
-            </div>
-            
-            <div style="display: flex; align-items: center; gap: 5px;">
-                <div style="width: 28px; height: 28px; background: darkred; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; border: 2px solid #333;">⚠</div>
-                <span style="font-weight: bold; font-size: 12px;">खतरा/DANGER</span>
-            </div>
-            
-            <div style="display: flex; align-items: center; gap: 5px;">
-                <div style="width: 28px; height: 28px; background: red; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; border: 2px solid #333;">+</div>
-                <span style="font-weight: bold; font-size: 12px;">अस्पताल/HOSPITAL</span>
-            </div>
-            
-            <div style="display: flex; align-items: center; gap: 5px;">
-                <div style="width: 28px; height: 28px; background: blue; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; border: 2px solid #333;">🛡</div>
-                <span style="font-weight: bold; font-size: 12px;">पुलिस/POLICE</span>
-            </div>
-            
-            <div style="display: flex; align-items: center; gap: 5px;">
-                <div style="width: 28px; height: 28px; background: orange; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; border: 2px solid #333;">⛽</div>
-                <span style="font-weight: bold; font-size: 12px;">पेट्रोल/FUEL</span>
-            </div>
-            
-            <div style="display: flex; align-items: center; gap: 5px;">
-                <div style="width: 40px; height: 4px; background: #0066FF; border-radius: 2px; border: 1px solid #333;"></div>
-                <span style="font-weight: bold; font-size: 12px;">मार्ग/ROUTE</span>
-            </div>
-        </div>
-        '''
-        m.get_root().html.add_child(folium.Element(legend_html))
-
+            folium.Marker(poi['location'], popup=f'⛽ {poi["name"]}',
+                         icon=folium.Icon(color='orange', icon='gas-pump', prefix='fa')).add_to(m)
         
         # Save map
         unique_id = uuid4().hex
@@ -1048,7 +959,6 @@ def analyze_edited_route():
 def detailed_report():
     """Generate detailed PDF-style report"""
     try:
-        # Get data from session
         coords = session.get('coords', [])
         sharp_turns = session.get('sharp_turns', [])
         curves = session.get('curves', [])
@@ -1058,20 +968,16 @@ def detailed_report():
         source = session.get('source', (0, 0))
         destination = session.get('destination', (0, 0))
         
-        # Calculate totals
         critical_turns = len([t for t in sharp_turns if t.get('turn_angle', 0) >= 90])
         high_turns = len([t for t in sharp_turns if 65 <= t.get('turn_angle', 0) < 90])
         moderate_turns = len([t for t in sharp_turns if 45 <= t.get('turn_angle', 0) < 65])
         
-        # Create report data
         route_report = {
             'total_distance': session.get('total_distance', 'N/A'),
             'total_duration': session.get('total_duration', 'N/A'),
             'tt_specifications': tt_specs
         }
         
-        # For now, render the same analysis template with a print-friendly flag
-        # In production, you'd create a separate PDF template
         return render_template("route_analysis_improved.html",
                              html_file=session.get('html_file', ''),
                              route_report=route_report,
@@ -1095,7 +1001,6 @@ def detailed_report():
 def save_map_to_database():
     """Save analyzed route map to database"""
     try:
-        # Get data from session
         tt_specs = session.get('tt_specs', {})
         html_file = session.get('html_file', '')
         total_distance = session.get('total_distance', 'N/A')
@@ -1104,7 +1009,6 @@ def save_map_to_database():
         destination = session.get('destination', (0, 0))
         username = session.get('username', 'Terminal Operator')
         
-        # Extract data from tt_specs
         sap_code = tt_specs.get('sap_code', '')
         terminal_name = tt_specs.get('terminal', '')
         consignee_name = tt_specs.get('consignee', '')
@@ -1114,7 +1018,6 @@ def save_map_to_database():
         if not sap_code:
             return jsonify({'success': False, 'message': 'SAP code not found in session'})
         
-        # Prepare data for database
         map_data = {
             'sap_code': sap_code,
             'terminal_name': terminal_name,
@@ -1129,7 +1032,6 @@ def save_map_to_database():
             'created_by': username
         }
         
-        # Save to database
         success, message = save_route_map(map_data)
         
         return jsonify({'success': success, 'message': message})
@@ -1163,10 +1065,7 @@ def terminal_dashboard():
             pass
         
         ro_data = load_ro_data()
-        
-        # Get saved route maps
         saved_maps = get_all_route_maps(limit=50)
-        
         username = session.get('username', 'User')
         
         return render_template('terminal_dashboard.html',
@@ -1239,47 +1138,14 @@ def api_delete_map(sap_code):
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
-@app.route('/admin/migrate-sap-codes')
-@login_required
-def migrate_sap_codes():
-    """Admin endpoint to clean SAP codes in database"""
+@app.route('/api/db_stats')
+def api_db_stats():
+    """Get database statistics - useful for monitoring"""
     try:
-        import sqlite3
-        
-        conn = sqlite3.connect('route_maps.db')
-        cursor = conn.cursor()
-        
-        # Get all records
-        cursor.execute('SELECT id, sap_code FROM route_maps')
-        records = cursor.fetchall()
-        
-        results = []
-        updated = 0
-        
-        for record_id, sap_code in records:
-            # Check if SAP has .0
-            if '.' in str(sap_code):
-                try:
-                    # Convert to int to remove decimal
-                    clean_sap = str(int(float(sap_code)))
-                    
-                    # Update the record
-                    cursor.execute('UPDATE route_maps SET sap_code = ? WHERE id = ?', 
-                                 (clean_sap, record_id))
-                    updated += 1
-                    results.append(f"✅ Updated: {sap_code} → {clean_sap}")
-                except Exception as e:
-                    results.append(f"⚠️ Could not clean {sap_code}: {e}")
-        
-        conn.commit()
-        conn.close()
-        
-        results.append(f"\n✅ Migration complete! Updated {updated} SAP codes.")
-        
-        return "<pre>" + "\n".join(results) + "</pre>"
-        
+        stats = get_database_stats()
+        return jsonify(stats)
     except Exception as e:
-        return f"<pre>❌ Migration failed: {e}</pre>"
+        return jsonify({'error': str(e)})
 
 # ============================================================================
 # UTILITY ROUTES
@@ -1292,8 +1158,8 @@ def view_map(filename):
 
 @app.route('/health')
 def health():
-    """Health check"""
-    return {"status": "OK", "message": "App is running"}
+    """Health check for Render"""
+    return {"status": "OK", "message": "App is running", "db_stats": get_database_stats()}
 
 # ============================================================================
 # ERROR HANDLERS
@@ -1313,11 +1179,10 @@ def server_error(e):
 
 if __name__ == '__main__':
     try:
-        if not os.path.exists("templates"):
-            os.makedirs("templates")
-        
-        if not os.path.exists("flask_session"):
-            os.makedirs("flask_session")
+        # Ensure required directories exist
+        for directory in ["templates", "flask_session"]:
+            if not os.path.exists(directory):
+                os.makedirs(directory, exist_ok=True)
         
         print("=" * 60)
         print("Smart Marg - IndianOil Route Management System")
@@ -1327,6 +1192,17 @@ if __name__ == '__main__':
             print(f"  {username} : {password}")
         print("=" * 60)
         
-        app.run(debug=True, host='0.0.0.0', port=5000)
+        # Print database stats
+        stats = get_database_stats()
+        print(f"\n📊 Database Info:")
+        print(f"  Location: {stats.get('db_path')}")
+        print(f"  Active Routes: {stats.get('active', 0)}")
+        print(f"  Total Routes: {stats.get('total', 0)}")
+        print("=" * 60)
+        
+        # Get port from environment (Render uses PORT env variable)
+        port = int(os.environ.get('PORT', 5000))
+        
+        app.run(debug=True, host='0.0.0.0', port=port)
     except Exception as e:
         print(f"❌ Error starting app: {e}")
